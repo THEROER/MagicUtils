@@ -123,6 +123,8 @@ public class LoggerConfig {
             return Logger.PrefixMode.valueOf(prefix.getChatMode());
         } catch (IllegalArgumentException e) {
             return Logger.PrefixMode.FULL; // Default fallback
+        } catch (NullPointerException e) {
+            return Logger.PrefixMode.FULL; // Default fallback
         }
     }
     
@@ -135,6 +137,8 @@ public class LoggerConfig {
             return Logger.PrefixMode.valueOf(prefix.getConsoleMode());
         } catch (IllegalArgumentException e) {
             return Logger.PrefixMode.SHORT; // Default fallback
+        } catch (NullPointerException e) {
+            return Logger.PrefixMode.SHORT; // Default fallback
         }
     }
     
@@ -146,6 +150,8 @@ public class LoggerConfig {
         try {
             return Logger.Target.valueOf(defaults.getTarget());
         } catch (IllegalArgumentException e) {
+            return Logger.Target.BOTH; // Default fallback
+        } catch (NullPointerException e) {
             return Logger.Target.BOTH; // Default fallback
         }
     }
