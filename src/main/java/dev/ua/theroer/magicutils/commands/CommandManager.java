@@ -1,7 +1,10 @@
 package dev.ua.theroer.magicutils.commands;
 
+import lombok.Getter;
+
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.SubLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.*;
 
 import org.bukkit.command.CommandSender;
@@ -15,14 +18,14 @@ import java.util.stream.Collectors;
  * Manages registration, execution, and tab completion of commands.
  */
 public class CommandManager {
-    private static final SubLogger logger = Logger.getSubLogger("Commands", "[Commands]");
+    private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
     
     private final Map<String, MagicCommand> commands = new HashMap<>();
     private final Map<String, CommandInfo> commandInfos = new HashMap<>();
     private final String permissionPrefix;
     private final String pluginName;
-    private final AutocompleteSuggestionParser suggestionParser;
-    private final ArgumentParserRegistry argumentParserRegistry;
+    @Getter
+    private final TypeParserRegistry typeParserRegistry;
 
     /**
      * Constructs a new CommandManager.
@@ -32,26 +35,10 @@ public class CommandManager {
     public CommandManager(String permissionPrefix, String pluginName) {
         this.permissionPrefix = permissionPrefix;
         this.pluginName = pluginName.toLowerCase();
-        this.suggestionParser = new AutocompleteSuggestionParser();
-        this.argumentParserRegistry = new ArgumentParserRegistry();
+        this.typeParserRegistry = new TypeParserRegistry();
         logger.debug("CommandManager initialized with permission prefix: " + permissionPrefix + " and plugin name: " + pluginName);
     }
-
-    /**
-     * Gets the argument parser registry for registering custom parsers.
-     * @return the argument parser registry
-     */
-    public ArgumentParserRegistry getArgumentParserRegistry() {
-        return argumentParserRegistry;
-    }
-
-    /**
-     * Gets the autocomplete suggestion parser.
-     * @return the suggestion parser
-     */
-    public AutocompleteSuggestionParser getSuggestionParser() {
-        return suggestionParser;
-    }
+    
 
     /**
      * Registers a command and its info.
@@ -130,7 +117,7 @@ public class CommandManager {
             String permission = permissionPrefix + ".commands." + normalizedName + ".use";
             if (!sender.hasPermission(permission)) {
                 logger.debug("Permission denied for " + sender.getName() + " on permission: " + permission);
-                return CommandResult.failure("У вас не вистачає прав на цю команду!");
+                return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
         }
 
@@ -139,7 +126,7 @@ public class CommandManager {
         } catch (Exception e) {
             logger.error("Error executing command " + name + ": " + e.getMessage());
             e.printStackTrace();
-            return CommandResult.failure("Виникла помилка при виконанні команди");
+            return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
     }
 
@@ -158,14 +145,14 @@ public class CommandManager {
         // If there are subcommands but no execute method and no args
         if (subCommands.isEmpty() && executeMethod == null) {
             logger.debug("No subcommands and no execute method found, returning success");
-            return CommandResult.success("Команда виконана");
+            return CommandResult.success(InternalMessages.CMD_EXECUTED.get());
         }
 
         // If there are subcommands but no args provided
         if (args.isEmpty() && !subCommands.isEmpty()) {
             String availableSubCommands = getAvailableSubCommands(subCommands, sender, normalizedCommandName);
             logger.debug("No arguments provided, available subcommands: " + availableSubCommands);
-            return CommandResult.failure("Вкажіть підкоманду: " + availableSubCommands);
+            return CommandResult.failure(InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", availableSubCommands));
         }
 
         // Handle subcommand execution
@@ -184,7 +171,7 @@ public class CommandManager {
         if (targetSubCommand == null) {
             logger.debug("Subcommand not found: " + subCommandName + ". Available: " + 
                 subCommands.stream().map(s -> s.annotation.name()).collect(Collectors.toList()));
-            return CommandResult.failure("Невідома підкоманда: " + subCommandName);
+            return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", subCommandName));
         }
 
         logger.debug("Found subcommand: " + subCommandName + ", checking permissions...");
@@ -194,7 +181,7 @@ public class CommandManager {
                 ".subcommand." + targetSubCommand.annotation.name() + ".use";
             if (!sender.hasPermission(permission)) {
                 logger.debug("Permission denied for subcommand " + subCommandName + " on permission: " + permission);
-                return CommandResult.failure("У вас не вистачає прав на цю підкоманду!");
+                return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
         }
 
@@ -215,7 +202,7 @@ public class CommandManager {
             
             if (methodArgs == null) {
                 logger.debug("Failed to parse arguments for direct execute method");
-                return CommandResult.failure("Неправильні аргументи команди");
+                return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get());
             }
 
             // Log the actual arguments being passed
@@ -234,7 +221,7 @@ public class CommandManager {
         } catch (Exception e) {
             logger.error("Error executing direct method: " + e.getMessage());
             e.printStackTrace();
-            return CommandResult.failure("Помилка виконання команди");
+            return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
     }
 
@@ -334,7 +321,7 @@ public class CommandManager {
         }
         
         // Check if this value is in the argument's suggestions
-        if (argumentHasSuggestion(argument, userArg)) {
+        if (argumentHasSuggestion(argument, userArg, sender)) {
             return true;
         }
         
@@ -346,10 +333,10 @@ public class CommandManager {
         return false;
     }
     
-    private boolean argumentHasSuggestion(CommandArgument argument, String value) {
+    private boolean argumentHasSuggestion(CommandArgument argument, String value, CommandSender sender) {
         for (String suggestionSource : argument.getSuggestions()) {
             // Use the suggestion parser to get all possible values
-            List<String> suggestions = suggestionParser.parse(suggestionSource, null); // sender not needed for checking
+            List<String> suggestions = typeParserRegistry.parseSuggestion(suggestionSource, sender);
             for (String suggestion : suggestions) {
                 if (suggestion.equalsIgnoreCase(value)) {
                     return true;
@@ -372,7 +359,7 @@ public class CommandManager {
             
             if (methodArgs == null) {
                 logger.debug("Failed to parse arguments for subcommand");
-                return CommandResult.failure("Неправильні аргументи команди");
+                return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get());
             }
 
             // Log the actual arguments being passed
@@ -391,7 +378,7 @@ public class CommandManager {
         } catch (Exception e) {
             logger.error("Error executing subcommand: " + e.getMessage());
             e.printStackTrace();
-            return CommandResult.failure("Помилка виконання підкоманди");
+            return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
     }
 
@@ -399,7 +386,7 @@ public class CommandManager {
         logger.debug("Converting argument: '" + value + "' to type: " + type.getSimpleName());
         
         // Use the argument parser registry to convert the argument
-        Object result = argumentParserRegistry.parse(value, type, sender);
+        Object result = typeParserRegistry.parse(value, type, sender);
         
         if (result != null || value == null) {
             return result;
@@ -696,9 +683,21 @@ public class CommandManager {
                                                        CommandSender sender, String currentInput) {
         logger.debug("generateSuggestionsForArgument called for argument: " + argument.getName() + " with input: '" + currentInput + "'");
         logger.debug("Argument suggestions: " + argument.getSuggestions());
+        logger.debug("Argument type: " + argument.getType());
         
         List<String> suggestions = new ArrayList<>();
         
+        // If no explicit suggestions, try to get suggestions from the argument type
+        if (argument.getSuggestions().isEmpty()) {
+            logger.debug("No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
+            List<String> typeSuggestions = typeParserRegistry.getSuggestionsForTypeFiltered(argument.getType(), currentInput, sender);
+            if (!typeSuggestions.isEmpty()) {
+                logger.debug("Got " + typeSuggestions.size() + " suggestions from type parser");
+                return typeSuggestions;
+            }
+        }
+        
+        // Process explicit suggestions
         for (String suggestionSource : argument.getSuggestions()) {
             logger.debug("Processing suggestion source: '" + suggestionSource + "'");
             
@@ -729,8 +728,8 @@ public class CommandManager {
     private List<String> processSuggestionSource(MagicCommand command, String source, CommandSender sender, String currentInput) {
         logger.debug("Processing suggestion source: " + source);
         
-        if (suggestionParser.isSpecialArgument(source)) {
-            return suggestionParser.parseFiltered(source, currentInput, sender);
+        if (typeParserRegistry.isSpecialSuggestion(source)) {
+            return typeParserRegistry.parseSuggestionFiltered(source, currentInput, sender);
         }
 
         if (source.startsWith("{") && source.endsWith("}")) {

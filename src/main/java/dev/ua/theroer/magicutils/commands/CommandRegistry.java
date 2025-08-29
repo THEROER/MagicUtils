@@ -1,8 +1,9 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.SubLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
 import lombok.Getter;
 
@@ -17,7 +18,7 @@ import java.util.*;
  * Handles registration and initialization of commands in the plugin.
  */
 public class CommandRegistry {
-    private static final SubLogger logger = Logger.getSubLogger("Commands", "[Commands]");
+    private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
     
     @Getter
     private static CommandManager commandManager;
@@ -48,7 +49,7 @@ public class CommandRegistry {
             logger.info("Command registry initialized successfully");
         } catch (Exception e) {
             logger.error("Failed to initialize command registry: " + e.getMessage());
-            throw new RuntimeException("Failed to get CommandMap", e);
+            throw new RuntimeException(InternalMessages.ERR_FAILED_GET_COMMANDMAP.get(), e);
         }
     }
 
@@ -58,7 +59,7 @@ public class CommandRegistry {
      */
     public static void registerAll(MagicCommand... commands) {
         if (commandManager == null) {
-            throw new IllegalStateException("CommandRegistry not initialized! Call initialize() first.");
+            throw new IllegalStateException(InternalMessages.ERR_REGISTRY_NOT_INITIALIZED.get());
         }
         
         for (MagicCommand command : commands) {
@@ -72,18 +73,18 @@ public class CommandRegistry {
      */
     public static void register(MagicCommand command) {
         if (commandManager == null) {
-            throw new IllegalStateException("CommandRegistry not initialized! Call initialize() first.");
+            throw new IllegalStateException(InternalMessages.ERR_REGISTRY_NOT_INITIALIZED.get());
         }
         
         if (commandMap == null) {
-            throw new IllegalStateException("CommandMap not available!");
+            throw new IllegalStateException(InternalMessages.ERR_COMMANDMAP_NOT_AVAILABLE.get());
         }
         
         Class<?> clazz = command.getClass();
         CommandInfo info = clazz.getAnnotation(CommandInfo.class);
         
         if (info == null) {
-            throw new IllegalArgumentException("Command class must have @CommandInfo annotation: " + clazz.getName());
+            throw new IllegalArgumentException(InternalMessages.ERR_MISSING_COMMANDINFO.get("class", clazz.getName()));
         }
 
         commandManager.register(command, info);
@@ -114,10 +115,10 @@ public class CommandRegistry {
         boolean registered = commandMap.register(plugin.getName().toLowerCase(), bukkitCommand);
         
         if (registered) {
-            logger.info("Successfully registered command: " + info.name() + " with aliases: " + Arrays.toString(info.aliases()));
-            logger.info("Command usage: " + usage);
+            logger.info(InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(), "aliases", Arrays.toString(info.aliases())));
+            logger.info(InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
             if (!subCommandUsages.isEmpty()) {
-                logger.info("Subcommand usages:");
+                logger.info(InternalMessages.SYS_SUBCOMMAND_USAGES.get());
                 for (String subUsage : subCommandUsages) {
                     logger.info("  " + subUsage);
                 }
@@ -152,8 +153,8 @@ public class CommandRegistry {
             
             boolean aliasRegistered = commandMap.register(plugin.getName().toLowerCase(), aliasCommand);
             if (aliasRegistered) {
-                logger.info("Successfully registered alias: " + alias + " for command: " + info.name());
-                logger.info("Alias usage: " + aliasUsage);
+                logger.info(InternalMessages.SYS_ALIAS_REGISTERED.get("alias", alias, "command", info.name()));
+                logger.info(InternalMessages.SYS_ALIAS_USAGE.get("usage", aliasUsage));
             }
         }
     }
@@ -174,7 +175,7 @@ public class CommandRegistry {
         }
 
         if (!permissions.isEmpty()) {
-            logger.info("Generated permissions for " + info.name() + ": " + permissions);
+            logger.info(InternalMessages.SYS_GENERATED_PERMISSIONS.get("command", info.name(), "permissions", permissions.toString()));
         }
     }
     
@@ -199,7 +200,7 @@ public class CommandRegistry {
             knownCommands.remove(commandName.toLowerCase());
             knownCommands.remove(plugin.getName().toLowerCase() + ":" + commandName.toLowerCase());
             
-            logger.info("Unregistered command: " + commandName);
+            logger.info(InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
             return true;
         } catch (Exception e) {
             logger.error("Failed to unregister command " + commandName + ": " + e.getMessage());

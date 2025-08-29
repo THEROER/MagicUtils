@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.commands;
 
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -115,7 +116,7 @@ public class CommandArgument {
         private final List<String> suggestions = new ArrayList<>();
         private String permission = null;
         private String permissionCondition = null;
-        private String permissionMessage = "You don't have permission to do this!";
+        private String permissionMessage = InternalMessages.CMD_NO_PERMISSION.get();
 
         /**
          * Constructs a new Builder for CommandArgument.

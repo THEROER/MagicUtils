@@ -11,7 +11,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.SubLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +20,7 @@ import java.util.Map;
  * Internal listener for handling GUI events.
  */
 class MagicGuiListener implements Listener {
-    private static final SubLogger logger = Logger.getSubLogger("MagicGui", "[GUI]");
+    private static final PrefixedLogger logger = Logger.create("MagicGui", "[GUI]");
     private static boolean registered = false;
     private static final Map<Player, MagicGui> openGuis = new HashMap<>();
     private static Plugin registeredPlugin = null;

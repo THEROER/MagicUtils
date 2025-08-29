@@ -1,24 +1,20 @@
-package dev.ua.theroer.magicutils.commands.parsers.argument;
+package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.commands.ArgumentTypeParser;
+import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
- * Parser for Long arguments.
+ * Type parser for Long arguments.
  */
-public class LongArgumentParser implements ArgumentTypeParser<Long> {
-    
-    /**
-     * Create a new LongArgumentParser.
-     */
-    public LongArgumentParser() {}
+public class LongTypeParser implements TypeParser<Long> {
     
     @Override
     public boolean canParse(@NotNull Class<?> type) {
-        return type == long.class || type == Long.class;
+        return type == Long.class || type == long.class;
     }
     
     @Override
@@ -29,13 +25,16 @@ public class LongArgumentParser implements ArgumentTypeParser<Long> {
         }
         
         try {
-            Long result = Long.parseLong(value);
-            Logger.debug("Parsed long: " + result);
-            return result;
+            return Long.parseLong(value);
         } catch (NumberFormatException e) {
-            Logger.debug("Failed to parse long: " + value);
             return null;
         }
+    }
+    
+    @Override
+    @NotNull
+    public List<String> getSuggestions(@NotNull CommandSender sender) {
+        return List.of("0", "1", "100", "1000", "10000");
     }
     
     @Override

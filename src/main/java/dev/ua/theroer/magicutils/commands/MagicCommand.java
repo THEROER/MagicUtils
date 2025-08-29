@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.*;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -63,7 +64,7 @@ public abstract class MagicCommand {
             List<String> suggestions = new ArrayList<>();
             String permission = null;
             String permissionCondition = null;
-            String permissionMessage = "У вас не вистачає прав для цього дії!";
+            String permissionMessage = InternalMessages.CMD_NO_PERMISSION.get();
             
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation instanceof DefaultValue) {

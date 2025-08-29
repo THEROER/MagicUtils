@@ -11,6 +11,10 @@ import java.util.Map;
 
 /**
  * Configuration for the MagicUtils Logger system.
+ * This class manages all logging-related settings including plugin identification,
+ * debug options, message formatting for both chat and console, and sub-logger configurations.
+ * 
+ * Constructor initializes default values for all logging components.
  */
 @ConfigFile("logger.yml")
 @ConfigReloadable(sections = {"chat", "console", "sub-loggers"})
@@ -53,26 +57,49 @@ public class LoggerConfig {
     private Map<String, SubLoggerConfig> subLoggers;
     
     // Custom methods for Logger to use
+    /**
+     * Gets the chat gradient colors array.
+     * @return array of gradient colors for chat, or null if auto-generation is enabled
+     */
     public String[] getChatGradient() {
         return chat.isAutoGenerateColors() ? null : chat.getGradient().toArray(new String[0]);
     }
     
+    /**
+     * Gets the console gradient colors array.
+     * @return array of gradient colors for console, or null if auto-generation is enabled
+     */
     public String[] getConsoleGradient() {
         return console.isAutoGenerateColors() ? null : console.getGradient().toArray(new String[0]);
     }
     
+    /**
+     * Gets the chat colors for a specific message type.
+     * @param type the message type
+     * @return array of colors for the specified type, or null if auto-generation is enabled or type not found
+     */
     public String[] getChatColors(String type) {
         if (chat.isAutoGenerateColors()) return null;
         List<String> colors = chat.getColors().toMap().get(type);
         return colors != null ? colors.toArray(new String[0]) : null;
     }
     
+    /**
+     * Gets the console colors for a specific message type.
+     * @param type the message type
+     * @return array of colors for the specified type, or null if auto-generation is enabled or type not found
+     */
     public String[] getConsoleColors(String type) {
         if (console.isAutoGenerateColors()) return null;
         List<String> colors = console.getColors().toMap().get(type);
         return colors != null ? colors.toArray(new String[0]) : null;
     }
     
+    /**
+     * Checks if a sub-logger is enabled.
+     * @param name the sub-logger name
+     * @return true if the sub-logger is enabled or not configured (defaults to enabled)
+     */
     public boolean isSubLoggerEnabled(String name) {
         SubLoggerConfig config = subLoggers.get(name);
         return config == null || config.isEnabled();

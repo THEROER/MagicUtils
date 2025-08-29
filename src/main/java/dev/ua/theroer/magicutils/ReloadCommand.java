@@ -8,6 +8,7 @@ import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.annotations.Suggest;
 import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 
 /**
  * Command for reloading different sections of MagicUtils.
@@ -32,9 +33,9 @@ public class ReloadCommand extends MagicCommand {
         @NotNull String commandName
     ) {
         if ("all".equals(commandName)) {
-            return CommandResult.success("All commands reloaded!");
+            return CommandResult.success(InternalMessages.RELOAD_ALL_COMMANDS.get());
         } else {
-            return CommandResult.success("Command " + commandName + " reloaded!");
+            return CommandResult.success(InternalMessages.RELOAD_COMMAND.get("command", commandName));
         }
     }
 
@@ -50,9 +51,9 @@ public class ReloadCommand extends MagicCommand {
         @NotNull String sectionName
     ) {
         if ("all".equals(sectionName)) {
-            return CommandResult.success("All sections reloaded!");
+            return CommandResult.success(InternalMessages.RELOAD_ALL_SECTIONS.get());
         } else {
-            return CommandResult.success("Section " + sectionName + " reloaded!");
+            return CommandResult.success(InternalMessages.RELOAD_SECTION.get("section", sectionName));
         }
     }
 
@@ -68,9 +69,9 @@ public class ReloadCommand extends MagicCommand {
         @NotNull String globalName
     ) {
         if ("all".equals(globalName)) {
-            return CommandResult.success("Global settings reloaded!");
+            return CommandResult.success(InternalMessages.RELOAD_GLOBAL_SETTINGS.get());
         } else {
-            return CommandResult.success("Global setting " + globalName + " reloaded!");
+            return CommandResult.success(InternalMessages.RELOAD_GLOBAL_SETTING.get("setting", globalName));
         }
     }
 

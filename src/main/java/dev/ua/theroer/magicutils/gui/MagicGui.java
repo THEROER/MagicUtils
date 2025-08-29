@@ -13,7 +13,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.SubLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
@@ -32,7 +32,7 @@ import java.util.function.Predicate;
  * Advanced GUI system with MiniMessage support and convenience methods.
  */
 public class MagicGui {
-    private static final SubLogger logger = Logger.getSubLogger("MagicGui", "[GUI]");
+    private static final PrefixedLogger logger = Logger.create("MagicGui", "[GUI]");
     
     private final JavaPlugin plugin;
     private final Inventory inventory;

@@ -5,8 +5,18 @@ import java.util.List;
 
 import dev.ua.theroer.magicutils.config.annotations.DefaultValueProvider;
 
-// Default value providers
+/**
+ * Default provider for chat gradient colors.
+ * Provides a purple-to-pink gradient color scheme for chat messages.
+ */
 public class DefaultChatGradientProvider implements DefaultValueProvider<List<String>> {
+    
+    /**
+     * Constructs a new DefaultChatGradientProvider.
+     */
+    public DefaultChatGradientProvider() {
+        // Default constructor
+    }
     @Override
     public List<String> provide() {
         return Arrays.asList("#7c3aed", "#ec4899");

@@ -9,8 +9,19 @@ import java.util.Map;
 
 /**
  * Utility class for easy message handling with MiniMessage support.
+ * Provides static methods for retrieving, formatting, and sending messages
+ * through a LanguageManager instance. Supports MiniMessage formatting
+ * and placeholder replacement.
+ * 
+ * Constructor is private as this is a utility class with only static methods.
  */
 public class Messages {
+    /**
+     * Private constructor - this is a utility class with static methods only.
+     */
+    private Messages() {
+    }
+    
     private static LanguageManager languageManager;
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
     
@@ -20,6 +31,14 @@ public class Messages {
      */
     public static void setLanguageManager(LanguageManager manager) {
         languageManager = manager;
+    }
+    
+    /**
+     * Gets the language manager instance.
+     * @return the language manager or null
+     */
+    public static LanguageManager getLanguageManager() {
+        return languageManager;
     }
     
     /**

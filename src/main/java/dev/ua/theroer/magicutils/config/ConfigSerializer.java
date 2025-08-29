@@ -11,9 +11,15 @@ import java.util.*;
  * Handles serialization and deserialization of complex config objects.
  */
 public class ConfigSerializer {
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private ConfigSerializer() {}
     
     /**
      * Serializes an object to a map for YAML.
+     * @param obj the object to serialize
+     * @return the serialized map representation
      */
     public static Map<String, Object> serialize(Object obj) {
         if (obj == null) return null;
@@ -68,6 +74,10 @@ public class ConfigSerializer {
     
     /**
      * Deserializes a map to an object.
+     * @param <T> the type to deserialize to
+     * @param data the map data to deserialize
+     * @param clazz the class to deserialize to
+     * @return the deserialized object
      */
     @SuppressWarnings("unchecked")
     public static <T> T deserialize(Map<String, Object> data, Class<T> clazz) {
@@ -115,6 +125,10 @@ public class ConfigSerializer {
     
     /**
      * Deserializes from ConfigurationSection.
+     * @param <T> the type to deserialize to
+     * @param section the configuration section
+     * @param clazz the class to deserialize to
+     * @return the deserialized object
      */
     public static <T> T deserialize(ConfigurationSection section, Class<T> clazz) {
         Map<String, Object> data = new LinkedHashMap<>();

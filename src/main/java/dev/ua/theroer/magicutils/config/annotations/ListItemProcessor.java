@@ -29,28 +29,50 @@ public interface ListItemProcessor<T> {
         }
         
         /**
-         * Item is valid as-is.
+         * Creates a result indicating the item is valid as-is without modification.
+         * @param value the original item value
+         * @param <T> the type of the item
+         * @return a ProcessResult indicating no changes are needed
          */
         public static <T> ProcessResult<T> ok(T value) {
             return new ProcessResult<>(value, false, false);
         }
         
         /**
-         * Item was modified.
+         * Creates a result indicating the item was modified to a new value.
+         * @param value the modified item value
+         * @param <T> the type of the item
+         * @return a ProcessResult with the modified value
          */
         public static <T> ProcessResult<T> modified(T value) {
             return new ProcessResult<>(value, true, false);
         }
         
         /**
-         * Replace with default value.
+         * Creates a result indicating the item should be replaced with the default value.
+         * @param <T> the type of the item
+         * @return a ProcessResult indicating the default value should be used
          */
         public static <T> ProcessResult<T> replaceWithDefault() {
             return new ProcessResult<>(null, false, true);
         }
         
+        /**
+         * Gets the processed value.
+         * @return the processed value, or null if shouldUseDefault() is true
+         */
         public T getValue() { return value; }
+        
+        /**
+         * Checks if the item was modified during processing.
+         * @return true if the item was modified
+         */
         public boolean isModified() { return modified; }
+        
+        /**
+         * Checks if the default value should be used instead of the processed value.
+         * @return true if the default value should be used
+         */
         public boolean shouldUseDefault() { return useDefault; }
     }
 }

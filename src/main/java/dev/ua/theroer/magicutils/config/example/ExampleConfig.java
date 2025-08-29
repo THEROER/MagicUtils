@@ -10,6 +10,13 @@ import java.util.stream.Collectors;
 
 /**
  * Example configuration class demonstrating MagicUtils config system.
+ * This class showcases various configuration features including config values,
+ * sections, validation, and default value providers.
+ * 
+ * <p>The configuration is automatically loaded from example.yml and supports
+ * reloading of specific sections (items and settings).</p>
+ * 
+ * <p>Constructor is automatically handled by the MagicUtils config system.</p>
  */
 @ConfigFile("example.yml")
 @ConfigReloadable(sections = {"items", "settings"})
@@ -32,18 +39,33 @@ public class ExampleConfig {
     private boolean enabled;
     
     // Custom methods for the plugin to use
+    /**
+     * Gets all items matching the specified type.
+     * @param type the item type to filter by (case-insensitive)
+     * @return list of items matching the specified type
+     */
     public List<Item> getItemsByType(String type) {
         return items.stream()
             .filter(item -> item.getType().equalsIgnoreCase(type))
             .collect(Collectors.toList());
     }
     
+    /**
+     * Gets all items with level greater than or equal to the specified minimum level.
+     * @param minLevel the minimum level threshold
+     * @return list of items with level >= minLevel
+     */
     public List<Item> getItemsWithMinLevel(int minLevel) {
         return items.stream()
             .filter(item -> item.getLevel() >= minLevel)
             .collect(Collectors.toList());
     }
     
+    /**
+     * Gets the item with the specified ID.
+     * @param id the unique identifier of the item
+     * @return the item with matching ID, or null if not found
+     */
     public Item getItemById(String id) {
         return items.stream()
             .filter(item -> item.getId().equals(id))
@@ -52,8 +74,22 @@ public class ExampleConfig {
     }
     
     // Getters
+    /**
+     * Gets the list of configured items.
+     * @return the list of items from the configuration
+     */
     public List<Item> getItems() { return items; }
+    
+    /**
+     * Gets the settings section of the configuration.
+     * @return the settings configuration section
+     */
     public Settings getSettings() { return settings; }
+    
+    /**
+     * Gets whether the system is enabled.
+     * @return true if the system is enabled, false otherwise
+     */
     public boolean isEnabled() { return enabled; }
 }
 
@@ -90,8 +126,22 @@ class Settings {
     @Comment("Save interval in seconds")
     private int saveInterval;
     
+    /**
+     * Gets the maximum number of items allowed.
+     * @return the maximum item count
+     */
     public int getMaxItems() { return maxItems; }
+    
+    /**
+     * Gets whether auto-save is enabled.
+     * @return true if auto-save is enabled, false otherwise
+     */
     public boolean isAutoSave() { return autoSave; }
+    
+    /**
+     * Gets the save interval in seconds.
+     * @return the save interval in seconds
+     */
     public int getSaveInterval() { return saveInterval; }
 }
 

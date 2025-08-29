@@ -91,6 +91,7 @@ Thumbs.db
 # Plugin specific files
 # Bukkit/Spigot
 plugins/
+run/
 server.jar
 server.properties
 bukkit.yml

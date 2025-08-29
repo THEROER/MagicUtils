@@ -7,7 +7,8 @@ import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.annotations.Suggest;
 import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
-import dev.ua.theroer.magicutils.commands.parsers.suggestion.LanguageKeySuggestionParser;
+import dev.ua.theroer.magicutils.commands.parsers.LanguageKeyTypeParser;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
 import lombok.Setter;
 
@@ -27,12 +28,14 @@ public class SettingsCommand extends MagicCommand {
     
     /**
      * Default constructor for SettingsCommand.
+     * @param languageManager the language manager instance for handling language operations
+     * @param plugin the JavaPlugin instance for plugin-related operations
      */
     public SettingsCommand(LanguageManager languageManager, JavaPlugin plugin) {
         setLanguageManager(languageManager);
 
-        LanguageKeySuggestionParser.setLanguageManager(languageManager);
-        LanguageKeySuggestionParser.setPlugin(plugin);
+        LanguageKeyTypeParser.setLanguageManager(languageManager);
+        LanguageKeyTypeParser.setPlugin(plugin);
     }
 
     /**
@@ -67,7 +70,7 @@ public class SettingsCommand extends MagicCommand {
      */
     private CommandResult handleLanguageCommand(String langOrKey, String keyOrValue, String value) {
         if (languageManager == null) {
-            return CommandResult.failure("Language manager not initialized!");
+            return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_INIT.get());
         }
 
         // 0 arguments: show current language and available languages
@@ -103,7 +106,7 @@ public class SettingsCommand extends MagicCommand {
         if (isFirstArgLanguage) {
             return setKeyValue(langOrKey, keyOrValue, value);
         } else {
-            return CommandResult.failure("Invalid arguments. First argument must be a language name when using 3 arguments.");
+            return CommandResult.failure(InternalMessages.SETTINGS_INVALID_ARGS.get());
         }
     }
 
@@ -114,7 +117,7 @@ public class SettingsCommand extends MagicCommand {
         String currentLang = languageManager.getCurrentLanguage();
         String availableLanguages = String.join(", ", languageManager.getAvailableLanguages());
         
-        return CommandResult.success("Current language: " + currentLang + "\nAvailable languages: " + availableLanguages);
+        return CommandResult.success(InternalMessages.SETTINGS_CURRENT_LANG.get("language", currentLang) + "\n" + InternalMessages.SETTINGS_AVAILABLE_LANGS.get("languages", availableLanguages));
     }
 
     /**
@@ -122,11 +125,10 @@ public class SettingsCommand extends MagicCommand {
      */
     private CommandResult showLanguageInfo(String languageCode) {
         if (!languageManager.getAvailableLanguages().contains(languageCode)) {
-            return CommandResult.failure("Language '" + languageCode + "' not found!");
+            return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get("language", languageCode));
         }
         
-        return CommandResult.success("Language: " + languageCode + "\n" +
-            "Available languages: " + String.join(", ", languageManager.getAvailableLanguages()));
+        return CommandResult.success(InternalMessages.SETTINGS_CURRENT_LANG.get("language", languageCode) + "\n" + InternalMessages.SETTINGS_AVAILABLE_LANGS.get("languages", String.join(", ", languageManager.getAvailableLanguages())));
     }
 
     /**
@@ -134,7 +136,7 @@ public class SettingsCommand extends MagicCommand {
      */
     private CommandResult showKeyValue(String languageCode, String key) {
         if (!languageManager.getAvailableLanguages().contains(languageCode)) {
-            return CommandResult.failure("Language '" + languageCode + "' not found!");
+            return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get("language", languageCode));
         }
 
         // Temporarily switch to target language to get the value
@@ -143,13 +145,13 @@ public class SettingsCommand extends MagicCommand {
         
         if (!languageManager.hasMessage(key)) {
             languageManager.setLanguage(originalLang); // Restore original language
-            return CommandResult.failure("Key '" + key + "' not found in language '" + languageCode + "'");
+            return CommandResult.failure(InternalMessages.SETTINGS_KEY_NOT_FOUND.get("key", key, "language", languageCode));
         }
         
         String message = languageManager.getMessage(key);
         languageManager.setLanguage(originalLang); // Restore original language
         
-        return CommandResult.success("Language: " + languageCode + "\nKey: " + key + "\nValue: " + message);
+        return CommandResult.success(InternalMessages.SETTINGS_KEY_VALUE.get("language", languageCode, "key", key, "value", message));
     }
 
     /**
@@ -157,14 +159,14 @@ public class SettingsCommand extends MagicCommand {
      */
     private CommandResult setKeyValue(String languageCode, String key, String newValue) {
         if (!languageManager.getAvailableLanguages().contains(languageCode)) {
-            return CommandResult.failure("Language '" + languageCode + "' not found!");
+            return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get("language", languageCode));
         }
 
-        Map<String, Object> customMessages = new HashMap<>();
+        Map<String, String> customMessages = new HashMap<>();
         customMessages.put(key, newValue);
         languageManager.saveCustomMessages(languageCode, customMessages);
         
-        return CommandResult.success("Set key '" + key + "' to '" + newValue + "' in language '" + languageCode + "'");
+        return CommandResult.success(InternalMessages.SETTINGS_KEY_SET.get("key", key, "value", newValue, "language", languageCode));
     }
 
     /**

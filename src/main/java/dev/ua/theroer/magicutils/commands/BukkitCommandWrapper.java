@@ -6,7 +6,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.SubLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
  * Bukkit command wrapper for integrating custom command logic with Bukkit's command system.
  */
 public class BukkitCommandWrapper extends Command {
-    private static final SubLogger logger = Logger.getSubLogger("Commands", "[Commands]");
+    private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
     private final CommandManager commandManager;
 
     @Getter @Setter
@@ -55,16 +56,28 @@ public class BukkitCommandWrapper extends Command {
             
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
-                    Logger.success(sender instanceof Player ? (Player) sender : null, result.getMessage());
+                    if (sender instanceof Player) {
+                        Logger.success().message(result.getMessage()).to((Player) sender).send();
+                    } else {
+                        Logger.success(result.getMessage());
+                    }
                 } else {
-                    Logger.error(sender instanceof Player ? (Player) sender : null, result.getMessage());
+                    if (sender instanceof Player) {
+                        Logger.error().message(result.getMessage()).to((Player) sender).send();
+                    } else {
+                        Logger.error(result.getMessage());
+                    }
                 }
             }
             
             return result.isSuccess();
         } catch (Exception e) {
             Logger.error("Error executing command " + commandLabel + ": " + e.getMessage());
-            Logger.error(sender instanceof Player ? (Player) sender : null, "An internal error occurred while executing the command.");
+            if (sender instanceof Player) {
+                Logger.error().message(InternalMessages.CMD_INTERNAL_ERROR.get()).to((Player) sender).send();
+            } else {
+                Logger.error(InternalMessages.CMD_INTERNAL_ERROR.get());
+            }
             e.printStackTrace();
             return false;
         }
@@ -111,8 +124,10 @@ public class BukkitCommandWrapper extends Command {
     
     /**
      * Sets the permission message for this command.
+     * Note: Permission messages do not work for player-executed commands since 1.13.
      * @param permissionMessage the permission message
      */
+    @SuppressWarnings("deprecation")
     @Override
     public BukkitCommandWrapper setPermissionMessage(String permissionMessage) {
         super.permissionMessage(Component.text(permissionMessage));

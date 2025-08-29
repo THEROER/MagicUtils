@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.config;
 
 import dev.ua.theroer.magicutils.config.annotations.*;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -37,18 +38,29 @@ public class ConfigManager {
      * @return the loaded configuration instance
      */
     public <T> T register(Class<T> configClass) {
+        return register(configClass, new HashMap<>());
+    }
+    
+    /**
+     * Registers and loads a configuration class with placeholder replacements.
+     * @param configClass the configuration class
+     * @param placeholders placeholder replacements for the file path
+     * @param <T> the type of configuration
+     * @return the loaded configuration instance
+     */
+    public <T> T register(Class<T> configClass, Map<String, String> placeholders) {
         try {
             // Check for @ConfigFile annotation
             ConfigFile configFile = configClass.getAnnotation(ConfigFile.class);
             if (configFile == null) {
-                throw new IllegalArgumentException("Class " + configClass.getName() + " must have @ConfigFile annotation");
+                throw new IllegalArgumentException(InternalMessages.ERR_MISSING_CONFIGFILE.get("class", configClass.getName()));
             }
             
             // Create instance
             T instance = configClass.getDeclaredConstructor().newInstance();
             
-            // Store metadata
-            ConfigMetadata metadata = new ConfigMetadata(configFile);
+            // Store metadata with resolved path
+            ConfigMetadata metadata = new ConfigMetadata(configFile, placeholders);
             configMetadata.put(configClass, metadata);
             
             // Load configuration
@@ -102,7 +114,7 @@ public class ConfigManager {
         
         // Save file
         yaml.save(configFile);
-        plugin.getLogger().info("Created default config: " + configFile.getName());
+        plugin.getLogger().info(InternalMessages.SYS_CREATED_DEFAULT_CONFIG.get("file", configFile.getName()));
     }
     
     /**
@@ -161,6 +173,7 @@ public class ConfigManager {
                         
                         if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
                             Map<String, Object> serializedMap = new HashMap<>();
+                            @SuppressWarnings("unchecked")
                             Map<String, Object> map = (Map<String, Object>) defaultValue;
                             
                             for (Map.Entry<String, Object> entry : map.entrySet()) {
@@ -235,7 +248,7 @@ public class ConfigManager {
             if (defaultValue != null) {
                 field.set(instance, defaultValue);
             } else if (field.getAnnotation(ConfigValue.class).required()) {
-                throw new IllegalStateException("Required config value missing: " + path);
+                throw new IllegalStateException(InternalMessages.ERR_REQUIRED_CONFIG_MISSING.get("path", path));
             }
             return;
         }
@@ -420,6 +433,8 @@ public class ConfigManager {
     
     /**
      * Saves configuration to file.
+     * @param <T> the configuration type
+     * @param configClass the configuration class
      */
     public <T> void save(Class<T> configClass) {
         try {
@@ -525,6 +540,9 @@ public class ConfigManager {
     
     /**
      * Gets a registered configuration.
+     * @param <T> the configuration type
+     * @param configClass the configuration class
+     * @return the configuration instance or null if not registered
      */
     @SuppressWarnings("unchecked")
     public <T> T getConfig(Class<T> configClass) {
@@ -533,6 +551,8 @@ public class ConfigManager {
     
     /**
      * Reloads a configuration.
+     * @param <T> the configuration type
+     * @param configClass the configuration class to reload
      */
     public <T> void reload(Class<T> configClass) {
         reload(configClass, new String[0]);
@@ -540,6 +560,9 @@ public class ConfigManager {
     
     /**
      * Reloads specific sections of a configuration.
+     * @param <T> the configuration type
+     * @param configClass the configuration class
+     * @param sections the sections to reload
      */
     public <T> void reload(Class<T> configClass, String... sections) {
         try {
@@ -554,7 +577,7 @@ public class ConfigManager {
                 Set<String> allowedSections = new HashSet<>(Arrays.asList(reloadable.sections()));
                 for (String section : sections) {
                     if (!allowedSections.contains(section)) {
-                        plugin.getLogger().warning("Section not reloadable: " + section);
+                        plugin.getLogger().warning(InternalMessages.SYS_SECTION_NOT_RELOADABLE.get("section", section));
                         return;
                     }
                 }
@@ -575,7 +598,11 @@ public class ConfigManager {
     
     /**
      * Registers a change listener.
+     * @param <T> the configuration type
+     * @param configClass the configuration class
+     * @param listener the listener to notify on changes
      */
+    @SuppressWarnings("unchecked")
     public <T> void onChange(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
         changeListeners.computeIfAbsent(configClass, k -> new ArrayList<>())
                       .add((BiConsumer<Object, Set<String>>) listener);
@@ -604,7 +631,16 @@ public class ConfigManager {
         private final String templatePath;
         
         ConfigMetadata(ConfigFile annotation) {
-            this.filePath = annotation.value();
+            this(annotation, new HashMap<>());
+        }
+        
+        ConfigMetadata(ConfigFile annotation, Map<String, String> placeholders) {
+            String path = annotation.value();
+            // Replace placeholders in the path
+            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+                path = path.replace("{" + entry.getKey() + "}", entry.getValue());
+            }
+            this.filePath = path;
             this.autoCreate = annotation.autoCreate();
             this.templatePath = annotation.template();
         }

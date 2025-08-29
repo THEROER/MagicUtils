@@ -12,10 +12,20 @@ import lombok.Data;
 
 /**
  * Chat formatting settings.
+ * Configuration class for managing chat message formatting options including
+ * automatic color generation and gradient settings.
  */
 @Data
 public
 class ChatSettings {
+    
+    /**
+     * Default constructor for ChatSettings.
+     * Initializes a new instance of ChatSettings with default values.
+     */
+    public ChatSettings() {
+        // Default constructor - fields will be initialized with default values
+    }
     @ConfigValue("auto-generate-colors")
     @DefaultValue("true")
     @Comment("Automatically generate colors based on plugin name")
@@ -30,5 +40,10 @@ class ChatSettings {
     @Comment("Colors for different log levels")
     private ColorSettings colors = new ColorSettings();
     
+    /**
+     * Gets the color settings for different log levels.
+     * 
+     * @return the ColorSettings instance containing color configurations
+     */
     public ColorSettings getColors() { return colors; }
 }

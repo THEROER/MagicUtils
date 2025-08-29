@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.commands;
 
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 
 /**
@@ -73,10 +74,29 @@ public class CommandResult {
     }
 
     /**
+     * Creates a failed CommandResult with a message and prefix option.
+     * @param message the failure message
+     * @param sendPrefix whether to send the prefix
+     * @return a failed CommandResult
+     */
+    public static CommandResult failure(String message, boolean sendPrefix) {
+        return new CommandResult(false, message, true, sendPrefix);
+    }
+
+    /**
+     * Creates a failed CommandResult with a sendMessage option.
+     * @param sendMessage whether to send the message
+     * @return a failed CommandResult
+     */
+    public static CommandResult failure(boolean sendMessage) {
+        return new CommandResult(false, "", sendMessage, false);
+    }
+
+    /**
      * Creates a CommandResult for a not found command.
      * @return a not found CommandResult
      */
     public static CommandResult notFound() {
-        return new CommandResult(false, "Command not found", true, true);
+        return new CommandResult(false, InternalMessages.CMD_NOT_FOUND.get(), true, true);
     }
 } 
