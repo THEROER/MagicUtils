@@ -2,6 +2,8 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
+import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
@@ -46,9 +48,9 @@ public class CommandRegistry {
             Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
             commandMapField.setAccessible(true);
             commandMap = (CommandMap) commandMapField.get(Bukkit.getServer());
-            logger.info("Command registry initialized successfully");
+            PrefixedLoggerGen.info(logger, "Command registry initialized successfully");
         } catch (Exception e) {
-            logger.error("Failed to initialize command registry: " + e.getMessage());
+            PrefixedLoggerGen.error(logger, "Failed to initialize command registry: " + e.getMessage());
             throw new RuntimeException(InternalMessages.ERR_FAILED_GET_COMMANDMAP.get(), e);
         }
     }
@@ -115,16 +117,16 @@ public class CommandRegistry {
         boolean registered = commandMap.register(plugin.getName().toLowerCase(), bukkitCommand);
         
         if (registered) {
-            logger.info(InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(), "aliases", Arrays.toString(info.aliases())));
-            logger.info(InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
+            PrefixedLoggerGen.info(logger, InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(), "aliases", Arrays.toString(info.aliases())));
+            PrefixedLoggerGen.info(logger, InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
             if (!subCommandUsages.isEmpty()) {
-                logger.info(InternalMessages.SYS_SUBCOMMAND_USAGES.get());
+                PrefixedLoggerGen.info(logger, InternalMessages.SYS_SUBCOMMAND_USAGES.get());
                 for (String subUsage : subCommandUsages) {
-                    logger.info("  " + subUsage);
+                    PrefixedLoggerGen.info(logger, "  " + subUsage);
                 }
             }
         } else {
-            logger.warn("Failed to register command: " + info.name() + " (command may already exist)");
+            PrefixedLoggerGen.warn(logger, "Failed to register command: " + info.name() + " (command may already exist)");
         }
 
         generatePermissions(clazz, info);
@@ -153,8 +155,8 @@ public class CommandRegistry {
             
             boolean aliasRegistered = commandMap.register(plugin.getName().toLowerCase(), aliasCommand);
             if (aliasRegistered) {
-                logger.info(InternalMessages.SYS_ALIAS_REGISTERED.get("alias", alias, "command", info.name()));
-                logger.info(InternalMessages.SYS_ALIAS_USAGE.get("usage", aliasUsage));
+                PrefixedLoggerGen.info(logger, InternalMessages.SYS_ALIAS_REGISTERED.get("alias", alias, "command", info.name()));
+                PrefixedLoggerGen.info(logger, InternalMessages.SYS_ALIAS_USAGE.get("usage", aliasUsage));
             }
         }
     }
@@ -175,7 +177,7 @@ public class CommandRegistry {
         }
 
         if (!permissions.isEmpty()) {
-            logger.info(InternalMessages.SYS_GENERATED_PERMISSIONS.get("command", info.name(), "permissions", permissions.toString()));
+            PrefixedLoggerGen.info(logger, InternalMessages.SYS_GENERATED_PERMISSIONS.get("command", info.name(), "permissions", permissions.toString()));
         }
     }
     
@@ -200,10 +202,10 @@ public class CommandRegistry {
             knownCommands.remove(commandName.toLowerCase());
             knownCommands.remove(plugin.getName().toLowerCase() + ":" + commandName.toLowerCase());
             
-            logger.info(InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
+            PrefixedLoggerGen.info(logger, InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
             return true;
         } catch (Exception e) {
-            logger.error("Failed to unregister command " + commandName + ": " + e.getMessage());
+            PrefixedLoggerGen.error(logger, "Failed to unregister command " + commandName + ": " + e.getMessage());
             return false;
         }
     }

@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
 import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -30,12 +31,12 @@ public class PlayerTypeParser implements TypeParser<Player> {
         }
         
         if ("@sender".equals(value) && sender instanceof Player) {
-            Logger.debug("Resolving @sender to: " + sender.getName());
+            LoggerGen.debug("Resolving @sender to: " + sender.getName());
             return (Player) sender;
         }
         
         Player player = Bukkit.getPlayer(value);
-        Logger.debug("Player lookup for '" + value + "': " + (player != null ? player.getName() : "null"));
+        LoggerGen.debug("Player lookup for '" + value + "': " + (player != null ? player.getName() : "null"));
         return player;
     }
     

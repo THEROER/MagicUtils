@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
 import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -30,20 +31,20 @@ public class OfflinePlayerTypeParser implements TypeParser<OfflinePlayer> {
         }
         
         if ("@sender".equals(value) && sender instanceof Player) {
-            Logger.debug("Resolving @sender to: " + sender.getName());
+            LoggerGen.debug("Resolving @sender to: " + sender.getName());
             return (OfflinePlayer) sender;
         }
         
         // Try online player first
         Player onlinePlayer = Bukkit.getPlayer(value);
         if (onlinePlayer != null) {
-            Logger.debug("OfflinePlayer lookup found online player: " + onlinePlayer.getName());
+            LoggerGen.debug("OfflinePlayer lookup found online player: " + onlinePlayer.getName());
             return onlinePlayer;
         }
         
         // Then try offline player
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(value);
-        Logger.debug("OfflinePlayer lookup for '" + value + "': " + 
+        LoggerGen.debug("OfflinePlayer lookup for '" + value + "': " + 
                     (offlinePlayer.hasPlayedBefore() ? "found" : "not found"));
         return offlinePlayer;
     }

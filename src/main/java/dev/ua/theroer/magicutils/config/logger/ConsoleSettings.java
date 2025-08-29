@@ -34,6 +34,11 @@ public class ConsoleSettings {
     @Comment("Default gradient colors for console messages")
     private List<String> gradient;
     
+    @ConfigValue("strip-formatting")
+    @DefaultValue("false")
+    @Comment("Strip all formatting from console output")
+    private boolean stripFormatting;
+    
     @ConfigSection("colors")
     @Comment("Colors for different log levels")
     private ColorSettings colors = new ColorSettings();

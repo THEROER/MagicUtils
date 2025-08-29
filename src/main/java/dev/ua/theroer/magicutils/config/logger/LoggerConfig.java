@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.config.logger;
 
+import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.config.SubLoggerConfig;
 import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.config.logger.providers.DefaultSubLoggersProvider;
@@ -42,6 +43,14 @@ public class LoggerConfig {
     @Comment("Whether to automatically localize messages using LanguageManager")
     @Setter
     private boolean autoLocalization;
+    
+    @ConfigSection("prefix")
+    @Comment("Prefix configuration")
+    private PrefixSettings prefix = new PrefixSettings();
+    
+    @ConfigSection("defaults")
+    @Comment("Default settings")
+    private DefaultSettings defaults = new DefaultSettings();
     
     @ConfigSection("chat")
     @Comment("Chat message formatting settings")
@@ -103,6 +112,42 @@ public class LoggerConfig {
     public boolean isSubLoggerEnabled(String name) {
         SubLoggerConfig config = subLoggers.get(name);
         return config == null || config.isEnabled();
+    }
+    
+    /**
+     * Gets the chat prefix mode.
+     * @return the prefix mode for chat messages
+     */
+    public Logger.PrefixMode getChatPrefixMode() {
+        try {
+            return Logger.PrefixMode.valueOf(prefix.getChatMode());
+        } catch (IllegalArgumentException e) {
+            return Logger.PrefixMode.FULL; // Default fallback
+        }
+    }
+    
+    /**
+     * Gets the console prefix mode.
+     * @return the prefix mode for console messages
+     */
+    public Logger.PrefixMode getConsolePrefixMode() {
+        try {
+            return Logger.PrefixMode.valueOf(prefix.getConsoleMode());
+        } catch (IllegalArgumentException e) {
+            return Logger.PrefixMode.SHORT; // Default fallback
+        }
+    }
+    
+    /**
+     * Gets the default target.
+     * @return the default target for messages
+     */
+    public Logger.Target getDefaultTarget() {
+        try {
+            return Logger.Target.valueOf(defaults.getTarget());
+        } catch (IllegalArgumentException e) {
+            return Logger.Target.BOTH; // Default fallback
+        }
     }
 }
 

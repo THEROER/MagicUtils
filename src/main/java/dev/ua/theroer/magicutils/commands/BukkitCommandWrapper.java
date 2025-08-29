@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
+import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,33 +52,33 @@ public class BukkitCommandWrapper extends Command {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         try {
-            logger.debug("Executing command: " + commandLabel + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+            PrefixedLoggerGen.debug(logger, "Executing command: " + commandLabel + " with args: " + Arrays.toString(args) + " by " + sender.getName());
             
             CommandResult result = commandManager.execute(commandLabel, sender, Arrays.asList(args));
             
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
                     if (sender instanceof Player) {
-                        Logger.success().message(result.getMessage()).to((Player) sender).send();
+                        Logger.success().to((Player) sender).send(result.getMessage());
                     } else {
-                        Logger.success(result.getMessage());
+                        LoggerGen.success(result.getMessage());
                     }
                 } else {
                     if (sender instanceof Player) {
-                        Logger.error().message(result.getMessage()).to((Player) sender).send();
+                        Logger.error().to((Player) sender).send(result.getMessage());
                     } else {
-                        Logger.error(result.getMessage());
+                        LoggerGen.error(result.getMessage());
                     }
                 }
             }
             
             return result.isSuccess();
         } catch (Exception e) {
-            Logger.error("Error executing command " + commandLabel + ": " + e.getMessage());
+            LoggerGen.error("Error executing command " + commandLabel + ": " + e.getMessage());
             if (sender instanceof Player) {
-                Logger.error().message(InternalMessages.CMD_INTERNAL_ERROR.get()).to((Player) sender).send();
+                Logger.error().to((Player) sender).send(InternalMessages.CMD_INTERNAL_ERROR.get());
             } else {
-                Logger.error(InternalMessages.CMD_INTERNAL_ERROR.get());
+                LoggerGen.error(InternalMessages.CMD_INTERNAL_ERROR.get());
             }
             e.printStackTrace();
             return false;
@@ -93,7 +95,7 @@ public class BukkitCommandWrapper extends Command {
     @Override
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
         try {
-            logger.debug("Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+            PrefixedLoggerGen.debug(logger, "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
             
             List<String> suggestions = commandManager.getSuggestions(alias, sender, Arrays.asList(args));
             
@@ -104,10 +106,10 @@ public class BukkitCommandWrapper extends Command {
                 }
             }
             
-            logger.debug("Generated " + filteredSuggestions.size() + " suggestions: " + filteredSuggestions);
+            PrefixedLoggerGen.debug(logger, "Generated " + filteredSuggestions.size() + " suggestions: " + filteredSuggestions);
             return filteredSuggestions;
         } catch (Exception e) {
-            Logger.error("Error generating tab completions for " + alias + ": " + e.getMessage());
+            LoggerGen.error("Error generating tab completions for " + alias + ": " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>();
         }

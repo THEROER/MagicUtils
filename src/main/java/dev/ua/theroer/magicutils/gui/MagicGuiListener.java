@@ -12,6 +12,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
+import dev.ua.theroer.magicutils.logger.LoggerGen;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +57,7 @@ class MagicGuiListener implements Listener {
      * @param gui GUI instance
      */
     public static void registerGui(Player player, MagicGui gui) {
-        logger.debug("[MagicGuiListener] Registering GUI for player " + player.getName());
+        PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Registering GUI for player " + player.getName());
         openGuis.put(player, gui);
     }
 
@@ -71,20 +73,20 @@ class MagicGuiListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         
-        logger.debug("[MagicGuiListener] Click event for player " + player.getName() + 
+        PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Click event for player " + player.getName() + 
             ", openGuis contains: " + openGuis.containsKey(player));
         
         MagicGui gui = openGuis.get(player);
         if (gui != null) {
-            logger.debug("[MagicGuiListener] GUI found, checking inventory match");
+            PrefixedLoggerGen.debug(logger, "[MagicGuiListener] GUI found, checking inventory match");
             if (event.getInventory().equals(gui.getInventory())) {
-                logger.debug("[MagicGuiListener] Inventory matches, calling handleClick");
+                PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Inventory matches, calling handleClick");
                 gui.handleClick(event);
             } else {
-                logger.debug("[MagicGuiListener] Inventory does not match");
+                PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Inventory does not match");
             }
         } else {
-            logger.debug("[MagicGuiListener] No GUI found for player");
+            PrefixedLoggerGen.debug(logger, "[MagicGuiListener] No GUI found for player");
         }
     }
 

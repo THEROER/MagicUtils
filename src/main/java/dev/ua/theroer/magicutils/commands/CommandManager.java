@@ -4,6 +4,8 @@ import lombok.Getter;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
+import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.*;
 
@@ -36,7 +38,7 @@ public class CommandManager {
         this.permissionPrefix = permissionPrefix;
         this.pluginName = pluginName.toLowerCase();
         this.typeParserRegistry = new TypeParserRegistry();
-        logger.debug("CommandManager initialized with permission prefix: " + permissionPrefix + " and plugin name: " + pluginName);
+        PrefixedLoggerGen.debug(logger, "CommandManager initialized with permission prefix: " + permissionPrefix + " and plugin name: " + pluginName);
     }
     
 
@@ -54,7 +56,7 @@ public class CommandManager {
         commands.put(namespacedName, command);
         commandInfos.put(namespacedName, info);
         
-        logger.debug("Registered command: " + name + " and " + namespacedName + " with class: " + command.getClass().getSimpleName());
+        PrefixedLoggerGen.debug(logger, "Registered command: " + name + " and " + namespacedName + " with class: " + command.getClass().getSimpleName());
         
         for (String alias : info.aliases()) {
             String aliasLower = alias.toLowerCase();
@@ -66,15 +68,15 @@ public class CommandManager {
             commands.put(namespacedAlias, command);
             commandInfos.put(namespacedAlias, info);
             
-            logger.debug("Registered alias: " + aliasLower + " and " + namespacedAlias + " for command: " + name);
+            PrefixedLoggerGen.debug(logger, "Registered alias: " + aliasLower + " and " + namespacedAlias + " for command: " + name);
         }
         
         List<MagicCommand.SubCommandInfo> subCommands = MagicCommand.getSubCommands(command.getClass());
         Method executeMethod = getExecuteMethod(command.getClass());
         
-        logger.debug("Command " + name + " has " + subCommands.size() + " subcommands: " + 
+        PrefixedLoggerGen.debug(logger, "Command " + name + " has " + subCommands.size() + " subcommands: " + 
             subCommands.stream().map(s -> s.annotation.name()).collect(Collectors.toList()));
-        logger.debug("Command " + name + " has direct execute method: " + (executeMethod != null));
+        PrefixedLoggerGen.debug(logger, "Command " + name + " has direct execute method: " + (executeMethod != null));
     }
 
     /**
@@ -99,7 +101,7 @@ public class CommandManager {
      * @return the result of command execution
      */
     public CommandResult execute(String name, CommandSender sender, List<String> args) {
-        logger.debug("Attempting to execute command: " + name + " with args: " + args);
+        PrefixedLoggerGen.debug(logger, "Attempting to execute command: " + name + " with args: " + args);
         
         String normalizedName = normalizeCommandName(name);
         
@@ -107,16 +109,16 @@ public class CommandManager {
         CommandInfo info = commandInfos.get(name.toLowerCase());
         
         if (command == null || info == null) {
-            logger.debug("Command not found: " + name + ". Available commands: " + commands.keySet());
+            PrefixedLoggerGen.debug(logger, "Command not found: " + name + ". Available commands: " + commands.keySet());
             return CommandResult.notFound();
         }
 
-        logger.debug("Found command: " + name + ", checking permissions...");
+        PrefixedLoggerGen.debug(logger, "Found command: " + name + ", checking permissions...");
 
         if (info.permission()) {
             String permission = permissionPrefix + ".commands." + normalizedName + ".use";
             if (!sender.hasPermission(permission)) {
-                logger.debug("Permission denied for " + sender.getName() + " on permission: " + permission);
+                PrefixedLoggerGen.debug(logger, "Permission denied for " + sender.getName() + " on permission: " + permission);
                 return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
         }
@@ -124,7 +126,7 @@ public class CommandManager {
         try {
             return executeCommand(command, info, sender, args, normalizedName);
         } catch (Exception e) {
-            logger.error("Error executing command " + name + ": " + e.getMessage());
+            PrefixedLoggerGen.error(logger, "Error executing command " + name + ": " + e.getMessage());
             e.printStackTrace();
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
@@ -134,30 +136,30 @@ public class CommandManager {
         List<MagicCommand.SubCommandInfo> subCommands = MagicCommand.getSubCommands(command.getClass());
         Method executeMethod = getExecuteMethod(command.getClass());
         
-        logger.debug("Executing command with " + subCommands.size() + " available subcommands and execute method: " + (executeMethod != null));
+        PrefixedLoggerGen.debug(logger, "Executing command with " + subCommands.size() + " available subcommands and execute method: " + (executeMethod != null));
         
         // If there's a direct execute method and no subcommands, or if there are no args and execute method exists
         if (executeMethod != null && (subCommands.isEmpty() || args.isEmpty())) {
-            logger.debug("Using direct execute method");
+            PrefixedLoggerGen.debug(logger, "Using direct execute method");
             return executeDirectMethod(command, executeMethod, sender, args);
         }
         
         // If there are subcommands but no execute method and no args
         if (subCommands.isEmpty() && executeMethod == null) {
-            logger.debug("No subcommands and no execute method found, returning success");
+            PrefixedLoggerGen.debug(logger, "No subcommands and no execute method found, returning success");
             return CommandResult.success(InternalMessages.CMD_EXECUTED.get());
         }
 
         // If there are subcommands but no args provided
         if (args.isEmpty() && !subCommands.isEmpty()) {
             String availableSubCommands = getAvailableSubCommands(subCommands, sender, normalizedCommandName);
-            logger.debug("No arguments provided, available subcommands: " + availableSubCommands);
+            PrefixedLoggerGen.debug(logger, "No arguments provided, available subcommands: " + availableSubCommands);
             return CommandResult.failure(InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", availableSubCommands));
         }
 
         // Handle subcommand execution
         String subCommandName = args.get(0).toLowerCase();
-        logger.debug("Looking for subcommand: " + subCommandName);
+        PrefixedLoggerGen.debug(logger, "Looking for subcommand: " + subCommandName);
         
         MagicCommand.SubCommandInfo targetSubCommand = null;
         
@@ -169,24 +171,24 @@ public class CommandManager {
         }
 
         if (targetSubCommand == null) {
-            logger.debug("Subcommand not found: " + subCommandName + ". Available: " + 
+            PrefixedLoggerGen.debug(logger, "Subcommand not found: " + subCommandName + ". Available: " + 
                 subCommands.stream().map(s -> s.annotation.name()).collect(Collectors.toList()));
             return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", subCommandName));
         }
 
-        logger.debug("Found subcommand: " + subCommandName + ", checking permissions...");
+        PrefixedLoggerGen.debug(logger, "Found subcommand: " + subCommandName + ", checking permissions...");
 
         if (targetSubCommand.annotation.permission()) {
             String permission = permissionPrefix + ".commands." + normalizedCommandName + 
                 ".subcommand." + targetSubCommand.annotation.name() + ".use";
             if (!sender.hasPermission(permission)) {
-                logger.debug("Permission denied for subcommand " + subCommandName + " on permission: " + permission);
+                PrefixedLoggerGen.debug(logger, "Permission denied for subcommand " + subCommandName + " on permission: " + permission);
                 return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
         }
 
         List<String> subArgs = args.size() > 1 ? args.subList(1, args.size()) : new ArrayList<>();
-        logger.debug("Executing subcommand: " + subCommandName + " with args: " + subArgs);
+        PrefixedLoggerGen.debug(logger, "Executing subcommand: " + subCommandName + " with args: " + subArgs);
         
         return executeSubCommand(command, targetSubCommand, sender, subArgs);
     }
@@ -195,31 +197,31 @@ public class CommandManager {
         try {
             List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
             
-            logger.debug("Parsing " + arguments.size() + " arguments for direct execute method");
-            logger.debug("Method parameter types: " + Arrays.toString(executeMethod.getParameterTypes()));
+            PrefixedLoggerGen.debug(logger, "Parsing " + arguments.size() + " arguments for direct execute method");
+            PrefixedLoggerGen.debug(logger, "Method parameter types: " + Arrays.toString(executeMethod.getParameterTypes()));
             
             Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender);
             
             if (methodArgs == null) {
-                logger.debug("Failed to parse arguments for direct execute method");
+                PrefixedLoggerGen.debug(logger, "Failed to parse arguments for direct execute method");
                 return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get());
             }
 
             // Log the actual arguments being passed
             for (int i = 0; i < methodArgs.length; i++) {
-                logger.debug("Method arg[" + i + "]: " + (methodArgs[i] != null ? methodArgs[i].getClass().getSimpleName() + "=" + methodArgs[i] : "null"));
+                PrefixedLoggerGen.debug(logger, "Method arg[" + i + "]: " + (methodArgs[i] != null ? methodArgs[i].getClass().getSimpleName() + "=" + methodArgs[i] : "null"));
             }
 
-            logger.debug("Invoking direct execute method with parsed arguments");
+            PrefixedLoggerGen.debug(logger, "Invoking direct execute method with parsed arguments");
             Object result = executeMethod.invoke(command, methodArgs);
             
             CommandResult commandResult = result instanceof CommandResult ? (CommandResult) result : CommandResult.success();
-            logger.debug("Direct execute method executed successfully, result: " + commandResult.isSuccess());
+            PrefixedLoggerGen.debug(logger, "Direct execute method executed successfully, result: " + commandResult.isSuccess());
             
             return commandResult;
             
         } catch (Exception e) {
-            logger.error("Error executing direct method: " + e.getMessage());
+            PrefixedLoggerGen.error(logger, "Error executing direct method: " + e.getMessage());
             e.printStackTrace();
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
@@ -235,7 +237,7 @@ public class CommandManager {
             if (argument.getType().equals(CommandSender.class)) {
                 result[i] = sender;
                 filled[i] = true;
-                logger.debug("Auto-filled CommandSender argument " + i + " (" + argument.getName() + "): " + sender.getName());
+                PrefixedLoggerGen.debug(logger, "Auto-filled CommandSender argument " + i + " (" + argument.getName() + "): " + sender.getName());
             }
         }
         
@@ -266,7 +268,7 @@ public class CommandManager {
                 result[i] = convertArgument(bestMatch, argument.getType(), sender);
                 filled[i] = true;
                 remainingArgs.remove(bestMatchIndex);
-                logger.debug("Matched user arg '" + bestMatch + "' to parameter " + i + " (" + argument.getName() + ")");
+                PrefixedLoggerGen.debug(logger, "Matched user arg '" + bestMatch + "' to parameter " + i + " (" + argument.getName() + ")");
             }
         }
         
@@ -281,29 +283,29 @@ public class CommandManager {
             if (userArgIndex < remainingArgs.size()) {
                 value = remainingArgs.get(userArgIndex);
                 userArgIndex++;
-                logger.debug("Filled remaining parameter " + i + " (" + argument.getName() + ") with user arg: " + value);
+                PrefixedLoggerGen.debug(logger, "Filled remaining parameter " + i + " (" + argument.getName() + ") with user arg: " + value);
             } else if (argument.getDefaultValue() != null) {
                 value = argument.getDefaultValue();
-                logger.debug("Used default value for parameter " + i + " (" + argument.getName() + "): " + value);
+                PrefixedLoggerGen.debug(logger, "Used default value for parameter " + i + " (" + argument.getName() + "): " + value);
             } else if (argument.isOptional()) {
                 value = null;
-                logger.debug("Used null for optional parameter " + i + " (" + argument.getName() + ")");
+                PrefixedLoggerGen.debug(logger, "Used null for optional parameter " + i + " (" + argument.getName() + ")");
             } else {
-                logger.debug("Missing required argument at position " + i + ": " + argument.getName());
+                PrefixedLoggerGen.debug(logger, "Missing required argument at position " + i + ": " + argument.getName());
                 return null;
             }
 
             if (argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
-                logger.debug("Permission denied for argument " + argument.getName() + " on permission: " + argument.getPermission());
+                PrefixedLoggerGen.debug(logger, "Permission denied for argument " + argument.getName() + " on permission: " + argument.getPermission());
                 return null;
             }
 
             result[i] = convertArgument(value, argument.getType(), sender);
-            logger.debug("Parsed argument " + i + " (" + argument.getName() + "): " + result[i] + " (type: " + (result[i] != null ? result[i].getClass().getSimpleName() : "null") + ")");
+            PrefixedLoggerGen.debug(logger, "Parsed argument " + i + " (" + argument.getName() + "): " + result[i] + " (type: " + (result[i] != null ? result[i].getClass().getSimpleName() : "null") + ")");
             
             // Check if conversion failed
             if (value != null && result[i] == null && !argument.isOptional()) {
-                logger.debug("Failed to convert argument " + i + " (" + argument.getName() + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
+                PrefixedLoggerGen.debug(logger, "Failed to convert argument " + i + " (" + argument.getName() + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
                 return null;
             }
         }
@@ -352,38 +354,38 @@ public class CommandManager {
             Method method = subInfo.method;
             List<CommandArgument> arguments = MagicCommand.getArguments(method);
             
-            logger.debug("Parsing " + arguments.size() + " arguments for method: " + method.getName());
-            logger.debug("Method parameter types: " + Arrays.toString(method.getParameterTypes()));
+            PrefixedLoggerGen.debug(logger, "Parsing " + arguments.size() + " arguments for method: " + method.getName());
+            PrefixedLoggerGen.debug(logger, "Method parameter types: " + Arrays.toString(method.getParameterTypes()));
             
             Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender);
             
             if (methodArgs == null) {
-                logger.debug("Failed to parse arguments for subcommand");
+                PrefixedLoggerGen.debug(logger, "Failed to parse arguments for subcommand");
                 return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get());
             }
 
             // Log the actual arguments being passed
             for (int i = 0; i < methodArgs.length; i++) {
-                logger.debug("Method arg[" + i + "]: " + (methodArgs[i] != null ? methodArgs[i].getClass().getSimpleName() + "=" + methodArgs[i] : "null"));
+                PrefixedLoggerGen.debug(logger, "Method arg[" + i + "]: " + (methodArgs[i] != null ? methodArgs[i].getClass().getSimpleName() + "=" + methodArgs[i] : "null"));
             }
 
-            logger.debug("Invoking method with parsed arguments");
+            PrefixedLoggerGen.debug(logger, "Invoking method with parsed arguments");
             Object result = method.invoke(command, methodArgs);
             
             CommandResult commandResult = result instanceof CommandResult ? (CommandResult) result : CommandResult.success();
-            logger.debug("Subcommand executed successfully, result: " + commandResult.isSuccess());
+            PrefixedLoggerGen.debug(logger, "Subcommand executed successfully, result: " + commandResult.isSuccess());
             
             return commandResult;
             
         } catch (Exception e) {
-            logger.error("Error executing subcommand: " + e.getMessage());
+            PrefixedLoggerGen.error(logger, "Error executing subcommand: " + e.getMessage());
             e.printStackTrace();
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
     }
 
     private Object convertArgument(String value, Class<?> type, CommandSender sender) {
-        logger.debug("Converting argument: '" + value + "' to type: " + type.getSimpleName());
+        PrefixedLoggerGen.debug(logger, "Converting argument: '" + value + "' to type: " + type.getSimpleName());
         
         // Use the argument parser registry to convert the argument
         Object result = typeParserRegistry.parse(value, type, sender);
@@ -393,7 +395,7 @@ public class CommandManager {
         }
         
         // Fallback to string if no parser could handle it
-        logger.debug("No parser found for type " + type.getSimpleName() + ", returning string value");
+        PrefixedLoggerGen.debug(logger, "No parser found for type " + type.getSimpleName() + ", returning string value");
         return value;
     }
 
@@ -405,7 +407,7 @@ public class CommandManager {
      * @return a list of suggestions
      */
     public List<String> getSuggestions(String name, CommandSender sender, List<String> args) {
-        logger.debug("Getting suggestions for command: " + name + " with args: " + args);
+        PrefixedLoggerGen.debug(logger, "Getting suggestions for command: " + name + " with args: " + args);
         
         // Normalize the command name (remove plugin namespace if present)
         String normalizedName = normalizeCommandName(name);
@@ -414,24 +416,24 @@ public class CommandManager {
         CommandInfo info = commandInfos.get(name.toLowerCase());
         
         if (command == null || info == null) {
-            logger.debug("Command not found for suggestions: " + name);
+            PrefixedLoggerGen.debug(logger, "Command not found for suggestions: " + name);
             return Arrays.asList("");
         }
 
         if (info.permission()) {
             String permission = permissionPrefix + ".commands." + normalizedName + ".use";
             if (!sender.hasPermission(permission)) {
-                logger.debug("No permission for suggestions: " + permission);
+                PrefixedLoggerGen.debug(logger, "No permission for suggestions: " + permission);
                 return Arrays.asList("");
             }
         }
 
         try {
             List<String> suggestions = generateSuggestions(command, info, sender, args, normalizedName);
-            logger.debug("Generated suggestions: " + suggestions);
+            PrefixedLoggerGen.debug(logger, "Generated suggestions: " + suggestions);
             return suggestions;
         } catch (Exception e) {
-            logger.debug("Error generating suggestions: " + e.getMessage());
+            PrefixedLoggerGen.debug(logger, "Error generating suggestions: " + e.getMessage());
             return Arrays.asList("");
         }
     }
@@ -440,24 +442,24 @@ public class CommandManager {
         List<MagicCommand.SubCommandInfo> subCommands = MagicCommand.getSubCommands(command.getClass());
         Method executeMethod = getExecuteMethod(command.getClass());
         
-        logger.debug("Generating suggestions - executeMethod: " + (executeMethod != null) + ", subCommands: " + subCommands.size() + ", args: " + args);
+        PrefixedLoggerGen.debug(logger, "Generating suggestions - executeMethod: " + (executeMethod != null) + ", subCommands: " + subCommands.size() + ", args: " + args);
         
         // If there's only a direct execute method and no subcommands
         if (executeMethod != null && subCommands.isEmpty()) {
             List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
-            logger.debug("Using direct method suggestions with " + arguments.size() + " arguments");
+            PrefixedLoggerGen.debug(logger, "Using direct method suggestions with " + arguments.size() + " arguments");
             return generateDirectMethodSuggestions(command, arguments, sender, args);
         }
         
         // If there are no subcommands and no execute method
         if (subCommands.isEmpty() && executeMethod == null) {
-            logger.debug("No subcommands and no execute method");
+            PrefixedLoggerGen.debug(logger, "No subcommands and no execute method");
             return Arrays.asList("");
         }
 
         // If no args and we have subcommands, show subcommands
         if (args.isEmpty() && !subCommands.isEmpty()) {
-            logger.debug("No args, showing subcommands");
+            PrefixedLoggerGen.debug(logger, "No args, showing subcommands");
             return getAvailableSubCommandsList(subCommands, sender, normalizedCommandName);
         }
 
@@ -523,79 +525,79 @@ public class CommandManager {
     }
 
     private List<String> generateDirectMethodSuggestions(MagicCommand command, List<CommandArgument> arguments, CommandSender sender, List<String> args) {
-        logger.debug("generateDirectMethodSuggestions called with " + arguments.size() + " arguments and " + args.size() + " args");
-        logger.debug("Raw args: " + args);
+        PrefixedLoggerGen.debug(logger, "generateDirectMethodSuggestions called with " + arguments.size() + " arguments and " + args.size() + " args");
+        PrefixedLoggerGen.debug(logger, "Raw args: " + args);
         
         if (arguments.isEmpty()) {
-            logger.debug("No arguments defined for direct method");
+            PrefixedLoggerGen.debug(logger, "No arguments defined for direct method");
             return Arrays.asList("");
         }
 
         // Log all arguments first
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
-            logger.debug("Raw argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ", suggestions: " + arg.getSuggestions() + ")");
+            PrefixedLoggerGen.debug(logger, "Raw argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ", suggestions: " + arg.getSuggestions() + ")");
         }
 
         // Build a list of arguments that need user input (skip only CommandSender, not its subclasses)
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
-            logger.debug("Checking argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ")");
+            PrefixedLoggerGen.debug(logger, "Checking argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ")");
             // Only skip if it's exactly CommandSender, not subclasses like Player
             if (arg.getType().equals(CommandSender.class)) {
-                logger.debug("  -> Skipped (CommandSender)");
+                PrefixedLoggerGen.debug(logger, "  -> Skipped (CommandSender)");
             } else {
                 userInputArguments.add(new ArgumentInfo(i, arg));
-                logger.debug("  -> Added as user input argument");
+                PrefixedLoggerGen.debug(logger, "  -> Added as user input argument");
             }
         }
         
-        logger.debug("User input arguments: " + userInputArguments.size());
+        PrefixedLoggerGen.debug(logger, "User input arguments: " + userInputArguments.size());
         for (int i = 0; i < userInputArguments.size(); i++) {
             ArgumentInfo info = userInputArguments.get(i);
-            logger.debug("  - User arg " + i + " (orig index " + info.originalIndex + "): " + info.argument.getName() + " (type: " + info.argument.getType().getSimpleName() + ", optional: " + info.argument.isOptional() + ", hasDefault: " + (info.argument.getDefaultValue() != null) + ")");
+            PrefixedLoggerGen.debug(logger, "  - User arg " + i + " (orig index " + info.originalIndex + "): " + info.argument.getName() + " (type: " + info.argument.getType().getSimpleName() + ", optional: " + info.argument.isOptional() + ", hasDefault: " + (info.argument.getDefaultValue() != null) + ")");
         }
 
         if (userInputArguments.isEmpty()) {
-            logger.debug("No arguments require user input");
+            PrefixedLoggerGen.debug(logger, "No arguments require user input");
             return Arrays.asList("");
         }
 
         // If no args provided, suggest for all possible first arguments (including optional ones)
         if (args.isEmpty()) {
-            logger.debug("No user args provided, generating suggestions for first argument(s)");
+            PrefixedLoggerGen.debug(logger, "No user args provided, generating suggestions for first argument(s)");
             List<String> suggestions = new ArrayList<>();
             
             // Always include suggestions for the first user argument
             ArgumentInfo firstArg = userInputArguments.get(0);
-            logger.debug("Generating suggestions for first argument: " + firstArg.argument.getName());
+            PrefixedLoggerGen.debug(logger, "Generating suggestions for first argument: " + firstArg.argument.getName());
             
             if (!firstArg.argument.hasPermission() || sender.hasPermission(firstArg.argument.getPermission())) {
                 List<String> firstArgSuggestions = generateSuggestionsForArgument(command, firstArg.argument, sender, "");
                 suggestions.addAll(firstArgSuggestions);
-                logger.debug("First argument suggestions: " + firstArgSuggestions);
+                PrefixedLoggerGen.debug(logger, "First argument suggestions: " + firstArgSuggestions);
             }
             
             // If first argument is optional, also include suggestions for the second argument
             if ((firstArg.argument.isOptional() || firstArg.argument.getDefaultValue() != null) && userInputArguments.size() > 1) {
                 ArgumentInfo secondArg = userInputArguments.get(1);
-                logger.debug("First argument is optional, also generating suggestions for second argument: " + secondArg.argument.getName());
+                PrefixedLoggerGen.debug(logger, "First argument is optional, also generating suggestions for second argument: " + secondArg.argument.getName());
                 
                 if (!secondArg.argument.hasPermission() || sender.hasPermission(secondArg.argument.getPermission())) {
                     List<String> secondArgSuggestions = generateSuggestionsForArgument(command, secondArg.argument, sender, "");
                     suggestions.addAll(secondArgSuggestions);
-                    logger.debug("Second argument suggestions: " + secondArgSuggestions);
+                    PrefixedLoggerGen.debug(logger, "Second argument suggestions: " + secondArgSuggestions);
                 }
             }
             
-            logger.debug("Combined suggestions for empty args: " + suggestions);
+            PrefixedLoggerGen.debug(logger, "Combined suggestions for empty args: " + suggestions);
             return suggestions.stream().distinct().collect(Collectors.toList());
         }
 
         // Determine which argument we're currently suggesting for
         int currentArgIndex = args.size() - 1;
-        logger.debug("Current argument index: " + currentArgIndex + " (based on args.size() = " + args.size() + ")");
+        PrefixedLoggerGen.debug(logger, "Current argument index: " + currentArgIndex + " (based on args.size() = " + args.size() + ")");
         
         // Handle the case where we might be suggesting for an argument beyond the current input
         // This happens when optional arguments are skipped
@@ -606,7 +608,7 @@ public class CommandManager {
             ArgumentInfo currentArg = userInputArguments.get(currentArgIndex);
             String currentInput = args.get(args.size() - 1);
             
-            logger.debug("Generating suggestions for current argument " + currentArgIndex + ": " + currentArg.argument.getName() + " with input: '" + currentInput + "'");
+            PrefixedLoggerGen.debug(logger, "Generating suggestions for current argument " + currentArgIndex + ": " + currentArg.argument.getName() + " with input: '" + currentInput + "'");
             
             if (!currentArg.argument.hasPermission() || sender.hasPermission(currentArg.argument.getPermission())) {
                 suggestions.addAll(generateSuggestionsForArgument(command, currentArg.argument, sender, currentInput));
@@ -620,7 +622,7 @@ public class CommandManager {
                 && currentArgIndex + 1 < userInputArguments.size()) {
                 
                 ArgumentInfo nextArg = userInputArguments.get(currentArgIndex + 1);
-                logger.debug("Current argument is optional, also suggesting for next argument: " + nextArg.argument.getName());
+                PrefixedLoggerGen.debug(logger, "Current argument is optional, also suggesting for next argument: " + nextArg.argument.getName());
                 
                 if (!nextArg.argument.hasPermission() || sender.hasPermission(nextArg.argument.getPermission())) {
                     suggestions.addAll(generateSuggestionsForArgument(command, nextArg.argument, sender, ""));
@@ -681,36 +683,36 @@ public class CommandManager {
 
     private List<String> generateSuggestionsForArgument(MagicCommand command, CommandArgument argument, 
                                                        CommandSender sender, String currentInput) {
-        logger.debug("generateSuggestionsForArgument called for argument: " + argument.getName() + " with input: '" + currentInput + "'");
-        logger.debug("Argument suggestions: " + argument.getSuggestions());
-        logger.debug("Argument type: " + argument.getType());
+        PrefixedLoggerGen.debug(logger, "generateSuggestionsForArgument called for argument: " + argument.getName() + " with input: '" + currentInput + "'");
+        PrefixedLoggerGen.debug(logger, "Argument suggestions: " + argument.getSuggestions());
+        PrefixedLoggerGen.debug(logger, "Argument type: " + argument.getType());
         
         List<String> suggestions = new ArrayList<>();
         
         // If no explicit suggestions, try to get suggestions from the argument type
         if (argument.getSuggestions().isEmpty()) {
-            logger.debug("No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
+            PrefixedLoggerGen.debug(logger, "No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
             List<String> typeSuggestions = typeParserRegistry.getSuggestionsForTypeFiltered(argument.getType(), currentInput, sender);
             if (!typeSuggestions.isEmpty()) {
-                logger.debug("Got " + typeSuggestions.size() + " suggestions from type parser");
+                PrefixedLoggerGen.debug(logger, "Got " + typeSuggestions.size() + " suggestions from type parser");
                 return typeSuggestions;
             }
         }
         
         // Process explicit suggestions
         for (String suggestionSource : argument.getSuggestions()) {
-            logger.debug("Processing suggestion source: '" + suggestionSource + "'");
+            PrefixedLoggerGen.debug(logger, "Processing suggestion source: '" + suggestionSource + "'");
             
             if (suggestionSource.contains("|")) {
                 String[] sources = suggestionSource.split("\\|");
                 for (String source : sources) {
                     List<String> sourceSuggestions = processSuggestionSource(command, source.trim(), sender, currentInput);
-                    logger.debug("Source '" + source.trim() + "' generated: " + sourceSuggestions);
+                    PrefixedLoggerGen.debug(logger, "Source '" + source.trim() + "' generated: " + sourceSuggestions);
                     suggestions.addAll(sourceSuggestions);
                 }
             } else {
                 List<String> sourceSuggestions = processSuggestionSource(command, suggestionSource, sender, currentInput);
-                logger.debug("Source '" + suggestionSource + "' generated: " + sourceSuggestions);
+                PrefixedLoggerGen.debug(logger, "Source '" + suggestionSource + "' generated: " + sourceSuggestions);
                 suggestions.addAll(sourceSuggestions);
             }
         }
@@ -720,13 +722,13 @@ public class CommandManager {
             .distinct()
             .collect(Collectors.toList());
         
-        logger.debug("Final filtered suggestions: " + filteredSuggestions);
+        PrefixedLoggerGen.debug(logger, "Final filtered suggestions: " + filteredSuggestions);
         return filteredSuggestions;
     }
 
     @SuppressWarnings("unchecked")
     private List<String> processSuggestionSource(MagicCommand command, String source, CommandSender sender, String currentInput) {
-        logger.debug("Processing suggestion source: " + source);
+        PrefixedLoggerGen.debug(logger, "Processing suggestion source: " + source);
         
         if (typeParserRegistry.isSpecialSuggestion(source)) {
             return typeParserRegistry.parseSuggestionFiltered(source, currentInput, sender);
@@ -747,7 +749,7 @@ public class CommandManager {
                 return (List<String>) result;
             }
         } catch (Exception e) {
-            logger.debug("Failed to call suggestion method " + source + ": " + e.getMessage());
+            PrefixedLoggerGen.debug(logger, "Failed to call suggestion method " + source + ": " + e.getMessage());
         }
 
         try {
@@ -761,7 +763,7 @@ public class CommandManager {
                 return (List<String>) result;
             }
         } catch (Exception e) {
-            logger.debug("Failed to call suggestion method " + source + " with Player parameter: " + e.getMessage());
+            PrefixedLoggerGen.debug(logger, "Failed to call suggestion method " + source + " with Player parameter: " + e.getMessage());
         }
 
         return Arrays.asList("");

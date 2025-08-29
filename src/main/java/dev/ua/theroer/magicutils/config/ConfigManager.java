@@ -10,6 +10,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -166,8 +167,26 @@ public class ConfigManager {
                     // Serialize ConfigSerializable objects before saving
                     Object valueToSave = defaultValue;
                     
+                    // Handle List with ConfigSerializable values
+                    if (defaultValue instanceof List && field.getType().equals(List.class)) {
+                        ParameterizedType listType = (ParameterizedType) field.getGenericType();
+                        Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+                        
+                        if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
+                            List<Map<String, Object>> serializedList = new ArrayList<>();
+                            @SuppressWarnings("unchecked")
+                            List<Object> list = (List<Object>) defaultValue;
+                            
+                            for (Object item : list) {
+                                if (item != null) {
+                                    serializedList.add(ConfigSerializer.serialize(item));
+                                }
+                            }
+                            valueToSave = serializedList;
+                        }
+                    }
                     // Handle Map with ConfigSerializable values
-                    if (defaultValue instanceof Map && field.getType().equals(Map.class)) {
+                    else if (defaultValue instanceof Map && field.getType().equals(Map.class)) {
                         ParameterizedType mapType = (ParameterizedType) field.getGenericType();
                         Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
                         
