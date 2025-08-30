@@ -1,6 +1,5 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;

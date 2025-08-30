@@ -96,6 +96,19 @@ public class LogBuilder {
     }
 
     /**
+     * Sets the target command sender for this message.
+     * 
+     * @param sender the command sender to send the message to
+     * @return this LogBuilder instance for method chaining
+     */
+    public LogBuilder to(CommandSender sender) {
+        if (sender != null) {
+            this.recipients.add(sender);
+        }
+        return this;
+    }
+
+    /**
      * Adds a recipient to the message.
      * 
      * @param sender the command sender to add as recipient

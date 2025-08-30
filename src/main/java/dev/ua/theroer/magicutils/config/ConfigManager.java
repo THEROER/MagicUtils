@@ -2,7 +2,8 @@ package dev.ua.theroer.magicutils.config;
 
 import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
-import org.bukkit.configuration.ConfigurationSection;
+import lombok.Getter;
+
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -630,7 +631,6 @@ public class ConfigManager {
     /**
      * Notifies change listeners.
      */
-    @SuppressWarnings("unchecked")
     private void notifyChangeListeners(Class<?> configClass, Set<String> changedSections) {
         List<BiConsumer<Object, Set<String>>> listeners = changeListeners.get(configClass);
         if (listeners == null) return;
@@ -645,17 +645,15 @@ public class ConfigManager {
      * Internal metadata storage.
      */
     private static class ConfigMetadata {
+        @Getter
         private final String filePath;
+        @Getter
         private final boolean autoCreate;
+        @Getter
         private final String templatePath;
-        
-        ConfigMetadata(ConfigFile annotation) {
-            this(annotation, new HashMap<>());
-        }
         
         ConfigMetadata(ConfigFile annotation, Map<String, String> placeholders) {
             String path = annotation.value();
-            // Replace placeholders in the path
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
                 path = path.replace("{" + entry.getKey() + "}", entry.getValue());
             }
@@ -663,9 +661,5 @@ public class ConfigManager {
             this.autoCreate = annotation.autoCreate();
             this.templatePath = annotation.template();
         }
-        
-        public String getFilePath() { return filePath; }
-        public boolean isAutoCreate() { return autoCreate; }
-        public String getTemplatePath() { return templatePath; }
     }
 }
