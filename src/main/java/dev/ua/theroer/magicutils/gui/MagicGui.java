@@ -788,7 +788,6 @@ public class MagicGui {
                 break;
 
             case HOTBAR_SWAP:
-            case HOTBAR_MOVE_AND_READD:
                 int hotbarSlot = event.getHotbarButton();
                 if (hotbarSlot >= 0) {
                     ItemStack hotbarItem = player.getInventory().getItem(hotbarSlot);
@@ -811,9 +810,8 @@ public class MagicGui {
             case PICKUP_SOME:
             case PICKUP_HALF:
             case PICKUP_ONE:
-                // Allow pickup if not placeholder
-                if (placeholder == null || !current.isSimilar(placeholder)) {
-                    newItem = null; // Item is being removed
+                if (placeholder == null || current == null || !current.isSimilar(placeholder)) {
+                    newItem = null;
                 }
                 break;
 

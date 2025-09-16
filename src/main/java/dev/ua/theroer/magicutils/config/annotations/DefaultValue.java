@@ -22,5 +22,5 @@ public @interface DefaultValue {
      * 
      * @return the provider class
      */
-    Class<? extends DefaultValueProvider> provider() default DefaultValueProvider.class;
+    Class<? extends DefaultValueProvider<?>> provider() default NoDefaultValueProvider.class;
 }

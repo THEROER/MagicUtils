@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils;
 
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -39,6 +40,7 @@ import java.util.regex.Pattern;
  */
 @LogMethods
 public final class Logger {
+    @Getter
     private static LoggerConfig config;
     private static ConfigManager configManager;
 

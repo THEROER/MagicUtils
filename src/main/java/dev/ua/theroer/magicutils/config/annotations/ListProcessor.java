@@ -14,5 +14,5 @@ public @interface ListProcessor {
      * 
      * @return the processor class
      */
-    Class<? extends ListItemProcessor> value();
+    Class<? extends ListItemProcessor<?>> value();
 }

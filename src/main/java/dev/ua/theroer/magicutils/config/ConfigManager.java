@@ -375,18 +375,20 @@ public class ConfigManager {
         if (processor == null)
             return list;
 
+        @SuppressWarnings("rawtypes")
         ListItemProcessor itemProcessor = processor.value().getDeclaredConstructor().newInstance();
         List<Object> result = new ArrayList<>();
 
         for (int i = 0; i < list.size(); i++) {
             Object item = list.get(i);
+            @SuppressWarnings("rawtypes")
             ListItemProcessor.ProcessResult processResult = itemProcessor.process(item, i);
 
             if (processResult.shouldUseDefault()) {
                 // Get default value for this index
                 DefaultValue defaultAnnotation = field.getAnnotation(DefaultValue.class);
-                if (defaultAnnotation != null && defaultAnnotation.provider() != DefaultValueProvider.class) {
-                    DefaultValueProvider provider = defaultAnnotation.provider().getDeclaredConstructor().newInstance();
+                if (defaultAnnotation != null && defaultAnnotation.provider() != NoDefaultValueProvider.class) {
+                    DefaultValueProvider<?> provider = defaultAnnotation.provider().getDeclaredConstructor().newInstance();
                     List<?> defaults = (List<?>) provider.provide();
                     if (i < defaults.size()) {
                         result.add(defaults.get(i));
@@ -410,7 +412,7 @@ public class ConfigManager {
             return null;
 
         // Use provider if specified
-        if (defaultAnnotation.provider() != DefaultValueProvider.class) {
+        if (defaultAnnotation.provider() != NoDefaultValueProvider.class) {
             DefaultValueProvider<?> provider = defaultAnnotation.provider().getDeclaredConstructor().newInstance();
             return provider.provide();
         }

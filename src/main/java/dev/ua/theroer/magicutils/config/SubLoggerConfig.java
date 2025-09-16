@@ -3,7 +3,6 @@ package dev.ua.theroer.magicutils.config;
 import dev.ua.theroer.magicutils.config.annotations.*;
 import lombok.Data;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 /**

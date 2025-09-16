@@ -226,16 +226,14 @@ public class LogBuilder {
             Logger.PrefixMode savedConsoleMode = null;
 
             try {
-                // TODO: Save current modes when getters are available
-                // savedChatMode = Logger.getChatPrefixMode();
-                // savedConsoleMode = Logger.getConsolePrefixMode();
+                savedChatMode = Logger.getConfig().getChatPrefixMode();
+                savedConsoleMode = Logger.getConfig().getConsolePrefixMode();
 
                 Logger.setChatPrefixMode(prefixOverride);
                 Logger.setConsolePrefixMode(prefixOverride);
 
                 performSend(message);
             } finally {
-                // Restore original modes
                 if (savedChatMode != null) {
                     Logger.setChatPrefixMode(savedChatMode);
                 }
