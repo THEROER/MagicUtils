@@ -10,13 +10,13 @@ import dev.ua.theroer.magicutils.config.annotations.DefaultValueProvider;
  * Provides an orange-to-darker orange color scheme for warning messages.
  */
 public class DefaultWarnColorsProvider implements DefaultValueProvider<List<String>> {
-    
+
     /**
-     * Constructs a new DefaultWarnColorsProvider.
+     * Default constructor for DefaultWarnColorsProvider.
      */
     public DefaultWarnColorsProvider() {
-        // Default constructor
     }
+
     @Override
     public List<String> provide() {
         return Arrays.asList("#ffaa00", "#ff6600");

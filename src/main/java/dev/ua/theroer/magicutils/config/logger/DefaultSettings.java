@@ -11,15 +11,13 @@ import lombok.Data;
  */
 @Data
 public class DefaultSettings {
-    
+
     /**
      * Default constructor for DefaultSettings.
-     * Initializes default settings with pre-configured values.
      */
     public DefaultSettings() {
-        // Default constructor - fields will be initialized with default values
     }
-    
+
     @ConfigValue("target")
     @DefaultValue("BOTH")
     @Comment("Default target for messages (CHAT, CONSOLE, BOTH)")

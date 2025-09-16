@@ -11,16 +11,18 @@ import java.lang.annotation.*;
 public @interface LogMethods {
     /**
      * Log levels to generate methods for
+     * 
      * @return array of log levels for which to generate methods
      */
-    LogLevel[] levels() default {LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.DEBUG, LogLevel.SUCCESS};
-    
+    LogLevel[] levels() default { LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.DEBUG, LogLevel.SUCCESS };
+
     /**
      * Whether to generate static methods
+     * 
      * @return true if methods should be static, false otherwise
      */
     boolean staticMethods() default true;
-    
+
     /**
      * Log levels enum for annotation
      */

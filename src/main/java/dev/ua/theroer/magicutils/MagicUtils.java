@@ -7,10 +7,12 @@ public class MagicUtils {
     /**
      * Default constructor for MagicUtils.
      */
-    public MagicUtils() {}
+    public MagicUtils() {
+    }
 
     /**
      * Main method for running the application.
+     * 
      * @param args command-line arguments
      */
     public static void main(String[] args) {

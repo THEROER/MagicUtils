@@ -13,6 +13,7 @@ public @interface ConfigSection {
     /**
      * Path to the section in the configuration file.
      * If empty, uses the field name.
+     * 
      * @return the section path
      */
     String value() default "";

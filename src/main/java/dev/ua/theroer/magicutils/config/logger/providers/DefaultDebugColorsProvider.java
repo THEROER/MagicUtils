@@ -10,13 +10,13 @@ import dev.ua.theroer.magicutils.config.annotations.DefaultValueProvider;
  * Provides a light blue-to-blue color scheme for debug messages.
  */
 public class DefaultDebugColorsProvider implements DefaultValueProvider<List<String>> {
-    
+
     /**
-     * Constructs a new DefaultDebugColorsProvider.
+     * Default constructor for DefaultDebugColorsProvider.
      */
     public DefaultDebugColorsProvider() {
-        // Default constructor
     }
+
     @Override
     public List<String> provide() {
         return Arrays.asList("#00aaff", "#0066cc");

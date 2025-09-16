@@ -13,25 +13,25 @@ import dev.ua.theroer.magicutils.lang.InternalMessages;
 /**
  * Command for reloading different sections of MagicUtils.
  */
-@CommandInfo(name = "reload", description = "MagicUtils reload command", permission = true, aliases = {"rl"})
+@CommandInfo(name = "reload", description = "MagicUtils reload command", permission = true, aliases = { "rl" })
 public class ReloadCommand extends MagicCommand {
 
     /**
      * Default constructor for ReloadCommand.
      */
-    public ReloadCommand() {}
+    public ReloadCommand() {
+    }
 
     /**
      * Reloads the command section.
+     * 
      * @param commandName the command name to reload
      * @return the result of the reload operation
      */
     @SubCommand(name = "command", description = "Reload the command section", permission = true)
     public CommandResult executeCommand(
-        @Suggest(value = {"getCommandSuggestions", "@players", "{all,specific}"}, permission = true)
-        @DefaultValue("all")
-        @NotNull String commandName
-    ) {
+            @Suggest(value = { "getCommandSuggestions", "@players",
+                    "{all,specific}" }, permission = true) @DefaultValue("all") @NotNull String commandName) {
         if ("all".equals(commandName)) {
             return CommandResult.success(InternalMessages.RELOAD_ALL_COMMANDS.get());
         } else {
@@ -41,15 +41,13 @@ public class ReloadCommand extends MagicCommand {
 
     /**
      * Reloads the section section.
+     * 
      * @param sectionName the section name to reload
      * @return the result of the reload operation
      */
     @SubCommand(name = "section", description = "Reload the section section", permission = true)
     public CommandResult executeSection(
-        @Suggest(value = "getSectionSuggestions|@worlds", permission = false)
-        @DefaultValue("all")
-        @NotNull String sectionName
-    ) {
+            @Suggest(value = "getSectionSuggestions|@worlds", permission = false) @DefaultValue("all") @NotNull String sectionName) {
         if ("all".equals(sectionName)) {
             return CommandResult.success(InternalMessages.RELOAD_ALL_SECTIONS.get());
         } else {
@@ -59,15 +57,13 @@ public class ReloadCommand extends MagicCommand {
 
     /**
      * Reloads the global section.
+     * 
      * @param globalName the global name to reload
      * @return the result of the reload operation
      */
     @SubCommand(name = "global", description = "Reload the global section", permission = true)
     public CommandResult executeGlobal(
-        @Suggest("getGlobalSuggestions")
-        @DefaultValue("all")
-        @NotNull String globalName
-    ) {
+            @Suggest("getGlobalSuggestions") @DefaultValue("all") @NotNull String globalName) {
         if ("all".equals(globalName)) {
             return CommandResult.success(InternalMessages.RELOAD_GLOBAL_SETTINGS.get());
         } else {
@@ -77,6 +73,7 @@ public class ReloadCommand extends MagicCommand {
 
     /**
      * Gets suggestions for command names.
+     * 
      * @return an array of command suggestions
      */
     public String[] getCommandSuggestions() {
@@ -85,14 +82,16 @@ public class ReloadCommand extends MagicCommand {
 
     /**
      * Gets suggestions for section names.
+     * 
      * @return an array of section suggestions
      */
     public String[] getSectionSuggestions() {
         return new String[0];
     }
-    
+
     /**
      * Gets suggestions for global names.
+     * 
      * @return an array of global suggestions
      */
     public String[] getGlobalSuggestions() {

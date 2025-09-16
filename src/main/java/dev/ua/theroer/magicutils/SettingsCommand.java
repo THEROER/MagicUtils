@@ -1,6 +1,5 @@
 package dev.ua.theroer.magicutils;
 
-
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
@@ -20,52 +19,51 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * Command for managing plugin settings including language management.
  */
-@CommandInfo(name = "settings", description = "MagicUtils settings command", permission = true, aliases = {"config", "cfg"})
+@CommandInfo(name = "settings", description = "MagicUtils settings command", permission = true, aliases = { "config",
+        "cfg" })
 public class SettingsCommand extends MagicCommand {
 
     @Setter
     private static LanguageManager languageManager;
-    
+
     /**
      * Default constructor for SettingsCommand.
-     * @param languageManager the language manager instance for handling language operations
-     * @param plugin the JavaPlugin instance for plugin-related operations
+     * 
+     * @param languageManager the language manager instance for handling language
+     *                        operations
+     * @param plugin          the JavaPlugin instance for plugin-related operations
      */
     public SettingsCommand(LanguageManager languageManager, JavaPlugin plugin) {
         setLanguageManager(languageManager);
 
-        LanguageKeyTypeParser.setLanguageManager(languageManager);
         LanguageKeyTypeParser.setPlugin(plugin);
     }
 
     /**
      * Manages language settings with flexible argument handling.
-     * @param langOrKey first argument - can be language name or key
-     * @param keyOrValue second argument - can be key or value  
-     * @param value third argument - value when setting
+     * 
+     * @param langOrKey  first argument - can be language name or key
+     * @param keyOrValue second argument - can be key or value
+     * @param value      third argument - value when setting
      * @return the result of the operation
      */
-    @SubCommand(name = "lang", aliases = {"language"}, description = "Manage language settings", permission = true)
+    @SubCommand(name = "lang", aliases = { "language" }, description = "Manage language settings", permission = true)
     public CommandResult executeLang(
-        @Suggest(value = {"getAvailableLanguages", "@language_keys"}, permission = false)
-        @OptionalArgument
-        String langOrKey,
-        
-        @Suggest(value = "@language_keys", permission = false)
-        @OptionalArgument  
-        String keyOrValue,
-        
-        @OptionalArgument
-        String value
-    ) {
+            @Suggest(value = { "getAvailableLanguages",
+                    "@language_keys" }, permission = false) @OptionalArgument String langOrKey,
+
+            @Suggest(value = "@language_keys", permission = false) @OptionalArgument String keyOrValue,
+
+            @OptionalArgument String value) {
         return handleLanguageCommand(langOrKey, keyOrValue, value);
     }
 
     /**
      * Handles the language command logic.
-     * @param langOrKey first argument
-     * @param keyOrValue second argument  
-     * @param value third argument
+     * 
+     * @param langOrKey  first argument
+     * @param keyOrValue second argument
+     * @param value      third argument
      * @return command result
      */
     private CommandResult handleLanguageCommand(String langOrKey, String keyOrValue, String value) {
@@ -80,7 +78,7 @@ public class SettingsCommand extends MagicCommand {
 
         // Check if first argument is a language name
         boolean isFirstArgLanguage = languageManager.getAvailableLanguages().contains(langOrKey);
-        
+
         // 1 argument: either show language content or show key in current language
         if (keyOrValue == null) {
             if (isFirstArgLanguage) {
@@ -91,7 +89,8 @@ public class SettingsCommand extends MagicCommand {
             }
         }
 
-        // 2 arguments: either show key in specific language or set key in current language
+        // 2 arguments: either show key in specific language or set key in current
+        // language
         if (value == null) {
             if (isFirstArgLanguage) {
                 // Show key in specific language
@@ -116,8 +115,9 @@ public class SettingsCommand extends MagicCommand {
     private CommandResult showLanguageStatus() {
         String currentLang = languageManager.getCurrentLanguage();
         String availableLanguages = String.join(", ", languageManager.getAvailableLanguages());
-        
-        return CommandResult.success(InternalMessages.SETTINGS_CURRENT_LANG.get("language", currentLang) + "\n" + InternalMessages.SETTINGS_AVAILABLE_LANGS.get("languages", availableLanguages));
+
+        return CommandResult.success(InternalMessages.SETTINGS_CURRENT_LANG.get("language", currentLang) + "\n"
+                + InternalMessages.SETTINGS_AVAILABLE_LANGS.get("languages", availableLanguages));
     }
 
     /**
@@ -127,8 +127,10 @@ public class SettingsCommand extends MagicCommand {
         if (!languageManager.getAvailableLanguages().contains(languageCode)) {
             return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get("language", languageCode));
         }
-        
-        return CommandResult.success(InternalMessages.SETTINGS_CURRENT_LANG.get("language", languageCode) + "\n" + InternalMessages.SETTINGS_AVAILABLE_LANGS.get("languages", String.join(", ", languageManager.getAvailableLanguages())));
+
+        return CommandResult.success(InternalMessages.SETTINGS_CURRENT_LANG.get("language", languageCode) + "\n"
+                + InternalMessages.SETTINGS_AVAILABLE_LANGS.get("languages",
+                        String.join(", ", languageManager.getAvailableLanguages())));
     }
 
     /**
@@ -142,16 +144,18 @@ public class SettingsCommand extends MagicCommand {
         // Temporarily switch to target language to get the value
         String originalLang = languageManager.getCurrentLanguage();
         languageManager.setLanguage(languageCode);
-        
+
         if (!languageManager.hasMessage(key)) {
             languageManager.setLanguage(originalLang); // Restore original language
-            return CommandResult.failure(InternalMessages.SETTINGS_KEY_NOT_FOUND.get("key", key, "language", languageCode));
+            return CommandResult
+                    .failure(InternalMessages.SETTINGS_KEY_NOT_FOUND.get("key", key, "language", languageCode));
         }
-        
+
         String message = languageManager.getMessage(key);
         languageManager.setLanguage(originalLang); // Restore original language
-        
-        return CommandResult.success(InternalMessages.SETTINGS_KEY_VALUE.get("language", languageCode, "key", key, "value", message));
+
+        return CommandResult.success(
+                InternalMessages.SETTINGS_KEY_VALUE.get("language", languageCode, "key", key, "value", message));
     }
 
     /**
@@ -165,17 +169,19 @@ public class SettingsCommand extends MagicCommand {
         Map<String, String> customMessages = new HashMap<>();
         customMessages.put(key, newValue);
         languageManager.saveCustomMessages(languageCode, customMessages);
-        
-        return CommandResult.success(InternalMessages.SETTINGS_KEY_SET.get("key", key, "value", newValue, "language", languageCode));
+
+        return CommandResult.success(
+                InternalMessages.SETTINGS_KEY_SET.get("key", key, "value", newValue, "language", languageCode));
     }
 
     /**
      * Gets available languages for suggestions.
+     * 
      * @return array of available language codes
      */
     public String[] getAvailableLanguages() {
         if (languageManager == null) {
-            return new String[]{"en", "uk"};
+            return new String[] { "en", "uk" };
         }
         return languageManager.getAvailableLanguages().toArray(new String[0]);
     }
@@ -183,6 +189,7 @@ public class SettingsCommand extends MagicCommand {
     /**
      * Gets dynamic key suggestions based on context.
      * This method will be replaced by @language_keys suggestion parser.
+     * 
      * @return array of key suggestions
      */
     public String[] getDynamicKeySuggestions() {

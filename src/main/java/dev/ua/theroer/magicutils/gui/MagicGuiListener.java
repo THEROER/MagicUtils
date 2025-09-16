@@ -13,7 +13,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
-import dev.ua.theroer.magicutils.logger.LoggerGen;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +28,7 @@ class MagicGuiListener implements Listener {
 
     /**
      * Ensure the listener is registered with the given plugin.
+     * 
      * @param plugin plugin to register with
      */
     public static void ensureRegistered(JavaPlugin plugin) {
@@ -37,6 +37,7 @@ class MagicGuiListener implements Listener {
 
     /**
      * Register the listener with a specific plugin.
+     * 
      * @param plugin plugin to register with
      */
     public static void register(Plugin plugin) {
@@ -53,8 +54,9 @@ class MagicGuiListener implements Listener {
 
     /**
      * Register a GUI for a player.
+     * 
      * @param player player
-     * @param gui GUI instance
+     * @param gui    GUI instance
      */
     public static void registerGui(Player player, MagicGui gui) {
         PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Registering GUI for player " + player.getName());
@@ -63,6 +65,7 @@ class MagicGuiListener implements Listener {
 
     /**
      * Unregister a GUI for a player.
+     * 
      * @param player player
      */
     public static void unregisterGui(Player player) {
@@ -71,11 +74,12 @@ class MagicGuiListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-        
-        PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Click event for player " + player.getName() + 
-            ", openGuis contains: " + openGuis.containsKey(player));
-        
+        if (!(event.getWhoClicked() instanceof Player player))
+            return;
+
+        PrefixedLoggerGen.debug(logger, "[MagicGuiListener] Click event for player " + player.getName() +
+                ", openGuis contains: " + openGuis.containsKey(player));
+
         MagicGui gui = openGuis.get(player);
         if (gui != null) {
             PrefixedLoggerGen.debug(logger, "[MagicGuiListener] GUI found, checking inventory match");
@@ -92,22 +96,24 @@ class MagicGuiListener implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
+        if (!(event.getPlayer() instanceof Player player))
+            return;
         MagicGui gui = openGuis.get(player);
         if (gui != null && event.getInventory().equals(gui.getInventory())) {
             gui.handleClose(event);
         }
     }
-    
+
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!(event.getWhoClicked() instanceof Player player))
+            return;
         MagicGui gui = openGuis.get(player);
         if (gui != null && event.getInventory().equals(gui.getInventory())) {
             gui.handleDrag(event);
         }
     }
-    
+
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();

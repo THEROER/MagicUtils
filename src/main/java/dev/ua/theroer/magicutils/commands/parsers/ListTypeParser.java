@@ -17,32 +17,44 @@ import java.util.regex.Pattern;
  */
 public class ListTypeParser implements TypeParser<String> {
     private static final Pattern LIST_PATTERN = Pattern.compile("^\\{([^}]+)\\}$");
-    
+
+    /**
+     * Default constructor for ListTypeParser.
+     */
+    public ListTypeParser() {
+    }
+
+    /**
+     * Checks if this parser can parse the specified type.
+     * 
+     * @param type the type to check
+     * @return true if this parser can parse the type, false otherwise
+     */
     @Override
     public boolean canParse(@NotNull Class<?> type) {
         // This parser is only for suggestions, not parsing
         return false;
     }
-    
+
     @Override
     @Nullable
     public String parse(@Nullable String value, @NotNull Class<String> targetType, @NotNull CommandSender sender) {
         // This parser doesn't parse values
         return null;
     }
-    
+
     @Override
     @NotNull
     public List<String> getSuggestions(@NotNull CommandSender sender) {
         // No default suggestions
         return new ArrayList<>();
     }
-    
+
     @Override
     public boolean canParseSuggestion(@NotNull String source) {
         return LIST_PATTERN.matcher(source).matches();
     }
-    
+
     @Override
     @NotNull
     public List<String> parseSuggestion(@NotNull String source, @NotNull CommandSender sender) {
@@ -53,7 +65,7 @@ public class ListTypeParser implements TypeParser<String> {
         }
         return new ArrayList<>();
     }
-    
+
     @Override
     public int getPriority() {
         return 80; // High priority for explicit lists

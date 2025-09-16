@@ -3,7 +3,6 @@ package dev.ua.theroer.magicutils.logger;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.Logger.LogLevel;
 import dev.ua.theroer.magicutils.Logger.Target;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -225,15 +224,15 @@ public class LogBuilder {
         if (prefixOverride != null) {
             Logger.PrefixMode savedChatMode = null;
             Logger.PrefixMode savedConsoleMode = null;
-            
+
             try {
                 // TODO: Save current modes when getters are available
                 // savedChatMode = Logger.getChatPrefixMode();
                 // savedConsoleMode = Logger.getConsolePrefixMode();
-                
+
                 Logger.setChatPrefixMode(prefixOverride);
                 Logger.setConsolePrefixMode(prefixOverride);
-                
+
                 performSend(message);
             } finally {
                 // Restore original modes
@@ -253,7 +252,7 @@ public class LogBuilder {
      * Formats and sends a message with current settings.
      * 
      * @param format the format string
-     * @param args the formatting arguments
+     * @param args   the formatting arguments
      */
     public void sendf(String format, Object... args) {
         send(String.format(format, args));
@@ -265,7 +264,7 @@ public class LogBuilder {
     private void performSend(Object message) {
         // Determine target
         Target finalTarget = target != null ? target : Logger.getDefaultTarget();
-        
+
         // Prepare recipients collection
         Collection<? extends Player> playerRecipients = null;
         if (!recipients.isEmpty()) {
@@ -279,7 +278,7 @@ public class LogBuilder {
                 playerRecipients = players;
             }
         }
-        
+
         // Send using the universal method
         Logger.send(level, message, player, playerRecipients, finalTarget, broadcast);
     }

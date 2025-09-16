@@ -12,6 +12,7 @@ import java.lang.annotation.*;
 public @interface ConfigSerializable {
     /**
      * Whether to include null fields when serializing.
+     * 
      * @return true to include nulls
      */
     boolean includeNulls() default false;

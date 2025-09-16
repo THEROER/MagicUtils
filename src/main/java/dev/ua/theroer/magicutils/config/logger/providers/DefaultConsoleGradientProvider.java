@@ -10,13 +10,13 @@ import dev.ua.theroer.magicutils.config.annotations.DefaultValueProvider;
  * Provides a yellow-to-orange gradient color scheme for console output.
  */
 public class DefaultConsoleGradientProvider implements DefaultValueProvider<List<String>> {
-    
+
     /**
-     * Constructs a new DefaultConsoleGradientProvider.
+     * Default constructor for DefaultConsoleGradientProvider.
      */
     public DefaultConsoleGradientProvider() {
-        // Default constructor
     }
+
     @Override
     public List<String> provide() {
         return Arrays.asList("#ffcc00", "#ff6600");

@@ -15,27 +15,22 @@ import org.bukkit.inventory.meta.ItemMeta;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
-import dev.ua.theroer.magicutils.logger.LoggerGen;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 /**
  * Advanced GUI system with MiniMessage support and convenience methods.
  */
 public class MagicGui {
     private static final PrefixedLogger logger = Logger.create("MagicGui", "[GUI]");
-    
+
     private final JavaPlugin plugin;
     private final Inventory inventory;
     private final Map<Integer, Consumer<InventoryClickEvent>> buttonCallbacks = new HashMap<>();
@@ -43,29 +38,27 @@ public class MagicGui {
     private final UUID ownerUuid;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private Consumer<InventoryCloseEvent> closeCallback;
-    
+
     // Slot policies
     private final Map<Integer, SlotPolicy> slotPolicies = new HashMap<>();
-    
-    // Track items in editable slots (excluding placeholders)
-    private final Map<Integer, ItemStack> editableSlotItems = new HashMap<>();
-    
+
     // Map of slot IDs to slot numbers
     private final Map<String, Integer> slotIdMap = new HashMap<>();
-    
+
     // Anti-spam protection
     private final Map<Integer, Long> lastClickTime = new HashMap<>();
     private static final long CLICK_COOLDOWN = 150; // milliseconds
-    
+
     // NBT key for placeholder identification
     private final NamespacedKey PLACEHOLDER_KEY;
 
     /**
      * Creates a new MagicGui with String title.
+     * 
      * @param plugin the plugin instance
-     * @param owner the player who owns this GUI
-     * @param size the size of the inventory
-     * @param title the title of the GUI (supports MiniMessage)
+     * @param owner  the player who owns this GUI
+     * @param size   the size of the inventory
+     * @param title  the title of the GUI (supports MiniMessage)
      */
     public MagicGui(JavaPlugin plugin, Player owner, int size, String title) {
         this.plugin = plugin;
@@ -78,10 +71,11 @@ public class MagicGui {
 
     /**
      * Creates a new MagicGui with Component title.
+     * 
      * @param plugin the plugin instance
-     * @param owner the player who owns this GUI
-     * @param size the size of the inventory
-     * @param title the title component of the GUI
+     * @param owner  the player who owns this GUI
+     * @param size   the size of the inventory
+     * @param title  the title component of the GUI
      */
     public MagicGui(JavaPlugin plugin, Player owner, int size, Component title) {
         this.plugin = plugin;
@@ -93,8 +87,9 @@ public class MagicGui {
 
     /**
      * Set an item with click callback.
-     * @param slot inventory slot
-     * @param item item to set
+     * 
+     * @param slot    inventory slot
+     * @param item    item to set
      * @param onClick callback when clicked
      */
     public void setItem(int slot, ItemStack item, Consumer<InventoryClickEvent> onClick) {
@@ -106,6 +101,7 @@ public class MagicGui {
 
     /**
      * Set an item without click callback.
+     * 
      * @param slot inventory slot
      * @param item item to set
      */
@@ -115,36 +111,41 @@ public class MagicGui {
 
     /**
      * Create and set an item with MiniMessage support.
-     * @param slot inventory slot
+     * 
+     * @param slot     inventory slot
      * @param material item material
-     * @param name item name (supports MiniMessage)
-     * @param lore item lore (supports MiniMessage)
-     * @param onClick callback when clicked
+     * @param name     item name (supports MiniMessage)
+     * @param lore     item lore (supports MiniMessage)
+     * @param onClick  callback when clicked
      */
-    public void setItem(int slot, Material material, String name, List<String> lore, Consumer<InventoryClickEvent> onClick) {
+    public void setItem(int slot, Material material, String name, List<String> lore,
+            Consumer<InventoryClickEvent> onClick) {
         ItemStack item = createItem(material, name, lore);
         setItem(slot, item, onClick);
     }
 
     /**
      * Create and set an item with Component support.
-     * @param slot inventory slot
+     * 
+     * @param slot     inventory slot
      * @param material item material
-     * @param name item name component
-     * @param lore item lore components
-     * @param onClick callback when clicked
+     * @param name     item name component
+     * @param lore     item lore components
+     * @param onClick  callback when clicked
      */
-    public void setItem(int slot, Material material, Component name, List<Component> lore, Consumer<InventoryClickEvent> onClick) {
+    public void setItem(int slot, Material material, Component name, List<Component> lore,
+            Consumer<InventoryClickEvent> onClick) {
         ItemStack item = createItem(material, name, lore);
         setItem(slot, item, onClick);
     }
 
     /**
      * Create and set an item without click callback.
-     * @param slot inventory slot
+     * 
+     * @param slot     inventory slot
      * @param material item material
-     * @param name item name (supports MiniMessage)
-     * @param lore item lore (supports MiniMessage)
+     * @param name     item name (supports MiniMessage)
+     * @param lore     item lore (supports MiniMessage)
      */
     public void setItem(int slot, Material material, String name, List<String> lore) {
         setItem(slot, material, name, lore, null);
@@ -152,10 +153,11 @@ public class MagicGui {
 
     /**
      * Create and set an item without click callback.
-     * @param slot inventory slot
+     * 
+     * @param slot     inventory slot
      * @param material item material
-     * @param name item name component
-     * @param lore item lore components
+     * @param name     item name component
+     * @param lore     item lore components
      */
     public void setItem(int slot, Material material, Component name, List<Component> lore) {
         setItem(slot, material, name, lore, null);
@@ -163,57 +165,60 @@ public class MagicGui {
 
     /**
      * Create an ItemStack with MiniMessage support.
+     * 
      * @param material item material
-     * @param name item name (supports MiniMessage)
-     * @param lore item lore (supports MiniMessage)
+     * @param name     item name (supports MiniMessage)
+     * @param lore     item lore (supports MiniMessage)
      * @return created ItemStack
      */
     public ItemStack createItem(Material material, String name, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        
+
         if (name != null) {
             meta.displayName(miniMessage.deserialize(name).decoration(TextDecoration.ITALIC, false));
         }
-        
+
         if (lore != null && !lore.isEmpty()) {
             List<Component> loreComponents = lore.stream()
                     .map(line -> miniMessage.deserialize(line).decoration(TextDecoration.ITALIC, false))
                     .toList();
             meta.lore(loreComponents);
         }
-        
+
         item.setItemMeta(meta);
         return item;
     }
 
     /**
      * Create an ItemStack with Component support.
+     * 
      * @param material item material
-     * @param name item name component
-     * @param lore item lore components
+     * @param name     item name component
+     * @param lore     item lore components
      * @return created ItemStack
      */
     public ItemStack createItem(Material material, Component name, List<Component> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        
+
         if (name != null) {
             meta.displayName(name);
         }
-        
+
         if (lore != null && !lore.isEmpty()) {
             meta.lore(lore);
         }
-        
+
         item.setItemMeta(meta);
         return item;
     }
 
     /**
      * Add a border of items around the GUI.
+     * 
      * @param material border material
-     * @param name border item name
+     * @param name     border item name
      */
     public void addBorder(Material material, String name) {
         ItemStack borderItem = createItem(material, name, null);
@@ -222,8 +227,9 @@ public class MagicGui {
 
     /**
      * Add a border of items around the GUI.
+     * 
      * @param material border material
-     * @param name border item name component
+     * @param name     border item name component
      */
     public void addBorder(Material material, Component name) {
         ItemStack borderItem = createItem(material, name, null);
@@ -232,6 +238,7 @@ public class MagicGui {
 
     /**
      * Add a border of items around the GUI.
+     * 
      * @param borderItem border item
      */
     public void addBorder(ItemStack borderItem) {
@@ -248,8 +255,9 @@ public class MagicGui {
 
     /**
      * Fill empty slots with an item.
+     * 
      * @param material fill material
-     * @param name fill item name
+     * @param name     fill item name
      */
     public void fillEmpty(Material material, String name) {
         ItemStack fillItem = createItem(material, name, null);
@@ -258,8 +266,9 @@ public class MagicGui {
 
     /**
      * Fill empty slots with an item.
+     * 
      * @param material fill material
-     * @param name fill item name component
+     * @param name     fill item name component
      */
     public void fillEmpty(Material material, Component name) {
         ItemStack fillItem = createItem(material, name, null);
@@ -268,6 +277,7 @@ public class MagicGui {
 
     /**
      * Fill empty slots with an item.
+     * 
      * @param fillItem fill item
      */
     public void fillEmpty(ItemStack fillItem) {
@@ -280,16 +290,18 @@ public class MagicGui {
 
     /**
      * Set a callback for when the GUI is closed.
+     * 
      * @param closeCallback close callback
      */
     public void onClose(Consumer<InventoryCloseEvent> closeCallback) {
         this.closeCallback = closeCallback;
     }
-    
+
     /**
      * Creates a placeholder item with NBT tag for identification.
+     * 
      * @param material the material for the placeholder
-     * @param name the display name (supports MiniMessage)
+     * @param name     the display name (supports MiniMessage)
      * @return the placeholder ItemStack
      */
     private ItemStack createPlaceholder(Material material, String name) {
@@ -304,9 +316,10 @@ public class MagicGui {
         }
         return item;
     }
-    
+
     /**
      * Check if an item is a placeholder.
+     * 
      * @param item the item to check
      * @return true if the item is a placeholder
      */
@@ -317,9 +330,10 @@ public class MagicGui {
         ItemMeta meta = item.getItemMeta();
         return meta.getPersistentDataContainer().has(PLACEHOLDER_KEY, PersistentDataType.BYTE);
     }
-    
+
     /**
      * Get all non-placeholder items from editable slots.
+     * 
      * @return map of slot to item (excluding placeholders)
      */
     public Map<Integer, ItemStack> getEditableItems() {
@@ -335,9 +349,10 @@ public class MagicGui {
         }
         return items;
     }
-    
+
     /**
      * Get item by slot ID.
+     * 
      * @param id the slot ID
      * @return the item in the slot (null if not found or placeholder)
      */
@@ -349,9 +364,10 @@ public class MagicGui {
         ItemStack item = inventory.getItem(slot);
         return (item != null && !isPlaceholder(item)) ? item.clone() : null;
     }
-    
+
     /**
      * Get all items by their IDs.
+     * 
      * @return map of ID to item (excluding placeholders)
      */
     public Map<String, ItemStack> getItemsByIds() {
@@ -373,7 +389,7 @@ public class MagicGui {
         owner.openInventory(inventory);
         MagicGuiListener.registerGui(owner, this);
     }
-    
+
     /**
      * Refresh all slots in the GUI.
      */
@@ -381,9 +397,10 @@ public class MagicGui {
         // This would be implemented by subclasses or screens
         // that know how to re-render their content
     }
-    
+
     /**
      * Refresh specific slots in the GUI.
+     * 
      * @param slots the slots to refresh
      */
     public void refreshSlots(int... slots) {
@@ -393,6 +410,7 @@ public class MagicGui {
 
     /**
      * Get the underlying inventory.
+     * 
      * @return inventory
      */
     public Inventory getInventory() {
@@ -401,49 +419,57 @@ public class MagicGui {
 
     /**
      * Get the GUI owner.
+     * 
      * @return owner player
      */
     public Player getOwner() {
         return owner;
     }
-    
+
     /**
      * Make a slot editable with full policy.
-     * @param slot the slot to make editable
+     * 
+     * @param slot   the slot to make editable
      * @param policy the slot policy
      */
     public void makeEditable(int slot, SlotPolicy policy) {
-        PrefixedLoggerGen.debug(logger, "[MagicGui] Making slot " + slot + " editable with policy: editable=" + policy.editable() + 
-            ", consumesItem=" + policy.consumesItem() + ", hasPlaceholder=" + (policy.placeholder() != null) +
-            ", id=" + policy.id());
+        PrefixedLoggerGen.debug(logger,
+                "[MagicGui] Making slot " + slot + " editable with policy: editable=" + policy.editable() +
+                        ", consumesItem=" + policy.consumesItem() + ", hasPlaceholder=" + (policy.placeholder() != null)
+                        +
+                        ", id=" + policy.id());
         slotPolicies.put(slot, policy);
-        
+
         // Register slot ID if provided
         if (policy.id() != null) {
             slotIdMap.put(policy.id(), slot);
         }
-        
+
         if (policy.placeholder() != null && inventory.getItem(slot) == null) {
             inventory.setItem(slot, policy.placeholder().clone());
         }
     }
-    
+
     /**
      * Make a slot editable with optional placeholder.
-     * @param slot the slot to make editable
-     * @param placeholder placeholder item (null for no placeholder)
-     * @param consumesItem true if placing item should consume it from player inventory
+     * 
+     * @param slot         the slot to make editable
+     * @param placeholder  placeholder item (null for no placeholder)
+     * @param consumesItem true if placing item should consume it from player
+     *                     inventory
      */
     public void makeEditable(int slot, ItemStack placeholder, boolean consumesItem) {
         makeEditable(slot, placeholder, consumesItem, null);
     }
-    
+
     /**
      * Make a slot editable with optional placeholder and change callback.
-     * @param slot the slot to make editable
-     * @param placeholder placeholder item (null for no placeholder)
-     * @param consumesItem true if placing item should consume it from player inventory
-     * @param onChange callback when item changes
+     * 
+     * @param slot         the slot to make editable
+     * @param placeholder  placeholder item (null for no placeholder)
+     * @param consumesItem true if placing item should consume it from player
+     *                     inventory
+     * @param onChange     callback when item changes
      */
     public void makeEditable(int slot, ItemStack placeholder, boolean consumesItem, Consumer<ItemStack> onChange) {
         // Add NBT tag to placeholder if not already present
@@ -454,61 +480,73 @@ public class MagicGui {
                 placeholder.setItemMeta(meta);
             }
         }
-        
+
         SlotPolicy policy = SlotPolicy.builder()
-            .editable(true)
-            .consumesItem(consumesItem)
-            .placeholder(placeholder)
-            .onChange(onChange)
-            .build();
+                .editable(true)
+                .consumesItem(consumesItem)
+                .placeholder(placeholder)
+                .onChange(onChange)
+                .build();
         makeEditable(slot, policy);
     }
-    
+
     /**
      * Make a slot editable with placeholder using material and name.
-     * @param slot the slot to make editable
+     * 
+     * @param slot                the slot to make editable
      * @param placeholderMaterial placeholder material (null for no placeholder)
-     * @param placeholderName placeholder name
-     * @param consumesItem true if placing item should consume it from player inventory
+     * @param placeholderName     placeholder name
+     * @param consumesItem        true if placing item should consume it from player
+     *                            inventory
      */
     public void makeEditable(int slot, Material placeholderMaterial, String placeholderName, boolean consumesItem) {
         makeEditable(slot, placeholderMaterial, placeholderName, consumesItem, null);
     }
-    
+
     /**
      * Make a slot editable with ID.
-     * @param slot the slot to make editable
-     * @param id the slot ID
+     * 
+     * @param slot                the slot to make editable
+     * @param id                  the slot ID
      * @param placeholderMaterial placeholder material (null for no placeholder)
-     * @param placeholderName placeholder name
-     * @param consumesItem true if placing item should consume it from player inventory
+     * @param placeholderName     placeholder name
+     * @param consumesItem        true if placing item should consume it from player
+     *                            inventory
      */
-    public void makeEditable(int slot, String id, Material placeholderMaterial, String placeholderName, boolean consumesItem) {
-        ItemStack placeholder = placeholderMaterial != null ? createPlaceholder(placeholderMaterial, placeholderName) : null;
+    public void makeEditable(int slot, String id, Material placeholderMaterial, String placeholderName,
+            boolean consumesItem) {
+        ItemStack placeholder = placeholderMaterial != null ? createPlaceholder(placeholderMaterial, placeholderName)
+                : null;
         SlotPolicy policy = SlotPolicy.builder()
-            .editable(true)
-            .consumesItem(consumesItem)
-            .placeholder(placeholder)
-            .id(id)
-            .build();
+                .editable(true)
+                .consumesItem(consumesItem)
+                .placeholder(placeholder)
+                .id(id)
+                .build();
         makeEditable(slot, policy);
     }
-    
+
     /**
-     * Make a slot editable with placeholder using material and name with change callback.
-     * @param slot the slot to make editable
+     * Make a slot editable with placeholder using material and name with change
+     * callback.
+     * 
+     * @param slot                the slot to make editable
      * @param placeholderMaterial placeholder material (null for no placeholder)
-     * @param placeholderName placeholder name
-     * @param consumesItem true if placing item should consume it from player inventory
-     * @param onChange callback when item changes
+     * @param placeholderName     placeholder name
+     * @param consumesItem        true if placing item should consume it from player
+     *                            inventory
+     * @param onChange            callback when item changes
      */
-    public void makeEditable(int slot, Material placeholderMaterial, String placeholderName, boolean consumesItem, Consumer<ItemStack> onChange) {
-        ItemStack placeholder = placeholderMaterial != null ? createPlaceholder(placeholderMaterial, placeholderName) : null;
+    public void makeEditable(int slot, Material placeholderMaterial, String placeholderName, boolean consumesItem,
+            Consumer<ItemStack> onChange) {
+        ItemStack placeholder = placeholderMaterial != null ? createPlaceholder(placeholderMaterial, placeholderName)
+                : null;
         makeEditable(slot, placeholder, consumesItem, onChange);
     }
-    
+
     /**
      * Check if a slot is editable.
+     * 
      * @param slot the slot to check
      * @return true if editable
      */
@@ -516,9 +554,10 @@ public class MagicGui {
         SlotPolicy policy = slotPolicies.get(slot);
         return policy != null && policy.editable();
     }
-    
+
     /**
      * Check if GUI has any editable slots.
+     * 
      * @return true if has editable slots
      */
     public boolean hasEditableSlots() {
@@ -527,37 +566,38 @@ public class MagicGui {
 
     void handleClick(InventoryClickEvent event) {
         PrefixedLoggerGen.debug(logger, "[MagicGui] handleClick called");
-        
+
         // Check if click is from owner
         if (!event.getWhoClicked().getUniqueId().equals(ownerUuid)) {
             PrefixedLoggerGen.debug(logger, "[MagicGui] Click cancelled - not owner");
             event.setCancelled(true);
             return;
         }
-        
+
         // Check if view is valid
         if (event.getView() == null || event.getView().getTopInventory() == null) {
             PrefixedLoggerGen.error(logger, "[MagicGui] Invalid inventory view in click event");
             event.setCancelled(true);
             return;
         }
-        
+
         int slot = event.getRawSlot();
         int topSize = event.getView().getTopInventory().getSize();
         boolean isGuiArea = slot >= 0 && slot < topSize;
-        
+
         // Debug logging
         String guiTitle = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
+                .serialize(event.getView().title());
         PrefixedLoggerGen.debug(logger, "[MagicGui] === Click Event ===");
         PrefixedLoggerGen.debug(logger, "[MagicGui] GUI: " + guiTitle);
         PrefixedLoggerGen.debug(logger, "[MagicGui] Slot: " + slot + " (isGuiArea=" + isGuiArea + ")");
-        PrefixedLoggerGen.debug(logger, "[MagicGui] Action: " + event.getAction() + ", isShiftClick=" + event.isShiftClick());
+        PrefixedLoggerGen.debug(logger,
+                "[MagicGui] Action: " + event.getAction() + ", isShiftClick=" + event.isShiftClick());
         PrefixedLoggerGen.debug(logger, "[MagicGui] Cursor: " + event.getCursor());
         PrefixedLoggerGen.debug(logger, "[MagicGui] Current: " + event.getCurrentItem());
         PrefixedLoggerGen.debug(logger, "[MagicGui] Has editable slots: " + hasEditableSlots());
         PrefixedLoggerGen.debug(logger, "[MagicGui] Slot policies count: " + slotPolicies.size());
-        
+
         // Handle special actions that affect multiple slots
         switch (event.getAction()) {
             case MOVE_TO_OTHER_INVENTORY:
@@ -571,11 +611,11 @@ public class MagicGui {
             default:
                 break;
         }
-        
+
         if (isGuiArea) {
             // Clicked in GUI
             SlotPolicy policy = slotPolicies.get(slot);
-            
+
             if (policy != null && policy.editable()) {
                 // Check anti-spam
                 if (!checkClickCooldown(slot)) {
@@ -596,7 +636,8 @@ public class MagicGui {
                         try {
                             callback.accept(event);
                         } catch (Exception e) {
-                            PrefixedLoggerGen.error(logger, "Error in button callback for slot " + slot + ": " + e.getMessage());
+                            PrefixedLoggerGen.error(logger,
+                                    "Error in button callback for slot " + slot + ": " + e.getMessage());
                             e.printStackTrace();
                         }
                     }
@@ -613,10 +654,10 @@ public class MagicGui {
             }
         }
     }
-    
+
     private void handleEditableSlotClick(InventoryClickEvent event, int slot, SlotPolicy policy) {
         Player player = (Player) event.getWhoClicked();
-        
+
         // Check permission
         if (policy.permission() != null && !policy.permission().test(player)) {
             PrefixedLoggerGen.debug(logger, "[MagicGui] Permission denied for slot " + slot);
@@ -624,19 +665,20 @@ public class MagicGui {
             player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
-        
-        PrefixedLoggerGen.debug(logger, "[MagicGui] Editable slot policy: consumesItem=" + policy.consumesItem() + 
-            ", hasPlaceholder=" + (policy.placeholder() != null) +
-            ", hasValidator=" + (policy.validator() != null) +
-            ", hasOnChange=" + (policy.onChange() != null));
-        
+
+        PrefixedLoggerGen.debug(logger, "[MagicGui] Editable slot policy: consumesItem=" + policy.consumesItem() +
+                ", hasPlaceholder=" + (policy.placeholder() != null) +
+                ", hasValidator=" + (policy.validator() != null) +
+                ", hasOnChange=" + (policy.onChange() != null));
+
         ItemStack current = event.getCurrentItem();
         ItemStack cursor = event.getCursor();
         ItemStack placeholder = policy.placeholder();
         boolean consumesItem = policy.consumesItem();
-        
-        PrefixedLoggerGen.debug(logger, "[MagicGui] Editable slot " + slot + " clicked, consumesItem=" + consumesItem + ", action=" + event.getAction());
-        
+
+        PrefixedLoggerGen.debug(logger, "[MagicGui] Editable slot " + slot + " clicked, consumesItem=" + consumesItem
+                + ", action=" + event.getAction());
+
         // Handle placeholder logic
         if (placeholder != null && current != null && current.isSimilar(placeholder)) {
             // Trying to take placeholder
@@ -646,11 +688,11 @@ public class MagicGui {
                 return;
             }
         }
-        
+
         // Prepare for validation
         ItemStack newItem = null;
         boolean shouldCancel = false;
-        
+
         // Handle different actions
         switch (event.getAction()) {
             case PLACE_ALL:
@@ -664,7 +706,7 @@ public class MagicGui {
                         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                         return;
                     }
-                    
+
                     // Check if current is placeholder
                     if (placeholder != null && current != null && current.isSimilar(placeholder)) {
                         // Replace placeholder with item
@@ -693,14 +735,15 @@ public class MagicGui {
                         }
                         return;
                     }
-                    
+
                     if (!consumesItem) {
                         // Duplicate mode
                         shouldCancel = true;
                         newItem = cursor.clone();
                         if (event.getAction() == InventoryAction.PLACE_ONE) {
                             newItem.setAmount(1);
-                        } else if (event.getAction() == InventoryAction.PLACE_SOME && current != null && current.getType() != Material.AIR) {
+                        } else if (event.getAction() == InventoryAction.PLACE_SOME && current != null
+                                && current.getType() != Material.AIR) {
                             int maxStack = Math.min(cursor.getType().getMaxStackSize(), inventory.getMaxStackSize());
                             int canPlace = maxStack - current.getAmount();
                             newItem.setAmount(Math.min(cursor.getAmount(), canPlace));
@@ -708,7 +751,7 @@ public class MagicGui {
                     }
                 }
                 break;
-                
+
             case SWAP_WITH_CURSOR:
                 if (cursor != null && cursor.getType() != Material.AIR) {
                     // Validate item
@@ -717,7 +760,7 @@ public class MagicGui {
                         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                         return;
                     }
-                    
+
                     // Check if current is placeholder
                     if (placeholder != null && current != null && current.isSimilar(placeholder)) {
                         // Replace placeholder with item, don't swap
@@ -736,14 +779,14 @@ public class MagicGui {
                         }
                         return;
                     }
-                    
+
                     if (!consumesItem) {
                         shouldCancel = true;
                         newItem = cursor.clone();
                     }
                 }
                 break;
-                
+
             case HOTBAR_SWAP:
             case HOTBAR_MOVE_AND_READD:
                 int hotbarSlot = event.getHotbarButton();
@@ -763,7 +806,7 @@ public class MagicGui {
                     }
                 }
                 break;
-                
+
             case PICKUP_ALL:
             case PICKUP_SOME:
             case PICKUP_HALF:
@@ -773,46 +816,48 @@ public class MagicGui {
                     newItem = null; // Item is being removed
                 }
                 break;
-                
+
             default:
                 // Cancel unknown actions
                 event.setCancelled(true);
                 return;
         }
-        
+
         if (shouldCancel) {
             event.setCancelled(true);
             if (newItem != null) {
                 inventory.setItem(slot, newItem);
             }
         }
-        
+
         // Schedule post-action updates
         if (plugin != null && plugin.isEnabled()) {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 ItemStack finalItem = inventory.getItem(slot);
-                
+
                 // Restore placeholder if needed
                 if ((finalItem == null || finalItem.getType() == Material.AIR) && placeholder != null) {
                     inventory.setItem(slot, placeholder.clone());
                     finalItem = placeholder;
                 }
-                
+
                 // Call onChange if item changed
                 if (policy.onChange() != null) {
                     try {
                         policy.onChange().accept(finalItem);
                     } catch (Exception e) {
-                        PrefixedLoggerGen.error(logger, "Error in onChange callback for slot " + slot + ": " + e.getMessage());
+                        PrefixedLoggerGen.error(logger,
+                                "Error in onChange callback for slot " + slot + ": " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             });
         }
     }
-    
+
     /**
      * Check click cooldown for anti-spam.
+     * 
      * @param slot the slot being clicked
      * @return true if click is allowed
      */
@@ -825,10 +870,11 @@ public class MagicGui {
         lastClickTime.put(slot, now);
         return true;
     }
-    
+
     /**
      * Handle move to other inventory action.
-     * @param event the click event
+     * 
+     * @param event   the click event
      * @param fromGui true if moving from GUI to player inventory
      */
     private void handleMoveToOther(InventoryClickEvent event, boolean fromGui) {
@@ -844,9 +890,10 @@ public class MagicGui {
             event.setCancelled(true);
         }
     }
-    
+
     /**
      * Handle inventory drag event.
+     * 
      * @param event the drag event
      */
     void handleDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
@@ -855,9 +902,9 @@ public class MagicGui {
             event.setCancelled(true);
             return;
         }
-        
+
         int topSize = event.getView().getTopInventory().getSize();
-        
+
         // Check if any dragged slot is in GUI area and not editable
         for (int slot : event.getRawSlots()) {
             if (slot < topSize) {
@@ -874,9 +921,10 @@ public class MagicGui {
             }
         }
     }
-    
+
     /**
      * Get button callback for a slot.
+     * 
      * @param slot the slot
      * @return callback or null
      */
@@ -894,7 +942,7 @@ public class MagicGui {
                 e.printStackTrace();
             }
         }
-        
+
         // Clean up resources
         buttonCallbacks.clear();
         slotPolicies.clear();

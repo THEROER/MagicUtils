@@ -1,6 +1,5 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;
@@ -14,58 +13,65 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Type parser for Player arguments with @sender support and automatic suggestions.
+ * Type parser for Player arguments with @sender support and automatic
+ * suggestions.
  */
 public class PlayerTypeParser implements TypeParser<Player> {
-    
+
+    /**
+     * Default constructor for PlayerTypeParser.
+     */
+    public PlayerTypeParser() {
+    }
+
     @Override
     public boolean canParse(@NotNull Class<?> type) {
         return type == Player.class;
     }
-    
+
     @Override
     @Nullable
     public Player parse(@Nullable String value, @NotNull Class<Player> targetType, @NotNull CommandSender sender) {
         if (value == null) {
             return null;
         }
-        
+
         if ("@sender".equals(value) && sender instanceof Player) {
             LoggerGen.debug("Resolving @sender to: " + sender.getName());
             return (Player) sender;
         }
-        
+
         Player player = Bukkit.getPlayer(value);
         LoggerGen.debug("Player lookup for '" + value + "': " + (player != null ? player.getName() : "null"));
         return player;
     }
-    
+
     @Override
     @NotNull
     public List<String> getSuggestions(@NotNull CommandSender sender) {
         List<String> result = new ArrayList<>();
-        
+
         // Add all online players
         for (Player player : Bukkit.getOnlinePlayers()) {
             result.add(player.getName());
         }
-        
+
         // Add @sender if sender is a player
         if (sender instanceof Player) {
-            result.add("@sender");
+            result.add(sender.getName());
         }
-        
+
         return result;
     }
-    
+
     @Override
     public boolean canParseSuggestion(@NotNull String source) {
-        return "@players".equals(source) || 
-               "@player".equals(source) ||
-               "@offlineplayers".equals(source) ||
-               "@allplayers".equals(source);
+        return "@players".equals(source) ||
+                "@player".equals(source) ||
+                "@offlineplayers".equals(source) ||
+                "@allplayers".equals(source);
     }
-    
+
     @Override
     @NotNull
     public List<String> parseSuggestion(@NotNull String source, @NotNull CommandSender sender) {
@@ -73,7 +79,7 @@ public class PlayerTypeParser implements TypeParser<Player> {
             case "@players":
             case "@player":
                 return getSuggestions(sender);
-                
+
             case "@offlineplayers":
                 List<String> offlineResult = new ArrayList<>();
                 for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
@@ -82,7 +88,7 @@ public class PlayerTypeParser implements TypeParser<Player> {
                     }
                 }
                 return offlineResult;
-                
+
             case "@allplayers":
                 List<String> allResult = new ArrayList<>();
                 // Add online players
@@ -97,15 +103,15 @@ public class PlayerTypeParser implements TypeParser<Player> {
                 }
                 // Add @sender if applicable
                 if (sender instanceof Player) {
-                    allResult.add("@sender");
+                    allResult.add(sender.getName());
                 }
                 return allResult;
-                
+
             default:
                 return getSuggestions(sender);
         }
     }
-    
+
     @Override
     public int getPriority() {
         return 50;

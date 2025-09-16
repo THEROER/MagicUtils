@@ -5,18 +5,20 @@ import java.lang.annotation.*;
 /**
  * Adds a comment to a configuration field in the generated YAML file.
  */
-@Target({ElementType.FIELD, ElementType.TYPE})
+@Target({ ElementType.FIELD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Comment {
     /**
      * Comment text. Can be multiline.
+     * 
      * @return the comment text
      */
     String value();
-    
+
     /**
      * Whether to place comment above (true) or inline (false).
+     * 
      * @return true for above, false for inline
      */
     boolean above() default true;

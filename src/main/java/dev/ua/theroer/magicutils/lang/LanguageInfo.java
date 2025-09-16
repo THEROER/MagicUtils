@@ -8,12 +8,13 @@ public class LanguageInfo {
     private final String name;
     private final String author;
     private final String version;
-    
+
     /**
      * Creates language information.
-     * @param code the language code
-     * @param name the display name
-     * @param author the author/translator
+     * 
+     * @param code    the language code
+     * @param name    the display name
+     * @param author  the author/translator
      * @param version the version
      */
     public LanguageInfo(String code, String name, String author, String version) {
@@ -22,12 +23,43 @@ public class LanguageInfo {
         this.author = author;
         this.version = version;
     }
-    
-    public String getCode() { return code; }
-    public String getName() { return name; }
-    public String getAuthor() { return author; }
-    public String getVersion() { return version; }
-    
+
+    /**
+     * Gets the ISO language code.
+     * 
+     * @return the ISO language code
+     */
+    public String getCode() {
+        return code;
+    }
+
+    /**
+     * Gets the display name of the language.
+     * 
+     * @return the display name of the language
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Gets the author of the language.
+     * 
+     * @return the author of the language
+     */
+    public String getAuthor() {
+        return author;
+    }
+
+    /**
+     * Gets the version of the language.
+     * 
+     * @return the version of the language
+     */
+    public String getVersion() {
+        return version;
+    }
+
     @Override
     public String toString() {
         return name + " (" + code + ") by " + author + " v" + version;

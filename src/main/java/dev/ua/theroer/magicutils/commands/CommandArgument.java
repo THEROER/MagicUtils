@@ -6,7 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Represents a command argument with its properties and permission requirements.
+ * Represents a command argument with its properties and permission
+ * requirements.
  */
 public class CommandArgument {
     private final String name;
@@ -31,47 +32,79 @@ public class CommandArgument {
 
     /**
      * Gets the argument name.
+     * 
      * @return the argument name
      */
-    public String getName() { return name; }
+    public String getName() {
+        return name;
+    }
+
     /**
      * Gets the argument type.
+     * 
      * @return the argument type
      */
-    public Class<?> getType() { return type; }
+    public Class<?> getType() {
+        return type;
+    }
+
     /**
      * Checks if the argument is optional.
+     * 
      * @return true if optional
      */
-    public boolean isOptional() { return optional; }
+    public boolean isOptional() {
+        return optional;
+    }
+
     /**
      * Gets the default value for the argument.
+     * 
      * @return the default value
      */
-    public String getDefaultValue() { return defaultValue; }
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
     /**
      * Gets the list of suggestions for the argument.
+     * 
      * @return the suggestions list
      */
-    public List<String> getSuggestions() { return new ArrayList<>(suggestions); }
+    public List<String> getSuggestions() {
+        return new ArrayList<>(suggestions);
+    }
+
     /**
      * Gets the required permission for the argument.
+     * 
      * @return the permission string
      */
-    public String getPermission() { return permission; }
+    public String getPermission() {
+        return permission;
+    }
+
     /**
      * Gets the permission condition for the argument.
+     * 
      * @return the permission condition
      */
-    public String getPermissionCondition() { return permissionCondition; }
+    public String getPermissionCondition() {
+        return permissionCondition;
+    }
+
     /**
      * Gets the permission denied message for the argument.
+     * 
      * @return the permission message
      */
-    public String getPermissionMessage() { return permissionMessage; }
+    public String getPermissionMessage() {
+        return permissionMessage;
+    }
 
     /**
      * Checks if argument has permission.
+     * 
      * @return true if permission is set
      */
     public boolean hasPermission() {
@@ -80,6 +113,7 @@ public class CommandArgument {
 
     /**
      * Checks if argument has permission condition.
+     * 
      * @return true if permission condition is set
      */
     public boolean hasPermissionCondition() {
@@ -88,6 +122,7 @@ public class CommandArgument {
 
     /**
      * Checks if argument contains specific suggestion.
+     * 
      * @param suggestion the suggestion to check
      * @return true if suggestion exists
      */
@@ -97,6 +132,7 @@ public class CommandArgument {
 
     /**
      * Creates a builder for CommandArgument.
+     * 
      * @param name the argument name
      * @param type the argument type
      * @return a new Builder instance
@@ -120,6 +156,7 @@ public class CommandArgument {
 
         /**
          * Constructs a new Builder for CommandArgument.
+         * 
          * @param name the argument name
          * @param type the argument type
          */
@@ -130,6 +167,7 @@ public class CommandArgument {
 
         /**
          * Sets the argument as optional.
+         * 
          * @return this builder
          */
         public Builder optional() {
@@ -139,6 +177,7 @@ public class CommandArgument {
 
         /**
          * Sets the default value for the argument.
+         * 
          * @param defaultValue the default value
          * @return this builder
          */
@@ -150,6 +189,7 @@ public class CommandArgument {
 
         /**
          * Adds suggestions for the argument.
+         * 
          * @param suggestions the suggestions
          * @return this builder
          */
@@ -160,6 +200,7 @@ public class CommandArgument {
 
         /**
          * Adds suggestions for the argument.
+         * 
          * @param suggestions the suggestions list
          * @return this builder
          */
@@ -170,6 +211,7 @@ public class CommandArgument {
 
         /**
          * Sets the required permission for the argument.
+         * 
          * @param permission the permission string
          * @return this builder
          */
@@ -180,6 +222,7 @@ public class CommandArgument {
 
         /**
          * Sets the permission condition for the argument.
+         * 
          * @param condition the permission condition
          * @return this builder
          */
@@ -190,6 +233,7 @@ public class CommandArgument {
 
         /**
          * Sets the permission denied message for the argument.
+         * 
          * @param message the permission message
          * @return this builder
          */
@@ -200,6 +244,7 @@ public class CommandArgument {
 
         /**
          * Builds the CommandArgument instance.
+         * 
          * @return the CommandArgument
          */
         public CommandArgument build() {

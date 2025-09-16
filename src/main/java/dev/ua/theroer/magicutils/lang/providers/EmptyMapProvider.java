@@ -8,6 +8,12 @@ import java.util.Map;
  * Empty map provider
  */
 public class EmptyMapProvider implements DefaultValueProvider<Map<String, String>> {
+    /**
+     * Default constructor for EmptyMapProvider.
+     */
+    public EmptyMapProvider() {
+    }
+
     @Override
     public Map<String, String> provide() {
         return new HashMap<>();

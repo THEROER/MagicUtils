@@ -19,20 +19,23 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Bukkit command wrapper for integrating custom command logic with Bukkit's command system.
+ * Bukkit command wrapper for integrating custom command logic with Bukkit's
+ * command system.
  */
 public class BukkitCommandWrapper extends Command {
     private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
     private final CommandManager commandManager;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private String detailedUsage;
 
     /**
      * Constructs a new BukkitCommandWrapper.
-     * @param name the command name
+     * 
+     * @param name           the command name
      * @param commandManager the command manager
-     * @param aliases the command aliases
+     * @param aliases        the command aliases
      */
     public BukkitCommandWrapper(String name, CommandManager commandManager, List<String> aliases) {
         super(name);
@@ -44,18 +47,20 @@ public class BukkitCommandWrapper extends Command {
 
     /**
      * Executes the command.
-     * @param sender the command sender
+     * 
+     * @param sender       the command sender
      * @param commandLabel the command label
-     * @param args the command arguments
+     * @param args         the command arguments
      * @return true if the command was successful
      */
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         try {
-            PrefixedLoggerGen.debug(logger, "Executing command: " + commandLabel + " with args: " + Arrays.toString(args) + " by " + sender.getName());
-            
+            PrefixedLoggerGen.debug(logger, "Executing command: " + commandLabel + " with args: "
+                    + Arrays.toString(args) + " by " + sender.getName());
+
             CommandResult result = commandManager.execute(commandLabel, sender, Arrays.asList(args));
-            
+
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
                     if (sender instanceof Player) {
@@ -71,7 +76,7 @@ public class BukkitCommandWrapper extends Command {
                     }
                 }
             }
-            
+
             return result.isSuccess();
         } catch (Exception e) {
             LoggerGen.error("Error executing command " + commandLabel + ": " + e.getMessage());
@@ -87,26 +92,30 @@ public class BukkitCommandWrapper extends Command {
 
     /**
      * Provides tab completion for the command.
+     * 
      * @param sender the command sender
-     * @param alias the command alias
-     * @param args the command arguments
+     * @param alias  the command alias
+     * @param args   the command arguments
      * @return a list of tab completion suggestions
      */
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
+    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias,
+            @NotNull String[] args) {
         try {
-            PrefixedLoggerGen.debug(logger, "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
-            
+            PrefixedLoggerGen.debug(logger,
+                    "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+
             List<String> suggestions = commandManager.getSuggestions(alias, sender, Arrays.asList(args));
-            
+
             List<String> filteredSuggestions = new ArrayList<>();
             for (String suggestion : suggestions) {
                 if (suggestion != null && !suggestion.trim().isEmpty()) {
                     filteredSuggestions.add(suggestion);
                 }
             }
-            
-            PrefixedLoggerGen.debug(logger, "Generated " + filteredSuggestions.size() + " suggestions: " + filteredSuggestions);
+
+            PrefixedLoggerGen.debug(logger,
+                    "Generated " + filteredSuggestions.size() + " suggestions: " + filteredSuggestions);
             return filteredSuggestions;
         } catch (Exception e) {
             LoggerGen.error("Error generating tab completions for " + alias + ": " + e.getMessage());
@@ -114,19 +123,22 @@ public class BukkitCommandWrapper extends Command {
             return new ArrayList<>();
         }
     }
-    
+
     /**
      * Sets the permission for this command.
+     * 
      * @param permission the permission string
      */
     @Override
     public void setPermission(String permission) {
         super.setPermission(permission);
     }
-    
+
     /**
      * Sets the permission message for this command.
-     * Note: Permission messages do not work for player-executed commands since 1.13.
+     * Note: Permission messages do not work for player-executed commands since
+     * 1.13.
+     * 
      * @param permissionMessage the permission message
      */
     @SuppressWarnings("deprecation")

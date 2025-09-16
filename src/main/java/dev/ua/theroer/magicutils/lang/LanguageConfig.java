@@ -16,81 +16,109 @@ import java.util.Map;
 @ConfigFile("lang/{lang}.yml")
 @Comment("Language file for MagicUtils")
 public class LanguageConfig {
-    
+
+    /**
+     * Default constructor for LanguageConfig.
+     */
+    public LanguageConfig() {
+    }
+
     @ConfigSection("language")
     @Comment("Language metadata")
     private LanguageMetadata metadata = new LanguageMetadata();
-    
+
     @ConfigSection("magicutils.commands")
     @Comment("Command related messages")
     private CommandMessages commands = new CommandMessages();
-    
+
     @ConfigSection("magicutils.settings")
     @Comment("Settings command messages")
     private SettingsMessages settings = new SettingsMessages();
-    
+
     @ConfigSection("magicutils.reload")
     @Comment("Reload command messages")
     private ReloadMessages reload = new ReloadMessages();
-    
+
     @ConfigSection("magicutils.system")
     @Comment("System messages")
     private SystemMessages system = new SystemMessages();
-    
+
     @ConfigSection("magicutils.errors")
     @Comment("Error messages")
     private ErrorMessages errors = new ErrorMessages();
-    
+
     @ConfigValue("messages")
     @Comment("Custom messages defined by plugins")
     @DefaultValue(provider = EmptyMapProvider.class)
     private Map<String, String> customMessages = new HashMap<>();
-    
+
     // Getters
     /**
      * Gets the language metadata.
+     * 
      * @return the language metadata instance
      */
-    public LanguageMetadata getMetadata() { return metadata; }
-    
+    public LanguageMetadata getMetadata() {
+        return metadata;
+    }
+
     /**
      * Gets the command messages configuration.
+     * 
      * @return the command messages instance
      */
-    public CommandMessages getCommands() { return commands; }
-    
+    public CommandMessages getCommands() {
+        return commands;
+    }
+
     /**
      * Gets the settings messages configuration.
+     * 
      * @return the settings messages instance
      */
-    public SettingsMessages getSettings() { return settings; }
-    
+    public SettingsMessages getSettings() {
+        return settings;
+    }
+
     /**
      * Gets the reload messages configuration.
+     * 
      * @return the reload messages instance
      */
-    public ReloadMessages getReload() { return reload; }
-    
+    public ReloadMessages getReload() {
+        return reload;
+    }
+
     /**
      * Gets the system messages configuration.
+     * 
      * @return the system messages instance
      */
-    public SystemMessages getSystem() { return system; }
-    
+    public SystemMessages getSystem() {
+        return system;
+    }
+
     /**
      * Gets the error messages configuration.
+     * 
      * @return the error messages instance
      */
-    public ErrorMessages getErrors() { return errors; }
-    
+    public ErrorMessages getErrors() {
+        return errors;
+    }
+
     /**
      * Gets the custom messages map.
+     * 
      * @return map of custom message keys to values
      */
-    public Map<String, String> getCustomMessages() { return customMessages; }
-    
+    public Map<String, String> getCustomMessages() {
+        return customMessages;
+    }
+
     /**
-     * Gets a message by its key. First checks custom messages, then internal messages.
+     * Gets a message by its key. First checks custom messages, then internal
+     * messages.
      * For internal messages, the key format should be 'magicutils.category.key'.
      * 
      * @param key the message key in format 'magicutils.category.key' or custom key
@@ -101,20 +129,26 @@ public class LanguageConfig {
         if (customMessages.containsKey(key)) {
             return customMessages.get(key);
         }
-        
+
         // Check internal messages
         String[] parts = key.split("\\.", 3);
         if (parts.length < 3 || !parts[0].equals("magicutils")) {
             return null;
         }
-        
+
         switch (parts[1]) {
-            case "commands": return commands.getMessage(parts[2]);
-            case "settings": return settings.getMessage(parts[2]);
-            case "reload": return reload.getMessage(parts[2]);
-            case "system": return system.getMessage(parts[2]);
-            case "errors": return errors.getMessage(parts[2]);
-            default: return null;
+            case "commands":
+                return commands.getMessage(parts[2]);
+            case "settings":
+                return settings.getMessage(parts[2]);
+            case "reload":
+                return reload.getMessage(parts[2]);
+            case "system":
+                return system.getMessage(parts[2]);
+            case "errors":
+                return errors.getMessage(parts[2]);
+            default:
+                return null;
         }
     }
 }

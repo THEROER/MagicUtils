@@ -11,6 +11,7 @@ import java.lang.annotation.*;
 public @interface ListProcessor {
     /**
      * Processor class that implements ListItemProcessor.
+     * 
      * @return the processor class
      */
     Class<? extends ListItemProcessor> value();

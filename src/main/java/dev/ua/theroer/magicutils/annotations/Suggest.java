@@ -13,14 +13,17 @@ import java.lang.annotation.Target;
 public @interface Suggest {
     /**
      * Sources of suggestions for autocomplete.
-     * Can contain method names, special arguments, static lists, or combined sources.
+     * Can contain method names, special arguments, static lists, or combined
+     * sources.
+     * 
      * @return the suggestion sources
      */
     String[] value();
-    
+
     /**
      * Whether permission is required to display suggestions.
      * If true, permission will be checked for each suggestion.
+     * 
      * @return true if permission is required for suggestions
      */
     boolean permission() default false;

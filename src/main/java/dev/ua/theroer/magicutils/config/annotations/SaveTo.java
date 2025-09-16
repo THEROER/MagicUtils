@@ -12,6 +12,7 @@ public @interface SaveTo {
     /**
      * Path to the file where this field should be saved.
      * Relative to plugin's data folder.
+     * 
      * @return the file path
      */
     String value();

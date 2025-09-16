@@ -21,7 +21,7 @@ public enum InternalMessages {
     CMD_NOT_FOUND("commands.not_found"),
     /** Message key for internal command error */
     CMD_INTERNAL_ERROR("commands.internal_error"),
-    
+
     // Settings command
     /** Message key for language manager not initialized */
     SETTINGS_LANG_NOT_INIT("settings.language_not_initialized"),
@@ -39,7 +39,7 @@ public enum InternalMessages {
     SETTINGS_KEY_VALUE("settings.key_value"),
     /** Message key for key set confirmation */
     SETTINGS_KEY_SET("settings.key_set"),
-    
+
     // Reload command
     /** Message key for all commands reloaded */
     RELOAD_ALL_COMMANDS("reload.all_commands"),
@@ -53,7 +53,7 @@ public enum InternalMessages {
     RELOAD_GLOBAL_SETTINGS("reload.global_settings"),
     /** Message key for single global setting reloaded */
     RELOAD_GLOBAL_SETTING("reload.global_setting"),
-    
+
     // System messages
     /** Message key for language loaded successfully */
     SYS_LOADED_LANGUAGE("system.loaded_language"),
@@ -79,7 +79,7 @@ public enum InternalMessages {
     SYS_GENERATED_PERMISSIONS("system.generated_permissions"),
     /** Message key for command unregistration */
     SYS_UNREGISTERED_COMMAND("system.unregistered_command"),
-    
+
     // Error messages
     /** Message key for message not set error */
     ERR_MESSAGE_NOT_SET("errors.message_not_set"),
@@ -95,24 +95,27 @@ public enum InternalMessages {
     ERR_MISSING_CONFIGFILE("errors.missing_configfile"),
     /** Message key for required config value missing */
     ERR_REQUIRED_CONFIG_MISSING("errors.required_config_missing");
-    
+
     private final String key;
-    
+
     InternalMessages(String key) {
         this.key = key;
     }
-    
+
     /**
      * Gets the full message key with namespace prefix.
+     * 
      * @return the full message key in format "magicutils.{key}"
      */
     public String getKey() {
         return "magicutils." + key;
     }
-    
+
     /**
      * Gets the localized message for this key.
-     * First tries to get from the Messages system if available, otherwise returns the default hardcoded message.
+     * First tries to get from the Messages system if available, otherwise returns
+     * the default hardcoded message.
+     * 
      * @return the localized message string
      */
     public String get() {
@@ -123,15 +126,18 @@ public enum InternalMessages {
                 return message;
             }
         }
-        
+
         // Fallback to hardcoded defaults
         return getDefaultMessage();
     }
-    
+
     /**
      * Gets the localized message for this key with placeholder replacements.
-     * First tries to get from the Messages system if available, otherwise uses the default hardcoded message.
-     * @param replacements key-value pairs for placeholder replacement (key1, value1, key2, value2, ...)
+     * First tries to get from the Messages system if available, otherwise uses the
+     * default hardcoded message.
+     * 
+     * @param replacements key-value pairs for placeholder replacement (key1,
+     *                     value1, key2, value2, ...)
      * @return the localized message string with placeholders replaced
      */
     public String get(String... replacements) {
@@ -142,7 +148,7 @@ public enum InternalMessages {
                 return message;
             }
         }
-        
+
         // Fallback to hardcoded defaults with replacements
         String message = getDefaultMessage();
         for (int i = 0; i < replacements.length - 1; i += 2) {
@@ -150,64 +156,106 @@ public enum InternalMessages {
         }
         return message;
     }
-    
+
     /**
      * Get default hardcoded message
      */
     private String getDefaultMessage() {
         switch (this) {
             // Command messages
-            case CMD_NO_PERMISSION: return "&cYou don't have permission to execute this command!";
-            case CMD_EXECUTION_ERROR: return "&cAn error occurred while executing the command";
-            case CMD_EXECUTED: return "&aCommand executed successfully";
-            case CMD_SPECIFY_SUBCOMMAND: return "&eSpecify a subcommand: &f{subcommands}";
-            case CMD_UNKNOWN_SUBCOMMAND: return "&cUnknown subcommand: &f{subcommand}";
-            case CMD_INVALID_ARGUMENTS: return "&cInvalid command arguments";
-            case CMD_NOT_FOUND: return "&cCommand not found";
-            case CMD_INTERNAL_ERROR: return "&cAn internal error occurred while executing the command";
-            
+            case CMD_NO_PERMISSION:
+                return "&cYou don't have permission to execute this command!";
+            case CMD_EXECUTION_ERROR:
+                return "&cAn error occurred while executing the command";
+            case CMD_EXECUTED:
+                return "&aCommand executed successfully";
+            case CMD_SPECIFY_SUBCOMMAND:
+                return "&eSpecify a subcommand: &f{subcommands}";
+            case CMD_UNKNOWN_SUBCOMMAND:
+                return "&cUnknown subcommand: &f{subcommand}";
+            case CMD_INVALID_ARGUMENTS:
+                return "&cInvalid command arguments";
+            case CMD_NOT_FOUND:
+                return "&cCommand not found";
+            case CMD_INTERNAL_ERROR:
+                return "&cAn internal error occurred while executing the command";
+
             // Settings command
-            case SETTINGS_LANG_NOT_INIT: return "&cLanguage manager not initialized!";
-            case SETTINGS_INVALID_ARGS: return "&cInvalid arguments. First argument must be a language name when using 3 arguments.";
-            case SETTINGS_CURRENT_LANG: return "&aCurrent language: &f{language}";
-            case SETTINGS_AVAILABLE_LANGS: return "&aAvailable languages: &f{languages}";
-            case SETTINGS_LANG_NOT_FOUND: return "&cLanguage '&f{language}&c' not found!";
-            case SETTINGS_KEY_NOT_FOUND: return "&cKey '&f{key}&c' not found in language '&f{language}&c'";
-            case SETTINGS_KEY_VALUE: return "&aLanguage: &f{language}\n&aKey: &f{key}\n&aValue: &f{value}";
-            case SETTINGS_KEY_SET: return "&aSet key '&f{key}&a' to '&f{value}&a' in language '&f{language}&a'";
-            
+            case SETTINGS_LANG_NOT_INIT:
+                return "&cLanguage manager not initialized!";
+            case SETTINGS_INVALID_ARGS:
+                return "&cInvalid arguments. First argument must be a language name when using 3 arguments.";
+            case SETTINGS_CURRENT_LANG:
+                return "&aCurrent language: &f{language}";
+            case SETTINGS_AVAILABLE_LANGS:
+                return "&aAvailable languages: &f{languages}";
+            case SETTINGS_LANG_NOT_FOUND:
+                return "&cLanguage '&f{language}&c' not found!";
+            case SETTINGS_KEY_NOT_FOUND:
+                return "&cKey '&f{key}&c' not found in language '&f{language}&c'";
+            case SETTINGS_KEY_VALUE:
+                return "&aLanguage: &f{language}\n&aKey: &f{key}\n&aValue: &f{value}";
+            case SETTINGS_KEY_SET:
+                return "&aSet key '&f{key}&a' to '&f{value}&a' in language '&f{language}&a'";
+
             // Reload command
-            case RELOAD_ALL_COMMANDS: return "&aAll commands reloaded!";
-            case RELOAD_COMMAND: return "&aCommand &f{command} &areloaded!";
-            case RELOAD_ALL_SECTIONS: return "&aAll sections reloaded!";
-            case RELOAD_SECTION: return "&aSection &f{section} &areloaded!";
-            case RELOAD_GLOBAL_SETTINGS: return "&aGlobal settings reloaded!";
-            case RELOAD_GLOBAL_SETTING: return "&aGlobal setting &f{setting} &areloaded!";
-            
+            case RELOAD_ALL_COMMANDS:
+                return "&aAll commands reloaded!";
+            case RELOAD_COMMAND:
+                return "&aCommand &f{command} &areloaded!";
+            case RELOAD_ALL_SECTIONS:
+                return "&aAll sections reloaded!";
+            case RELOAD_SECTION:
+                return "&aSection &f{section} &areloaded!";
+            case RELOAD_GLOBAL_SETTINGS:
+                return "&aGlobal settings reloaded!";
+            case RELOAD_GLOBAL_SETTING:
+                return "&aGlobal setting &f{setting} &areloaded!";
+
             // System messages
-            case SYS_LOADED_LANGUAGE: return "Loaded language: {language}";
-            case SYS_FAILED_LOAD_LANGUAGE: return "Failed to load language: {language}";
-            case SYS_FAILED_SAVE_MESSAGES: return "Failed to save custom messages for language: {language}";
-            case SYS_CREATED_DEFAULT_CONFIG: return "Created default config: {file}";
-            case SYS_SECTION_NOT_RELOADABLE: return "Section not reloadable: {section}";
-            case SYS_COMMAND_REGISTERED: return "Successfully registered command: {command} with aliases: {aliases}";
-            case SYS_COMMAND_USAGE: return "Command usage: {usage}";
-            case SYS_SUBCOMMAND_USAGES: return "Subcommand usages:";
-            case SYS_ALIAS_REGISTERED: return "Successfully registered alias: {alias} for command: {command}";
-            case SYS_ALIAS_USAGE: return "Alias usage: {usage}";
-            case SYS_GENERATED_PERMISSIONS: return "Generated permissions for {command}: {permissions}";
-            case SYS_UNREGISTERED_COMMAND: return "Unregistered command: {command}";
-            
+            case SYS_LOADED_LANGUAGE:
+                return "Loaded language: {language}";
+            case SYS_FAILED_LOAD_LANGUAGE:
+                return "Failed to load language: {language}";
+            case SYS_FAILED_SAVE_MESSAGES:
+                return "Failed to save custom messages for language: {language}";
+            case SYS_CREATED_DEFAULT_CONFIG:
+                return "Created default config: {file}";
+            case SYS_SECTION_NOT_RELOADABLE:
+                return "Section not reloadable: {section}";
+            case SYS_COMMAND_REGISTERED:
+                return "Successfully registered command: {command} with aliases: {aliases}";
+            case SYS_COMMAND_USAGE:
+                return "Command usage: {usage}";
+            case SYS_SUBCOMMAND_USAGES:
+                return "Subcommand usages:";
+            case SYS_ALIAS_REGISTERED:
+                return "Successfully registered alias: {alias} for command: {command}";
+            case SYS_ALIAS_USAGE:
+                return "Alias usage: {usage}";
+            case SYS_GENERATED_PERMISSIONS:
+                return "Generated permissions for {command}: {permissions}";
+            case SYS_UNREGISTERED_COMMAND:
+                return "Unregistered command: {command}";
+
             // Error messages
-            case ERR_MESSAGE_NOT_SET: return "Message must be set before sending";
-            case ERR_FAILED_GET_COMMANDMAP: return "Failed to get CommandMap";
-            case ERR_REGISTRY_NOT_INITIALIZED: return "CommandRegistry not initialized! Call initialize() first.";
-            case ERR_COMMANDMAP_NOT_AVAILABLE: return "CommandMap not available!";
-            case ERR_MISSING_COMMANDINFO: return "Command class must have @CommandInfo annotation: {class}";
-            case ERR_MISSING_CONFIGFILE: return "Class {class} must have @ConfigFile annotation";
-            case ERR_REQUIRED_CONFIG_MISSING: return "Required config value missing: {path}";
-            
-            default: return getKey();
+            case ERR_MESSAGE_NOT_SET:
+                return "Message must be set before sending";
+            case ERR_FAILED_GET_COMMANDMAP:
+                return "Failed to get CommandMap";
+            case ERR_REGISTRY_NOT_INITIALIZED:
+                return "CommandRegistry not initialized! Call initialize() first.";
+            case ERR_COMMANDMAP_NOT_AVAILABLE:
+                return "CommandMap not available!";
+            case ERR_MISSING_COMMANDINFO:
+                return "Command class must have @CommandInfo annotation: {class}";
+            case ERR_MISSING_CONFIGFILE:
+                return "Class {class} must have @ConfigFile annotation";
+            case ERR_REQUIRED_CONFIG_MISSING:
+                return "Required config value missing: {path}";
+
+            default:
+                return getKey();
         }
     }
 }

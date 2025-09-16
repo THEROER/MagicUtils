@@ -15,10 +15,11 @@ public class CommandResult {
 
     /**
      * Creates a new CommandResult.
-     * @param success whether the command was successful
-     * @param message the result message
+     * 
+     * @param success     whether the command was successful
+     * @param message     the result message
      * @param sendMessage whether to send the message
-     * @param sendPrefix whether to send the prefix
+     * @param sendPrefix  whether to send the prefix
      */
     private CommandResult(boolean success, String message, boolean sendMessage, boolean sendPrefix) {
         this.success = success;
@@ -29,6 +30,7 @@ public class CommandResult {
 
     /**
      * Creates a successful CommandResult with no message.
+     * 
      * @return a successful CommandResult
      */
     public static CommandResult success() {
@@ -37,6 +39,7 @@ public class CommandResult {
 
     /**
      * Creates a successful CommandResult with a message.
+     * 
      * @param message the result message
      * @return a successful CommandResult
      */
@@ -46,7 +49,8 @@ public class CommandResult {
 
     /**
      * Creates a successful CommandResult with a message and prefix option.
-     * @param message the result message
+     * 
+     * @param message    the result message
      * @param sendPrefix whether to send the prefix
      * @return a successful CommandResult
      */
@@ -56,8 +60,9 @@ public class CommandResult {
 
     /**
      * Creates a successful CommandResult with message and sendMessage option.
+     * 
      * @param sendMessage whether to send the message
-     * @param message the result message
+     * @param message     the result message
      * @return a successful CommandResult
      */
     public static CommandResult success(boolean sendMessage, String message) {
@@ -66,6 +71,7 @@ public class CommandResult {
 
     /**
      * Creates a failed CommandResult with a message.
+     * 
      * @param message the failure message
      * @return a failed CommandResult
      */
@@ -75,7 +81,8 @@ public class CommandResult {
 
     /**
      * Creates a failed CommandResult with a message and prefix option.
-     * @param message the failure message
+     * 
+     * @param message    the failure message
      * @param sendPrefix whether to send the prefix
      * @return a failed CommandResult
      */
@@ -85,6 +92,7 @@ public class CommandResult {
 
     /**
      * Creates a failed CommandResult with a sendMessage option.
+     * 
      * @param sendMessage whether to send the message
      * @return a failed CommandResult
      */
@@ -94,9 +102,10 @@ public class CommandResult {
 
     /**
      * Creates a CommandResult for a not found command.
+     * 
      * @return a not found CommandResult
      */
     public static CommandResult notFound() {
         return new CommandResult(false, InternalMessages.CMD_NOT_FOUND.get(), true, true);
     }
-} 
+}
