@@ -758,7 +758,7 @@ public class CommandManager {
         if (argument.getSuggestions().isEmpty()) {
             PrefixedLoggerGen.debug(logger,
                     "No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
-            List<String> typeSuggestions = typeParserRegistry.getSuggestionsForTypeFiltered(argument.getType(),
+            List<String> typeSuggestions = typeParserRegistry.getSuggestionsForArgumentFiltered(argument,
                     currentInput, sender);
             if (!typeSuggestions.isEmpty()) {
                 PrefixedLoggerGen.debug(logger, "Got " + typeSuggestions.size() + " suggestions from type parser");
@@ -835,6 +835,10 @@ public class CommandManager {
         } catch (Exception e) {
             PrefixedLoggerGen.debug(logger,
                     "Failed to call suggestion method " + source + " with Player parameter: " + e.getMessage());
+        }
+
+        if ("@sender".equalsIgnoreCase(source)) {
+            return Collections.emptyList();
         }
 
         return Arrays.asList("");

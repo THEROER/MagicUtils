@@ -72,11 +72,6 @@ public class OfflinePlayerTypeParser implements TypeParser<OfflinePlayer> {
             }
         }
 
-        // Add @sender if sender is a player
-        if (sender instanceof Player) {
-            result.add("@sender");
-        }
-
         return result;
     }
 

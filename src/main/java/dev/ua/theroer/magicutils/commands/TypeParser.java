@@ -44,6 +44,18 @@ public interface TypeParser<T> {
     List<String> getSuggestions(@NotNull CommandSender sender);
 
     /**
+     * Gets suggestions for this type with access to the argument metadata.
+     *
+     * @param sender   the command sender for context
+     * @param argument the command argument (may be null)
+     * @return list of suggestions
+     */
+    @NotNull
+    default List<String> getSuggestions(@NotNull CommandSender sender, @Nullable CommandArgument argument) {
+        return getSuggestions(sender);
+    }
+
+    /**
      * Gets filtered suggestions based on current input.
      * 
      * @param currentInput the current user input for filtering
@@ -51,13 +63,16 @@ public interface TypeParser<T> {
      * @return filtered list of suggestions
      */
     @NotNull
-    default List<String> getSuggestionsFiltered(@NotNull String currentInput, @NotNull CommandSender sender) {
+    default List<String> getSuggestionsFiltered(@Nullable String currentInput, @NotNull CommandSender sender,
+            @Nullable CommandArgument argument) {
+        List<String> base = getSuggestions(sender, argument);
         if (currentInput == null || currentInput.isEmpty()) {
-            return getSuggestions(sender);
+            return base;
         }
 
-        return getSuggestions(sender).stream()
-                .filter(suggestion -> suggestion.toLowerCase().startsWith(currentInput.toLowerCase()))
+        final String lowered = currentInput.toLowerCase();
+        return base.stream()
+                .filter(suggestion -> suggestion != null && suggestion.toLowerCase().startsWith(lowered))
                 .collect(Collectors.toList());
     }
 

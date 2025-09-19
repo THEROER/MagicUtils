@@ -1,10 +1,12 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
+import dev.ua.theroer.magicutils.commands.CommandArgument;
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -58,8 +60,37 @@ public class BooleanTypeParser implements TypeParser<Boolean> {
      */
     @Override
     @NotNull
+    public List<String> getSuggestions(@NotNull CommandSender sender, @Nullable CommandArgument argument) {
+        List<String> base = new ArrayList<>(Arrays.asList("true", "false"));
+
+        if (argument != null) {
+            String defaultValue = argument.getDefaultValue();
+            if (defaultValue != null) {
+                String normalized = normalize(defaultValue);
+                if (normalized != null) {
+                    base.remove(normalized);
+                    base.add(0, normalized);
+                }
+            }
+        }
+
+        return base;
+    }
+
+    @Override
     public List<String> getSuggestions(@NotNull CommandSender sender) {
-        return Arrays.asList("true", "false");
+        return getSuggestions(sender, null);
+    }
+
+    private String normalize(String value) {
+        String lower = value.toLowerCase();
+        if ("true".equals(lower) || "yes".equals(lower) || "on".equals(lower) || "1".equals(lower)) {
+            return "true";
+        }
+        if ("false".equals(lower) || "no".equals(lower) || "off".equals(lower) || "0".equals(lower)) {
+            return "false";
+        }
+        return null;
     }
 
     /**
@@ -96,7 +127,7 @@ public class BooleanTypeParser implements TypeParser<Boolean> {
             case "{on,off,toggle}":
                 return Arrays.asList("on", "off", "toggle");
             default:
-                return getSuggestions(sender);
+                return getSuggestions(sender, null);
         }
     }
 

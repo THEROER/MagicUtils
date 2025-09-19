@@ -60,6 +60,15 @@ public class TypeParserRegistry {
     }
 
     /**
+     * Registers a list of type parsers.
+     * 
+     * @param parsers the list of parsers to register
+     */
+    public void registerAll(@NotNull List<TypeParser<?>> parsers) {
+        parsers.forEach(this::register);
+    }
+
+    /**
      * Parses a value to the specified type using registered parsers.
      * 
      * @param <T>        the type to parse to
@@ -104,24 +113,19 @@ public class TypeParserRegistry {
      */
     @NotNull
     public List<String> getSuggestionsForType(@NotNull Class<?> targetType, @NotNull CommandSender sender) {
-        PrefixedLoggerGen.debug(logger, "Getting suggestions for type: " + targetType.getSimpleName());
+        return getSuggestionsInternal(targetType, sender, null);
+    }
 
-        for (TypeParser<?> parser : parsers) {
-            if (parser.canParse(targetType)) {
-                PrefixedLoggerGen.debug(logger, "Using parser for suggestions: " + parser.getClass().getSimpleName());
-                try {
-                    List<String> suggestions = parser.getSuggestions(sender);
-                    PrefixedLoggerGen.debug(logger, "Got " + suggestions.size() + " suggestions");
-                    return suggestions;
-                } catch (Exception e) {
-                    PrefixedLoggerGen.debug(logger, "Parser " + parser.getClass().getSimpleName()
-                            + " failed to get suggestions: " + e.getMessage());
-                }
-            }
-        }
-
-        PrefixedLoggerGen.debug(logger, "No suitable parser found for suggestions");
-        return new ArrayList<>();
+    /**
+     * Gets suggestions for the provided argument.
+     *
+     * @param argument the command argument metadata
+     * @param sender   the command sender for context
+     * @return list of suggestions
+     */
+    @NotNull
+    public List<String> getSuggestionsForArgument(@NotNull CommandArgument argument, @NotNull CommandSender sender) {
+        return getSuggestionsInternal(argument.getType(), sender, argument);
     }
 
     /**
@@ -152,6 +156,9 @@ public class TypeParserRegistry {
         }
 
         PrefixedLoggerGen.debug(logger, "No suitable parser found for suggestion source: " + source);
+        if ("@sender".equalsIgnoreCase(source)) {
+            return new ArrayList<>();
+        }
         return Arrays.asList(source); // Fallback to original source
     }
 
@@ -191,15 +198,57 @@ public class TypeParserRegistry {
     @NotNull
     public List<String> getSuggestionsForTypeFiltered(@NotNull Class<?> targetType, @NotNull String currentInput,
             @NotNull CommandSender sender) {
-        List<String> suggestions = getSuggestionsForType(targetType, sender);
+        return getSuggestionsForTypeFiltered(targetType, currentInput, sender, null);
+    }
+
+    /**
+     * Gets filtered suggestions for the provided argument.
+     *
+     * @param argument     the command argument metadata
+     * @param currentInput current user input
+     * @param sender       the command sender
+     * @return filtered list of suggestions
+     */
+    @NotNull
+    public List<String> getSuggestionsForArgumentFiltered(@NotNull CommandArgument argument,
+            @NotNull String currentInput, @NotNull CommandSender sender) {
+        return getSuggestionsForTypeFiltered(argument.getType(), currentInput, sender, argument);
+    }
+
+    private List<String> getSuggestionsForTypeFiltered(@NotNull Class<?> targetType, @Nullable String currentInput,
+            @NotNull CommandSender sender, @Nullable CommandArgument argument) {
+        List<String> suggestions = getSuggestionsInternal(targetType, sender, argument);
 
         if (currentInput == null || currentInput.isEmpty()) {
             return suggestions;
         }
 
+        final String lowered = currentInput.toLowerCase();
         return suggestions.stream()
-                .filter(suggestion -> suggestion.toLowerCase().startsWith(currentInput.toLowerCase()))
+                .filter(suggestion -> suggestion != null && suggestion.toLowerCase().startsWith(lowered))
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    private List<String> getSuggestionsInternal(@NotNull Class<?> targetType, @NotNull CommandSender sender,
+            @Nullable CommandArgument argument) {
+        PrefixedLoggerGen.debug(logger, "Getting suggestions for type: " + targetType.getSimpleName());
+
+        for (TypeParser<?> parser : parsers) {
+            if (parser.canParse(targetType)) {
+                PrefixedLoggerGen.debug(logger, "Using parser for suggestions: " + parser.getClass().getSimpleName());
+                try {
+                    List<String> suggestions = parser.getSuggestions(sender, argument);
+                    PrefixedLoggerGen.debug(logger, "Got " + suggestions.size() + " suggestions");
+                    return suggestions;
+                } catch (Exception e) {
+                    PrefixedLoggerGen.debug(logger, "Parser " + parser.getClass().getSimpleName()
+                            + " failed to get suggestions: " + e.getMessage());
+                }
+            }
+        }
+
+        PrefixedLoggerGen.debug(logger, "No suitable parser found for suggestions");
+        return new ArrayList<>();
     }
 
     /**
