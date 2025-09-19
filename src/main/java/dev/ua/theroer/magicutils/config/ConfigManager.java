@@ -168,59 +168,19 @@ public class ConfigManager {
             // Handle @ConfigValue
             ConfigValue configValue = field.getAnnotation(ConfigValue.class);
             if (configValue != null) {
-                // Get default value
-                Object defaultValue = getDefaultValue(field);
+                Object defaultValue = field.get(instance);
+                if (defaultValue == null) {
+                    defaultValue = getDefaultValue(field);
+                }
+                if (defaultValue == null && field.getType().isPrimitive()) {
+                    defaultValue = getPrimitiveDefault(field.getType());
+                }
+
                 if (defaultValue != null) {
-                    // Serialize ConfigSerializable objects before saving
-                    Object valueToSave = defaultValue;
-
-                    // Handle List with ConfigSerializable values
-                    if (defaultValue instanceof List && field.getType().equals(List.class)) {
-                        ParameterizedType listType = (ParameterizedType) field.getGenericType();
-                        Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
-
-                        if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
-                            List<Map<String, Object>> serializedList = new ArrayList<>();
-                            @SuppressWarnings("unchecked")
-                            List<Object> list = (List<Object>) defaultValue;
-
-                            for (Object item : list) {
-                                if (item != null) {
-                                    serializedList.add(ConfigSerializer.serialize(item));
-                                }
-                            }
-                            valueToSave = serializedList;
-                        }
-                    }
-                    // Handle Map with ConfigSerializable values
-                    else if (defaultValue instanceof Map && field.getType().equals(Map.class)) {
-                        ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-                        Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
-
-                        if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
-                            Map<String, Object> serializedMap = new HashMap<>();
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> map = (Map<String, Object>) defaultValue;
-
-                            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                                if (entry.getValue() != null) {
-                                    serializedMap.put(entry.getKey(), ConfigSerializer.serialize(entry.getValue()));
-                                } else {
-                                    serializedMap.put(entry.getKey(), null);
-                                }
-                            }
-                            valueToSave = serializedMap;
-                        }
-                    }
-                    // Handle single ConfigSerializable objects
-                    else if (defaultValue.getClass().isAnnotationPresent(ConfigSerializable.class)) {
-                        valueToSave = ConfigSerializer.serialize(defaultValue);
-                    }
-
+                    Object valueToSave = prepareForYaml(defaultValue, field);
                     yaml.set(path, valueToSave);
-                    field.set(instance, defaultValue);
+                    field.set(instance, cloneIfNeeded(defaultValue));
 
-                    // Add comment
                     Comment comment = field.getAnnotation(Comment.class);
                     if (comment != null && comment.above()) {
                         yaml.setComments(path, Arrays.asList(comment.value().split("\n")));
@@ -270,10 +230,19 @@ public class ConfigManager {
     @SuppressWarnings("unchecked")
     private void loadFieldValue(Object instance, Field field, YamlConfiguration yaml, String path) throws Exception {
         if (!yaml.contains(path)) {
+            Object existingValue = field.get(instance);
+            if (existingValue != null) {
+                return;
+            }
+
             // Use default value
             Object defaultValue = getDefaultValue(field);
+            if (defaultValue == null && field.getType().isPrimitive()) {
+                defaultValue = getPrimitiveDefault(field.getType());
+            }
+
             if (defaultValue != null) {
-                field.set(instance, defaultValue);
+                field.set(instance, cloneIfNeeded(defaultValue));
             } else if (field.getAnnotation(ConfigValue.class).required()) {
                 throw new IllegalStateException(InternalMessages.ERR_REQUIRED_CONFIG_MISSING.get("path", path));
             }
@@ -363,7 +332,7 @@ public class ConfigManager {
             }
         }
 
-        field.set(instance, value);
+        field.set(instance, cloneIfNeeded(value));
     }
 
     /**
@@ -401,6 +370,91 @@ public class ConfigManager {
         }
 
         return result;
+    }
+
+    /**
+     * Converts a value to a YAML-friendly representation.
+     */
+    private Object prepareForYaml(Object value, Field field) throws Exception {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof List && List.class.isAssignableFrom(field.getType())) {
+            ParameterizedType listType = (ParameterizedType) field.getGenericType();
+            Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+            if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
+                List<Map<String, Object>> serializedList = new ArrayList<>();
+                for (Object item : (List<?>) value) {
+                    serializedList.add(item != null ? ConfigSerializer.serialize(item) : null);
+                }
+                return serializedList;
+            }
+        }
+
+        if (value instanceof Map && Map.class.isAssignableFrom(field.getType())) {
+            ParameterizedType mapType = (ParameterizedType) field.getGenericType();
+            Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
+            if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
+                Map<String, Object> serializedMap = new LinkedHashMap<>();
+                Map<?, ?> map = (Map<?, ?>) value;
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    Object entryValue = entry.getValue();
+                    serializedMap.put(String.valueOf(entry.getKey()),
+                            entryValue != null ? ConfigSerializer.serialize(entryValue) : null);
+                }
+                return serializedMap;
+            }
+        }
+
+        if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
+            return ConfigSerializer.serialize(value);
+        }
+
+        return value;
+    }
+
+    /**
+     * Clones mutable values to prevent shared state.
+     */
+    @SuppressWarnings("unchecked")
+    private Object cloneIfNeeded(Object value) {
+        if (value instanceof List<?>) {
+            List<Object> copy = new ArrayList<>();
+            for (Object item : (List<Object>) value) {
+                copy.add(cloneIfNeeded(item));
+            }
+            return copy;
+        }
+        if (value instanceof Map<?, ?>) {
+            Map<Object, Object> copy = new LinkedHashMap<>();
+            ((Map<?, ?>) value).forEach((key, val) -> copy.put(key, cloneIfNeeded(val)));
+            return copy;
+        }
+        return value;
+    }
+
+    /**
+     * Returns the default value for a primitive type.
+     */
+    private Object getPrimitiveDefault(Class<?> type) {
+        if (type == boolean.class)
+            return false;
+        if (type == byte.class)
+            return (byte) 0;
+        if (type == short.class)
+            return (short) 0;
+        if (type == int.class)
+            return 0;
+        if (type == long.class)
+            return 0L;
+        if (type == float.class)
+            return 0F;
+        if (type == double.class)
+            return 0D;
+        if (type == char.class)
+            return '\0';
+        return null;
     }
 
     /**
@@ -499,7 +553,6 @@ public class ConfigManager {
     /**
      * Saves fields to YAML.
      */
-    @SuppressWarnings("unchecked")
     private void saveFields(Object instance, YamlConfiguration yaml, Class<?> clazz, String prefix) throws Exception {
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
@@ -509,21 +562,17 @@ public class ConfigManager {
 
             String path = getFieldPath(field, prefix);
             Object value = field.get(instance);
-
-            // If value is null but field has default value, use the default
             if (value == null) {
-                DefaultValue defaultValue = field.getAnnotation(DefaultValue.class);
-                if (defaultValue != null) {
-                    value = getDefaultValue(field);
-                    if (value != null) {
-                        field.set(instance, value);
-                    }
-                }
-
-                // If still null, skip this field
-                if (value == null)
-                    continue;
+                value = getDefaultValue(field);
             }
+            if (value == null && field.getType().isPrimitive()) {
+                value = getPrimitiveDefault(field.getType());
+            }
+            if (value == null) {
+                continue;
+            }
+            value = cloneIfNeeded(value);
+            field.set(instance, value);
 
             // Handle @SaveTo
             SaveTo saveTo = field.getAnnotation(SaveTo.class);
@@ -539,38 +588,7 @@ public class ConfigManager {
                 continue;
             }
 
-            // Handle complex types before saving
-            Class<?> fieldType = field.getType();
-
-            // Handle lists with ConfigSerializable elements
-            if (value instanceof List && fieldType.equals(List.class)) {
-                List<?> list = (List<?>) value;
-                if (!list.isEmpty() && list.get(0).getClass().isAnnotationPresent(ConfigSerializable.class)) {
-                    List<Map<String, Object>> serializedList = new ArrayList<>();
-                    for (Object item : list) {
-                        serializedList.add(ConfigSerializer.serialize(item));
-                    }
-                    value = serializedList;
-                }
-            }
-            // Handle maps with ConfigSerializable values
-            else if (value instanceof Map && fieldType.equals(Map.class)) {
-                Map<String, Object> map = (Map<String, Object>) value;
-                Map<String, Object> serializedMap = new HashMap<>();
-                for (Map.Entry<String, Object> entry : map.entrySet()) {
-                    if (entry.getValue() != null &&
-                            entry.getValue().getClass().isAnnotationPresent(ConfigSerializable.class)) {
-                        serializedMap.put(entry.getKey(), ConfigSerializer.serialize(entry.getValue()));
-                    } else {
-                        serializedMap.put(entry.getKey(), entry.getValue());
-                    }
-                }
-                value = serializedMap;
-            }
-            // Handle single ConfigSerializable objects
-            else if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
-                value = ConfigSerializer.serialize(value);
-            }
+            Object valueToSave = prepareForYaml(value, field);
 
             // Add comment if present
             Comment comment = field.getAnnotation(Comment.class);
@@ -578,7 +596,7 @@ public class ConfigManager {
                 yaml.setComments(path, Arrays.asList(comment.value().split("\n")));
             }
 
-            yaml.set(path, value);
+            yaml.set(path, valueToSave);
         }
     }
 

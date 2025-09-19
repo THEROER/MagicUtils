@@ -2,13 +2,16 @@ package dev.ua.theroer.magicutils.config.logger;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.config.SubLoggerConfig;
-import dev.ua.theroer.magicutils.config.annotations.*;
-import dev.ua.theroer.magicutils.config.logger.providers.DefaultSubLoggersProvider;
-import lombok.Getter;
-import lombok.Setter;
-
+import dev.ua.theroer.magicutils.config.annotations.Comment;
+import dev.ua.theroer.magicutils.config.annotations.ConfigFile;
+import dev.ua.theroer.magicutils.config.annotations.ConfigReloadable;
+import dev.ua.theroer.magicutils.config.annotations.ConfigSection;
+import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Configuration for the MagicUtils Logger system.
@@ -42,12 +45,10 @@ public class LoggerConfig {
     private String shortName = "";
 
     @ConfigValue("debug-commands")
-    @DefaultValue("true")
     @Comment("Whether to show debug messages for command processing")
-    private boolean debugCommands;
+    private boolean debugCommands = true;
 
     @ConfigValue("auto-localization")
-    @DefaultValue("false")
     @Comment("Whether to automatically localize messages using LanguageManager")
     @Setter
     private boolean autoLocalization;
@@ -70,8 +71,7 @@ public class LoggerConfig {
 
     @ConfigValue("sub-loggers")
     @Comment("Configuration for sub-loggers")
-    @DefaultValue(provider = DefaultSubLoggersProvider.class)
-    private Map<String, SubLoggerConfig> subLoggers;
+    private Map<String, SubLoggerConfig> subLoggers = createDefaultSubLoggers();
 
     // Custom methods for Logger to use
     /**
@@ -177,5 +177,12 @@ public class LoggerConfig {
         } catch (NullPointerException e) {
             return Logger.Target.BOTH;
         }
+    }
+
+    private static Map<String, SubLoggerConfig> createDefaultSubLoggers() {
+        Map<String, SubLoggerConfig> defaults = new LinkedHashMap<>();
+        defaults.put("database", SubLoggerConfig.builder().enabled(true).build());
+        defaults.put("api", SubLoggerConfig.builder().enabled(true).build());
+        return defaults;
     }
 }

@@ -1,18 +1,13 @@
 package dev.ua.theroer.magicutils.config.logger;
 
-import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
-import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
-import dev.ua.theroer.magicutils.config.logger.providers.DefaultDebugColorsProvider;
-import dev.ua.theroer.magicutils.config.logger.providers.DefaultErrorColorsProvider;
-import dev.ua.theroer.magicutils.config.logger.providers.DefaultSuccessColorsProvider;
-import dev.ua.theroer.magicutils.config.logger.providers.DefaultWarnColorsProvider;
 import dev.ua.theroer.magicutils.config.annotations.Comment;
-import lombok.Data;
-
-import java.util.List;
-
-import java.util.Map;
+import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.Data;
 
 /**
  * Color settings for different log levels.
@@ -30,24 +25,20 @@ public class ColorSettings {
     }
 
     @ConfigValue("error")
-    @DefaultValue(provider = DefaultErrorColorsProvider.class)
     @Comment("Colors for error messages")
-    private List<String> error;
+    private List<String> error = new ArrayList<>(Arrays.asList("#ff4444", "#cc0000"));
 
     @ConfigValue("warn")
-    @DefaultValue(provider = DefaultWarnColorsProvider.class)
     @Comment("Colors for warning messages")
-    private List<String> warn;
+    private List<String> warn = new ArrayList<>(Arrays.asList("#ffbb33", "#ff8800"));
 
     @ConfigValue("debug")
-    @DefaultValue(provider = DefaultDebugColorsProvider.class)
     @Comment("Colors for debug messages")
-    private List<String> debug;
+    private List<String> debug = new ArrayList<>(Arrays.asList("#33b5e5", "#0099cc"));
 
     @ConfigValue("success")
-    @DefaultValue(provider = DefaultSuccessColorsProvider.class)
     @Comment("Colors for success messages")
-    private List<String> success;
+    private List<String> success = new ArrayList<>(Arrays.asList("#00c851", "#007e33"));
 
     /**
      * Converts the color settings to a map for easy access.

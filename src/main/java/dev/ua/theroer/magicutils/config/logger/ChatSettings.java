@@ -1,13 +1,11 @@
 package dev.ua.theroer.magicutils.config.logger;
 
-import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
-import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
-import dev.ua.theroer.magicutils.config.logger.providers.DefaultChatGradientProvider;
-
-import java.util.List;
-
 import dev.ua.theroer.magicutils.config.annotations.Comment;
 import dev.ua.theroer.magicutils.config.annotations.ConfigSection;
+import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import lombok.Data;
 
 /**
@@ -25,14 +23,12 @@ public class ChatSettings {
     }
 
     @ConfigValue("auto-generate-colors")
-    @DefaultValue("true")
     @Comment("Automatically generate colors based on plugin name")
-    private boolean autoGenerateColors;
+    private boolean autoGenerateColors = true;
 
     @ConfigValue("gradient")
-    @DefaultValue(provider = DefaultChatGradientProvider.class)
     @Comment("Default gradient colors for chat messages")
-    private List<String> gradient;
+    private List<String> gradient = new ArrayList<>(Arrays.asList("#7c3aed", "#ec4899"));
 
     @ConfigSection("colors")
     @Comment("Colors for different log levels")

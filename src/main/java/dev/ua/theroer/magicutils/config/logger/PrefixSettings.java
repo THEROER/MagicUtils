@@ -2,7 +2,6 @@ package dev.ua.theroer.magicutils.config.logger;
 
 import dev.ua.theroer.magicutils.config.annotations.Comment;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
-import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
 import lombok.Data;
 
 /**
@@ -19,27 +18,22 @@ public class PrefixSettings {
     }
 
     @ConfigValue("chat-mode")
-    @DefaultValue("FULL")
     @Comment("Prefix mode for chat messages (NONE, SHORT, FULL, CUSTOM)")
-    private String chatMode;
+    private String chatMode = "FULL";
 
     @ConfigValue("console-mode")
-    @DefaultValue("SHORT")
     @Comment("Prefix mode for console messages (NONE, SHORT, FULL, CUSTOM)")
-    private String consoleMode;
+    private String consoleMode = "SHORT";
 
     @ConfigValue("custom")
-    @DefaultValue("[UAP]")
     @Comment("Custom prefix when mode is CUSTOM")
-    private String custom;
+    private String custom = "[UAP]";
 
     @ConfigValue("use-gradient-chat")
-    @DefaultValue("true")
     @Comment("Apply gradient to prefix in chat")
-    private boolean useGradientChat;
+    private boolean useGradientChat = true;
 
     @ConfigValue("use-gradient-console")
-    @DefaultValue("false")
     @Comment("Apply gradient to prefix in console")
     private boolean useGradientConsole;
 }
