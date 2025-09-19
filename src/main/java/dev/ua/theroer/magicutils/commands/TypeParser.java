@@ -60,6 +60,7 @@ public interface TypeParser<T> {
      * 
      * @param currentInput the current user input for filtering
      * @param sender       the command sender for context
+     * @param argument     the command argument for context
      * @return filtered list of suggestions
      */
     @NotNull
