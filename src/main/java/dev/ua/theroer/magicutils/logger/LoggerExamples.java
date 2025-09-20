@@ -103,7 +103,7 @@ public class LoggerExamples {
         // Broadcast with formatting
         Logger.success()
                 .toAll()
-                .sendf("<rainbow>Event started! %d players participating</rainbow>", 25);
+                .send("<rainbow>Event started! %d players participating</rainbow>", 25);
 
         // Complex targeting
         Logger.debug()

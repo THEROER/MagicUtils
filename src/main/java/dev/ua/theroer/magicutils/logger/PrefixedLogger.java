@@ -200,21 +200,14 @@ public class PrefixedLogger {
         }
 
         @Override
-        public void send(Object message) {
+        public void send(Object message, Object... placeholders) {
             if (!enabled)
                 return;
             if (message instanceof String) {
-                super.send(formatMessage((String) message));
+                super.send(formatMessage((String) message), placeholders);
             } else {
-                super.send(message);
+                super.send(message, placeholders);
             }
-        }
-
-        @Override
-        public void sendf(String format, Object... args) {
-            if (!enabled)
-                return;
-            super.send(formatMessage(String.format(format, args)));
         }
     }
 }

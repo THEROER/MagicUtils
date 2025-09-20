@@ -218,8 +218,9 @@ public class LogBuilder {
      * Sends the message with current settings.
      * 
      * @param message the message to send (any Object)
+     * @param placeholders the placeholders to apply to the message
      */
-    public void send(Object message) {
+    public void send(Object message, Object... placeholders) {
         // Apply prefix override if set
         if (prefixOverride != null) {
             Logger.PrefixMode savedChatMode = null;
@@ -232,7 +233,7 @@ public class LogBuilder {
                 Logger.setChatPrefixMode(prefixOverride);
                 Logger.setConsolePrefixMode(prefixOverride);
 
-                performSend(message);
+                performSend(message, placeholders);
             } finally {
                 if (savedChatMode != null) {
                     Logger.setChatPrefixMode(savedChatMode);
@@ -242,24 +243,14 @@ public class LogBuilder {
                 }
             }
         } else {
-            performSend(message);
+            performSend(message, placeholders);
         }
-    }
-
-    /**
-     * Formats and sends a message with current settings.
-     * 
-     * @param format the format string
-     * @param args   the formatting arguments
-     */
-    public void sendf(String format, Object... args) {
-        send(String.format(format, args));
     }
 
     /**
      * Internal method to perform the actual send.
      */
-    private void performSend(Object message) {
+    private void performSend(Object message, Object... placeholders) {
         // Determine target
         Target finalTarget = target != null ? target : Logger.getDefaultTarget();
 
@@ -278,6 +269,6 @@ public class LogBuilder {
         }
 
         // Send using the universal method
-        Logger.send(level, message, player, playerRecipients, finalTarget, broadcast);
+        Logger.send(level, message, player, playerRecipients, finalTarget, broadcast, placeholders);
     }
 }

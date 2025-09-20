@@ -16,6 +16,7 @@ import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.logger.LogBuilder;
 import dev.ua.theroer.magicutils.logger.LogMethods;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.utils.MsgFmt;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -448,6 +449,7 @@ public final class Logger {
      * @param target    where to send (CHAT, CONSOLE, BOTH)
      * @param broadcast if true, sends to all online players (ignoring
      *                  player/players params)
+     * @param placeholders the placeholders to apply to the message
      */
     public static void send(
             LogLevel level,
@@ -455,10 +457,11 @@ public final class Logger {
             @Nullable Player player,
             @Nullable Collection<? extends Player> players,
             Target target,
-            boolean broadcast) {
+            boolean broadcast,
+            Object... placeholders) {
 
         // Process the message into Component
-        Component component = parseMessage(message, level, target);
+        Component component = parseMessage(message, level, target, placeholders);
 
         // Determine recipients
         Collection<CommandSender> recipients = determineRecipients(player, players, broadcast, target);
@@ -556,7 +559,7 @@ public final class Logger {
     /**
      * Parses any Object into a formatted Component with prefix based on settings.
      */
-    private static Component parseMessage(Object message, LogLevel level, Target target) {
+    private static Component parseMessage(Object message, LogLevel level, Target target, Object... placeholdersArgs) {
         // First, convert Object to string representation
         String messageStr;
 
@@ -571,18 +574,8 @@ public final class Logger {
             messageStr = String.valueOf(message);
         }
 
-        // Apply localization if enabled
-        if (config != null && config.isAutoLocalization() && languageManager != null && messageStr != null) {
-            if (messageStr.startsWith("@")) {
-                // Explicit localization key
-                String localized = languageManager.getMessage(messageStr);
-                if (!localized.equals(messageStr)) {
-                    messageStr = localized;
-                }
-            }
-        }
-
-        // Apply smart parsing (legacy codes + MiniMessage)
+        messageStr = applyLocalization(messageStr);
+        messageStr = applyPlaceholders(messageStr, placeholdersArgs);
         messageStr = legacyToMiniMessage(messageStr);
 
         // Build prefix based on target
@@ -634,6 +627,30 @@ public final class Logger {
         }
 
         return sb.toString();
+    }
+
+    private static String applyPlaceholders(String messageStr, Object... placeholders) {
+        if (placeholders == null || placeholders.length == 0) {
+            return messageStr;
+        }
+        return MsgFmt.apply(messageStr, placeholders);
+    }
+
+    /**
+     * Applies localization to a message string.
+     * 
+     * @param messageStr the message string to localize
+     * @return the localized message string
+     */
+    private static String applyLocalization(String messageStr) {
+        if (config != null && config.isAutoLocalization() && languageManager != null && messageStr != null
+                && messageStr.startsWith("@")) {
+            String localized = languageManager.getMessage(messageStr);
+            if (!localized.equals(messageStr)) {
+                return localized;
+            }
+        }
+        return messageStr;
     }
 
     /**
