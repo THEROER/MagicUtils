@@ -5,6 +5,7 @@ import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -322,14 +323,8 @@ public class ConfigManager {
             // Handle maps
             else if (Map.class.isAssignableFrom(fieldType)) {
                 // Handle ConfigurationSection (Bukkit's way of representing YAML sections)
-                if (value instanceof org.bukkit.configuration.ConfigurationSection) {
-                    org.bukkit.configuration.ConfigurationSection section = (org.bukkit.configuration.ConfigurationSection) value;
-                    Map<String, Object> map = new HashMap<>();
-
-                    for (String key : section.getKeys(false)) {
-                        map.put(key, section.get(key));
-                    }
-                    value = map;
+                if (value instanceof ConfigurationSection) {
+                    value = flattenSection((ConfigurationSection) value);
                 }
 
                 if (value instanceof Map) {
@@ -346,9 +341,9 @@ public class ConfigManager {
                                 deserializedMap.put(entry.getKey(),
                                         ConfigSerializer.deserialize((Map<String, Object>) entry.getValue(),
                                                 valueType));
-                            } else if (entry.getValue() instanceof org.bukkit.configuration.ConfigurationSection) {
+                            } else if (entry.getValue() instanceof ConfigurationSection) {
                                 // Convert ConfigurationSection to Map for deserialization
-                                org.bukkit.configuration.ConfigurationSection subSection = (org.bukkit.configuration.ConfigurationSection) entry
+                                ConfigurationSection subSection = (ConfigurationSection) entry
                                         .getValue();
                                 Map<String, Object> subMap = new HashMap<>();
                                 for (String subKey : subSection.getKeys(false)) {
@@ -443,6 +438,11 @@ public class ConfigManager {
                 }
                 return serializedMap;
             }
+
+            Map<?, ?> map = (Map<?, ?>) value;
+            if (hasDottedKeys(map)) {
+                return expandDottedMap(map);
+            }
         }
 
         if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
@@ -450,6 +450,63 @@ public class ConfigManager {
         }
 
         return value;
+    }
+
+    private Map<String, Object> flattenSection(ConfigurationSection section) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        flattenSectionRecursive("", section, result);
+        return result;
+    }
+
+    private void flattenSectionRecursive(String prefix, ConfigurationSection section,
+            Map<String, Object> output) {
+        for (String key : section.getKeys(false)) {
+            Object raw = section.get(key);
+            String fullKey = prefix.isEmpty() ? key : prefix + "." + key;
+            if (raw instanceof ConfigurationSection) {
+                flattenSectionRecursive(fullKey, (ConfigurationSection) raw, output);
+            } else {
+                output.put(fullKey, raw);
+            }
+        }
+    }
+
+    private boolean hasDottedKeys(Map<?, ?> map) {
+        for (Object key : map.keySet()) {
+            if (key != null && key.toString().contains(".")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Map<String, Object> expandDottedMap(Map<?, ?> map) {
+        Map<String, Object> root = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            String key = entry.getKey() != null ? entry.getKey().toString() : "null";
+            insertDotted(root, key, entry.getValue());
+        }
+        return root;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void insertDotted(Map<String, Object> node, String key, Object value) {
+        int dot = key.indexOf('.');
+        if (dot < 0) {
+            node.put(key, value);
+            return;
+        }
+
+        String head = key.substring(0, dot);
+        String tail = key.substring(dot + 1);
+
+        Object child = node.get(head);
+        if (!(child instanceof Map)) {
+            child = new LinkedHashMap<String, Object>();
+            node.put(head, child);
+        }
+
+        insertDotted((Map<String, Object>) child, tail, value);
     }
 
     /**

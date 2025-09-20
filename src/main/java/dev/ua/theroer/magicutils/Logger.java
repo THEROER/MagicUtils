@@ -645,7 +645,7 @@ public final class Logger {
     private static String applyLocalization(String messageStr) {
         if (config != null && config.isAutoLocalization() && languageManager != null && messageStr != null
                 && messageStr.startsWith("@")) {
-            String localized = languageManager.getMessage(messageStr);
+            String localized = languageManager.getMessage(messageStr.substring(1));
             if (!localized.equals(messageStr)) {
                 return localized;
             }
