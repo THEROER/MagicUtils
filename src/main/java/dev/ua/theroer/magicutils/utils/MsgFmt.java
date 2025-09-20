@@ -22,7 +22,7 @@ public final class MsgFmt {
     /**
      * Applies placeholders to a message string.
      * 
-     * @param messageStr the message string to apply placeholders to
+     * @param messageStr   the message string to apply placeholders to
      * @param placeholders the placeholders to apply to the message
      * @return the message string with placeholders applied
      */
