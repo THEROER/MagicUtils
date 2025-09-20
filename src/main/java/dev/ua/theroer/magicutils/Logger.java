@@ -575,9 +575,6 @@ public final class Logger {
         if (config != null && config.isAutoLocalization() && languageManager != null && messageStr != null) {
             if (messageStr.startsWith("@")) {
                 // Explicit localization key
-                messageStr = languageManager.getMessage(messageStr.substring(1));
-            } else {
-                // Try to localize the message
                 String localized = languageManager.getMessage(messageStr);
                 if (!localized.equals(messageStr)) {
                     messageStr = localized;
