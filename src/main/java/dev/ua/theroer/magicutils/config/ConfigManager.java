@@ -322,29 +322,34 @@ public class ConfigManager {
             }
             // Handle maps
             else if (Map.class.isAssignableFrom(fieldType)) {
-                // Handle ConfigurationSection (Bukkit's way of representing YAML sections)
+                ParameterizedType mapType = (ParameterizedType) field.getGenericType();
+                Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
+
                 if (value instanceof ConfigurationSection) {
-                    value = flattenSection((ConfigurationSection) value);
+                    ConfigurationSection section = (ConfigurationSection) value;
+                    if (valueType == String.class) {
+                        value = flattenSection(section);
+                    } else {
+                        Map<String, Object> map = new LinkedHashMap<>();
+                        for (String key : section.getKeys(false)) {
+                            map.put(key, section.get(key));
+                        }
+                        value = map;
+                    }
                 }
 
                 if (value instanceof Map) {
-                    ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-                    Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
-
                     Map<String, Object> map = (Map<String, Object>) value;
 
-                    // Check if values need deserialization
                     if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
                         Map<String, Object> deserializedMap = new HashMap<>();
                         for (Map.Entry<String, Object> entry : map.entrySet()) {
-                            if (entry.getValue() instanceof Map) {
+                            Object entryValue = entry.getValue();
+                            if (entryValue instanceof Map) {
                                 deserializedMap.put(entry.getKey(),
-                                        ConfigSerializer.deserialize((Map<String, Object>) entry.getValue(),
-                                                valueType));
-                            } else if (entry.getValue() instanceof ConfigurationSection) {
-                                // Convert ConfigurationSection to Map for deserialization
-                                ConfigurationSection subSection = (ConfigurationSection) entry
-                                        .getValue();
+                                        ConfigSerializer.deserialize((Map<String, Object>) entryValue, valueType));
+                            } else if (entryValue instanceof ConfigurationSection) {
+                                ConfigurationSection subSection = (ConfigurationSection) entryValue;
                                 Map<String, Object> subMap = new HashMap<>();
                                 for (String subKey : subSection.getKeys(false)) {
                                     subMap.put(subKey, subSection.get(subKey));
@@ -352,7 +357,7 @@ public class ConfigManager {
                                 deserializedMap.put(entry.getKey(),
                                         ConfigSerializer.deserialize(subMap, valueType));
                             } else {
-                                deserializedMap.put(entry.getKey(), entry.getValue());
+                                deserializedMap.put(entry.getKey(), entryValue);
                             }
                         }
                         value = deserializedMap;
@@ -439,9 +444,11 @@ public class ConfigManager {
                 return serializedMap;
             }
 
-            Map<?, ?> map = (Map<?, ?>) value;
-            if (hasDottedKeys(map)) {
-                return expandDottedMap(map);
+            if (valueType == String.class) {
+                Map<?, ?> map = (Map<?, ?>) value;
+                if (hasDottedKeys(map)) {
+                    return expandDottedMap(map);
+                }
             }
         }
 
