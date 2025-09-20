@@ -2,10 +2,12 @@ package dev.ua.theroer.magicutils.lang.messages;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
+import lombok.Getter;
 
 /**
  * System messages
  */
+@Getter
 public class SystemMessages {
 
     /**
@@ -61,41 +63,4 @@ public class SystemMessages {
     @ConfigValue("unregistered_command")
     @DefaultValue("Unregistered command: {command}")
     private String unregisteredCommand;
-
-    /**
-     * Gets a message by key.
-     * 
-     * @param key the key of the message
-     * @return the message
-     */
-    public String getMessage(String key) {
-        switch (key) {
-            case "loaded_language":
-                return loadedLanguage;
-            case "failed_load_language":
-                return failedLoadLanguage;
-            case "failed_save_messages":
-                return failedSaveMessages;
-            case "created_default_config":
-                return createdDefaultConfig;
-            case "section_not_reloadable":
-                return sectionNotReloadable;
-            case "command_registered":
-                return commandRegistered;
-            case "command_usage":
-                return commandUsage;
-            case "subcommand_usages":
-                return subcommandUsages;
-            case "alias_registered":
-                return aliasRegistered;
-            case "alias_usage":
-                return aliasUsage;
-            case "generated_permissions":
-                return generatedPermissions;
-            case "unregistered_command":
-                return unregisteredCommand;
-            default:
-                return null;
-        }
-    }
 }

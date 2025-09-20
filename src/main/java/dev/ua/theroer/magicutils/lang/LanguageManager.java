@@ -1,16 +1,21 @@
 package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.config.ConfigManager;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
@@ -20,10 +25,12 @@ import java.util.logging.Level;
 public class LanguageManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final Map<String, LanguageConfig> loadedLanguages = new HashMap<>();
+    private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
+    private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
     private LanguageConfig fallbackConfig;
+    private String fallbackLanguage = "en";
 
     /**
      * Creates a new LanguageManager with ConfigManager.
@@ -46,8 +53,10 @@ public class LanguageManager {
         loadLanguage(currentLanguage);
 
         // Load fallback language (usually English)
-        if (!currentLanguage.equals("en")) {
-            loadFallbackLanguage("en");
+        if (!currentLanguage.equals(fallbackLanguage)) {
+            loadFallbackLanguage(fallbackLanguage);
+        } else {
+            fallbackConfig = currentConfig;
         }
     }
 
@@ -73,6 +82,10 @@ public class LanguageManager {
 
             if (languageCode.equals(currentLanguage)) {
                 currentConfig = config;
+            }
+
+            if (languageCode.equals(fallbackLanguage)) {
+                fallbackConfig = config;
             }
 
             plugin.getLogger().info(InternalMessages.SYS_LOADED_LANGUAGE.get("language", languageCode));
@@ -104,9 +117,7 @@ public class LanguageManager {
 
                 // Reload the config to pick up the new translations
                 try {
-                    Map<String, String> placeholders = new HashMap<>();
-                    placeholders.put("lang", languageCode);
-                    configManager.reload(LanguageConfig.class);
+                    configManager.reload(config);
                 } catch (Exception e) {
                     plugin.getLogger().log(Level.WARNING, "Failed to reload language config after setting translations",
                             e);
@@ -122,6 +133,7 @@ public class LanguageManager {
      */
     private void loadFallbackLanguage(String languageCode) {
         if (loadLanguage(languageCode)) {
+            this.fallbackLanguage = languageCode;
             fallbackConfig = loadedLanguages.get(languageCode);
         }
     }
@@ -142,6 +154,24 @@ public class LanguageManager {
         this.currentLanguage = languageCode;
         this.currentConfig = loadedLanguages.get(languageCode);
         return true;
+    }
+
+    /**
+     * Sets fallback language that will be used when message is missing in primary language.
+     *
+     * @param languageCode fallback language code
+     */
+    public void setFallbackLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isEmpty()) {
+            return;
+        }
+
+        this.fallbackLanguage = languageCode;
+        if (!languageCode.equals(currentLanguage)) {
+            loadFallbackLanguage(languageCode);
+        } else {
+            fallbackConfig = currentConfig;
+        }
     }
 
     /**
@@ -212,20 +242,7 @@ public class LanguageManager {
      * @return the message or key if not found
      */
     public String getMessage(String key) {
-        String message = null;
-
-        // Try current language first
-        if (currentConfig != null) {
-            message = currentConfig.getMessage(key);
-        }
-
-        // Fall back to fallback language
-        if (message == null && fallbackConfig != null) {
-            message = fallbackConfig.getMessage(key);
-        }
-
-        // Return key if message not found
-        return message != null ? message : key;
+        return resolveMessage(currentLanguage, key);
     }
 
     /**
@@ -236,15 +253,8 @@ public class LanguageManager {
      * @return the formatted message
      */
     public String getMessage(String key, Map<String, String> placeholders) {
-        String message = getMessage(key);
-
-        if (placeholders != null) {
-            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-                message = message.replace("{" + entry.getKey() + "}", entry.getValue());
-            }
-        }
-
-        return message;
+        String message = resolveMessage(currentLanguage, key);
+        return applyPlaceholders(message, placeholders);
     }
 
     /**
@@ -255,18 +265,8 @@ public class LanguageManager {
      * @return the formatted message
      */
     public String getMessage(String key, String... replacements) {
-        String message = getMessage(key);
-
-        for (int i = 0; i < replacements.length - 1; i += 2) {
-            String placeholder = replacements[i];
-            String value = replacements[i + 1];
-
-            // Support both {placeholder} and placeholder format
-            message = message.replace("{" + placeholder + "}", value);
-            message = message.replace(placeholder, value);
-        }
-
-        return message;
+        String message = resolveMessage(currentLanguage, key);
+        return applyReplacements(message, replacements);
     }
 
     /**
@@ -276,27 +276,293 @@ public class LanguageManager {
      * @return true if key exists
      */
     public boolean hasMessage(String key) {
-        if (currentConfig != null && currentConfig.getMessage(key) != null) {
+        if (hasMessage(currentConfig, key)) {
             return true;
         }
 
-        return fallbackConfig != null && fallbackConfig.getMessage(key) != null;
+        ensureFallbackLoaded();
+        return hasMessage(fallbackConfig, key);
+    }
+
+    /**
+     * Checks message availability for a particular language.
+     *
+     * @param languageCode target language code
+     * @param key          message key
+     * @return true if message exists or fallback can serve it
+     */
+    public boolean hasMessageForLanguage(String languageCode, String key) {
+        LanguageConfig primary = getOrLoadLanguage(languageCode);
+        if (hasMessage(primary, key)) {
+            return true;
+        }
+
+        ensureFallbackLoaded();
+        return hasMessage(fallbackConfig, key);
+    }
+
+    /**
+     * Gets message for a specific language.
+     *
+     * @param languageCode the language code to get message for
+     * @param key the message key
+     * @return the resolved message for the specified language
+     */
+    public String getMessageForLanguage(String languageCode, String key) {
+        return resolveMessage(languageCode, key);
+    }
+
+    /**
+     * Gets message for a specific language with map placeholders.
+     *
+     * @param languageCode the language code to get message for
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return the resolved message with placeholders applied
+     */
+    public String getMessageForLanguage(String languageCode, String key, Map<String, String> placeholders) {
+        String message = resolveMessage(languageCode, key);
+        return applyPlaceholders(message, placeholders);
+    }
+
+    /**
+     * Gets message for a specific language with positional replacements.
+     *
+     * @param languageCode the language code to get message for
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return the resolved message with replacements applied
+     */
+    public String getMessageForLanguage(String languageCode, String key, String... replacements) {
+        String message = resolveMessage(languageCode, key);
+        return applyReplacements(message, replacements);
+    }
+
+    /**
+     * Sets custom language for player.
+     *
+     * @param playerId the player's unique identifier
+     * @param languageCode the language code to set for the player
+     * @return true if the language was set successfully, false otherwise
+     */
+    public boolean setPlayerLanguage(UUID playerId, String languageCode) {
+        if (playerId == null) {
+            return false;
+        }
+
+        if (languageCode == null || languageCode.isEmpty()) {
+            playerLanguages.remove(playerId);
+            return true;
+        }
+
+        if (!loadedLanguages.containsKey(languageCode) && !loadLanguage(languageCode)) {
+            return false;
+        }
+
+        playerLanguages.put(playerId, languageCode);
+        return true;
+    }
+
+    /**
+     * Sets custom language for player.
+     *
+     * @param player the player instance
+     * @param languageCode the language code to set for the player
+     * @return true if the language was set successfully, false otherwise
+     */
+    public boolean setPlayerLanguage(Player player, String languageCode) {
+        return player != null && setPlayerLanguage(player.getUniqueId(), languageCode);
+    }
+
+    /**
+     * Clears player specific language.
+     *
+     * @param playerId the player's unique identifier
+     */
+    public void clearPlayerLanguage(UUID playerId) {
+        if (playerId != null) {
+            playerLanguages.remove(playerId);
+        }
+    }
+
+    /**
+     * Clears player specific language.
+     *
+     * @param player the player instance
+     */
+    public void clearPlayerLanguage(Player player) {
+        if (player != null) {
+            clearPlayerLanguage(player.getUniqueId());
+        }
+    }
+
+    /**
+     * Gets player specific language or default one.
+     *
+     * @param playerId the player's unique identifier
+     * @return the player's language code or default language if not set
+     */
+    public String getPlayerLanguage(UUID playerId) {
+        if (playerId == null) {
+            return currentLanguage;
+        }
+        return playerLanguages.getOrDefault(playerId, currentLanguage);
+    }
+
+    /**
+     * Gets player specific language or default one.
+     *
+     * @param player the player instance
+     * @return the player's language code or default language if not set
+     */
+    public String getPlayerLanguage(Player player) {
+        return player == null ? currentLanguage : getPlayerLanguage(player.getUniqueId());
+    }
+
+    /**
+     * Returns snapshot of player language assignments.
+     *
+     * @return unmodifiable map of player IDs to their language codes
+     */
+    public Map<UUID, String> getPlayerLanguages() {
+        return Collections.unmodifiableMap(new HashMap<>(playerLanguages));
+    }
+
+    /**
+     * Resolves message for player.
+     *
+     * @param playerId the player's unique identifier
+     * @param key the message key
+     * @return the resolved message for the player
+     */
+    public String getMessageForPlayer(UUID playerId, String key) {
+        return resolveMessage(getPlayerLanguage(playerId), key);
+    }
+
+    /**
+     * Resolves message for player with map placeholders.
+     *
+     * @param playerId the player's unique identifier
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return the resolved message with placeholders applied
+     */
+    public String getMessageForPlayer(UUID playerId, String key, Map<String, String> placeholders) {
+        String message = resolveMessage(getPlayerLanguage(playerId), key);
+        return applyPlaceholders(message, placeholders);
+    }
+
+    /**
+     * Resolves message for player with positional replacements.
+     *
+     * @param playerId the player's unique identifier
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return the resolved message with replacements applied
+     */
+    public String getMessageForPlayer(UUID playerId, String key, String... replacements) {
+        String message = resolveMessage(getPlayerLanguage(playerId), key);
+        return applyReplacements(message, replacements);
+    }
+
+    /**
+     * Resolves message for player.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @return the resolved message for the player
+     */
+    public String getMessageForPlayer(Player player, String key) {
+        return getMessageForPlayer(player != null ? player.getUniqueId() : null, key);
+    }
+
+    /**
+     * Resolves message for player with map placeholders.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return the resolved message with placeholders applied
+     */
+    public String getMessageForPlayer(Player player, String key, Map<String, String> placeholders) {
+        return getMessageForPlayer(player != null ? player.getUniqueId() : null, key, placeholders);
+    }
+
+    /**
+     * Resolves message for player with positional replacements.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return the resolved message with replacements applied
+     */
+    public String getMessageForPlayer(Player player, String key, String... replacements) {
+        return getMessageForPlayer(player != null ? player.getUniqueId() : null, key, replacements);
+    }
+
+    /**
+     * Resolves message for command sender.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @return the resolved message for the sender
+     */
+    public String getMessage(CommandSender sender, String key) {
+        if (sender instanceof Player player) {
+            return getMessageForPlayer(player, key);
+        }
+        return getMessage(key);
+    }
+
+    /**
+     * Resolves message for command sender with map placeholders.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return the resolved message with placeholders applied
+     */
+    public String getMessage(CommandSender sender, String key, Map<String, String> placeholders) {
+        if (sender instanceof Player player) {
+            return getMessageForPlayer(player, key, placeholders);
+        }
+        return getMessage(key, placeholders);
+    }
+
+    /**
+     * Resolves message for command sender with positional replacements.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return the resolved message with replacements applied
+     */
+    public String getMessage(CommandSender sender, String key, String... replacements) {
+        if (sender instanceof Player player) {
+            return getMessageForPlayer(player, key, replacements);
+        }
+        return getMessage(key, replacements);
     }
 
     /**
      * Reloads all loaded languages.
      */
     public void reload() {
-        Set<String> languages = Set.copyOf(loadedLanguages.keySet());
-        loadedLanguages.clear();
+        Map<String, LanguageConfig> snapshot = new HashMap<>(loadedLanguages);
 
-        for (String lang : languages) {
-            loadLanguage(lang);
+        for (Map.Entry<String, LanguageConfig> entry : snapshot.entrySet()) {
+            configManager.reload(entry.getValue());
         }
 
-        // Restore current language
-        if (loadedLanguages.containsKey(currentLanguage)) {
+        currentConfig = loadedLanguages.get(currentLanguage);
+        if (currentConfig == null) {
+            loadLanguage(currentLanguage);
             currentConfig = loadedLanguages.get(currentLanguage);
+        }
+
+        fallbackConfig = loadedLanguages.get(fallbackLanguage);
+        if (fallbackConfig == null && fallbackLanguage != null) {
+            loadFallbackLanguage(fallbackLanguage);
         }
     }
 
@@ -317,7 +583,7 @@ public class LanguageManager {
 
             if (config != null) {
                 config.getCustomMessages().putAll(customMessages);
-                configManager.save(config.getClass());
+                configManager.save(config);
             }
 
         } catch (Exception e) {
@@ -331,192 +597,90 @@ public class LanguageManager {
      */
     public void addMagicUtilsMessages() {
         // This will be called by MagicUtils to register its internal messages
-        for (String lang : loadedLanguages.keySet()) {
-            LanguageConfig config = loadedLanguages.get(lang);
+        for (LanguageConfig config : loadedLanguages.values()) {
             // The LanguageConfig already has all MagicUtils messages as defaults
-            configManager.save(config.getClass());
+            configManager.save(config);
         }
+    }
+
+    private LanguageConfig getOrLoadLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isEmpty()) {
+            return currentConfig;
+        }
+
+        LanguageConfig config = loadedLanguages.get(languageCode);
+        if (config == null && loadLanguage(languageCode)) {
+            config = loadedLanguages.get(languageCode);
+        }
+        return config;
+    }
+
+    private void ensureFallbackLoaded() {
+        if (fallbackConfig == null && fallbackLanguage != null) {
+            loadFallbackLanguage(fallbackLanguage);
+        }
+    }
+
+    private String resolveMessage(String languageCode, String key) {
+        return resolveMessage(getOrLoadLanguage(languageCode), key);
+    }
+
+    private String resolveMessage(LanguageConfig primary, String key) {
+        if (primary != null) {
+            String message = primary.getMessage(key);
+            if (message != null) {
+                return message;
+            }
+        }
+
+        ensureFallbackLoaded();
+        if (fallbackConfig != null) {
+            String fallbackMessage = fallbackConfig.getMessage(key);
+            if (fallbackMessage != null) {
+                return fallbackMessage;
+            }
+        }
+
+        return key;
+    }
+
+    private boolean hasMessage(LanguageConfig config, String key) {
+        return config != null && config.getMessage(key) != null;
+    }
+
+    private String applyPlaceholders(String message, Map<String, String> placeholders) {
+        if (placeholders == null || placeholders.isEmpty()) {
+            return message;
+        }
+
+        String result = message;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            result = result.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return result;
+    }
+
+    private String applyReplacements(String message, String... replacements) {
+        if (replacements == null || replacements.length == 0) {
+            return message;
+        }
+
+        String result = message;
+        for (int i = 0; i < replacements.length - 1; i += 2) {
+            String placeholder = replacements[i];
+            String value = replacements[i + 1];
+
+            result = result.replace("{" + placeholder + "}", value);
+            result = result.replace(placeholder, value);
+        }
+        return result;
     }
 
     /**
      * Creates language-specific translations.
      */
     private Map<String, Map<String, String>> createTranslations(String languageCode) {
-        Map<String, Map<String, String>> translations = new HashMap<>();
-
-        switch (languageCode) {
-            case "ru":
-                translations.put("language", createRussianMetadata());
-                translations.put("magicutils.commands", createRussianCommandMessages());
-                translations.put("magicutils.settings", createRussianSettingsMessages());
-                translations.put("magicutils.reload", createRussianReloadMessages());
-                translations.put("magicutils.system", createRussianSystemMessages());
-                translations.put("magicutils.errors", createRussianErrorMessages());
-                break;
-            case "uk":
-                translations.put("language", createUkrainianMetadata());
-                translations.put("magicutils.commands", createUkrainianCommandMessages());
-                translations.put("magicutils.settings", createUkrainianSettingsMessages());
-                translations.put("magicutils.reload", createUkrainianReloadMessages());
-                translations.put("magicutils.system", createUkrainianSystemMessages());
-                translations.put("magicutils.errors", createUkrainianErrorMessages());
-                break;
-        }
-
-        return translations;
-    }
-
-    private Map<String, String> createRussianMetadata() {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("name", "Русский");
-        metadata.put("code", "ru");
-        metadata.put("author", "MagicUtils Team");
-        metadata.put("version", "1.0");
-        return metadata;
-    }
-
-    private Map<String, String> createRussianCommandMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("no_permission", "&cУ вас нет прав для выполнения этой команды!");
-        messages.put("execution_error", "&cПроизошла ошибка при выполнении команды");
-        messages.put("executed", "&aКоманда выполнена успешно");
-        messages.put("specify_subcommand", "&eУкажите подкоманду: &f{subcommands}");
-        messages.put("unknown_subcommand", "&cНеизвестная подкоманда: &f{subcommand}");
-        messages.put("invalid_arguments", "&cНеверные аргументы команды");
-        messages.put("not_found", "&cКоманда не найдена");
-        messages.put("internal_error", "&cПроизошла внутренняя ошибка при выполнении команды");
-        return messages;
-    }
-
-    private Map<String, String> createRussianSettingsMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("language_not_initialized", "&cМенеджер языков не инициализирован!");
-        messages.put("invalid_arguments",
-                "&cНеверные аргументы. Первый аргумент должен быть названием языка при использовании 3 аргументов.");
-        messages.put("current_language", "&aТекущий язык: &f{language}");
-        messages.put("available_languages", "&aДоступные языки: &f{languages}");
-        messages.put("language_not_found", "&cЯзык '&f{language}&c' не найден!");
-        messages.put("key_not_found", "&cКлюч '&f{key}&c' не найден в языке '&f{language}&c'");
-        messages.put("key_value", "&aЯзык: &f{language}\n&aКлюч: &f{key}\n&aЗначение: &f{value}");
-        messages.put("key_set", "&aКлюч '&f{key}&a' установлен в '&f{value}&a' для языка '&f{language}&a'");
-        return messages;
-    }
-
-    private Map<String, String> createRussianReloadMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("all_commands", "&aВсе команды перезагружены!");
-        messages.put("command", "&aКоманда &f{command} &aперезагружена!");
-        messages.put("all_sections", "&aВсе секции перезагружены!");
-        messages.put("section", "&aСекция &f{section} &aперезагружена!");
-        messages.put("global_settings", "&aГлобальные настройки перезагружены!");
-        messages.put("global_setting", "&aГлобальная настройка &f{setting} &aперезагружена!");
-        return messages;
-    }
-
-    private Map<String, String> createRussianSystemMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("loaded_language", "Загружен язык: {language}");
-        messages.put("failed_load_language", "Не удалось загрузить язык: {language}");
-        messages.put("failed_save_messages", "Не удалось сохранить пользовательские сообщения для языка: {language}");
-        messages.put("created_default_config", "Создан конфиг по умолчанию: {file}");
-        messages.put("section_not_reloadable", "Секция не перезагружаемая: {section}");
-        messages.put("command_registered", "Успешно зарегистрирована команда: {command} с алиасами: {aliases}");
-        messages.put("command_usage", "Использование команды: {usage}");
-        messages.put("subcommand_usages", "Использование подкоманд:");
-        messages.put("alias_registered", "Успешно зарегистрирован алиас: {alias} для команды: {command}");
-        messages.put("alias_usage", "Использование алиаса: {usage}");
-        messages.put("generated_permissions", "Сгенерированы права для {command}: {permissions}");
-        messages.put("unregistered_command", "Отменена регистрация команды: {command}");
-        return messages;
-    }
-
-    private Map<String, String> createRussianErrorMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("message_not_set", "Сообщение должно быть установлено перед отправкой");
-        messages.put("failed_get_commandmap", "Не удалось получить CommandMap");
-        messages.put("registry_not_initialized", "CommandRegistry не инициализирован! Сначала вызовите initialize().");
-        messages.put("commandmap_not_available", "CommandMap недоступен!");
-        messages.put("missing_commandinfo", "Класс команды должен иметь аннотацию @CommandInfo: {class}");
-        messages.put("missing_configfile", "Класс {class} должен иметь аннотацию @ConfigFile");
-        messages.put("required_config_missing", "Отсутствует обязательное значение конфига: {path}");
-        return messages;
-    }
-
-    // Ukrainian translations
-    private Map<String, String> createUkrainianMetadata() {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("name", "Українська");
-        metadata.put("code", "uk");
-        metadata.put("author", "MagicUtils Team");
-        metadata.put("version", "1.0");
-        return metadata;
-    }
-
-    private Map<String, String> createUkrainianCommandMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("no_permission", "&cВи не маєте прав для виконання цієї команди!");
-        messages.put("execution_error", "&cСталася помилка при виконанні команди");
-        messages.put("executed", "&aКоманда виконана успішно");
-        messages.put("specify_subcommand", "&eВкажіть підкоманду: &f{subcommands}");
-        messages.put("unknown_subcommand", "&cНевідома підкоманда: &f{subcommand}");
-        messages.put("invalid_arguments", "&cНевірні аргументи команди");
-        messages.put("not_found", "&cКоманда не знайдена");
-        messages.put("internal_error", "&cСталася внутрішня помилка при виконанні команди");
-        return messages;
-    }
-
-    private Map<String, String> createUkrainianSettingsMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("language_not_initialized", "&cМенеджер мов не ініціалізований!");
-        messages.put("invalid_arguments",
-                "&cНевірні аргументи. Перший аргумент повинен бути назвою мови при використанні 3 аргументів.");
-        messages.put("current_language", "&aПоточна мова: &f{language}");
-        messages.put("available_languages", "&aДоступні мови: &f{languages}");
-        messages.put("language_not_found", "&cМова '&f{language}&c' не знайдена!");
-        messages.put("key_not_found", "&cКлюч '&f{key}&c' не знайдений в мові '&f{language}&c'");
-        messages.put("key_value", "&aМова: &f{language}\n&aКлюч: &f{key}\n&aЗначення: &f{value}");
-        messages.put("key_set", "&aКлюч '&f{key}&a' встановлено в '&f{value}&a' для мови '&f{language}&a'");
-        return messages;
-    }
-
-    private Map<String, String> createUkrainianReloadMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("all_commands", "&aВсі команди перезавантажені!");
-        messages.put("command", "&aКоманда &f{command} &aперезавантажена!");
-        messages.put("all_sections", "&aВсі секції перезавантажені!");
-        messages.put("section", "&aСекція &f{section} &aперезавантажена!");
-        messages.put("global_settings", "&aГлобальні налаштування перезавантажені!");
-        messages.put("global_setting", "&aГлобальне налаштування &f{setting} &aперезавантажене!");
-        return messages;
-    }
-
-    private Map<String, String> createUkrainianSystemMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("loaded_language", "Завантажено мову: {language}");
-        messages.put("failed_load_language", "Не вдалося завантажити мову: {language}");
-        messages.put("failed_save_messages", "Не вдалося зберегти користувацькі повідомлення для мови: {language}");
-        messages.put("created_default_config", "Створено конфіг за замовчуванням: {file}");
-        messages.put("section_not_reloadable", "Секція не перезавантажувана: {section}");
-        messages.put("command_registered", "Успішно зареєстровано команду: {command} з аліасами: {aliases}");
-        messages.put("command_usage", "Використання команди: {usage}");
-        messages.put("subcommand_usages", "Використання підкоманд:");
-        messages.put("alias_registered", "Успішно зареєстровано аліас: {alias} для команди: {command}");
-        messages.put("alias_usage", "Використання аліасу: {usage}");
-        messages.put("generated_permissions", "Згенеровані права для {command}: {permissions}");
-        messages.put("unregistered_command", "Скасовано реєстрацію команди: {command}");
-        return messages;
-    }
-
-    private Map<String, String> createUkrainianErrorMessages() {
-        Map<String, String> messages = new HashMap<>();
-        messages.put("message_not_set", "Повідомлення повинно бути встановлено перед відправкою");
-        messages.put("failed_get_commandmap", "Не вдалося отримати CommandMap");
-        messages.put("registry_not_initialized", "CommandRegistry не ініціалізований! Спочатку викличте initialize().");
-        messages.put("commandmap_not_available", "CommandMap недоступний!");
-        messages.put("missing_commandinfo", "Клас команди повинен мати анотацію @CommandInfo: {class}");
-        messages.put("missing_configfile", "Клас {class} повинен мати анотацію @ConfigFile");
-        messages.put("required_config_missing", "Відсутнє обов'язкове значення конфігу: {path}");
-        return messages;
+        return LanguageDefaults.localizedSections(languageCode);
     }
 
     /**

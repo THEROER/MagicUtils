@@ -141,18 +141,12 @@ public class SettingsCommand extends MagicCommand {
             return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get("language", languageCode));
         }
 
-        // Temporarily switch to target language to get the value
-        String originalLang = languageManager.getCurrentLanguage();
-        languageManager.setLanguage(languageCode);
-
-        if (!languageManager.hasMessage(key)) {
-            languageManager.setLanguage(originalLang); // Restore original language
+        if (!languageManager.hasMessageForLanguage(languageCode, key)) {
             return CommandResult
                     .failure(InternalMessages.SETTINGS_KEY_NOT_FOUND.get("key", key, "language", languageCode));
         }
 
-        String message = languageManager.getMessage(key);
-        languageManager.setLanguage(originalLang); // Restore original language
+        String message = languageManager.getMessageForLanguage(languageCode, key);
 
         return CommandResult.success(
                 InternalMessages.SETTINGS_KEY_VALUE.get("language", languageCode, "key", key, "value", message));

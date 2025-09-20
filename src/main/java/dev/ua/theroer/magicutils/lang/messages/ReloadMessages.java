@@ -2,10 +2,12 @@ package dev.ua.theroer.magicutils.lang.messages;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
+import lombok.Getter;
 
 /**
  * Reload messages
  */
+@Getter
 public class ReloadMessages {
     /**
      * Default constructor for ReloadMessages.
@@ -36,29 +38,4 @@ public class ReloadMessages {
     @ConfigValue("global_setting")
     @DefaultValue("&aGlobal setting &f{setting} &areloaded!")
     private String globalSetting;
-
-    /**
-     * Gets a message by key.
-     * 
-     * @param key the key of the message
-     * @return the message
-     */
-    public String getMessage(String key) {
-        switch (key) {
-            case "all_commands":
-                return allCommands;
-            case "command":
-                return command;
-            case "all_sections":
-                return allSections;
-            case "section":
-                return section;
-            case "global_settings":
-                return globalSettings;
-            case "global_setting":
-                return globalSetting;
-            default:
-                return null;
-        }
-    }
 }

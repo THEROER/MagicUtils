@@ -4,15 +4,30 @@ import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
@@ -21,9 +36,18 @@ import java.util.logging.Level;
  */
 public class ConfigManager {
     private final JavaPlugin plugin;
-    private final Map<Class<?>, Object> registeredConfigs = new ConcurrentHashMap<>();
-    private final Map<Class<?>, ConfigMetadata> configMetadata = new ConcurrentHashMap<>();
+    private final Map<ConfigKey, ConfigEntry<?>> configs = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Set<ConfigKey>> classIndex = new ConcurrentHashMap<>();
+    private final Map<Object, ConfigKey> instanceIndex = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Object> primaryInstances = new ConcurrentHashMap<>();
     private final Map<Class<?>, List<BiConsumer<Object, Set<String>>>> changeListeners = new ConcurrentHashMap<>();
+
+    private final Map<Path, Set<ConfigKey>> fileIndex = new ConcurrentHashMap<>();
+    private final Map<Path, WatchKey> directoryWatchKeys = new ConcurrentHashMap<>();
+    private final Map<Path, Integer> directoryRefCounts = new ConcurrentHashMap<>();
+    private WatchService watchService;
+    private ExecutorService watcherExecutor;
+    private volatile boolean shuttingDown = false;
 
     /**
      * Creates a new ConfigManager.
@@ -62,18 +86,32 @@ public class ConfigManager {
                         InternalMessages.ERR_MISSING_CONFIGFILE.get("class", configClass.getName()));
             }
 
-            // Create instance
+            Map<String, String> placeholdersCopy = placeholders == null ? new HashMap<>() : new HashMap<>(placeholders);
+
+            // Resolve placeholders and build key
+            ConfigMetadata metadata = new ConfigMetadata(configFile, placeholdersCopy);
+            ConfigKey key = new ConfigKey(configClass, metadata.getFilePath());
+
+            @SuppressWarnings("unchecked")
+            ConfigEntry<T> existingEntry = (ConfigEntry<T>) configs.get(key);
+            if (existingEntry != null) {
+                return existingEntry.instance;
+            }
+
+            // Create instance and load configuration
             T instance = configClass.getDeclaredConstructor().newInstance();
-
-            // Store metadata with resolved path
-            ConfigMetadata metadata = new ConfigMetadata(configFile, placeholders);
-            configMetadata.put(configClass, metadata);
-
-            // Load configuration
             loadConfig(instance, metadata);
 
-            // Register instance
-            registeredConfigs.put(configClass, instance);
+            ConfigEntry<T> entry = new ConfigEntry<>(key, instance, metadata,
+                    new File(plugin.getDataFolder(), metadata.getFilePath()));
+            entry.refreshLastModified();
+
+            configs.put(key, entry);
+            instanceIndex.put(instance, key);
+            classIndex.computeIfAbsent(configClass, clazz -> ConcurrentHashMap.newKeySet()).add(key);
+            primaryInstances.putIfAbsent(configClass, instance);
+
+            registerWatcher(entry);
 
             return instance;
 
@@ -532,21 +570,69 @@ public class ConfigManager {
      * @param configClass the configuration class
      */
     public <T> void save(Class<T> configClass) {
-        try {
-            T instance = getConfig(configClass);
-            if (instance == null)
-                return;
+        for (ConfigEntry<?> entry : getEntries(configClass)) {
+            saveEntry(entry);
+        }
+    }
 
-            ConfigMetadata metadata = configMetadata.get(configClass);
-            File configFile = new File(plugin.getDataFolder(), metadata.getFilePath());
+    /**
+     * Saves the provided configuration instance back to disk.
+     *
+     * @param configInstance configuration obtained via {@link #register(Class)}
+     */
+    public void save(Object configInstance) {
+        ConfigEntry<?> entry = getEntry(configInstance);
+        if (entry != null) {
+            saveEntry(entry);
+        }
+    }
 
-            YamlConfiguration yaml = new YamlConfiguration();
-            saveFields(instance, yaml, instance.getClass(), "");
+    /**
+     * Reloads the provided configuration instance from disk.
+     *
+     * @param configInstance configuration obtained via {@link #register(Class)}
+     */
+    public void reload(Object configInstance) {
+        ConfigEntry<?> entry = getEntry(configInstance);
+        if (entry == null) {
+            return;
+        }
 
-            yaml.save(configFile);
+        if (reloadEntry(entry, Collections.emptySet(), false)) {
+            ConfigReloadable reloadable = entry.key.configClass.getAnnotation(ConfigReloadable.class);
+            if (reloadable != null && reloadable.notifyOnChange()) {
+                notifyChangeListeners(entry, Collections.emptySet());
+            }
+        }
+    }
 
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save config: " + configClass.getName(), e);
+    /**
+     * Alias for {@link #reload(Object)} for semantic clarity when doing merge operations.
+     *
+     * @param configInstance the configuration instance to merge from file
+     */
+    public void mergeFromFile(Object configInstance) {
+        reload(configInstance);
+    }
+
+    /**
+     * Alias for {@link #save(Object)} for semantic clarity when doing merge operations.
+     *
+     * @param configInstance the configuration instance to merge to file
+     */
+    public void mergeToFile(Object configInstance) {
+        save(configInstance);
+    }
+
+    /**
+     * Unregisters the configuration and stops tracking file changes.
+     *
+     * @param configInstance configuration obtained via {@link #register(Class)}
+     */
+    public void unload(Object configInstance) {
+        ConfigEntry<?> entry = getEntry(configInstance);
+        if (entry != null) {
+            removeEntry(entry);
         }
     }
 
@@ -609,7 +695,7 @@ public class ConfigManager {
      */
     @SuppressWarnings("unchecked")
     public <T> T getConfig(Class<T> configClass) {
-        return (T) registeredConfigs.get(configClass);
+        return (T) primaryInstances.get(configClass);
     }
 
     /**
@@ -630,35 +716,25 @@ public class ConfigManager {
      * @param sections    the sections to reload
      */
     public <T> void reload(Class<T> configClass, String... sections) {
-        try {
-            T instance = getConfig(configClass);
-            if (instance == null)
-                return;
+        Set<String> sectionSet = (sections == null || sections.length == 0)
+                ? Collections.emptySet()
+                : new HashSet<>(Arrays.asList(sections));
 
-            ConfigMetadata metadata = configMetadata.get(configClass);
-
-            // Check if sections are reloadable
-            ConfigReloadable reloadable = configClass.getAnnotation(ConfigReloadable.class);
-            if (reloadable != null && reloadable.sections().length > 0) {
-                Set<String> allowedSections = new HashSet<>(Arrays.asList(reloadable.sections()));
-                for (String section : sections) {
-                    if (!allowedSections.contains(section)) {
-                        plugin.getLogger().warning(InternalMessages.SYS_SECTION_NOT_RELOADABLE.get("section", section));
-                        return;
-                    }
+        ConfigReloadable reloadable = configClass.getAnnotation(ConfigReloadable.class);
+        if (reloadable != null && reloadable.sections().length > 0 && !sectionSet.isEmpty()) {
+            Set<String> allowedSections = new HashSet<>(Arrays.asList(reloadable.sections()));
+            for (String section : sectionSet) {
+                if (!allowedSections.contains(section)) {
+                    plugin.getLogger().warning(InternalMessages.SYS_SECTION_NOT_RELOADABLE.get("section", section));
+                    return;
                 }
             }
+        }
 
-            // Reload
-            loadConfig(instance, metadata);
-
-            // Notify listeners
-            if (reloadable != null && reloadable.notifyOnChange()) {
-                notifyChangeListeners(configClass, new HashSet<>(Arrays.asList(sections)));
+        for (ConfigEntry<?> entry : getEntries(configClass)) {
+            if (reloadEntry(entry, sectionSet, false) && reloadable != null && reloadable.notifyOnChange()) {
+                notifyChangeListeners(entry, sectionSet);
             }
-
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to reload config: " + configClass.getName(), e);
         }
     }
 
@@ -678,14 +754,320 @@ public class ConfigManager {
     /**
      * Notifies change listeners.
      */
-    private void notifyChangeListeners(Class<?> configClass, Set<String> changedSections) {
-        List<BiConsumer<Object, Set<String>>> listeners = changeListeners.get(configClass);
-        if (listeners == null)
+    private void notifyChangeListeners(ConfigEntry<?> entry, Set<String> changedSections) {
+        List<BiConsumer<Object, Set<String>>> listeners = changeListeners.get(entry.key.configClass);
+        if (listeners == null) {
             return;
+        }
 
-        Object config = getConfig(configClass);
         for (BiConsumer<Object, Set<String>> listener : listeners) {
-            listener.accept(config, changedSections);
+            listener.accept(entry.instance, changedSections);
+        }
+    }
+
+    private Collection<ConfigEntry<?>> getEntries(Class<?> configClass) {
+        Set<ConfigKey> keys = classIndex.get(configClass);
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ConfigEntry<?>> result = new ArrayList<>(keys.size());
+        for (ConfigKey key : keys) {
+            ConfigEntry<?> entry = configs.get(key);
+            if (entry != null) {
+                result.add(entry);
+            }
+        }
+        return result;
+    }
+
+    private ConfigEntry<?> getEntry(Object configInstance) {
+        if (configInstance == null) {
+            return null;
+        }
+
+        ConfigKey key = instanceIndex.get(configInstance);
+        return key != null ? configs.get(key) : null;
+    }
+
+    private void removeEntry(ConfigEntry<?> entry) {
+        configs.remove(entry.key);
+        instanceIndex.remove(entry.instance);
+
+        Set<ConfigKey> keys = classIndex.get(entry.key.configClass);
+        if (keys != null) {
+            keys.remove(entry.key);
+            if (keys.isEmpty()) {
+                classIndex.remove(entry.key.configClass);
+                if (primaryInstances.get(entry.key.configClass) == entry.instance) {
+                    primaryInstances.remove(entry.key.configClass);
+                }
+            } else if (primaryInstances.get(entry.key.configClass) == entry.instance) {
+                ConfigEntry<?> nextEntry = configs.get(keys.iterator().next());
+                if (nextEntry != null) {
+                    primaryInstances.put(entry.key.configClass, nextEntry.instance);
+                } else {
+                    primaryInstances.remove(entry.key.configClass);
+                }
+            }
+        }
+
+        Path filePath = entry.file.toPath().toAbsolutePath();
+        Set<ConfigKey> fileKeys = fileIndex.get(filePath);
+        if (fileKeys != null) {
+            fileKeys.remove(entry.key);
+            if (fileKeys.isEmpty()) {
+                fileIndex.remove(filePath);
+            }
+        }
+
+        Path dir = filePath.getParent();
+        directoryRefCounts.computeIfPresent(dir, (path, count) -> {
+            int next = count - 1;
+            if (next <= 0) {
+                WatchKey watchKey = directoryWatchKeys.remove(path);
+                if (watchKey != null) {
+                    watchKey.cancel();
+                }
+                return null;
+            }
+            return next;
+        });
+    }
+
+    private void saveEntry(ConfigEntry<?> entry) {
+        synchronized (entry.monitor) {
+            try {
+                if (entry.file.exists() && entry.file.lastModified() > entry.lastModified) {
+                    reloadEntry(entry, Collections.emptySet(), true);
+                }
+
+                YamlConfiguration yaml = new YamlConfiguration();
+                saveFields(entry.instance, yaml, entry.instance.getClass(), "");
+
+                entry.file.getParentFile().mkdirs();
+                yaml.save(entry.file);
+                entry.refreshLastModified();
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING,
+                        "Failed to save config " + entry.key.configClass.getName() + " (" + entry.metadata.getFilePath()
+                                + ")",
+                        e);
+            }
+        }
+    }
+
+    private boolean reloadEntry(ConfigEntry<?> entry, Set<String> sections, boolean externalTrigger) {
+        synchronized (entry.monitor) {
+            try {
+                loadConfig(entry.instance, entry.metadata);
+                entry.refreshLastModified();
+                return true;
+            } catch (Exception e) {
+                String reason = externalTrigger ? "external" : "internal";
+                plugin.getLogger().log(Level.WARNING,
+                        "Failed to reload config " + entry.key.configClass.getName() + " (" + entry.metadata.getFilePath()
+                                + ") via " + reason,
+                        e);
+                return false;
+            }
+        }
+    }
+
+    private void registerWatcher(ConfigEntry<?> entry) {
+        File file = entry.file;
+        Path filePath = file.toPath().toAbsolutePath();
+        Path directory = filePath.getParent();
+
+        fileIndex.computeIfAbsent(filePath, key -> ConcurrentHashMap.newKeySet()).add(entry.key);
+
+        try {
+            ensureWatchService();
+
+            if (!directoryWatchKeys.containsKey(directory)) {
+                if (!directory.toFile().exists()) {
+                    directory.toFile().mkdirs();
+                }
+
+                WatchKey watchKey = directory.register(watchService,
+                        StandardWatchEventKinds.ENTRY_CREATE,
+                        StandardWatchEventKinds.ENTRY_MODIFY,
+                        StandardWatchEventKinds.ENTRY_DELETE);
+                directoryWatchKeys.put(directory, watchKey);
+            }
+
+            directoryRefCounts.merge(directory, 1, Integer::sum);
+            startWatcherThread();
+
+        } catch (IOException e) {
+            plugin.getLogger().log(Level.WARNING,
+                    "Failed to register config watcher for " + entry.metadata.getFilePath(), e);
+        }
+    }
+
+    private synchronized void ensureWatchService() throws IOException {
+        if (watchService == null) {
+            watchService = FileSystems.getDefault().newWatchService();
+        }
+    }
+
+    private synchronized void startWatcherThread() {
+        if (watcherExecutor != null) {
+            return;
+        }
+
+        watcherExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, plugin.getName() + "-ConfigWatcher");
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        watcherExecutor.submit(this::watchLoop);
+    }
+
+    private void watchLoop() {
+        while (!shuttingDown) {
+            WatchKey key;
+            try {
+                key = watchService.take();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ClosedWatchServiceException e) {
+                break;
+            }
+
+            Path directory = (Path) key.watchable();
+            for (WatchEvent<?> event : key.pollEvents()) {
+                WatchEvent.Kind<?> kind = event.kind();
+                if (kind == StandardWatchEventKinds.OVERFLOW) {
+                    continue;
+                }
+
+                Path changed = directory.resolve((Path) event.context()).toAbsolutePath();
+                Set<ConfigKey> affectedKeys = fileIndex.get(changed);
+                if (affectedKeys == null || affectedKeys.isEmpty()) {
+                    continue;
+                }
+
+                for (ConfigKey configKey : affectedKeys) {
+                    ConfigEntry<?> entry = configs.get(configKey);
+                    if (entry != null) {
+                        scheduleExternalReload(entry, kind);
+                    }
+                }
+            }
+
+            boolean valid = key.reset();
+            if (!valid) {
+                directoryWatchKeys.remove(directory);
+                directoryRefCounts.remove(directory);
+            }
+        }
+    }
+
+    private void scheduleExternalReload(ConfigEntry<?> entry, WatchEvent.Kind<?> kind) {
+        if (shuttingDown) {
+            return;
+        }
+
+        if (!entry.markReloadScheduled()) {
+            return;
+        }
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            try {
+                if (reloadEntry(entry, Collections.emptySet(), true)) {
+                    notifyChangeListeners(entry, Collections.emptySet());
+                }
+            } finally {
+                entry.reloadComplete();
+            }
+        });
+    }
+
+    /**
+     * Stops the watcher service and releases associated resources.
+     */
+    public void shutdown() {
+        shuttingDown = true;
+
+        if (watcherExecutor != null) {
+            watcherExecutor.shutdownNow();
+            try {
+                watcherExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            watcherExecutor = null;
+        }
+
+        if (watchService != null) {
+            try {
+                watchService.close();
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to close config watch service", e);
+            }
+            watchService = null;
+        }
+
+        directoryWatchKeys.clear();
+        directoryRefCounts.clear();
+        fileIndex.clear();
+    }
+
+    private static final class ConfigKey {
+        private final Class<?> configClass;
+        private final String filePath;
+
+        private ConfigKey(Class<?> configClass, String filePath) {
+            this.configClass = configClass;
+            this.filePath = filePath;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            ConfigKey configKey = (ConfigKey) o;
+            return Objects.equals(configClass, configKey.configClass)
+                    && Objects.equals(filePath, configKey.filePath);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(configClass, filePath);
+        }
+    }
+
+    private static final class ConfigEntry<T> {
+        private final ConfigKey key;
+        private final T instance;
+        private final ConfigMetadata metadata;
+        private final File file;
+        private final Object monitor = new Object();
+        private final AtomicBoolean reloadScheduled = new AtomicBoolean(false);
+        private volatile long lastModified = -1L;
+
+        private ConfigEntry(ConfigKey key, T instance, ConfigMetadata metadata, File file) {
+            this.key = key;
+            this.instance = instance;
+            this.metadata = metadata;
+            this.file = file;
+        }
+
+        private boolean markReloadScheduled() {
+            return reloadScheduled.compareAndSet(false, true);
+        }
+
+        private void reloadComplete() {
+            reloadScheduled.set(false);
+        }
+
+        private void refreshLastModified() {
+            this.lastModified = file.exists() ? file.lastModified() : -1L;
         }
     }
 

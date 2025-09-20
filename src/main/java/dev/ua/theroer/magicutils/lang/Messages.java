@@ -76,6 +76,85 @@ public class Messages {
     }
 
     /**
+     * Gets raw message string for command sender based on personal language.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @return the raw message string
+     */
+    public static String getRaw(CommandSender sender, String key) {
+        if (languageManager == null) {
+            return key;
+        }
+        return languageManager.getMessage(sender, key);
+    }
+
+    /**
+     * Gets raw message string for command sender with positional replacements.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return the raw message string with replacements applied
+     */
+    public static String getRaw(CommandSender sender, String key, String... replacements) {
+        if (languageManager == null) {
+            return key;
+        }
+        return languageManager.getMessage(sender, key, replacements);
+    }
+
+    /**
+     * Gets raw message string for command sender with map placeholders.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return the raw message string with placeholders applied
+     */
+    public static String getRaw(CommandSender sender, String key, Map<String, String> placeholders) {
+        if (languageManager == null) {
+            return key;
+        }
+        return languageManager.getMessage(sender, key, placeholders);
+    }
+
+    /**
+     * Gets raw message string for player based on personal language.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @return the raw message string
+     */
+    public static String getRaw(Player player, String key) {
+        return languageManager != null ? languageManager.getMessageForPlayer(player, key) : key;
+    }
+
+    /**
+     * Gets raw message string for player with positional replacements.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return the raw message string with replacements applied
+     */
+    public static String getRaw(Player player, String key, String... replacements) {
+        return languageManager != null ? languageManager.getMessageForPlayer(player, key, replacements) : key;
+    }
+
+    /**
+     * Gets raw message string for player with map placeholders.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return the raw message string with placeholders applied
+     */
+    public static String getRaw(Player player, String key, Map<String, String> placeholders) {
+        return languageManager != null ? languageManager.getMessageForPlayer(player, key, placeholders) : key;
+    }
+
+    /**
      * Gets message as Component with MiniMessage parsing.
      * 
      * @param key the message key
@@ -111,13 +190,89 @@ public class Messages {
     }
 
     /**
+     * Gets message as Component for command sender.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @return Component message
+     */
+    public static Component get(CommandSender sender, String key) {
+        String raw = getRaw(sender, key);
+        return miniMessage.deserialize(raw);
+    }
+
+    /**
+     * Gets message as Component for command sender with positional replacements.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return Component message with replacements applied
+     */
+    public static Component get(CommandSender sender, String key, String... replacements) {
+        String raw = getRaw(sender, key, replacements);
+        return miniMessage.deserialize(raw);
+    }
+
+    /**
+     * Gets message as Component for command sender with map placeholders.
+     *
+     * @param sender the command sender
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return Component message with placeholders applied
+     */
+    public static Component get(CommandSender sender, String key, Map<String, String> placeholders) {
+        String raw = getRaw(sender, key, placeholders);
+        return miniMessage.deserialize(raw);
+    }
+
+    /**
+     * Gets message as Component for player.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @return Component message
+     */
+    public static Component get(Player player, String key) {
+        String raw = getRaw(player, key);
+        return miniMessage.deserialize(raw);
+    }
+
+    /**
+     * Gets message as Component for player with positional replacements.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @param replacements positional replacement values
+     * @return Component message with replacements applied
+     */
+    public static Component get(Player player, String key, String... replacements) {
+        String raw = getRaw(player, key, replacements);
+        return miniMessage.deserialize(raw);
+    }
+
+    /**
+     * Gets message as Component for player with map placeholders.
+     *
+     * @param player the player instance
+     * @param key the message key
+     * @param placeholders map of placeholder keys and values
+     * @return Component message with placeholders applied
+     */
+    public static Component get(Player player, String key, Map<String, String> placeholders) {
+        String raw = getRaw(player, key, placeholders);
+        return miniMessage.deserialize(raw);
+    }
+
+    /**
      * Sends message to command sender.
      * 
      * @param sender the command sender
      * @param key    the message key
      */
     public static void send(CommandSender sender, String key) {
-        sender.sendMessage(get(key));
+        sender.sendMessage(get(sender, key));
     }
 
     /**
@@ -128,7 +283,7 @@ public class Messages {
      * @param replacements placeholder -> value pairs
      */
     public static void send(CommandSender sender, String key, String... replacements) {
-        sender.sendMessage(get(key, replacements));
+        sender.sendMessage(get(sender, key, replacements));
     }
 
     /**
@@ -139,7 +294,7 @@ public class Messages {
      * @param placeholders map of placeholder -> value
      */
     public static void send(CommandSender sender, String key, Map<String, String> placeholders) {
-        sender.sendMessage(get(key, placeholders));
+        sender.sendMessage(get(sender, key, placeholders));
     }
 
     /**
@@ -149,7 +304,7 @@ public class Messages {
      * @param key    the message key
      */
     public static void send(Player player, String key) {
-        player.sendMessage(get(key));
+        player.sendMessage(get(player, key));
     }
 
     /**
@@ -160,7 +315,7 @@ public class Messages {
      * @param replacements placeholder -> value pairs
      */
     public static void send(Player player, String key, String... replacements) {
-        player.sendMessage(get(key, replacements));
+        player.sendMessage(get(player, key, replacements));
     }
 
     /**
@@ -171,7 +326,7 @@ public class Messages {
      * @param placeholders map of placeholder -> value
      */
     public static void send(Player player, String key, Map<String, String> placeholders) {
-        player.sendMessage(get(key, placeholders));
+        player.sendMessage(get(player, key, placeholders));
     }
 
     /**

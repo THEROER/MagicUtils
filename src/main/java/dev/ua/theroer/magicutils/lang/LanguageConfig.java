@@ -2,9 +2,13 @@ package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.lang.messages.*;
-import dev.ua.theroer.magicutils.lang.providers.EmptyMapProvider;
+
+import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Language configuration using MagicUtils config system.
@@ -16,6 +20,19 @@ import java.util.Map;
 @ConfigFile("lang/{lang}.yml")
 @Comment("Language file for MagicUtils")
 public class LanguageConfig {
+
+    private static final Map<Class<?>, Map<String, Field>> SECTION_FIELD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Function<LanguageConfig, Object>> SECTION_ACCESSORS;
+
+    static {
+        Map<String, Function<LanguageConfig, Object>> accessors = new HashMap<>();
+        accessors.put("commands", LanguageConfig::getCommands);
+        accessors.put("settings", LanguageConfig::getSettings);
+        accessors.put("reload", LanguageConfig::getReload);
+        accessors.put("system", LanguageConfig::getSystem);
+        accessors.put("errors", LanguageConfig::getErrors);
+        SECTION_ACCESSORS = Collections.unmodifiableMap(accessors);
+    }
 
     /**
      * Default constructor for LanguageConfig.
@@ -49,7 +66,6 @@ public class LanguageConfig {
 
     @ConfigValue("messages")
     @Comment("Custom messages defined by plugins")
-    @DefaultValue(provider = EmptyMapProvider.class)
     private Map<String, String> customMessages = new HashMap<>();
 
     // Getters
@@ -136,19 +152,47 @@ public class LanguageConfig {
             return null;
         }
 
-        switch (parts[1]) {
-            case "commands":
-                return commands.getMessage(parts[2]);
-            case "settings":
-                return settings.getMessage(parts[2]);
-            case "reload":
-                return reload.getMessage(parts[2]);
-            case "system":
-                return system.getMessage(parts[2]);
-            case "errors":
-                return errors.getMessage(parts[2]);
-            default:
-                return null;
+        Function<LanguageConfig, Object> accessor = SECTION_ACCESSORS.get(parts[1]);
+        if (accessor == null) {
+            return null;
         }
+
+        Object section = accessor.apply(this);
+        return resolveSectionValue(section, parts[2]);
+    }
+
+    private String resolveSectionValue(Object section, String key) {
+        if (section == null || key == null) {
+            return null;
+        }
+
+        Map<String, Field> fieldMap = SECTION_FIELD_CACHE.computeIfAbsent(section.getClass(),
+                LanguageConfig::mapSectionFields);
+        Field field = fieldMap.get(key);
+        if (field == null) {
+            return null;
+        }
+
+        try {
+            Object value = field.get(section);
+            return value != null ? value.toString() : null;
+        } catch (IllegalAccessException e) {
+            return null;
+        }
+    }
+
+    private static Map<String, Field> mapSectionFields(Class<?> type) {
+        Map<String, Field> map = new HashMap<>();
+        for (Field field : type.getDeclaredFields()) {
+            ConfigValue annotation = field.getAnnotation(ConfigValue.class);
+            if (annotation == null) {
+                continue;
+            }
+
+            field.setAccessible(true);
+            String name = annotation.value().isEmpty() ? field.getName() : annotation.value();
+            map.put(name, field);
+        }
+        return map;
     }
 }

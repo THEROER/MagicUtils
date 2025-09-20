@@ -1,5 +1,9 @@
 package dev.ua.theroer.magicutils.lang;
 
+import org.bukkit.command.CommandSender;
+
+import java.util.Map;
+
 /**
  * Internal messages keys for MagicUtils library
  */
@@ -96,6 +100,8 @@ public enum InternalMessages {
     /** Message key for required config value missing */
     ERR_REQUIRED_CONFIG_MISSING("errors.required_config_missing");
 
+    private static final Map<String, String> DEFAULT_MESSAGES = LanguageDefaults.englishTranslations();
+
     private final String key;
 
     InternalMessages(String key) {
@@ -120,7 +126,8 @@ public enum InternalMessages {
      */
     public String get() {
         // First try to get from Messages (if plugin has set up localization)
-        if (Messages.getLanguageManager() != null) {
+        LanguageManager manager = Messages.getLanguageManager();
+        if (manager != null) {
             String message = Messages.getRaw(getKey());
             if (!message.equals(getKey())) {
                 return message;
@@ -142,7 +149,8 @@ public enum InternalMessages {
      */
     public String get(String... replacements) {
         // First try to get from Messages (if plugin has set up localization)
-        if (Messages.getLanguageManager() != null) {
+        LanguageManager manager = Messages.getLanguageManager();
+        if (manager != null) {
             String message = Messages.getRaw(getKey(), replacements);
             if (!message.equals(getKey())) {
                 return message;
@@ -150,112 +158,62 @@ public enum InternalMessages {
         }
 
         // Fallback to hardcoded defaults with replacements
-        String message = getDefaultMessage();
-        for (int i = 0; i < replacements.length - 1; i += 2) {
-            message = message.replace("{" + replacements[i] + "}", replacements[i + 1]);
+        return applyPlaceholders(getDefaultMessage(), replacements);
+    }
+
+    /**
+     * Gets the localized message for the given sender using their preferred language.
+     *
+     * @param sender command sender instance
+     * @return resolved message string
+     */
+    public String get(CommandSender sender) {
+        LanguageManager manager = Messages.getLanguageManager();
+        if (manager != null) {
+            String message = Messages.getRaw(sender, getKey());
+            if (!message.equals(getKey())) {
+                return message;
+            }
         }
-        return message;
+        return getDefaultMessage();
+    }
+
+    /**
+     * Gets the localized message for the given sender using their preferred language
+     * and applies replacements if necessary.
+     *
+     * @param sender        command sender instance
+     * @param replacements placeholder-value pairs
+     * @return resolved message string
+     */
+    public String get(CommandSender sender, String... replacements) {
+        LanguageManager manager = Messages.getLanguageManager();
+        if (manager != null) {
+            String message = Messages.getRaw(sender, getKey(), replacements);
+            if (!message.equals(getKey())) {
+                return message;
+            }
+        }
+        return applyPlaceholders(getDefaultMessage(), replacements);
     }
 
     /**
      * Get default hardcoded message
      */
     private String getDefaultMessage() {
-        switch (this) {
-            // Command messages
-            case CMD_NO_PERMISSION:
-                return "&cYou don't have permission to execute this command!";
-            case CMD_EXECUTION_ERROR:
-                return "&cAn error occurred while executing the command";
-            case CMD_EXECUTED:
-                return "&aCommand executed successfully";
-            case CMD_SPECIFY_SUBCOMMAND:
-                return "&eSpecify a subcommand: &f{subcommands}";
-            case CMD_UNKNOWN_SUBCOMMAND:
-                return "&cUnknown subcommand: &f{subcommand}";
-            case CMD_INVALID_ARGUMENTS:
-                return "&cInvalid command arguments";
-            case CMD_NOT_FOUND:
-                return "&cCommand not found";
-            case CMD_INTERNAL_ERROR:
-                return "&cAn internal error occurred while executing the command";
+        return DEFAULT_MESSAGES.getOrDefault(getKey(), getKey());
+    }
 
-            // Settings command
-            case SETTINGS_LANG_NOT_INIT:
-                return "&cLanguage manager not initialized!";
-            case SETTINGS_INVALID_ARGS:
-                return "&cInvalid arguments. First argument must be a language name when using 3 arguments.";
-            case SETTINGS_CURRENT_LANG:
-                return "&aCurrent language: &f{language}";
-            case SETTINGS_AVAILABLE_LANGS:
-                return "&aAvailable languages: &f{languages}";
-            case SETTINGS_LANG_NOT_FOUND:
-                return "&cLanguage '&f{language}&c' not found!";
-            case SETTINGS_KEY_NOT_FOUND:
-                return "&cKey '&f{key}&c' not found in language '&f{language}&c'";
-            case SETTINGS_KEY_VALUE:
-                return "&aLanguage: &f{language}\n&aKey: &f{key}\n&aValue: &f{value}";
-            case SETTINGS_KEY_SET:
-                return "&aSet key '&f{key}&a' to '&f{value}&a' in language '&f{language}&a'";
-
-            // Reload command
-            case RELOAD_ALL_COMMANDS:
-                return "&aAll commands reloaded!";
-            case RELOAD_COMMAND:
-                return "&aCommand &f{command} &areloaded!";
-            case RELOAD_ALL_SECTIONS:
-                return "&aAll sections reloaded!";
-            case RELOAD_SECTION:
-                return "&aSection &f{section} &areloaded!";
-            case RELOAD_GLOBAL_SETTINGS:
-                return "&aGlobal settings reloaded!";
-            case RELOAD_GLOBAL_SETTING:
-                return "&aGlobal setting &f{setting} &areloaded!";
-
-            // System messages
-            case SYS_LOADED_LANGUAGE:
-                return "Loaded language: {language}";
-            case SYS_FAILED_LOAD_LANGUAGE:
-                return "Failed to load language: {language}";
-            case SYS_FAILED_SAVE_MESSAGES:
-                return "Failed to save custom messages for language: {language}";
-            case SYS_CREATED_DEFAULT_CONFIG:
-                return "Created default config: {file}";
-            case SYS_SECTION_NOT_RELOADABLE:
-                return "Section not reloadable: {section}";
-            case SYS_COMMAND_REGISTERED:
-                return "Successfully registered command: {command} with aliases: {aliases}";
-            case SYS_COMMAND_USAGE:
-                return "Command usage: {usage}";
-            case SYS_SUBCOMMAND_USAGES:
-                return "Subcommand usages:";
-            case SYS_ALIAS_REGISTERED:
-                return "Successfully registered alias: {alias} for command: {command}";
-            case SYS_ALIAS_USAGE:
-                return "Alias usage: {usage}";
-            case SYS_GENERATED_PERMISSIONS:
-                return "Generated permissions for {command}: {permissions}";
-            case SYS_UNREGISTERED_COMMAND:
-                return "Unregistered command: {command}";
-
-            // Error messages
-            case ERR_MESSAGE_NOT_SET:
-                return "Message must be set before sending";
-            case ERR_FAILED_GET_COMMANDMAP:
-                return "Failed to get CommandMap";
-            case ERR_REGISTRY_NOT_INITIALIZED:
-                return "CommandRegistry not initialized! Call initialize() first.";
-            case ERR_COMMANDMAP_NOT_AVAILABLE:
-                return "CommandMap not available!";
-            case ERR_MISSING_COMMANDINFO:
-                return "Command class must have @CommandInfo annotation: {class}";
-            case ERR_MISSING_CONFIGFILE:
-                return "Class {class} must have @ConfigFile annotation";
-            case ERR_REQUIRED_CONFIG_MISSING:
-                return "Required config value missing: {path}";
-
-            default:
-                return getKey();
+    private static String applyPlaceholders(String message, String... replacements) {
+        if (message == null || replacements == null) {
+            return message;
         }
+        String result = message;
+        for (int i = 0; i < replacements.length - 1; i += 2) {
+            String placeholder = replacements[i];
+            String value = replacements[i + 1];
+            result = result.replace("{" + placeholder + "}", value);
+        }
+        return result;
     }
 }

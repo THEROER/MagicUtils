@@ -2,10 +2,12 @@ package dev.ua.theroer.magicutils.lang.messages;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
+import lombok.Getter;
 
 /**
  * Error messages
  */
+@Getter
 public class ErrorMessages {
     /**
      * Default constructor for ErrorMessages.
@@ -40,31 +42,4 @@ public class ErrorMessages {
     @ConfigValue("required_config_missing")
     @DefaultValue("Required config value missing: {path}")
     private String requiredConfigMissing;
-
-    /**
-     * Gets a message by key.
-     * 
-     * @param key the key of the message
-     * @return the message
-     */
-    public String getMessage(String key) {
-        switch (key) {
-            case "message_not_set":
-                return messageNotSet;
-            case "failed_get_commandmap":
-                return failedGetCommandMap;
-            case "registry_not_initialized":
-                return registryNotInitialized;
-            case "commandmap_not_available":
-                return commandMapNotAvailable;
-            case "missing_commandinfo":
-                return missingCommandInfo;
-            case "missing_configfile":
-                return missingConfigFile;
-            case "required_config_missing":
-                return requiredConfigMissing;
-            default:
-                return null;
-        }
-    }
 }
