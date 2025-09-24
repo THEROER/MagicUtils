@@ -6,7 +6,11 @@ import dev.ua.theroer.magicutils.config.annotations.Comment;
 import dev.ua.theroer.magicutils.config.annotations.ConfigFile;
 import dev.ua.theroer.magicutils.config.annotations.ConfigSection;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import lombok.Getter;
+
+import java.util.Set;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -60,8 +64,8 @@ public final class ConfigExample {
         private TagResolvers() {
         }
 
-        static net.kyori.adventure.text.minimessage.tag.resolver.TagResolver sections(java.util.Set<String> sections) {
-            return net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.placeholder(
+        static TagResolver sections(Set<String> sections) {
+            return TagResolver.placeholder(
                     "sections",
                     String.join(", ", sections));
         }
