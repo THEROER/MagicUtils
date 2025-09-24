@@ -13,18 +13,17 @@ import org.bukkit.Bukkit;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.config.SubLoggerConfig;
 import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
+import dev.ua.theroer.magicutils.utils.ColorUtils;
+import dev.ua.theroer.magicutils.utils.placeholders.PlaceholderProcessor;
 import dev.ua.theroer.magicutils.logger.LogBuilder;
 import dev.ua.theroer.magicutils.logger.LogMethods;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
-import dev.ua.theroer.magicutils.utils.MsgFmt;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.command.CommandSender;
 
 import javax.annotation.Nullable;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -262,27 +261,27 @@ public final class Logger {
      * Generate chat colors automatically
      */
     private static void generateChatColors() {
-        String[] baseColors = getMainAndSecondaryColor(config.getPluginName());
+        String[] baseColors = ColorUtils.getMainAndSecondaryColor(config.getPluginName());
         chatDefaultGradient = baseColors;
-        chatErrorColors = new String[] { "#ff4444", adjustHue(baseColors[0], -30) };
-        chatWarnColors = new String[] { "#ffaa00", adjustHue(baseColors[0], 45) };
-        chatDebugColors = new String[] { "#00aaff", adjustHue(baseColors[0], 180) };
-        chatSuccessColors = new String[] { "#00ff44", adjustHue(baseColors[0], 120) };
+        chatErrorColors = new String[] { "#ff4444", ColorUtils.adjustHue(baseColors[0], -30) };
+        chatWarnColors = new String[] { "#ffaa00", ColorUtils.adjustHue(baseColors[0], 45) };
+        chatDebugColors = new String[] { "#00aaff", ColorUtils.adjustHue(baseColors[0], 180) };
+        chatSuccessColors = new String[] { "#00ff44", ColorUtils.adjustHue(baseColors[0], 120) };
     }
 
     /**
      * Generate console colors automatically
      */
     private static void generateConsoleColors() {
-        String[] baseColors = getMainAndSecondaryColor(config.getPluginName());
+        String[] baseColors = ColorUtils.getMainAndSecondaryColor(config.getPluginName());
         consoleDefaultGradient = new String[] {
-                adjustBrightness(baseColors[0], 1.2f),
-                adjustBrightness(baseColors[1], 1.2f)
+                ColorUtils.adjustBrightness(baseColors[0], 1.2f),
+                ColorUtils.adjustBrightness(baseColors[1], 1.2f)
         };
-        consoleErrorColors = new String[] { "#ff6666", adjustHue(baseColors[0], -20) };
-        consoleWarnColors = new String[] { "#ffcc22", adjustHue(baseColors[0], 55) };
-        consoleDebugColors = new String[] { "#22aaff", adjustHue(baseColors[0], 170) };
-        consoleSuccessColors = new String[] { "#22ff66", adjustHue(baseColors[0], 110) };
+        consoleErrorColors = new String[] { "#ff6666", ColorUtils.adjustHue(baseColors[0], -20) };
+        consoleWarnColors = new String[] { "#ffcc22", ColorUtils.adjustHue(baseColors[0], 55) };
+        consoleDebugColors = new String[] { "#22aaff", ColorUtils.adjustHue(baseColors[0], 170) };
+        consoleSuccessColors = new String[] { "#22ff66", ColorUtils.adjustHue(baseColors[0], 110) };
     }
 
     /**
@@ -371,84 +370,16 @@ public final class Logger {
     }
 
     /**
-     * Adjust color brightness by factor
-     */
-    private static String adjustBrightness(String hex, float factor) {
-        int r = Integer.valueOf(hex.substring(1, 3), 16);
-        int g = Integer.valueOf(hex.substring(3, 5), 16);
-        int b = Integer.valueOf(hex.substring(5, 7), 16);
-
-        r = Math.min(255, Math.round(r * factor));
-        g = Math.min(255, Math.round(g * factor));
-        b = Math.min(255, Math.round(b * factor));
-
-        return String.format("#%02x%02x%02x", r, g, b);
-    }
-
-    /**
-     * Adjust color hue by degrees
-     */
-    private static String adjustHue(String hex, int hueShift) {
-        int r = Integer.valueOf(hex.substring(1, 3), 16);
-        int g = Integer.valueOf(hex.substring(3, 5), 16);
-        int b = Integer.valueOf(hex.substring(5, 7), 16);
-
-        int shift = Math.abs(hueShift) % 360;
-        if (shift > 120) {
-            int temp = r;
-            r = g;
-            g = b;
-            b = temp;
-        } else if (shift > 60) {
-            int temp = r;
-            r = b;
-            b = g;
-            g = temp;
-        }
-
-        return String.format("#%02x%02x%02x", r, g, b);
-    }
-
-    /**
-     * Gets the main and secondary color for a given name.
-     * 
-     * @param name the name to generate colors for
-     * @return an array with main and secondary color
-     */
-    public static String[] getMainAndSecondaryColor(String name) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(name.getBytes());
-
-            int r = 100 + (hash[0] & 0xFF) % 156;
-            int g = 100 + (hash[1] & 0xFF) % 156;
-            int b = 100 + (hash[2] & 0xFF) % 156;
-
-            String primary = String.format("#%02x%02x%02x", r, g, b);
-
-            int r2 = Math.min(255, r + 40);
-            int g2 = Math.min(255, g + 50);
-            int b2 = Math.max(50, b - 20);
-
-            String secondary = String.format("#%02x%02x%02x", r2, g2, b2);
-
-            return new String[] { primary, secondary };
-        } catch (NoSuchAlgorithmException e) {
-            return new String[] { "#7c3aed", "#ec4899" };
-        }
-    }
-
-    /**
      * Universal send method for logging messages with complete control over
      * delivery.
      * 
-     * @param level     the log level (INFO, WARN, ERROR, DEBUG, SUCCESS)
-     * @param message   the message to log (any Object)
-     * @param player    single recipient player (can be null)
-     * @param players   collection of recipient players (can be null or empty)
-     * @param target    where to send (CHAT, CONSOLE, BOTH)
-     * @param broadcast if true, sends to all online players (ignoring
-     *                  player/players params)
+     * @param level        the log level (INFO, WARN, ERROR, DEBUG, SUCCESS)
+     * @param message      the message to log (any Object)
+     * @param player       single recipient player (can be null)
+     * @param players      collection of recipient players (can be null or empty)
+     * @param target       where to send (CHAT, CONSOLE, BOTH)
+     * @param broadcast    if true, sends to all online players (ignoring
+     *                     player/players params)
      * @param placeholders the placeholders to apply to the message
      */
     public static void send(
@@ -461,7 +392,7 @@ public final class Logger {
             Object... placeholders) {
 
         // Process the message into Component
-        Component component = parseMessage(message, level, target, placeholders);
+        Component component = parseMessage(message, level, target, player, players, placeholders);
 
         // Determine recipients
         Collection<CommandSender> recipients = determineRecipients(player, players, broadcast, target);
@@ -559,9 +490,16 @@ public final class Logger {
     /**
      * Parses any Object into a formatted Component with prefix based on settings.
      */
-    private static Component parseMessage(Object message, LogLevel level, Target target, Object... placeholdersArgs) {
+    private static Component parseMessage(
+            Object message,
+            LogLevel level,
+            Target target,
+            @Nullable Player directPlayer,
+            @Nullable Collection<? extends Player> playerCollection,
+            Object... placeholdersArgs) {
         // First, convert Object to string representation
         String messageStr;
+        Player singlePlayer = null;
 
         if (message instanceof Component) {
             // If already a Component, serialize to MiniMessage format
@@ -574,9 +512,26 @@ public final class Logger {
             messageStr = String.valueOf(message);
         }
 
+        if (placeholdersArgs != null && placeholdersArgs.length > 0) {
+            Object lastArg = placeholdersArgs[placeholdersArgs.length - 1];
+            if (lastArg instanceof Player) {
+                singlePlayer = (Player) lastArg;
+            }
+        }
+
+        if (directPlayer != null) {
+            singlePlayer = directPlayer;
+        }
+
+        Player targetPlayer = singlePlayer != null ? singlePlayer
+                : PlaceholderProcessor.pickPrimaryPlayer(directPlayer, playerCollection);
+
+        messageStr = PlaceholderProcessor.applyPlaceholders(pluginInstance, targetPlayer, messageStr, placeholdersArgs);
+        messageStr = PlaceholderProcessor.applyPapi(pluginInstance, messageStr, targetPlayer);
         messageStr = applyLocalization(messageStr);
-        messageStr = applyPlaceholders(messageStr, placeholdersArgs);
-        messageStr = legacyToMiniMessage(messageStr);
+        messageStr = PlaceholderProcessor.applyPapi(pluginInstance, messageStr, targetPlayer);
+        messageStr = PlaceholderProcessor.applyPlaceholders(pluginInstance, targetPlayer, messageStr, placeholdersArgs);
+        messageStr = ColorUtils.legacyToMiniMessage(messageStr);
 
         // Build prefix based on target
         String prefix = "";
@@ -592,7 +547,7 @@ public final class Logger {
         // Apply gradient if needed
         if (!prefix.isEmpty() && shouldUseGradient(target)) {
             String[] colors = getColorsForLevel(level, target == Target.CONSOLE);
-            String gradientTag = createGradientTag(colors);
+            String gradientTag = ColorUtils.createGradientTag(colors);
             finalMessage = "<reset>" + gradientTag + finalMessage + "</gradient>";
         } else {
             finalMessage = "<reset>" + finalMessage;
@@ -627,13 +582,6 @@ public final class Logger {
         }
 
         return sb.toString();
-    }
-
-    private static String applyPlaceholders(String messageStr, Object... placeholders) {
-        if (placeholders == null || placeholders.length == 0) {
-            return messageStr;
-        }
-        return MsgFmt.apply(messageStr, placeholders);
     }
 
     /**
@@ -868,18 +816,6 @@ public final class Logger {
                 default -> chatDefaultGradient;
             };
         }
-    }
-
-    /**
-     * Create gradient tag from colors array
-     */
-    private static String createGradientTag(String[] colors) {
-        StringBuilder sb = new StringBuilder("<gradient");
-        for (String color : colors) {
-            sb.append(":").append(color);
-        }
-        sb.append(">");
-        return sb.toString();
     }
 
     /**
