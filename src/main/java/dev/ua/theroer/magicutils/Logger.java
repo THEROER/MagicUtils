@@ -489,8 +489,16 @@ public final class Logger {
 
     /**
      * Parses any Object into a formatted Component with prefix based on settings.
+     * 
+     * @param message the message to parse
+     * @param level the log level
+     * @param target the target
+     * @param directPlayer the direct player
+     * @param playerCollection the player collection
+     * @param placeholdersArgs the placeholders arguments
+     * @return the parsed message
      */
-    private static Component parseMessage(
+    public static Component parseMessage(
             Object message,
             LogLevel level,
             Target target,
