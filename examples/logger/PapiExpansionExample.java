@@ -32,12 +32,12 @@ public class PapiExpansionExample extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getAuthor() {
-        return plugin.getDescription().getAuthors().toString();
+        return plugin.getPluginMeta().getAuthors().toString();
     }
 
     @Override
     public @NotNull String getVersion() {
-        return plugin.getDescription().getVersion();
+        return plugin.getPluginMeta().getVersion();
     }
 
     @Override
@@ -52,10 +52,10 @@ public class PapiExpansionExample extends PlaceholderExpansion {
                 return "Hello World";
                 
             case "player_name":
-                return player != null ? player.getDisplayName() : "Console";
+                return player != null ? player.displayName() : "Console";
                 
             case "plugin_version":
-                return plugin.getDescription().getVersion();
+                return plugin.getPluginMeta().getVersion();
                 
             default:
                 return null; // Placeholder not found
