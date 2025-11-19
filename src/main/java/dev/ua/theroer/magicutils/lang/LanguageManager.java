@@ -645,7 +645,8 @@ public class LanguageManager {
     }
 
     private boolean hasMessage(LanguageConfig config, String key) {
-        return config != null && config.getMessage(key) != null;
+        if (config == null) return false;
+        return config.getMessage(key) != null;
     }
 
     private String applyPlaceholders(String message, Map<String, String> placeholders) {

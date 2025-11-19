@@ -16,6 +16,7 @@ import java.lang.reflect.ParameterizedType;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
@@ -90,7 +92,7 @@ public class ConfigManager {
             Map<String, String> placeholdersCopy = placeholders == null ? new HashMap<>() : new HashMap<>(placeholders);
 
             // Resolve placeholders and build key
-            ConfigMetadata metadata = new ConfigMetadata(configFile, placeholdersCopy);
+            ConfigMetadata metadata = new ConfigMetadata(configFile, placeholdersCopy, plugin);
             ConfigKey key = new ConfigKey(configClass, metadata.getFilePath());
 
             @SuppressWarnings("unchecked")
@@ -902,15 +904,29 @@ public class ConfigManager {
     private void saveEntry(ConfigEntry<?> entry) {
         synchronized (entry.monitor) {
             try {
-                if (entry.file.exists() && entry.file.lastModified() > entry.lastModified) {
+                // Atomic check: reload if file was modified externally
+                long currentFileModified = entry.file.exists() ? entry.file.lastModified() : -1L;
+                long lastKnownModified = entry.getLastModified();
+                
+                // Double-check pattern to prevent race condition
+                if (entry.file.exists() && currentFileModified > lastKnownModified) {
+                    // File was modified externally, reload first
                     reloadEntry(entry, Collections.emptySet(), true);
+                    // Refresh timestamp after reload
+                    entry.refreshLastModified();
                 }
 
+                // Create YAML configuration
                 YamlConfiguration yaml = new YamlConfiguration();
                 saveFields(entry.instance, yaml, entry.instance.getClass(), "");
 
+                // Ensure parent directory exists
                 entry.file.getParentFile().mkdirs();
+                
+                // Save to file
                 yaml.save(entry.file);
+                
+                // Atomically update last modified timestamp
                 entry.refreshLastModified();
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING,
@@ -924,8 +940,19 @@ public class ConfigManager {
     private boolean reloadEntry(ConfigEntry<?> entry, Set<String> sections, boolean externalTrigger) {
         synchronized (entry.monitor) {
             try {
+                // Store current file modification time before reload
+                long beforeReload = entry.file.exists() ? entry.file.lastModified() : -1L;
+                
+                // Load configuration
                 loadConfig(entry.instance, entry.metadata);
+                
+                // Atomically update last modified timestamp
+                // Use the timestamp from before reload to ensure consistency
+                entry.lastModified.set(beforeReload);
+                
+                // Refresh to get actual current timestamp
                 entry.refreshLastModified();
+                
                 return true;
             } catch (Exception e) {
                 String reason = externalTrigger ? "external" : "internal";
@@ -1113,7 +1140,8 @@ public class ConfigManager {
         private final File file;
         private final Object monitor = new Object();
         private final AtomicBoolean reloadScheduled = new AtomicBoolean(false);
-        private volatile long lastModified = -1L;
+        // Use AtomicLong for thread-safe access to lastModified
+        private final AtomicLong lastModified = new AtomicLong(-1L);
 
         private ConfigEntry(ConfigKey key, T instance, ConfigMetadata metadata, File file) {
             this.key = key;
@@ -1131,7 +1159,12 @@ public class ConfigManager {
         }
 
         private void refreshLastModified() {
-            this.lastModified = file.exists() ? file.lastModified() : -1L;
+            long modified = file.exists() ? file.lastModified() : -1L;
+            this.lastModified.set(modified);
+        }
+        
+        private long getLastModified() {
+            return this.lastModified.get();
         }
     }
 
@@ -1146,14 +1179,56 @@ public class ConfigManager {
         @Getter
         private final String templatePath;
 
-        ConfigMetadata(ConfigFile annotation, Map<String, String> placeholders) {
+        ConfigMetadata(ConfigFile annotation, Map<String, String> placeholders, JavaPlugin plugin) {
             String path = annotation.value();
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
                 path = path.replace("{" + entry.getKey() + "}", entry.getValue());
             }
-            this.filePath = path;
+            // Sanitize path to prevent path traversal attacks
+            this.filePath = sanitizePath(path, plugin);
             this.autoCreate = annotation.autoCreate();
             this.templatePath = annotation.template();
+        }
+
+        /**
+         * Sanitizes file path to prevent path traversal attacks.
+         * 
+         * @param path the path to sanitize
+         * @param plugin the plugin instance
+         * @return sanitized path
+         * @throws SecurityException if path traversal is detected
+         */
+        private String sanitizePath(String path, JavaPlugin plugin) {
+            if (path == null || path.isEmpty()) {
+                throw new IllegalArgumentException("Path cannot be null or empty");
+            }
+
+            try {
+                // Normalize the path to resolve .. and . components
+                Path normalizedPath = Paths.get(path).normalize();
+                
+                // Get plugin data folder as base path
+                Path pluginDir = plugin.getDataFolder().toPath().normalize();
+                
+                // Resolve the full path
+                Path fullPath = pluginDir.resolve(normalizedPath).normalize();
+                
+                // Check if the resolved path is still within plugin directory
+                if (!fullPath.startsWith(pluginDir)) {
+                    throw new SecurityException(
+                        "Path traversal detected! Path '" + path + 
+                        "' attempts to access files outside plugin directory."
+                    );
+                }
+                
+                // Return relative path from plugin directory
+                return pluginDir.relativize(fullPath).toString().replace('\\', '/');
+            } catch (Exception e) {
+                if (e instanceof SecurityException) {
+                    throw e;
+                }
+                throw new IllegalArgumentException("Invalid path: " + path, e);
+            }
         }
     }
 }

@@ -83,9 +83,30 @@ public class ConfigSerializer {
      * @param data  the map data to deserialize
      * @param clazz the class to deserialize to
      * @return the deserialized object
+     * @throws SecurityException if the class is not marked as @ConfigSerializable
      */
     @SuppressWarnings("unchecked")
     public static <T> T deserialize(Map<String, Object> data, Class<T> clazz) {
+        // Security check: only allow deserialization of classes marked with @ConfigSerializable
+        if (!clazz.isAnnotationPresent(ConfigSerializable.class)) {
+            throw new SecurityException(
+                "Deserialization is only allowed for classes annotated with @ConfigSerializable. " +
+                "Class '" + clazz.getName() + "' is not marked as serializable."
+            );
+        }
+        
+        // Additional security: check package to prevent deserialization of system classes
+        String packageName = clazz.getPackage() != null ? clazz.getPackage().getName() : "";
+        if (packageName.startsWith("java.") || 
+            packageName.startsWith("javax.") || 
+            packageName.startsWith("sun.") ||
+            packageName.startsWith("com.sun.")) {
+            throw new SecurityException(
+                "Deserialization of system classes is not allowed. " +
+                "Attempted to deserialize: " + clazz.getName()
+            );
+        }
+        
         try {
             T instance = clazz.getDeclaredConstructor().newInstance();
 
@@ -115,6 +136,7 @@ public class ConfigSerializer {
                     } else if (Map.class.isAssignableFrom(fieldType)) {
                         field.set(instance, value); // Maps are handled as-is
                     } else if (fieldType.isAnnotationPresent(ConfigSerializable.class)) {
+                        // Recursive deserialization - security check is already in deserialize method
                         field.set(instance, deserialize((Map<String, Object>) value, fieldType));
                     }
                 } catch (Exception e) {
@@ -183,6 +205,7 @@ public class ConfigSerializer {
             } else if (isPrimitiveOrWrapper(elementType) || elementType == String.class) {
                 result.add((T) convertValue(item, elementType));
             } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
+                // Recursive deserialization - security check is already in deserialize method
                 result.add(deserialize((Map<String, Object>) item, elementType));
             } else {
                 result.add((T) item);

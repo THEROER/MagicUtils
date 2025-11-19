@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -21,8 +22,8 @@ import java.util.stream.Collectors;
 public class CommandManager {
     private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
 
-    private final Map<String, MagicCommand> commands = new HashMap<>();
-    private final Map<String, CommandInfo> commandInfos = new HashMap<>();
+    private final Map<String, MagicCommand> commands = new ConcurrentHashMap<>();
+    private final Map<String, CommandInfo> commandInfos = new ConcurrentHashMap<>();
     private final String permissionPrefix;
     private final String pluginName;
     @Getter
