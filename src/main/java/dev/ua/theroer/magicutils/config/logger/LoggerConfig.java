@@ -46,7 +46,7 @@ public class LoggerConfig {
 
     @ConfigValue("debug-commands")
     @Comment("Whether to show debug messages for command processing")
-    private boolean debugCommands = true;
+    private boolean debugCommands = false;
 
     @ConfigValue("auto-localization")
     @Comment("Whether to automatically localize messages using LanguageManager")
@@ -71,7 +71,7 @@ public class LoggerConfig {
 
     @ConfigValue("sub-loggers")
     @Comment("Configuration for sub-loggers")
-    private Map<String, SubLoggerConfig> subLoggers = createDefaultSubLoggers();
+    private Map<String, SubLoggerConfig> subLoggers = new LinkedHashMap<>();
 
     // Custom methods for Logger to use
     /**
@@ -135,8 +135,23 @@ public class LoggerConfig {
     }
 
     /**
+     * Adds a new sub-logger to the configuration if it doesn't already exist.
+     *
+     * @param name the name of the sub-logger to add
+     * @return true if the sub-logger was added, false otherwise
+     */
+    public boolean addSubLogger(String name) {
+        if (subLoggers.containsKey(name)) {
+            return false;
+        }
+
+        subLoggers.put(name, SubLoggerConfig.builder().enabled(false).build());
+        return true;
+    }
+
+    /**
      * Gets the chat prefix mode.
-     * 
+     *
      * @return the prefix mode for chat messages
      */
     public Logger.PrefixMode getChatPrefixMode() {
@@ -177,12 +192,5 @@ public class LoggerConfig {
         } catch (NullPointerException e) {
             return Logger.Target.BOTH;
         }
-    }
-
-    private static Map<String, SubLoggerConfig> createDefaultSubLoggers() {
-        Map<String, SubLoggerConfig> defaults = new LinkedHashMap<>();
-        defaults.put("database", SubLoggerConfig.builder().enabled(true).build());
-        defaults.put("api", SubLoggerConfig.builder().enabled(true).build());
-        return defaults;
     }
 }

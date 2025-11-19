@@ -61,13 +61,19 @@ public final class Logger {
     private static LanguageManager languageManager;
 
     // Prefix settings
+    @Setter
     private static PrefixMode chatPrefixMode = PrefixMode.FULL;
+    @Setter
     private static PrefixMode consolePrefixMode = PrefixMode.SHORT;
+    @Getter @Setter
     private static String customPrefix = "[UAP]";
 
     // Default settings
+    @Getter @Setter
     private static Target defaultTarget = Target.BOTH;
+    @Getter @Setter
     private static boolean consoleStripFormatting = false;
+    @Getter @Setter
     private static boolean consoleUseGradient = false;
 
     // Plugin instance for thread safety
@@ -85,80 +91,6 @@ public final class Logger {
         }
     }
 
-    /**
-     * Sets prefix modes for both chat and console.
-     * 
-     * @param chatMode    prefix mode for chat messages
-     * @param consoleMode prefix mode for console messages
-     */
-    public static void setPrefixModes(PrefixMode chatMode, PrefixMode consoleMode) {
-        chatPrefixMode = chatMode;
-        consolePrefixMode = consoleMode;
-    }
-
-    /**
-     * Sets prefix mode for chat messages.
-     * 
-     * @param mode the prefix mode
-     */
-    public static void setChatPrefixMode(PrefixMode mode) {
-        chatPrefixMode = mode;
-    }
-
-    /**
-     * Sets prefix mode for console messages.
-     * 
-     * @param mode the prefix mode
-     */
-    public static void setConsolePrefixMode(PrefixMode mode) {
-        consolePrefixMode = mode;
-    }
-
-    /**
-     * Sets custom prefix for CUSTOM mode.
-     * 
-     * @param prefix the custom prefix
-     */
-    public static void setCustomPrefix(String prefix) {
-        customPrefix = prefix;
-    }
-
-    /**
-     * Sets default target for messages.
-     * 
-     * @param target the default target
-     */
-    public static void setDefaultTarget(Target target) {
-        defaultTarget = target;
-    }
-
-    /**
-     * Gets default target for messages.
-     * 
-     * @return the default target
-     */
-    public static Target getDefaultTarget() {
-        return defaultTarget;
-    }
-
-    /**
-     * Sets whether to strip formatting from console output.
-     * 
-     * @param strip true to strip formatting
-     */
-    public static void setConsoleStripFormatting(boolean strip) {
-        consoleStripFormatting = strip;
-    }
-
-    /**
-     * Sets whether to use gradient for console prefix.
-     * 
-     * @param useGradient true to use gradient
-     */
-    public static void setConsoleUseGradient(boolean useGradient) {
-        consoleUseGradient = useGradient;
-    }
-
     private static final MiniMessage mm = MiniMessage.miniMessage();
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
             .character('&')
@@ -166,6 +98,7 @@ public final class Logger {
             .useUnusualXRepeatedCharacterHexFormat()
             .build();
 
+    @Getter
     private static final Map<String, PrefixedLogger> prefixedLoggers = new HashMap<>();
 
     /**
@@ -391,6 +324,7 @@ public final class Logger {
             boolean broadcast,
             Object... placeholders) {
 
+        if (LogLevel.DEBUG == level && config != null && !config.isDebugCommands()) return;
         // Process the message into Component
         Component component = parseMessage(message, level, target, player, players, placeholders);
 
@@ -862,6 +796,10 @@ public final class Logger {
         return prefixedLoggers.computeIfAbsent(name, k -> {
             PrefixedLogger prefixedLogger = new PrefixedLogger(name, prefix);
 
+            if (config != null && config.addSubLogger(name)) {
+                configManager.save(LoggerConfig.class);
+            }
+
             // Check if there's a configuration for this logger
             if (config != null && config.getSubLoggers() != null) {
                 SubLoggerConfig subLoggerConfig = config.getSubLoggers().get(name);
@@ -872,15 +810,6 @@ public final class Logger {
 
             return prefixedLogger;
         });
-    }
-
-    /**
-     * Gets all registered prefixed loggers
-     * 
-     * @return map of logger names to instances
-     */
-    public static Map<String, PrefixedLogger> getPrefixedLoggers() {
-        return new HashMap<>(prefixedLoggers);
     }
 
     /**
