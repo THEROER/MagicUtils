@@ -151,7 +151,8 @@ public class LoggerExamples {
                 "tps", 19.97));
 
         // Runtime configuration changes
-        Logger.setPrefixModes(Logger.PrefixMode.SHORT, Logger.PrefixMode.NONE);
+        Logger.setChatPrefixMode(Logger.PrefixMode.SHORT);
+        Logger.setConsolePrefixMode(Logger.PrefixMode.NONE);
         Logger.setDefaultTarget(Logger.Target.CONSOLE);
         Logger.setConsoleStripFormatting(true);
 
