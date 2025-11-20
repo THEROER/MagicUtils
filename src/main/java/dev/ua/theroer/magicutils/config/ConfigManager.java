@@ -252,7 +252,18 @@ public class ConfigManager {
                         sectionInstance = field.getType().getDeclaredConstructor().newInstance();
                         field.set(instance, sectionInstance);
                     }
-                    processFields(sectionInstance, yaml, field.getType());
+                    // Get the subsection to process fields within the section context
+                    ConfigurationSection subsection = yaml.getConfigurationSection(path);
+                    if (subsection != null) {
+                        // Create a new YAML configuration from the subsection
+                        // This allows fields within the section to use relative paths
+                        YamlConfiguration subsectionYaml = new YamlConfiguration();
+                        copySectionToYaml(subsection, subsectionYaml, "");
+                        processFields(sectionInstance, subsectionYaml, field.getType());
+                    } else {
+                        // If subsection doesn't exist, process with empty config (will use defaults)
+                        processFields(sectionInstance, new YamlConfiguration(), field.getType());
+                    }
                 }
                 continue;
             }
@@ -459,6 +470,28 @@ public class ConfigManager {
         }
 
         return value;
+    }
+
+    /**
+     * Copies a ConfigurationSection to a YamlConfiguration recursively.
+     * 
+     * @param source the source ConfigurationSection
+     * @param target the target YamlConfiguration
+     * @param prefix the prefix for keys (empty for root)
+     */
+    private void copySectionToYaml(ConfigurationSection source, YamlConfiguration target, String prefix) {
+        for (String key : source.getKeys(false)) {
+            String fullKey = prefix.isEmpty() ? key : prefix + "." + key;
+            Object value = source.get(key);
+            
+            if (value instanceof ConfigurationSection) {
+                // Recursively copy nested sections
+                copySectionToYaml((ConfigurationSection) value, target, fullKey);
+            } else {
+                // Copy simple values
+                target.set(fullKey, value);
+            }
+        }
     }
 
     private Map<String, Object> flattenSection(ConfigurationSection section) {
