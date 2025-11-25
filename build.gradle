@@ -1,50 +1,44 @@
 plugins {
-    id 'java-library'
-    id 'maven-publish'
+    id 'base'
 }
 
-group = 'dev.ua.theroer'
-version = '1.4.10'
-
-repositories {
-    mavenCentral()
-    maven { url 'https://oss.sonatype.org/content/groups/public/' }
-    maven { url 'https://repo.papermc.io/repository/maven-public/' }
-    maven { url 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+allprojects {
+    group = 'dev.ua.theroer'
+    version = '1.5.2'
 }
 
-dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'org.jetbrains:annotations:24.0.1'
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    compileOnly 'me.clip:placeholderapi:2.11.6'
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
 
-    implementation 'net.kyori:adventure-api:4.14.0'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    repositories {
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/groups/public/' }
+        maven { url 'https://repo.papermc.io/repository/maven-public/' }
+        maven { url 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+        maven { url 'https://maven.neoforged.net/releases' }
+    }
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
-    testImplementation 'org.mockito:mockito-core:5.1.1'
-}
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+        withSourcesJar()
+        withJavadocJar()
+    }
 
-test {
-    useJUnitPlatform()
-}
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+    }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+    }
 
-    withSourcesJar()
-    withJavadocJar()
-}
-
-tasks.withType(JavaCompile) {
-    options.compilerArgs << '-Xlint:deprecation' << '-Xlint:unchecked'
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
         }
     }
 }

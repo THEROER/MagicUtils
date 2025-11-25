@@ -1,0 +1,509 @@
+package dev.ua.theroer.magicutils.lang;
+
+import dev.ua.theroer.magicutils.config.ConfigManager;
+import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.Platform;
+import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Platform-agnostic language manager.
+ */
+public class LanguageManager {
+    private final Platform platform;
+    private final ConfigManager configManager;
+    private final PlatformLogger logger;
+    private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
+    private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
+    private String currentLanguage = "en";
+    private LanguageConfig currentConfig;
+    private LanguageConfig fallbackConfig;
+    private String fallbackLanguage = "en";
+
+    public LanguageManager(Object platformOrPlugin, ConfigManager configManager) {
+        this(resolvePlatform(platformOrPlugin), configManager);
+    }
+
+    public LanguageManager(Platform platform, ConfigManager configManager) {
+        this.platform = platform;
+        this.configManager = configManager;
+        this.logger = platform.logger();
+    }
+
+    public void init(String defaultLanguage) {
+        this.currentLanguage = defaultLanguage;
+        loadLanguage(currentLanguage);
+
+        if (!currentLanguage.equals(fallbackLanguage)) {
+            loadFallbackLanguage(fallbackLanguage);
+        } else {
+            fallbackConfig = currentConfig;
+        }
+    }
+
+    public boolean loadLanguage(String languageCode) {
+        try {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("lang", languageCode);
+
+            LanguageConfig config = configManager.register(LanguageConfig.class, placeholders);
+            initializeLanguageDefaults(config, languageCode);
+
+            loadedLanguages.put(languageCode, config);
+
+            if (languageCode.equals(currentLanguage)) {
+                currentConfig = config;
+            }
+
+            if (languageCode.equals(fallbackLanguage)) {
+                fallbackConfig = config;
+            }
+
+            logger.info("Loaded language: " + languageCode);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Failed to load language: " + languageCode, e);
+            return false;
+        }
+    }
+
+    private void initializeLanguageDefaults(LanguageConfig config, String languageCode) {
+        String metaCode = config.getMetadata() != null ? config.getMetadata().getCode() : null;
+        boolean isNewFile = ("en".equalsIgnoreCase(metaCode) || metaCode == null) && !languageCode.equals("en");
+
+        if (isNewFile) {
+            Map<String, Map<String, String>> translations = createTranslations(languageCode);
+
+            if (!translations.isEmpty()) {
+                saveLanguageTranslations(languageCode, translations);
+                try {
+                    configManager.reload(config);
+                } catch (Exception e) {
+                    logger.warn("Failed to reload language config after setting translations", e);
+                }
+            }
+        }
+    }
+
+    private void loadFallbackLanguage(String languageCode) {
+        if (loadLanguage(languageCode)) {
+            this.fallbackLanguage = languageCode;
+            fallbackConfig = loadedLanguages.get(languageCode);
+        }
+    }
+
+    public boolean setLanguage(String languageCode) {
+        if (!loadedLanguages.containsKey(languageCode)) {
+            if (!loadLanguage(languageCode)) {
+                return false;
+            }
+        }
+
+        this.currentLanguage = languageCode;
+        this.currentConfig = loadedLanguages.get(languageCode);
+        return true;
+    }
+
+    public void setFallbackLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isEmpty()) {
+            return;
+        }
+
+        this.fallbackLanguage = languageCode;
+        if (!languageCode.equals(currentLanguage)) {
+            loadFallbackLanguage(languageCode);
+        } else {
+            fallbackConfig = currentConfig;
+        }
+    }
+
+    public String getCurrentLanguage() {
+        return currentLanguage;
+    }
+
+    public Set<String> getAvailableLanguages() {
+        Set<String> languages = new HashSet<>();
+        File langDir = platform.configDir().resolve("lang").toFile();
+
+        if (langDir.exists() && langDir.isDirectory()) {
+            File[] files = langDir.listFiles((dir, name) -> name.endsWith(".yml"));
+            if (files != null) {
+                for (File file : files) {
+                    String name = file.getName();
+                    languages.add(name.substring(0, name.length() - 4));
+                }
+            }
+        }
+
+        languages.addAll(loadedLanguages.keySet());
+        return languages;
+    }
+
+    public Map<String, LanguageInfo> getLanguageInfos() {
+        Map<String, LanguageInfo> infos = new HashMap<>();
+
+        for (String code : getAvailableLanguages()) {
+            if (!loadedLanguages.containsKey(code)) {
+                loadLanguage(code);
+            }
+
+            LanguageConfig config = loadedLanguages.get(code);
+            if (config != null) {
+                infos.put(code, new LanguageInfo(
+                        code,
+                        config.getMetadata().getName(),
+                        config.getMetadata().getAuthor(),
+                        config.getMetadata().getVersion()));
+            }
+        }
+
+        return infos;
+    }
+
+    public String getMessage(String key) {
+        return resolveMessage(currentLanguage, key);
+    }
+
+    public String getMessage(String key, Map<String, String> placeholders) {
+        String message = resolveMessage(currentLanguage, key);
+        return applyPlaceholders(message, placeholders);
+    }
+
+    public String getMessage(String key, String... replacements) {
+        String message = resolveMessage(currentLanguage, key);
+        return applyReplacements(message, replacements);
+    }
+
+    public boolean hasMessage(String key) {
+        if (hasMessage(currentConfig, key)) {
+            return true;
+        }
+        ensureFallbackLoaded();
+        return hasMessage(fallbackConfig, key);
+    }
+
+    public boolean hasMessageForLanguage(String languageCode, String key) {
+        LanguageConfig primary = getOrLoadLanguage(languageCode);
+        if (hasMessage(primary, key)) {
+            return true;
+        }
+        ensureFallbackLoaded();
+        return hasMessage(fallbackConfig, key);
+    }
+
+    public String getMessageForLanguage(String languageCode, String key) {
+        return resolveMessage(languageCode, key);
+    }
+
+    public String getMessageForLanguage(String languageCode, String key, Map<String, String> placeholders) {
+        String message = resolveMessage(languageCode, key);
+        return applyPlaceholders(message, placeholders);
+    }
+
+    public String getMessageForLanguage(String languageCode, String key, String... replacements) {
+        String message = resolveMessage(languageCode, key);
+        return applyReplacements(message, replacements);
+    }
+
+    public boolean setPlayerLanguage(UUID playerId, String languageCode) {
+        if (playerId == null) {
+            return false;
+        }
+
+        if (languageCode == null || languageCode.isEmpty()) {
+            playerLanguages.remove(playerId);
+            return true;
+        }
+
+        if (!loadedLanguages.containsKey(languageCode) && !loadLanguage(languageCode)) {
+            return false;
+        }
+
+        playerLanguages.put(playerId, languageCode);
+        return true;
+    }
+
+    public boolean setPlayerLanguage(Audience audience, String languageCode) {
+        return audience != null && setPlayerLanguage(audience.id(), languageCode);
+    }
+
+    public boolean setPlayerLanguage(Object player, String languageCode) {
+        UUID id = extractUuid(player);
+        return setPlayerLanguage(id, languageCode);
+    }
+
+    public void clearPlayerLanguage(UUID playerId) {
+        if (playerId != null) {
+            playerLanguages.remove(playerId);
+        }
+    }
+
+    public void clearPlayerLanguage(Object player) {
+        UUID id = extractUuid(player);
+        clearPlayerLanguage(id);
+    }
+
+    public String getPlayerLanguage(UUID playerId) {
+        if (playerId == null) {
+            return currentLanguage;
+        }
+        return playerLanguages.getOrDefault(playerId, currentLanguage);
+    }
+
+    public String getPlayerLanguage(Object player) {
+        UUID id = extractUuid(player);
+        return id != null ? getPlayerLanguage(id) : currentLanguage;
+    }
+
+    public Map<UUID, String> getPlayerLanguages() {
+        return Collections.unmodifiableMap(new HashMap<>(playerLanguages));
+    }
+
+    public String getMessageForAudience(Audience audience, String key) {
+        if (audience == null || audience.id() == null) {
+            return getMessage(key);
+        }
+        return resolveMessage(getPlayerLanguage(audience.id()), key);
+    }
+
+    public String getMessageForAudience(Audience audience, String key, Map<String, String> placeholders) {
+        String message = getMessageForAudience(audience, key);
+        return applyPlaceholders(message, placeholders);
+    }
+
+    public String getMessageForAudience(Audience audience, String key, String... replacements) {
+        String message = getMessageForAudience(audience, key);
+        return applyReplacements(message, replacements);
+    }
+
+    public void reload() {
+        Map<String, LanguageConfig> snapshot = new HashMap<>(loadedLanguages);
+
+        for (Map.Entry<String, LanguageConfig> entry : snapshot.entrySet()) {
+            configManager.reload(entry.getValue());
+        }
+
+        currentConfig = loadedLanguages.get(currentLanguage);
+        if (currentConfig == null) {
+            loadLanguage(currentLanguage);
+            currentConfig = loadedLanguages.get(currentLanguage);
+        }
+
+        fallbackConfig = loadedLanguages.get(fallbackLanguage);
+        if (fallbackConfig == null && fallbackLanguage != null) {
+            loadFallbackLanguage(fallbackLanguage);
+        }
+    }
+
+    public void saveCustomMessages(String languageCode, Map<String, String> customMessages) {
+        try {
+            LanguageConfig config = loadedLanguages.get(languageCode);
+            if (config == null) {
+                loadLanguage(languageCode);
+                config = loadedLanguages.get(languageCode);
+            }
+
+            if (config != null) {
+                config.getCustomMessages().putAll(customMessages);
+                configManager.save(config);
+            }
+
+        } catch (Exception e) {
+            logger.warn("Failed to save language messages for: " + languageCode, e);
+        }
+    }
+
+    public void addMagicUtilsMessages() {
+        for (LanguageConfig config : loadedLanguages.values()) {
+            configManager.save(config);
+        }
+    }
+
+    private LanguageConfig getOrLoadLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isEmpty()) {
+            return currentConfig;
+        }
+
+        LanguageConfig config = loadedLanguages.get(languageCode);
+        if (config == null && loadLanguage(languageCode)) {
+            config = loadedLanguages.get(languageCode);
+        }
+        return config;
+    }
+
+    private void ensureFallbackLoaded() {
+        if (fallbackConfig == null && fallbackLanguage != null) {
+            loadFallbackLanguage(fallbackLanguage);
+        }
+    }
+
+    private String resolveMessage(String languageCode, String key) {
+        return resolveMessage(getOrLoadLanguage(languageCode), key);
+    }
+
+    private String resolveMessage(LanguageConfig primary, String key) {
+        if (primary != null) {
+            String message = primary.getMessage(key);
+            if (message != null) {
+                return message;
+            }
+        }
+
+        ensureFallbackLoaded();
+        if (fallbackConfig != null) {
+            String fallbackMessage = fallbackConfig.getMessage(key);
+            if (fallbackMessage != null) {
+                return fallbackMessage;
+            }
+        }
+
+        return key;
+    }
+
+    private boolean hasMessage(LanguageConfig config, String key) {
+        if (config == null) return false;
+        return config.getMessage(key) != null;
+    }
+
+    private String applyPlaceholders(String message, Map<String, String> placeholders) {
+        if (placeholders == null || placeholders.isEmpty()) {
+            return message;
+        }
+        String result = message;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            result = result.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return result;
+    }
+
+    private String applyReplacements(String message, String... replacements) {
+        if (replacements == null || replacements.length == 0) {
+            return message;
+        }
+        String result = message;
+        for (int i = 0; i < replacements.length - 1; i += 2) {
+            String placeholder = replacements[i];
+            String value = replacements[i + 1];
+
+            result = result.replace("{" + placeholder + "}", value);
+            result = result.replace(placeholder, value);
+        }
+        return result;
+    }
+
+    private Map<String, Map<String, String>> createTranslations(String languageCode) {
+        return LanguageDefaults.localizedSections(languageCode);
+    }
+
+    private void saveLanguageTranslations(String languageCode, Map<String, Map<String, String>> translations) {
+        try {
+            File langFile = platform.configDir().resolve("lang/" + languageCode + ".yml").toFile();
+            langFile.getParentFile().mkdirs();
+
+            Map<String, Object> data = new HashMap<>();
+            if (langFile.exists()) {
+                try (FileInputStream in = new FileInputStream(langFile)) {
+                    Yaml yaml = new Yaml();
+                    Object loaded = yaml.load(in);
+                    if (loaded instanceof Map) {
+                        data.putAll(castMap((Map<?, ?>) loaded));
+                    }
+                }
+            }
+
+            for (Map.Entry<String, Map<String, String>> section : translations.entrySet()) {
+                for (Map.Entry<String, String> entry : section.getValue().entrySet()) {
+                    applyPath(data, section.getKey() + "." + entry.getKey(), entry.getValue());
+                }
+            }
+
+            DumperOptions options = new DumperOptions();
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            options.setIndicatorIndent(1);
+            options.setIndent(2);
+            options.setDefaultScalarStyle(DumperOptions.ScalarStyle.SINGLE_QUOTED);
+            Yaml yaml = new Yaml(options);
+            try (FileWriter writer = new FileWriter(langFile)) {
+                yaml.dump(data, writer);
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to save language translations for: " + languageCode, e);
+        }
+    }
+
+    private Map<String, Object> castMap(Map<?, ?> raw) {
+        Map<String, Object> out = new HashMap<>();
+        for (Map.Entry<?, ?> e : raw.entrySet()) {
+            out.put(String.valueOf(e.getKey()), e.getValue());
+        }
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyPath(Map<String, Object> root, String path, Object value) {
+        String[] parts = path.split("\\.");
+        Map<String, Object> current = root;
+        for (int i = 0; i < parts.length - 1; i++) {
+            String part = parts[i];
+            Object child = current.get(part);
+            if (!(child instanceof Map)) {
+                child = new HashMap<String, Object>();
+                current.put(part, child);
+            }
+            current = (Map<String, Object>) child;
+        }
+        current.put(parts[parts.length - 1], value);
+    }
+
+    private UUID extractUuid(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Audience audience) {
+            return audience.id();
+        }
+        try {
+            var m = obj.getClass().getMethod("getUniqueId");
+            Object res = m.invoke(obj);
+            if (res instanceof UUID uuid) {
+                return uuid;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private static Platform resolvePlatform(Object platformOrPlugin) {
+        if (platformOrPlugin instanceof Platform) {
+            return (Platform) platformOrPlugin;
+        }
+        if (platformOrPlugin != null) {
+            try {
+                Class<?> providerClass = Class
+                        .forName("dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider");
+                for (var ctor : providerClass.getConstructors()) {
+                    if (ctor.getParameterCount() == 1
+                            && ctor.getParameterTypes()[0].isAssignableFrom(platformOrPlugin.getClass())) {
+                        Object instance = ctor.newInstance(platformOrPlugin);
+                        if (instance instanceof Platform) {
+                            return (Platform) instance;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        throw new IllegalArgumentException("Platform provider is required to initialize LanguageManager");
+    }
+}

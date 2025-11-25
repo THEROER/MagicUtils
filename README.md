@@ -26,9 +26,9 @@ Maven cache.
 
 ## Quick Start
 
-1. **Publish to Maven Local**
+1. **Publish to Maven Local** (Bukkit implementation)
    ```bash
-   ./gradlew publishToMavenLocal
+   ./gradlew :platform-bukkit:publishToMavenLocal
    ```
 2. **Declare the dependency** in your plugin build script:
    ```kts
@@ -43,6 +43,10 @@ Maven cache.
    The default version is defined in `build.gradle` (e.g. `1.0-SNAPSHOT`).
 3. **Refresh after every change** by repeating `publishToMavenLocal` so
    dependent plugins pick up the new artefact.
+
+> **Modules:** `platform-api` (abstractions), `core` (platform-agnostic code),
+> `platform-bukkit` (Paper/Bukkit implementation), `platform-neoforge`
+> (minimal NeoForge adapter: config dir, logger, console audience).
 
 > **Sandbox tip:** if the wrapper cannot write to the default Gradle home, run
 > commands with `GRADLE_USER_HOME=$PWD/.gradle ./gradlew …`.
@@ -199,6 +203,7 @@ Maven cache.
 ```java
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.config.ConfigManager;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public final class ExamplePlugin extends JavaPlugin {
@@ -207,7 +212,7 @@ public final class ExamplePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        configManager = new ConfigManager(this);
+        configManager = new ConfigManager(new BukkitPlatformProvider(this));
         exampleConfig = configManager.register(ExampleConfig.class);
 
         configManager.onChange(ExampleConfig.class, (config, sections) ->

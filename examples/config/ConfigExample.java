@@ -2,6 +2,7 @@ package examples.config;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.config.ConfigManager;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider;
 import dev.ua.theroer.magicutils.config.annotations.Comment;
 import dev.ua.theroer.magicutils.config.annotations.ConfigFile;
 import dev.ua.theroer.magicutils.config.annotations.ConfigSection;
@@ -48,7 +49,7 @@ public final class ConfigExample {
      * Demonstrates registration, change listening, and manual saves.
      */
     public static void bootstrap(JavaPlugin plugin) {
-        ConfigManager manager = new ConfigManager(plugin);
+        ConfigManager manager = new ConfigManager(new BukkitPlatformProvider(plugin));
         ExampleConfig config = manager.register(ExampleConfig.class);
 
         manager.onChange(ExampleConfig.class, (updated, sections) ->
