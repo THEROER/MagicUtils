@@ -152,7 +152,7 @@ public class CommandManager {
         // args and execute method exists
         if (executeMethod != null && (subCommands.isEmpty() || args.isEmpty())) {
             PrefixedLoggerGen.debug(logger, "Using direct execute method");
-            return executeDirectMethod(command, executeMethod, sender, args);
+            return executeDirectMethod(command, info, executeMethod, sender, args);
         }
 
         // If there are subcommands but no execute method and no args
@@ -203,10 +203,10 @@ public class CommandManager {
         List<String> subArgs = args.size() > 1 ? args.subList(1, args.size()) : new ArrayList<>();
         PrefixedLoggerGen.debug(logger, "Executing subcommand: " + subCommandName + " with args: " + subArgs);
 
-        return executeSubCommand(command, targetSubCommand, sender, subArgs);
+        return executeSubCommand(command, info, targetSubCommand, sender, subArgs);
     }
 
-    private CommandResult executeDirectMethod(MagicCommand command, Method executeMethod, CommandSender sender,
+    private CommandResult executeDirectMethod(MagicCommand command, CommandInfo info, Method executeMethod, CommandSender sender,
             List<String> args) {
         try {
             List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
@@ -219,7 +219,8 @@ public class CommandManager {
 
             if (methodArgs == null) {
                 PrefixedLoggerGen.debug(logger, "Failed to parse arguments for direct execute method");
-                return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get());
+                String usage = buildUsage(info, null, arguments);
+                return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get("usage", usage));
             }
 
             // Log the actual arguments being passed
@@ -289,6 +290,12 @@ public class CommandManager {
 
             // If we found a match, use it
             if (bestMatch != null) {
+                if (argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
+                    PrefixedLoggerGen.debug(logger, "Permission denied for argument " + argument.getName()
+                            + " on permission: " + argument.getPermission());
+                    return null;
+                }
+
                 result[i] = convertArgument(bestMatch, argument.getType(), sender);
                 filled[i] = true;
                 remainingArgs.remove(bestMatchIndex);
@@ -305,10 +312,12 @@ public class CommandManager {
 
             CommandArgument argument = arguments.get(i);
             String value;
+            boolean providedByUser = false;
 
             if (userArgIndex < remainingArgs.size()) {
                 value = remainingArgs.get(userArgIndex);
                 userArgIndex++;
+                providedByUser = true;
                 PrefixedLoggerGen.debug(logger,
                         "Filled remaining parameter " + i + " (" + argument.getName() + ") with user arg: " + value);
             } else if (argument.getDefaultValue() != null) {
@@ -325,7 +334,7 @@ public class CommandManager {
                 return null;
             }
 
-            if (argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
+            if (providedByUser && argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
                 PrefixedLoggerGen.debug(logger, "Permission denied for argument " + argument.getName()
                         + " on permission: " + argument.getPermission());
                 return null;
@@ -381,7 +390,7 @@ public class CommandManager {
         return false;
     }
 
-    private CommandResult executeSubCommand(MagicCommand command, MagicCommand.SubCommandInfo subInfo,
+    private CommandResult executeSubCommand(MagicCommand command, CommandInfo info, MagicCommand.SubCommandInfo subInfo,
             CommandSender sender, List<String> args) {
         try {
             Method method = subInfo.method;
@@ -395,7 +404,8 @@ public class CommandManager {
 
             if (methodArgs == null) {
                 PrefixedLoggerGen.debug(logger, "Failed to parse arguments for subcommand");
-                return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get());
+                String usage = buildUsage(info, subInfo, arguments);
+                return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get("usage", usage));
             }
 
             // Log the actual arguments being passed
@@ -964,6 +974,24 @@ public class CommandManager {
                 usage.append(">");
             }
         }
+    }
+
+    private String buildUsage(CommandInfo info, MagicCommand.SubCommandInfo subInfo, List<CommandArgument> arguments) {
+        StringBuilder usage = new StringBuilder("/").append(info.name());
+        if (subInfo != null) {
+            usage.append(" ").append(subInfo.annotation.name());
+        }
+        for (CommandArgument arg : arguments) {
+            if (arg.getType().equals(CommandSender.class)) {
+                continue;
+            }
+            boolean optional = arg.isOptional() || arg.getDefaultValue() != null;
+            usage.append(" ");
+            usage.append(optional ? "[" : "<");
+            usage.append(generateArgumentName(arg));
+            usage.append(optional ? "]" : ">");
+        }
+        return usage.toString();
     }
 
     /**

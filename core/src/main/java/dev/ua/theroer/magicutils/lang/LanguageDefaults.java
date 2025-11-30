@@ -20,7 +20,7 @@ final class LanguageDefaults {
         map.put("executed", "&aCommand executed successfully");
         map.put("specify_subcommand", "&eSpecify a subcommand: &f{subcommands}");
         map.put("unknown_subcommand", "&cUnknown subcommand: &f{subcommand}");
-        map.put("invalid_arguments", "&cInvalid command arguments");
+        map.put("invalid_arguments", "&cInvalid command arguments. Usage: &7{usage}");
         map.put("not_found", "&cCommand not found");
         map.put("internal_error", "&cAn internal error occurred while executing the command");
         return map;
@@ -138,7 +138,7 @@ final class LanguageDefaults {
         map.put("executed", "&aКоманда выполнена успешно");
         map.put("specify_subcommand", "&eУкажите подкоманду: &f{subcommands}");
         map.put("unknown_subcommand", "&cНеизвестная подкоманда: &f{subcommand}");
-        map.put("invalid_arguments", "&cНеверные аргументы команды");
+        map.put("invalid_arguments", "&cНеверные аргументы. Использование: &7{usage}");
         map.put("not_found", "&cКоманда не найдена");
         map.put("internal_error", "&cПроизошла внутренняя ошибка при выполнении команды");
         return map;
@@ -215,7 +215,7 @@ final class LanguageDefaults {
         map.put("executed", "&aКоманду виконано успішно");
         map.put("specify_subcommand", "&eВкажіть підкоманду: &f{subcommands}");
         map.put("unknown_subcommand", "&cНевідома підкоманда: &f{subcommand}");
-        map.put("invalid_arguments", "&cНеправильні аргументи команди");
+        map.put("invalid_arguments", "&cНеправильні аргументи. Використання: &7{usage}");
         map.put("not_found", "&cКоманду не знайдено");
         map.put("internal_error", "&cСталася внутрішня помилка під час виконання команди");
         return map;
