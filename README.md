@@ -17,6 +17,8 @@ Maven cache.
    - [logger](#logger--rich-console--chat-logging)
    - [gui](#gui--inventory-ui-helpers)
    - [utils](#utils--scheduling-helpers)
+   - [platform](#platform--platform-abstractions)
+   - [placeholders](#placeholders--custom--papi-integration)
    - [annotations](#annotations--shared-metadata)
 3. [Recipes](#recipes)
 4. [Troubleshooting](#troubleshooting)
@@ -40,9 +42,11 @@ Maven cache.
        implementation("dev.ua.theroer:magicutils:<version>")
    }
    ```
-   The default version is defined in `build.gradle` (e.g. `1.0-SNAPSHOT`).
+   The default version is defined in `build.gradle` (currently `1.5.2`).
 3. **Refresh after every change** by repeating `publishToMavenLocal` so
    dependent plugins pick up the new artefact.
+
+> **Prerequisites:** Java 21 toolchain across all modules.
 
 > **Modules:** `platform-api` (abstractions), `core` (platform-agnostic code),
 > `platform-bukkit` (Paper/Bukkit implementation), `platform-neoforge`
@@ -122,6 +126,7 @@ Maven cache.
 - Combine with the `lang` module: return `CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get(sender, "language", arg))` for translated errors.
 - Commands can be reloaded by clearing the registry and re-registering classes; useful during development or when configs change.
 - Example: `examples/commands/ExampleCommand.java`.
+- Built-in `/magicutils reload` and `/magicutils settings` commands exist but are still in progress; expect breaking changes.
 
 ### `logger` — rich console & chat logging
 
@@ -131,6 +136,7 @@ Maven cache.
 - Sub-logger support (`PrefixedLogger`) for namespaced output (e.g. `database`, `api`, `scheduler`).
 - Optional localisation — route everything through `LanguageManager` by flipping a single flag.
 - Smart parsing: `Logger.parseSmart()` recognises hybrid strings that mix MiniMessage with legacy codes, making transition painless.
+- Placeholder pipeline: custom placeholders are expanded first, then PlaceholderAPI is applied if present (fallbacks gracefully when absent).
 
 **Key knobs in `logger.yml`**
 - `chat` / `console` sections: gradients, palettes per log level, auto colour generation toggles.
@@ -148,6 +154,7 @@ Maven cache.
   ```
 - Combine with the command framework for translated feedback: `Logger.warn(sender, InternalMessages.CMD_NO_PERMISSION.get(sender));`
 - Flip localisation at runtime via `Logger.setAutoLocalization(true)` to respect per-player languages when broadcasting to chat.
+- Register custom placeholders via `PlaceholderProcessor.registerGlobalPlaceholder` / `registerLocalPlaceholder`; see `examples/logger/PlaceholderDemo.java`.
 - Example: `examples/logger/LoggerExample.java`.
 
 ### `gui` — inventory UI helpers
@@ -181,6 +188,45 @@ Maven cache.
           () -> player.sendMessage(Messages.get(player, "match.begin")));
   ```
 - Example: `examples/utils/ScheduleExample.java`.
+
+### `platform` — platform abstractions
+
+**Highlights**
+- `Platform`, `PlatformLogger`, and `Audience` interfaces decouple core code from Bukkit-specific APIs.
+- `platform-bukkit` supplies a full provider; `platform-neoforge` adds a minimal adapter (config dir, console audience, logging, main-thread execution).
+- `ConfigManager` and `LanguageManager` accept either a `Platform` or a legacy plugin instance (auto-resolves to a Bukkit provider when possible).
+
+**Usage notes**
+- Use `new BukkitPlatformProvider(plugin)` (or your own `Platform` implementation) when wiring MagicUtils in non-Bukkit contexts.
+- For other platforms, implement the `Platform`/`Audience`/`PlatformLogger` trio and pass it into managers.
+- Typical setup in a Bukkit plugin:
+  ```java
+  private ConfigManager configManager;
+  private LanguageManager languageManager;
+
+  @Override
+  public void onEnable() {
+      Platform platform = new BukkitPlatformProvider(this);
+      configManager = new ConfigManager(platform);
+      languageManager = new LanguageManager(platform, configManager);
+      languageManager.init("en");
+      Logger.init(this, configManager);
+      Messages.setLanguageManager(languageManager);
+  }
+  ```
+
+### `placeholders` — custom & PAPI integration
+
+**Highlights**
+- `PlaceholderProcessor` allows global or plugin-scoped placeholders; resolvers receive the player (if any) and formatting args.
+- PlaceholderAPI integration is lazy: if PAPI is present, `PapiEngine` is used; otherwise a `NoopEngine` fallback keeps messages intact.
+- Logger messages automatically run through custom placeholders first, then PAPI, ensuring consistent rendering across console/chat.
+- `IntegrationManager`/`Integration` helpers wrap third-party checks (e.g., PlaceholderAPI) and report availability safely.
+
+**Usage notes**
+- Register resolvers: `registerGlobalPlaceholder("server-online", () -> String.valueOf(Bukkit.getOnlinePlayers().size()))`.
+- Pair with your own PAPI expansions (`examples/logger/PapiExpansionExample.java`) or purely custom placeholders (`examples/logger/PlaceholderDemo.java`).
+
 
 ### `annotations` — shared metadata
 
