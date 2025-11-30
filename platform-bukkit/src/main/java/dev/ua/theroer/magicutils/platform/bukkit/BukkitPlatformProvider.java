@@ -20,6 +20,11 @@ public class BukkitPlatformProvider implements Platform {
     private final PlatformLogger logger;
     private final BukkitScheduler scheduler;
 
+    /**
+     * Create a Bukkit/Paper platform adapter around the given plugin.
+     *
+     * @param plugin owning plugin instance
+     */
     public BukkitPlatformProvider(JavaPlugin plugin) {
         this.plugin = plugin;
         this.logger = new BukkitPlatformLogger(plugin.getLogger());

@@ -33,16 +33,33 @@ public class LanguageManager {
     private LanguageConfig fallbackConfig;
     private String fallbackLanguage = "en";
 
+    /**
+     * Create a language manager, resolving a {@link Platform} from the provided platform or legacy plugin instance.
+     *
+     * @param platformOrPlugin platform abstraction or Bukkit plugin
+     * @param configManager config manager for loading language files
+     */
     public LanguageManager(Object platformOrPlugin, ConfigManager configManager) {
         this(resolvePlatform(platformOrPlugin), configManager);
     }
 
+    /**
+     * Create a language manager bound to a specific platform.
+     *
+     * @param platform platform abstraction
+     * @param configManager config manager for loading language files
+     */
     public LanguageManager(Platform platform, ConfigManager configManager) {
         this.platform = platform;
         this.configManager = configManager;
         this.logger = platform.logger();
     }
 
+    /**
+     * Initialise language manager and load default language (plus fallback if different).
+     *
+     * @param defaultLanguage language code to load first
+     */
     public void init(String defaultLanguage) {
         this.currentLanguage = defaultLanguage;
         loadLanguage(currentLanguage);
@@ -54,6 +71,12 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Load a language file into memory.
+     *
+     * @param languageCode language code to load
+     * @return true if successfully loaded
+     */
     public boolean loadLanguage(String languageCode) {
         try {
             Map<String, String> placeholders = new HashMap<>();
@@ -105,6 +128,12 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Switch the current language for the manager.
+     *
+     * @param languageCode language code to set
+     * @return true if language is now active
+     */
     public boolean setLanguage(String languageCode) {
         if (!loadedLanguages.containsKey(languageCode)) {
             if (!loadLanguage(languageCode)) {
@@ -117,6 +146,11 @@ public class LanguageManager {
         return true;
     }
 
+    /**
+     * Set fallback language used when a key is missing in the current language.
+     *
+     * @param languageCode fallback language code
+     */
     public void setFallbackLanguage(String languageCode) {
         if (languageCode == null || languageCode.isEmpty()) {
             return;
@@ -130,10 +164,20 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Get the language currently active for the manager.
+     *
+     * @return currently active language code
+     */
     public String getCurrentLanguage() {
         return currentLanguage;
     }
 
+    /**
+     * List languages available on disk or already loaded.
+     *
+     * @return set of language codes found on disk or loaded in memory
+     */
     public Set<String> getAvailableLanguages() {
         Set<String> languages = new HashSet<>();
         File langDir = platform.configDir().resolve("lang").toFile();
@@ -152,6 +196,11 @@ public class LanguageManager {
         return languages;
     }
 
+    /**
+     * Get metadata for every available language.
+     *
+     * @return metadata for each available language
+     */
     public Map<String, LanguageInfo> getLanguageInfos() {
         Map<String, LanguageInfo> infos = new HashMap<>();
 
@@ -173,20 +222,46 @@ public class LanguageManager {
         return infos;
     }
 
+    /**
+     * Resolve a message in the current language.
+     *
+     * @param key message key
+     * @return resolved message or key if missing
+     */
     public String getMessage(String key) {
         return resolveMessage(currentLanguage, key);
     }
 
+    /**
+     * Resolve a message with named placeholders.
+     *
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return message with substitutions applied
+     */
     public String getMessage(String key, Map<String, String> placeholders) {
         String message = resolveMessage(currentLanguage, key);
         return applyPlaceholders(message, placeholders);
     }
 
+    /**
+     * Resolve a message with positional replacements (name/value pairs).
+     *
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return message with substitutions applied
+     */
     public String getMessage(String key, String... replacements) {
         String message = resolveMessage(currentLanguage, key);
         return applyReplacements(message, replacements);
     }
 
+    /**
+     * Check whether the current language (or fallback) has a message for the key.
+     *
+     * @param key message key
+     * @return true if present
+     */
     public boolean hasMessage(String key) {
         if (hasMessage(currentConfig, key)) {
             return true;
@@ -195,6 +270,13 @@ public class LanguageManager {
         return hasMessage(fallbackConfig, key);
     }
 
+    /**
+     * Check whether a specific language (or fallback) has a message for the key.
+     *
+     * @param languageCode language to inspect
+     * @param key message key
+     * @return true if present
+     */
     public boolean hasMessageForLanguage(String languageCode, String key) {
         LanguageConfig primary = getOrLoadLanguage(languageCode);
         if (hasMessage(primary, key)) {
@@ -204,20 +286,50 @@ public class LanguageManager {
         return hasMessage(fallbackConfig, key);
     }
 
+    /**
+     * Resolve a message for a specific language code.
+     *
+     * @param languageCode language to use
+     * @param key message key
+     * @return resolved message or key if missing
+     */
     public String getMessageForLanguage(String languageCode, String key) {
         return resolveMessage(languageCode, key);
     }
 
+    /**
+     * Resolve a message with placeholders for a specific language code.
+     *
+     * @param languageCode language to use
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved message
+     */
     public String getMessageForLanguage(String languageCode, String key, Map<String, String> placeholders) {
         String message = resolveMessage(languageCode, key);
         return applyPlaceholders(message, placeholders);
     }
 
+    /**
+     * Resolve a message with positional replacements for a specific language code.
+     *
+     * @param languageCode language to use
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved message
+     */
     public String getMessageForLanguage(String languageCode, String key, String... replacements) {
         String message = resolveMessage(languageCode, key);
         return applyReplacements(message, replacements);
     }
 
+    /**
+     * Assign a preferred language for a player.
+     *
+     * @param playerId player UUID
+     * @param languageCode language code to set (null/empty clears preference)
+     * @return true if updated
+     */
     public boolean setPlayerLanguage(UUID playerId, String languageCode) {
         if (playerId == null) {
             return false;
@@ -236,26 +348,56 @@ public class LanguageManager {
         return true;
     }
 
+    /**
+     * Assign a preferred language for an {@link Audience}.
+     *
+     * @param audience audience with id
+     * @param languageCode language code to set
+     * @return true if updated
+     */
     public boolean setPlayerLanguage(Audience audience, String languageCode) {
         return audience != null && setPlayerLanguage(audience.id(), languageCode);
     }
 
+    /**
+     * Assign a preferred language for a player-like object (expects getUniqueId()).
+     *
+     * @param player player object
+     * @param languageCode language code to set
+     * @return true if updated
+     */
     public boolean setPlayerLanguage(Object player, String languageCode) {
         UUID id = extractUuid(player);
         return setPlayerLanguage(id, languageCode);
     }
 
+    /**
+     * Remove stored language preference for a player.
+     *
+     * @param playerId player UUID
+     */
     public void clearPlayerLanguage(UUID playerId) {
         if (playerId != null) {
             playerLanguages.remove(playerId);
         }
     }
 
+    /**
+     * Remove stored language preference for an arbitrary player object.
+     *
+     * @param player player object
+     */
     public void clearPlayerLanguage(Object player) {
         UUID id = extractUuid(player);
         clearPlayerLanguage(id);
     }
 
+    /**
+     * Get stored language for a player or current language if none.
+     *
+     * @param playerId player UUID
+     * @return language code
+     */
     public String getPlayerLanguage(UUID playerId) {
         if (playerId == null) {
             return currentLanguage;
@@ -263,15 +405,33 @@ public class LanguageManager {
         return playerLanguages.getOrDefault(playerId, currentLanguage);
     }
 
+    /**
+     * Get stored language for a player-like object.
+     *
+     * @param player player object
+     * @return language code
+     */
     public String getPlayerLanguage(Object player) {
         UUID id = extractUuid(player);
         return id != null ? getPlayerLanguage(id) : currentLanguage;
     }
 
+    /**
+     * Snapshot of stored player language preferences.
+     *
+     * @return snapshot of player language preferences
+     */
     public Map<UUID, String> getPlayerLanguages() {
         return Collections.unmodifiableMap(new HashMap<>(playerLanguages));
     }
 
+    /**
+     * Resolve a message for an audience respecting per-player language overrides.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @return resolved message
+     */
     public String getMessageForAudience(Audience audience, String key) {
         if (audience == null || audience.id() == null) {
             return getMessage(key);
@@ -279,16 +439,35 @@ public class LanguageManager {
         return resolveMessage(getPlayerLanguage(audience.id()), key);
     }
 
+    /**
+     * Resolve a message for an audience with placeholders.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved message
+     */
     public String getMessageForAudience(Audience audience, String key, Map<String, String> placeholders) {
         String message = getMessageForAudience(audience, key);
         return applyPlaceholders(message, placeholders);
     }
 
+    /**
+     * Resolve a message for an audience with positional replacements.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved message
+     */
     public String getMessageForAudience(Audience audience, String key, String... replacements) {
         String message = getMessageForAudience(audience, key);
         return applyReplacements(message, replacements);
     }
 
+    /**
+     * Reload all loaded languages from disk.
+     */
     public void reload() {
         Map<String, LanguageConfig> snapshot = new HashMap<>(loadedLanguages);
 
@@ -308,6 +487,12 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Persist custom messages into the language file.
+     *
+     * @param languageCode language to modify
+     * @param customMessages map of keys to values to persist
+     */
     public void saveCustomMessages(String languageCode, Map<String, String> customMessages) {
         try {
             LanguageConfig config = loadedLanguages.get(languageCode);
@@ -326,6 +511,9 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Persist currently loaded MagicUtils messages (ensures defaults exist).
+     */
     public void addMagicUtilsMessages() {
         for (LanguageConfig config : loadedLanguages.values()) {
             configManager.save(config);

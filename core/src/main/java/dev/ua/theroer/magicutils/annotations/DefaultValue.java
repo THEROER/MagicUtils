@@ -7,6 +7,9 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to specify a default value for a command argument.
+ * <p>
+ * <strong>Note:</strong> This is for the command framework. For config/POJO defaults,
+ * use {@code dev.ua.theroer.magicutils.config.annotations.DefaultValue} instead.
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)

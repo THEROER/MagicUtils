@@ -10,6 +10,11 @@ import java.util.logging.Logger;
 public class BukkitPlatformLogger implements PlatformLogger {
     private final Logger delegate;
 
+    /**
+     * Bridge between {@link PlatformLogger} and Bukkit's {@link Logger}.
+     *
+     * @param delegate Bukkit logger to forward to
+     */
     public BukkitPlatformLogger(Logger delegate) {
         this.delegate = delegate;
     }

@@ -124,6 +124,7 @@ Maven cache.
 - Commands can be reloaded by clearing the registry and re-registering classes; useful during development or when configs change.
 - Example: `examples/commands/ExampleCommand.java`.
 - Built-in `/magicutils reload` and `/magicutils settings` commands exist but are still in progress; expect breaking changes.
+- Import the right annotations: for commands use `dev.ua.theroer.magicutils.annotations.*`; for configs use `dev.ua.theroer.magicutils.config.annotations.*`.
 
 ### `logger` — rich console & chat logging
 

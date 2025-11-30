@@ -627,6 +627,9 @@ public class ConfigManager {
 
     /**
      * Saves all registered instances of the given config class.
+     *
+     * @param <T> config type
+     * @param configClass config type to save
      */
     public <T> void save(Class<T> configClass) {
         for (ConfigEntry<?> entry : getEntries(configClass)) {
@@ -636,6 +639,8 @@ public class ConfigManager {
 
     /**
      * Saves the provided configuration instance.
+     *
+     * @param configInstance config instance to persist
      */
     public void save(Object configInstance) {
         ConfigEntry<?> entry = getEntry(configInstance);
@@ -646,6 +651,8 @@ public class ConfigManager {
 
     /**
      * Reloads the provided configuration instance from disk.
+     *
+     * @param configInstance config instance to reload
      */
     public void reload(Object configInstance) {
         ConfigEntry<?> entry = getEntry(configInstance);
@@ -661,18 +668,28 @@ public class ConfigManager {
         }
     }
 
-    /** Alias for {@link #reload(Object)}. */
+    /**
+     * Alias for {@link #reload(Object)}.
+     *
+     * @param configInstance config instance to reload
+     */
     public void mergeFromFile(Object configInstance) {
         reload(configInstance);
     }
 
-    /** Alias for {@link #save(Object)}. */
+    /**
+     * Alias for {@link #save(Object)}.
+     *
+     * @param configInstance config instance to save
+     */
     public void mergeToFile(Object configInstance) {
         save(configInstance);
     }
 
     /**
      * Unregisters the configuration and stops tracking file changes.
+     *
+     * @param configInstance config instance to remove
      */
     public void unload(Object configInstance) {
         ConfigEntry<?> entry = getEntry(configInstance);
@@ -723,15 +740,35 @@ public class ConfigManager {
         }
     }
 
+    /**
+     * Retrieves the primary registered instance of the given config class.
+     *
+     * @param <T> config type
+     * @param configClass config type to fetch
+     * @return primary instance or null if none registered
+     */
     @SuppressWarnings("unchecked")
     public <T> T getConfig(Class<T> configClass) {
         return (T) primaryInstances.get(configClass);
     }
 
+    /**
+     * Reloads all registered instances of a config class from disk.
+     *
+     * @param <T> config type
+     * @param configClass config type to reload
+     */
     public <T> void reload(Class<T> configClass) {
         reload(configClass, new String[0]);
     }
 
+    /**
+     * Reloads registered instances of a config class, optionally scoping to specific sections.
+     *
+     * @param <T> config type
+     * @param configClass config type to reload
+     * @param sections sections to reload (empty for full reload)
+     */
     public <T> void reload(Class<T> configClass, String... sections) {
         Set<String> sectionSet = (sections == null || sections.length == 0)
                 ? Collections.emptySet()
@@ -755,6 +792,13 @@ public class ConfigManager {
         }
     }
 
+    /**
+     * Registers a listener that fires when the config changes on disk.
+     *
+     * @param <T> config type
+     * @param configClass config type to monitor
+     * @param listener callback receiving updated instance and changed sections
+     */
     @SuppressWarnings("unchecked")
     public <T> void onChange(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
         changeListeners.computeIfAbsent(configClass, k -> new ArrayList<>())

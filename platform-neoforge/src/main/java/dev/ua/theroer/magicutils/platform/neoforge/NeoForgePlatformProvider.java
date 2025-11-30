@@ -18,6 +18,9 @@ public class NeoForgePlatformProvider implements Platform {
     private final PlatformLogger logger;
     private final Audience consoleAudience;
 
+    /**
+     * Create a minimal NeoForge platform adapter using SLF4J for logging.
+     */
     public NeoForgePlatformProvider() {
         Logger slf4j = LoggerFactory.getLogger("MagicUtils-NeoForge");
         this.logger = new NeoForgePlatformLogger(slf4j);

@@ -7,9 +7,17 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
+/**
+ * Wraps a Bukkit {@link CommandSender} as a platform-agnostic {@link Audience}.
+ */
 public class BukkitAudienceWrapper implements Audience {
     private final CommandSender sender;
 
+    /**
+     * Wrap a {@link CommandSender} as an {@link Audience}.
+     *
+     * @param sender Bukkit command sender to wrap
+     */
     public BukkitAudienceWrapper(CommandSender sender) {
         this.sender = sender;
     }

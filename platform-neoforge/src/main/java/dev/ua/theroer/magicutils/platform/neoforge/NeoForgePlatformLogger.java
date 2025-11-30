@@ -3,9 +3,17 @@ package dev.ua.theroer.magicutils.platform.neoforge;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import org.slf4j.Logger;
 
+/**
+ * SLF4J-backed platform logger for NeoForge runtime.
+ */
 public class NeoForgePlatformLogger implements PlatformLogger {
     private final Logger delegate;
 
+    /**
+     * Bridge between {@link PlatformLogger} and SLF4J.
+     *
+     * @param delegate SLF4J logger to forward to
+     */
     public NeoForgePlatformLogger(Logger delegate) {
         this.delegate = delegate;
     }
