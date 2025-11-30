@@ -52,9 +52,6 @@ Maven cache.
 > `platform-bukkit` (Paper/Bukkit implementation), `platform-neoforge`
 > (minimal NeoForge adapter: config dir, logger, console audience).
 
-> **Sandbox tip:** if the wrapper cannot write to the default Gradle home, run
-> commands with `GRADLE_USER_HOME=$PWD/.gradle ./gradlew …`.
-
 ---
 
 ## Module Reference
