@@ -1,9 +1,8 @@
 # MagicUtils
 
-Utility toolkit for Bukkit/Paper plugins that consolidates configuration,
-localisation, commands, logging, GUI helpers, and scheduling into a single
-library. MagicUtils is distributed internally; depend on it via your local
-Maven cache.
+Utility toolkit for Bukkit/Paper + NeoForge that consolidates configuration,
+localisation, commands, logging, GUI helpers, and scheduling. Published to
+local Maven; use the thin jars or `-all` shaded variants.
 
 ---
 
@@ -28,9 +27,10 @@ Maven cache.
 
 ## Quick Start
 
-1. **Publish to Maven Local** (Bukkit implementation)
+1. **Publish to Maven Local** (choose target)
    ```bash
-   ./gradlew :platform-bukkit:publishToMavenLocal
+   ./gradlew :platform-bukkit:publishToMavenLocal   # Paper/Bukkit
+   ./gradlew :platform-neoforge:publishToMavenLocal # NeoForge
    ```
 2. **Declare the dependency** in your plugin build script:
    ```kts
@@ -39,10 +39,11 @@ Maven cache.
    }
 
    dependencies {
-       implementation("dev.ua.theroer:magicutils:<version>")
+       implementation("dev.ua.theroer:magicutils-bukkit:<version>")    // or magicutils-neoforge
+       // if you prefer shaded runtime: implementation("dev.ua.theroer:magicutils-bukkit-all:<version>")
    }
    ```
-   The default version is defined in `build.gradle` (currently `1.5.2`).
+   Version is set in `gradle.properties` (`version=1.5.4` by default).
 3. **Refresh after every change** by repeating `publishToMavenLocal` so
    dependent plugins pick up the new artefact.
 
@@ -51,6 +52,10 @@ Maven cache.
 > **Modules:** `platform-api` (abstractions), `core` (platform-agnostic code),
 > `platform-bukkit` (Paper/Bukkit implementation), `platform-neoforge`
 > (minimal NeoForge adapter: config dir, logger, console audience).
+
+> **Annotation processor (optional):** `processor` is a no-op APT that claims MagicUtils
+> annotations to silence javac warnings; it is added automatically as `annotationProcessor`
+> when using the modules above.
 
 ---
 
@@ -294,8 +299,6 @@ gui.open(player);
 
 ## Troubleshooting
 
-- **Gradle lock-file errors** – ensure the wrapper writes to a directory you
-  control; set `GRADLE_USER_HOME` if necessary.
 - **Watcher warnings on shutdown** – confirm `configManager.shutdown()` runs in
   your plugin’s `onDisable`.
 - **Missing translations** – inspect `lang/<code>.yml`. MagicUtils seeds
