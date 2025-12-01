@@ -1,2 +1,2 @@
 rootProject.name = 'MagicUtils'
-include 'platform-api', 'core', 'platform-bukkit', 'platform-neoforge'
+include 'platform-api', 'core', 'platform-bukkit', 'platform-neoforge', 'processor'

@@ -41,6 +41,12 @@ subprojects {
         options.compilerArgs += ['-Xlint:all']
     }
 
+    if (project.name != 'processor') {
+        dependencies {
+            annotationProcessor project(':processor')
+        }
+    }
+
     tasks.withType(Jar).configureEach {
         archiveBaseName.set(moduleName)
     }

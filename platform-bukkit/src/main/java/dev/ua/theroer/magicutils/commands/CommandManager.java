@@ -38,7 +38,7 @@ public class CommandManager {
     public CommandManager(String permissionPrefix, String pluginName) {
         this.permissionPrefix = permissionPrefix;
         this.pluginName = pluginName.toLowerCase();
-        this.typeParserRegistry = new TypeParserRegistry();
+        this.typeParserRegistry = TypeParserRegistry.createWithDefaults();
         PrefixedLoggerGen.debug(logger, "CommandManager initialized with permission prefix: " + permissionPrefix
                 + " and plugin name: " + pluginName);
     }

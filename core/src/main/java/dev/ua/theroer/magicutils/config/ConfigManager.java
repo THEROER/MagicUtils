@@ -475,27 +475,9 @@ public class ConfigManager {
         current.put(parts[parts.length - 1], value);
     }
 
-    private Map<String, Object> flattenSection(YamlSection section) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        flattenSectionRecursive("", section, result);
-        return result;
-    }
-
     private List<String> commentLines(Comment comment) {
         if (comment == null || comment.value().isEmpty()) return null;
         return Arrays.asList(comment.value().split("\n"));
-    }
-
-    private void flattenSectionRecursive(String prefix, YamlSection section, Map<String, Object> output) {
-        for (String key : section.getKeys(false)) {
-            Object raw = section.get(key);
-            String fullKey = prefix.isEmpty() ? key : prefix + "." + key;
-            if (raw instanceof Map) {
-                flattenSectionRecursive(fullKey, new YamlSection(YamlDocument.castMap((Map<?, ?>) raw)), output);
-            } else {
-                output.put(fullKey, raw);
-            }
-        }
     }
 
     private boolean hasDottedKeys(Map<?, ?> map) {
@@ -1219,10 +1201,6 @@ public class ConfigManager {
             this.header = lines;
         }
 
-        void set(String path, Object value) {
-            set(path, value, null);
-        }
-
         void set(String path, Object value, List<String> comment) {
             applyPath(data, path, value);
             if (comment != null && !comment.isEmpty()) {
@@ -1232,11 +1210,6 @@ public class ConfigManager {
 
         boolean contains(String path) {
             return navigate(data, path).found;
-        }
-
-        boolean isConfigurationSection(String path) {
-            NavigateResult res = navigate(data, path);
-            return res.found && res.value instanceof Map;
         }
 
         YamlSection getConfigurationSection(String path) {
@@ -1387,23 +1360,9 @@ public class ConfigManager {
      */
     private static class YamlSection {
         private final Map<String, Object> backing;
-        private final List<String> header;
 
         YamlSection(Map<String, Object> backing) {
-            this(backing, null);
-        }
-
-        YamlSection(Map<String, Object> backing, List<String> header) {
             this.backing = backing;
-            this.header = header;
-        }
-
-        Set<String> getKeys(boolean deep) {
-            return backing.keySet();
-        }
-
-        Object get(String key) {
-            return backing.get(key);
         }
 
         Map<String, Object> unwrap() {

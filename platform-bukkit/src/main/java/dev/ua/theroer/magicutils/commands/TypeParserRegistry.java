@@ -19,10 +19,20 @@ public class TypeParserRegistry {
     private final List<TypeParser<?>> parsers = new ArrayList<>();
 
     /**
-     * Create a new TypeParserRegistry.
+     * Create a new empty TypeParserRegistry; prefer {@link #createWithDefaults()}.
      */
-    public TypeParserRegistry() {
-        registerDefaultParsers();
+    private TypeParserRegistry() {
+    }
+
+    /**
+     * Factory to register built-in parsers after construction.
+     *
+     * @return registry preloaded with default parsers
+     */
+    public static TypeParserRegistry createWithDefaults() {
+        TypeParserRegistry registry = new TypeParserRegistry();
+        registry.registerDefaultParsers();
+        return registry;
     }
 
     /**

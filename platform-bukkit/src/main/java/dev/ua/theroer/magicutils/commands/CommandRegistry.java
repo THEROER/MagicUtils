@@ -98,7 +98,7 @@ public class CommandRegistry {
         String usage = commandManager.generateUsage(command, info);
         List<String> subCommandUsages = commandManager.generateSubCommandUsages(command, info);
 
-        BukkitCommandWrapper bukkitCommand = new BukkitCommandWrapper(
+        BukkitCommandWrapper bukkitCommand = BukkitCommandWrapper.create(
                 info.name(),
                 commandManager,
                 Arrays.asList(info.aliases()));
@@ -139,7 +139,7 @@ public class CommandRegistry {
         for (String alias : info.aliases()) {
             String aliasUsage = usage.replace("/" + info.name(), "/" + alias);
 
-            BukkitCommandWrapper aliasCommand = new BukkitCommandWrapper(
+            BukkitCommandWrapper aliasCommand = BukkitCommandWrapper.create(
                     alias,
                     commandManager,
                     Arrays.asList(info.name()));

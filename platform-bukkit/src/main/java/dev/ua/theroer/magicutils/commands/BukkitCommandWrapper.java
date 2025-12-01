@@ -37,12 +37,25 @@ public class BukkitCommandWrapper extends Command {
      * @param commandManager the command manager
      * @param aliases        the command aliases
      */
-    public BukkitCommandWrapper(String name, CommandManager commandManager, List<String> aliases) {
+    private BukkitCommandWrapper(String name, CommandManager commandManager) {
         super(name);
         this.commandManager = commandManager;
+    }
+
+    /**
+     * Factory to avoid leaking 'this' before full initialisation.
+     *
+     * @param name           command name
+     * @param commandManager manager to delegate execution
+     * @param aliases        optional aliases
+     * @return fully initialised wrapper
+     */
+    public static BukkitCommandWrapper create(String name, CommandManager commandManager, List<String> aliases) {
+        BukkitCommandWrapper wrapper = new BukkitCommandWrapper(name, commandManager);
         if (aliases != null && !aliases.isEmpty()) {
-            this.setAliases(aliases);
+            wrapper.setAliases(aliases);
         }
+        return wrapper;
     }
 
     /**
