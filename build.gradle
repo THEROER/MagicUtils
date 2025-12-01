@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = 'dev.ua.theroer'
-    version = '1.5.2'
+    version = project.properties.get('version') ?: '0.0.0'
 }
 
 subprojects {
@@ -59,6 +59,9 @@ subprojects {
         archiveClassifier.set('all')
         mergeServiceFiles()
         relocate 'org.yaml.snakeyaml', 'dev.ua.theroer.magicutils.shaded.snakeyaml'
+        if (project.name == 'processor') {
+            enabled = false
+        }
     }
 
     tasks.named('build') {
@@ -69,9 +72,17 @@ subprojects {
         publications {
             mavenJava(MavenPublication) {
                 artifactId = moduleName
-                project.shadow.component(it)
-                artifact tasks.named('sourcesJar')
-                artifact tasks.named('javadocJar')
+                if (project.name == 'processor') {
+                    from components.java
+                } else {
+                    from components.java
+                }
+            }
+            if (project.name != 'processor') {
+                register('mavenShadow', MavenPublication) {
+                    artifactId = "${moduleName}-all"
+                    artifact tasks.named('shadowJar')
+                }
             }
         }
     }
