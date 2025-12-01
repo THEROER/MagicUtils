@@ -1,5 +1,6 @@
 plugins {
     id 'base'
+    id 'com.gradleup.shadow' version '8.3.5' apply false
 }
 
 allprojects {
@@ -10,6 +11,16 @@ allprojects {
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
+    apply plugin: 'com.gradleup.shadow'
+
+    // Normalize artifact names to magicutils-*
+    def moduleNameMap = [
+            'platform-api'     : 'magicutils-api',
+            'platform-neoforge': 'magicutils-neoforge',
+            'platform-bukkit'  : 'magicutils-bukkit',
+            'core'             : 'magicutils-core'
+    ]
+    def moduleName = moduleNameMap.getOrDefault(project.name, project.name)
 
     repositories {
         mavenCentral()
@@ -27,18 +38,39 @@ subprojects {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+        options.compilerArgs += ['-Xlint:all']
+    }
+
+    tasks.withType(Jar).configureEach {
+        archiveBaseName.set(moduleName)
     }
 
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
     }
 
+    tasks.withType(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configureEach {
+        archiveClassifier.set('all')
+        mergeServiceFiles()
+        relocate 'org.yaml.snakeyaml', 'dev.ua.theroer.magicutils.shaded.snakeyaml'
+    }
+
+    tasks.named('build') {
+        dependsOn tasks.named('shadowJar')
+    }
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
-                from components.java
+                artifactId = moduleName
+                project.shadow.component(it)
+                artifact tasks.named('sourcesJar')
+                artifact tasks.named('javadocJar')
             }
         }
+    }
+
+    tasks.withType(PublishToMavenLocal).configureEach {
+        dependsOn tasks.named('shadowJar')
     }
 }
