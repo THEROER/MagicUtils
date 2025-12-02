@@ -52,7 +52,7 @@ public class LoggerConfig {
     @ConfigValue("auto-localization")
     @Comment("Whether to automatically localize messages using LanguageManager")
     @Setter
-    private boolean autoLocalization;
+    private boolean autoLocalization = true;
 
     @ConfigSection("prefix")
     @Comment("Prefix configuration")

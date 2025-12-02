@@ -77,8 +77,6 @@ subprojects {
                 } else {
                     from components.java
                 }
-                artifact tasks.named('sourcesJar')
-                artifact tasks.named('javadocJar')
             }
             if (project.name != 'processor') {
                 register('mavenShadow', MavenPublication) {
