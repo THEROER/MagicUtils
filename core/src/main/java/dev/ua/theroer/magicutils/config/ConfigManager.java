@@ -1,6 +1,8 @@
 package dev.ua.theroer.magicutils.config;
 
 import dev.ua.theroer.magicutils.config.annotations.*;
+import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
+import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import lombok.Getter;
@@ -312,6 +314,12 @@ public class ConfigManager {
                 }
             } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                 value = ConfigSerializer.deserialize((Map<String, Object>) value, fieldType);
+            } else {
+                ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
+                if (adapter != null) {
+                    ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                    value = typed.deserialize(value);
+                }
             }
         }
 
@@ -409,6 +417,13 @@ public class ConfigManager {
 
         if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
             return ConfigSerializer.serialize(value);
+        }
+
+        ConfigValueAdapter<?> adapter = ConfigAdapters.get(value.getClass());
+        if (adapter != null) {
+            @SuppressWarnings("unchecked")
+            ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+            return typed.serialize(value);
         }
 
         return value;

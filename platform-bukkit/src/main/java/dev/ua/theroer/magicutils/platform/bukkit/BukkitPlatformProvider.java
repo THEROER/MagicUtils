@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.platform.bukkit;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.config.adapters.AdaptersBootstrap;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,6 +30,7 @@ public class BukkitPlatformProvider implements Platform {
         this.plugin = plugin;
         this.logger = new BukkitPlatformLogger(plugin.getLogger());
         this.scheduler = Bukkit.getScheduler();
+        AdaptersBootstrap.registerDefaults();
     }
 
     @Override
