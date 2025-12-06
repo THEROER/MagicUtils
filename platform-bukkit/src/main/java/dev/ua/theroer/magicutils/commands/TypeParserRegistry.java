@@ -49,6 +49,7 @@ public class TypeParserRegistry {
         register(new IntegerTypeParser());
         register(new LongTypeParser());
         register(new BooleanTypeParser());
+        register(new EnumTypeParser());
 
         // Special parsers
         register(new ListTypeParser());

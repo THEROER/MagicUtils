@@ -86,7 +86,7 @@ public class CommandRegistry {
         }
 
         Class<?> clazz = command.getClass();
-        CommandInfo info = clazz.getAnnotation(CommandInfo.class);
+        CommandInfo info = command.overrideInfo(clazz.getAnnotation(CommandInfo.class));
 
         if (info == null) {
             throw new IllegalArgumentException(InternalMessages.ERR_MISSING_COMMANDINFO.get("class", clazz.getName()));
@@ -168,15 +168,18 @@ public class CommandRegistry {
     private static void generatePermissions(Class<?> clazz, CommandInfo info) {
         Set<String> permissions = new HashSet<>();
 
-        if (info.permission()) {
-            permissions.add(permissionPrefix + ".commands." + info.name() + ".use");
+        String commandPermission = resolvePermission(info.permission(),
+                "commands." + info.name() + ".use");
+        if (!commandPermission.isEmpty()) {
+            permissions.add(commandPermission);
         }
 
         for (MagicCommand.SubCommandInfo subInfo : MagicCommand.getSubCommands(clazz)) {
             SubCommand sub = subInfo.annotation;
-            if (sub.permission()) {
-                permissions.add(permissionPrefix + ".commands." + info.name() +
-                        ".subcommand." + sub.name() + ".use");
+            String subPermission = resolvePermission(sub.permission(),
+                    "commands." + info.name() + ".subcommand." + sub.name() + ".use");
+            if (!subPermission.isEmpty()) {
+                permissions.add(subPermission);
             }
         }
 
@@ -184,6 +187,26 @@ public class CommandRegistry {
             PrefixedLoggerGen.info(logger, InternalMessages.SYS_GENERATED_PERMISSIONS.get("command", info.name(),
                     "permissions", permissions.toString()));
         }
+    }
+
+    private static String resolvePermission(String annotationPermission, String fallbackPermission) {
+        String permission = (annotationPermission != null && !annotationPermission.isEmpty())
+                ? annotationPermission
+                : fallbackPermission;
+        if (permission == null || permission.isEmpty()) {
+            return "";
+        }
+        String prefix = permissionPrefix != null ? permissionPrefix : "";
+        if (!prefix.isEmpty()) {
+            if (permission.startsWith(prefix + ".")) {
+                return permission;
+            }
+            if (permission.startsWith(".")) {
+                return prefix + permission;
+            }
+            return prefix + "." + permission;
+        }
+        return permission.startsWith(".") ? permission.substring(1) : permission;
     }
 
     /**

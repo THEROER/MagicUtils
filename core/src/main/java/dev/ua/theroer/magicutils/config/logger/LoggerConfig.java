@@ -146,7 +146,7 @@ public class LoggerConfig {
             return false;
         }
 
-        subLoggers.put(name, SubLoggerConfig.builder().enabled(false).build());
+        subLoggers.put(name, SubLoggerConfig.builder().enabled(true).build());
         return true;
     }
 

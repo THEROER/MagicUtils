@@ -5,10 +5,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.Getter;
+
 /**
  * Represents a command argument with its properties and permission
  * requirements.
  */
+@Getter
 public class CommandArgument {
     private final String name;
     private final Class<?> type;
@@ -18,6 +21,7 @@ public class CommandArgument {
     private final String permission;
     private final String permissionCondition;
     private final String permissionMessage;
+    private final boolean greedy;
 
     private CommandArgument(Builder builder) {
         this.name = builder.name;
@@ -28,78 +32,7 @@ public class CommandArgument {
         this.permission = builder.permission;
         this.permissionCondition = builder.permissionCondition;
         this.permissionMessage = builder.permissionMessage;
-    }
-
-    /**
-     * Gets the argument name.
-     * 
-     * @return the argument name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Gets the argument type.
-     * 
-     * @return the argument type
-     */
-    public Class<?> getType() {
-        return type;
-    }
-
-    /**
-     * Checks if the argument is optional.
-     * 
-     * @return true if optional
-     */
-    public boolean isOptional() {
-        return optional;
-    }
-
-    /**
-     * Gets the default value for the argument.
-     * 
-     * @return the default value
-     */
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    /**
-     * Gets the list of suggestions for the argument.
-     * 
-     * @return the suggestions list
-     */
-    public List<String> getSuggestions() {
-        return new ArrayList<>(suggestions);
-    }
-
-    /**
-     * Gets the required permission for the argument.
-     * 
-     * @return the permission string
-     */
-    public String getPermission() {
-        return permission;
-    }
-
-    /**
-     * Gets the permission condition for the argument.
-     * 
-     * @return the permission condition
-     */
-    public String getPermissionCondition() {
-        return permissionCondition;
-    }
-
-    /**
-     * Gets the permission denied message for the argument.
-     * 
-     * @return the permission message
-     */
-    public String getPermissionMessage() {
-        return permissionMessage;
+        this.greedy = builder.greedy;
     }
 
     /**
@@ -153,6 +86,7 @@ public class CommandArgument {
         private String permission = null;
         private String permissionCondition = null;
         private String permissionMessage = InternalMessages.CMD_NO_PERMISSION.get();
+        private boolean greedy = false;
 
         /**
          * Constructs a new Builder for CommandArgument.
@@ -239,6 +173,16 @@ public class CommandArgument {
          */
         public Builder permissionMessage(String message) {
             this.permissionMessage = message;
+            return this;
+        }
+
+        /**
+         * Marks this argument as greedy (consume remaining input).
+         *
+         * @return this builder
+         */
+        public Builder greedy() {
+            this.greedy = true;
             return this;
         }
 

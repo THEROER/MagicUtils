@@ -19,7 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * Command for managing plugin settings including language management.
  */
-@CommandInfo(name = "settings", description = "MagicUtils settings command", permission = true, aliases = { "config",
+@CommandInfo(name = "settings", description = "MagicUtils settings command", permission = "commands.settings.use", aliases = { "config",
         "cfg" })
 public class SettingsCommand extends MagicCommand {
 
@@ -47,7 +47,7 @@ public class SettingsCommand extends MagicCommand {
      * @param value      third argument - value when setting
      * @return the result of the operation
      */
-    @SubCommand(name = "lang", aliases = { "language" }, description = "Manage language settings", permission = true)
+    @SubCommand(name = "lang", aliases = { "language" }, description = "Manage language settings", permission = "commands.settings.lang.use")
     public CommandResult executeLang(
             @Suggest(value = { "getAvailableLanguages",
                     "@language_keys" }, permission = false) @OptionalArgument String langOrKey,

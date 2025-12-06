@@ -1,6 +1,9 @@
 package dev.ua.theroer.magicutils.config;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigSerializable;
+import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
+import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
@@ -48,7 +51,7 @@ public class ConfigSerializer {
                 if (value == null && !includeNulls)
                     continue;
 
-                String key = field.getName();
+                String key = resolveKey(field);
 
                 // Handle different types
                 if (value == null) {
@@ -56,14 +59,26 @@ public class ConfigSerializer {
                 } else if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String) {
                     result.put(key, value);
                 } else if (value instanceof List) {
-                    result.put(key, serializeList((List<?>) value));
+                    Class<?> elementType = extractListElementType(field);
+                    result.put(key, serializeList((List<?>) value, elementType));
                 } else if (value instanceof Map) {
-                    result.put(key, serializeMap((Map<?, ?>) value));
+                    Class<?> valueType = extractMapValueType(field);
+                    result.put(key, serializeMap((Map<?, ?>) value, valueType));
                 } else if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
                     result.put(key, serialize(value));
                 } else {
-                    // Try toString for other types
-                    result.put(key, value.toString());
+                    ConfigValueAdapter<?> adapter = ConfigAdapters.get(field.getType());
+                    if (adapter == null) {
+                        adapter = ConfigAdapters.get(value.getClass());
+                    }
+                    if (adapter != null) {
+                        @SuppressWarnings("unchecked")
+                        ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                        result.put(key, typed.serialize(value));
+                    } else {
+                        // Try toString for other types
+                        result.put(key, value.toString());
+                    }
                 }
 
             } catch (IllegalAccessException e) {
@@ -111,7 +126,7 @@ public class ConfigSerializer {
             for (Field field : clazz.getDeclaredFields()) {
                 field.setAccessible(true);
 
-                String key = field.getName();
+                String key = resolveKey(field);
                 if (!data.containsKey(key))
                     continue;
 
@@ -125,15 +140,21 @@ public class ConfigSerializer {
                     Class<?> fieldType = field.getType();
 
                     // Handle different types
-                    if (isPrimitiveOrWrapper(fieldType) || fieldType == String.class) {
+                    ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
+                    if (adapter != null) {
+                        ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                        field.set(instance, typed.deserialize(value));
+                    } else if (isPrimitiveOrWrapper(fieldType) || fieldType == String.class) {
                         field.set(instance, convertValue(value, fieldType));
-                    } else if (List.class.isAssignableFrom(fieldType)) {
+                    } else if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
                         ParameterizedType listType = (ParameterizedType) field.getGenericType();
                         Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
                         field.set(instance, deserializeList((List<?>) value, elementType));
-                    } else if (Map.class.isAssignableFrom(fieldType)) {
-                        field.set(instance, value); // Maps are handled as-is
-                    } else if (fieldType.isAnnotationPresent(ConfigSerializable.class)) {
+                    } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
+                        ParameterizedType mapType = (ParameterizedType) field.getGenericType();
+                        Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
+                        field.set(instance, deserializeMap((Map<?, ?>) value, valueType));
+                    } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                         // Recursive deserialization - security check is already in deserialize method
                         field.set(instance, deserialize((Map<String, Object>) value, fieldType));
                     }
@@ -152,22 +173,25 @@ public class ConfigSerializer {
     /**
      * Serializes a list.
      */
-    private static List<Object> serializeList(List<?> list) {
+    private static List<Object> serializeList(List<?> list, Class<?> elementType) {
         List<Object> result = new ArrayList<>();
 
         for (Object item : list) {
             if (item == null) {
                 result.add(null);
-            } else if (isPrimitiveOrWrapper(item.getClass()) || item instanceof String) {
-                result.add(item);
-            } else if (item instanceof List) {
-                result.add(serializeList((List<?>) item));
-            } else if (item instanceof Map) {
-                result.add(serializeMap((Map<?, ?>) item));
-            } else if (item.getClass().isAnnotationPresent(ConfigSerializable.class)) {
-                result.add(serialize(item));
+            } else if (elementType != null) {
+                ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+                if (adapter != null) {
+                    @SuppressWarnings("unchecked")
+                    ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                    result.add(typed.serialize(item));
+                } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && !(item instanceof Map)) {
+                    result.add(serialize(item));
+                } else {
+                    result.add(serializeDynamic(item));
+                }
             } else {
-                result.add(item.toString());
+                result.add(serializeDynamic(item));
             }
         }
 
@@ -181,9 +205,14 @@ public class ConfigSerializer {
     private static <T> List<T> deserializeList(List<?> data, Class<T> elementType) {
         List<T> result = new ArrayList<>();
 
+        ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+
         for (Object item : data) {
             if (item == null) {
                 result.add(null);
+            } else if (adapter != null) {
+                ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                result.add((T) typed.deserialize(item));
             } else if (isPrimitiveOrWrapper(elementType) || elementType == String.class) {
                 result.add((T) convertValue(item, elementType));
             } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
@@ -200,7 +229,7 @@ public class ConfigSerializer {
     /**
      * Serializes a map.
      */
-    private static Map<String, Object> serializeMap(Map<?, ?> map) {
+    private static Map<String, Object> serializeMap(Map<?, ?> map, Class<?> valueType) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -209,16 +238,101 @@ public class ConfigSerializer {
 
             if (value == null) {
                 result.put(key, null);
-            } else if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String) {
-                result.put(key, value);
-            } else if (value instanceof List) {
-                result.put(key, serializeList((List<?>) value));
-            } else if (value instanceof Map) {
-                result.put(key, serializeMap((Map<?, ?>) value));
-            } else if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
-                result.put(key, serialize(value));
+            } else if (valueType != null) {
+                ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+                if (adapter != null) {
+                    @SuppressWarnings("unchecked")
+                    ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                    result.put(key, typed.serialize(value));
+                } else if (valueType.isAnnotationPresent(ConfigSerializable.class) && !(value instanceof Map)) {
+                    result.put(key, serialize(value));
+                } else {
+                    result.put(key, serializeDynamic(value));
+                }
             } else {
-                result.put(key, value.toString());
+                result.put(key, serializeDynamic(value));
+            }
+        }
+
+        return result;
+    }
+
+    private static Object serializeDynamic(Object value) {
+        if (value == null) return null;
+        if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String) {
+            return value;
+        }
+        if (value instanceof List) {
+            return serializeList((List<?>) value, null);
+        }
+        if (value instanceof Map) {
+            return serializeMap((Map<?, ?>) value, null);
+        }
+        if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
+            return serialize(value);
+        }
+        ConfigValueAdapter<?> adapter = ConfigAdapters.get(value.getClass());
+        if (adapter != null) {
+            @SuppressWarnings("unchecked")
+            ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+            return typed.serialize(value);
+        }
+        return value.toString();
+    }
+
+    private static Class<?> extractListElementType(Field field) {
+        if (field == null) return null;
+        if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) return null;
+        try {
+            return (Class<?>) parameterizedType.getActualTypeArguments()[0];
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static Class<?> extractMapValueType(Field field) {
+        if (field == null) return null;
+        if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) return null;
+        try {
+            return (Class<?>) parameterizedType.getActualTypeArguments()[1];
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String resolveKey(Field field) {
+        ConfigValue cv = field.getAnnotation(ConfigValue.class);
+        if (cv != null && !cv.value().isEmpty()) {
+            return cv.value();
+        }
+        return field.getName();
+    }
+
+    /**
+     * Deserializes a map using adapters/serializable types for values.
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> deserializeMap(Map<?, ?> data, Class<?> valueType) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+
+        for (Map.Entry<?, ?> entry : data.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            Object raw = entry.getValue();
+
+            if (raw == null) {
+                result.put(key, null);
+                continue;
+            }
+
+            if (adapter != null) {
+                ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                result.put(key, typed.deserialize(raw));
+            } else if (valueType.isAnnotationPresent(ConfigSerializable.class) && raw instanceof Map) {
+                result.put(key, deserialize((Map<String, Object>) raw, valueType));
+            } else {
+                result.put(key, raw);
             }
         }
 

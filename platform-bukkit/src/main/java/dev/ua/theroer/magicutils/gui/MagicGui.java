@@ -1,8 +1,6 @@
 package dev.ua.theroer.magicutils.gui;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -36,7 +34,6 @@ public class MagicGui {
     private final Map<Integer, Consumer<InventoryClickEvent>> buttonCallbacks = new HashMap<>();
     private final Player owner;
     private final UUID ownerUuid;
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private Consumer<InventoryCloseEvent> closeCallback;
 
     // Slot policies
@@ -65,7 +62,7 @@ public class MagicGui {
         this.owner = owner;
         this.ownerUuid = owner.getUniqueId();
         this.PLACEHOLDER_KEY = new NamespacedKey(plugin, "gui_placeholder");
-        Component titleComponent = miniMessage.deserialize(title).decoration(TextDecoration.ITALIC, false);
+        Component titleComponent = Logger.parseSmart(title);
         this.inventory = Bukkit.createInventory(owner, size, titleComponent);
     }
 
@@ -176,12 +173,12 @@ public class MagicGui {
         ItemMeta meta = item.getItemMeta();
 
         if (name != null) {
-            meta.displayName(miniMessage.deserialize(name).decoration(TextDecoration.ITALIC, false));
+            meta.displayName(Logger.parseSmart(name));
         }
 
         if (lore != null && !lore.isEmpty()) {
             List<Component> loreComponents = lore.stream()
-                    .map(line -> miniMessage.deserialize(line).decoration(TextDecoration.ITALIC, false))
+                    .map(line -> Logger.parseSmart(line))
                     .toList();
             meta.lore(loreComponents);
         }
@@ -309,7 +306,7 @@ public class MagicGui {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             // Set display name
-            meta.displayName(miniMessage.deserialize(name).decoration(TextDecoration.ITALIC, false));
+            meta.displayName(Logger.parseSmart(name));
             // Add NBT tag to identify as placeholder
             meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);

@@ -4,6 +4,9 @@ import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import lombok.Getter;
+import lombok.Setter;
+
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -28,10 +31,13 @@ public class LanguageManager {
     private final PlatformLogger logger;
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
+    private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
     private LanguageConfig fallbackConfig;
     private String fallbackLanguage = "en";
+    @Getter @Setter
+    private boolean logMissingMessages = false;
 
     /**
      * Create a language manager, resolving a {@link Platform} from the provided platform or legacy plugin instance.
@@ -62,6 +68,7 @@ public class LanguageManager {
      */
     public void init(String defaultLanguage) {
         this.currentLanguage = defaultLanguage;
+        this.loggedMissingMessages.clear();
         loadLanguage(currentLanguage);
 
         if (!currentLanguage.equals(fallbackLanguage)) {
@@ -79,6 +86,7 @@ public class LanguageManager {
      */
     public boolean loadLanguage(String languageCode) {
         try {
+            this.loggedMissingMessages.clear();
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("lang", languageCode);
 
@@ -469,6 +477,7 @@ public class LanguageManager {
      * Reload all loaded languages from disk.
      */
     public void reload() {
+        loggedMissingMessages.clear();
         Map<String, LanguageConfig> snapshot = new HashMap<>(loadedLanguages);
 
         for (Map.Entry<String, LanguageConfig> entry : snapshot.entrySet()) {
@@ -539,10 +548,7 @@ public class LanguageManager {
     }
 
     private String resolveMessage(String languageCode, String key) {
-        return resolveMessage(getOrLoadLanguage(languageCode), key);
-    }
-
-    private String resolveMessage(LanguageConfig primary, String key) {
+        LanguageConfig primary = getOrLoadLanguage(languageCode);
         if (primary != null) {
             String message = primary.getMessage(key);
             if (message != null) {
@@ -558,12 +564,24 @@ public class LanguageManager {
             }
         }
 
+        logMissing(languageCode, key);
         return key;
     }
 
     private boolean hasMessage(LanguageConfig config, String key) {
         if (config == null) return false;
         return config.getMessage(key) != null;
+    }
+
+    private void logMissing(String languageCode, String key) {
+        if (!logMissingMessages) {
+            return;
+        }
+        String composite = languageCode + "::" + key;
+        if (loggedMissingMessages.add(composite)) {
+            String fallbackInfo = fallbackLanguage != null ? ("; fallback=" + fallbackLanguage) : "";
+            logger.debug("Missing translation for key '" + key + "' in language '" + languageCode + "'" + fallbackInfo);
+        }
     }
 
     private String applyPlaceholders(String message, Map<String, String> placeholders) {

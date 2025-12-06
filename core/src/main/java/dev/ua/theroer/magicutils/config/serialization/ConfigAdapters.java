@@ -1,5 +1,8 @@
 package dev.ua.theroer.magicutils.config.serialization;
 
+import dev.ua.theroer.magicutils.config.adapters.EnumAdapter;
+import lombok.Getter;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -7,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Simple registry for config value adapters.
  */
 public final class ConfigAdapters {
+    @Getter
     private static final Map<Class<?>, ConfigValueAdapter<?>> ADAPTERS = new ConcurrentHashMap<>();
 
     private ConfigAdapters() {
@@ -24,7 +28,6 @@ public final class ConfigAdapters {
         ADAPTERS.put(type, adapter);
     }
 
-    @SuppressWarnings("unchecked")
     /**
      * Lookup adapter for a type.
      *
@@ -32,7 +35,22 @@ public final class ConfigAdapters {
      * @param type target class
      * @return adapter or null if not registered
      */
+    @SuppressWarnings("unchecked")
     public static <T> ConfigValueAdapter<T> get(Class<T> type) {
-        return (ConfigValueAdapter<T>) ADAPTERS.get(type);
+        ConfigValueAdapter<T> adapter = (ConfigValueAdapter<T>) ADAPTERS.get(type);
+        if (adapter == null && type != null && type.isEnum()) {
+            @SuppressWarnings({"rawtypes"})
+            EnumAdapter<?> enumAdapter = new EnumAdapter(type.asSubclass(Enum.class));
+            ADAPTERS.put(type, enumAdapter);
+            adapter = (ConfigValueAdapter<T>) enumAdapter;
+        }
+        return adapter;
+    }
+
+    /**
+    * Returns true if an adapter is registered for the given type.
+    */
+    public static boolean has(Class<?> type) {
+        return ADAPTERS.containsKey(type);
     }
 }

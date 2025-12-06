@@ -13,7 +13,7 @@ import dev.ua.theroer.magicutils.lang.InternalMessages;
 /**
  * Command for reloading different sections of MagicUtils.
  */
-@CommandInfo(name = "reload", description = "MagicUtils reload command", permission = true, aliases = { "rl" })
+@CommandInfo(name = "reload", description = "MagicUtils reload command", permission = "commands.reload.use", aliases = { "rl" })
 public class ReloadCommand extends MagicCommand {
 
     /**
@@ -28,7 +28,7 @@ public class ReloadCommand extends MagicCommand {
      * @param commandName the command name to reload
      * @return the result of the reload operation
      */
-    @SubCommand(name = "command", description = "Reload the command section", permission = true)
+    @SubCommand(name = "command", description = "Reload the command section", permission = "commands.reload.command.use")
     public CommandResult executeCommand(
             @Suggest(value = { "getCommandSuggestions", "@players",
                     "{all,specific}" }, permission = true) @DefaultValue("all") @NotNull String commandName) {
@@ -45,7 +45,7 @@ public class ReloadCommand extends MagicCommand {
      * @param sectionName the section name to reload
      * @return the result of the reload operation
      */
-    @SubCommand(name = "section", description = "Reload the section section", permission = true)
+    @SubCommand(name = "section", description = "Reload the section section", permission = "commands.reload.section.use")
     public CommandResult executeSection(
             @Suggest(value = "getSectionSuggestions|@worlds", permission = false) @DefaultValue("all") @NotNull String sectionName) {
         if ("all".equals(sectionName)) {
@@ -61,7 +61,7 @@ public class ReloadCommand extends MagicCommand {
      * @param globalName the global name to reload
      * @return the result of the reload operation
      */
-    @SubCommand(name = "global", description = "Reload the global section", permission = true)
+    @SubCommand(name = "global", description = "Reload the global section", permission = "commands.reload.global.use")
     public CommandResult executeGlobal(
             @Suggest("getGlobalSuggestions") @DefaultValue("all") @NotNull String globalName) {
         if ("all".equals(globalName)) {

@@ -35,9 +35,12 @@ public @interface SubCommand {
     String[] aliases() default {};
 
     /**
-     * Whether the subcommand requires permission.
-     * 
-     * @return true if permission is required
+     * Specific permission node required to execute the subcommand. If empty, no check is performed.
      */
-    boolean permission() default false;
+    String permission() default "";
+
+    /**
+     * Default permission state (string name mirroring Bukkit PermissionDefault).
+     */
+    String permissionDefault() default "OP";
 }

@@ -31,4 +31,9 @@ public @interface Permission {
      * @return the permission denied message
      */
     String message() default "magicutils.noPermission";
+
+    /**
+     * Default permission state (string name mirroring Bukkit PermissionDefault).
+     */
+    String defaultValue() default "OP";
 }

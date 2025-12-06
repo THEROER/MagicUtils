@@ -6,6 +6,7 @@ import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
@@ -93,7 +94,8 @@ public final class Logger {
         }
     }
 
-    private static final MiniMessage mm = MiniMessage.miniMessage();
+    @Getter
+    private static final MiniMessage miniMessage = MiniMessage.miniMessage();
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
             .character('&')
             .hexColors()
@@ -447,7 +449,7 @@ public final class Logger {
 
         if (message instanceof Component) {
             // If already a Component, serialize to MiniMessage format
-            messageStr = mm.serialize((Component) message);
+            messageStr = miniMessage.serialize((Component) message);
         } else if (message instanceof Throwable) {
             // Format exception with stack trace
             messageStr = formatThrowable((Throwable) message);
@@ -498,7 +500,7 @@ public final class Logger {
         }
 
         // Parse to Component
-        Component component = mm.deserialize(finalMessage, TagResolver.standard());
+        Component component = miniMessage.deserialize(finalMessage, TagResolver.standard());
 
         // Strip formatting for console if needed
         if ((target == LogTarget.CONSOLE || target == LogTarget.BOTH) && consoleStripFormatting) {
@@ -729,14 +731,20 @@ public final class Logger {
             return Component.empty();
         boolean hasMini = input.indexOf('<') >= 0 && input.indexOf('>') > input.indexOf('<');
         boolean hasLegacy = input.indexOf('&') >= 0 || input.indexOf('§') >= 0;
+        Component comp;
         if (hasMini && hasLegacy) {
-            return mm.deserialize(legacyToMiniMessage(input));
+            comp = miniMessage.deserialize(legacyToMiniMessage(input));
         } else if (hasMini) {
-            return mm.deserialize(input);
+            comp = miniMessage.deserialize(input);
         } else if (hasLegacy) {
-            return LEGACY.deserialize(input.replace('§', '&'));
+            comp = LEGACY.deserialize(input.replace('§', '&'));
+        } else {
+            comp = Component.text(input);
         }
-        return Component.text(input);
+        if (comp.decoration(TextDecoration.ITALIC) == TextDecoration.State.NOT_SET) {
+            comp = comp.decoration(TextDecoration.ITALIC, false);
+        }
+        return comp;
     }
 
     /**

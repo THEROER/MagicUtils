@@ -33,5 +33,6 @@ public class SubLoggerConfig {
     }
 
     @Comment("Whether this sub-logger is enabled")
-    private boolean enabled;
+    @Builder.Default
+    private boolean enabled = true;
 }

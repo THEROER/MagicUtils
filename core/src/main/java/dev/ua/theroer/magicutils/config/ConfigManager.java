@@ -122,6 +122,69 @@ public class ConfigManager {
         }
     }
 
+    /**
+     * Registers and loads a configuration class using placeholder pairs.
+     * Accepts {@code key, value, key, value...} and converts them to a map.
+     *
+     * @param configClass the configuration class
+     * @param placeholders key/value pairs for placeholders
+     * @param <T> the type of configuration
+     * @return loaded configuration instance
+     */
+    public <T> T loadConfigFile(Class<T> configClass, String... placeholders) {
+        return register(configClass, toPlaceholderMap(placeholders));
+    }
+
+    /**
+     * Saves all registered instances of the given config class.
+     *
+     * @param <T> config type
+     * @param configClass config type to save
+     */
+    public <T> void saveConfigFile(Class<T> configClass) {
+        save(configClass);
+    }
+
+    /**
+     * Saves a specific configuration instance.
+     *
+     * @param configInstance instance to persist
+     */
+    public void saveConfigFile(Object configInstance) {
+        save(configInstance);
+    }
+
+    /**
+     * Reloads a configuration class with optional sections.
+     *
+     * @param <T> config type
+     * @param configClass config type to reload
+     * @param sections optional sections
+     */
+    public <T> void reloadConfigFile(Class<T> configClass, String... sections) {
+        reload(configClass, sections);
+    }
+
+    /**
+     * Reloads a specific configuration instance.
+     *
+     * @param configInstance instance to reload
+     */
+    public void reloadConfigFile(Object configInstance) {
+        reload(configInstance);
+    }
+
+    /**
+     * Unregisters all instances of a config class.
+     *
+     * @param configClass config type to unload
+     */
+    public void unloadConfigFile(Class<?> configClass) {
+        for (ConfigEntry<?> entry : new ArrayList<>(getEntries(configClass))) {
+            removeEntry(entry);
+        }
+    }
+
     private <T> void loadConfig(T instance, ConfigMetadata metadata) throws Exception {
         File configFile = metadata.resolveFile(platform.configDir());
 
@@ -283,6 +346,16 @@ public class ConfigManager {
                         }
                     }
                     value = deserializedList;
+                } else {
+                    ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+                    if (adapter != null) {
+                        ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                        List<Object> converted = new ArrayList<>(list.size());
+                        for (Object item : list) {
+                            converted.add(typed.deserialize(item));
+                        }
+                        value = converted;
+                    }
                 }
 
                 ListProcessor processor = field.getAnnotation(ListProcessor.class);
@@ -291,15 +364,19 @@ public class ConfigManager {
                 }
             } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
                 ParameterizedType mapType = (ParameterizedType) field.getGenericType();
+                Class<?> keyType = (Class<?>) mapType.getActualTypeArguments()[0];
                 Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
 
-                Map<String, Object> map = new LinkedHashMap<>();
+                Map<Object, Object> map = new LinkedHashMap<>();
+                ConfigValueAdapter<?> keyAdapter = keyType == String.class ? null : ConfigAdapters.get(keyType);
                 for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                    map.put(String.valueOf(entry.getKey()), entry.getValue());
+                    Object rawKey = entry.getKey();
+                    Object typedKey = keyAdapter != null ? keyAdapter.deserialize(rawKey) : String.valueOf(rawKey);
+                    map.put(typedKey, entry.getValue());
                 }
                 if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
-                    Map<String, Object> deserializedMap = new HashMap<>();
-                    for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    Map<Object, Object> deserializedMap = new HashMap<>();
+                    for (Map.Entry<Object, Object> entry : map.entrySet()) {
                         Object entryValue = entry.getValue();
                         if (entryValue instanceof Map) {
                             deserializedMap.put(entry.getKey(),
@@ -309,8 +386,23 @@ public class ConfigManager {
                         }
                     }
                     value = deserializedMap;
+                } else if (valueType == String.class) {
+                    // flatten works on string-keyed map; ensure keys are stringified
+                    Map<String, Object> stringMap = new LinkedHashMap<>();
+                    map.forEach((k, v) -> stringMap.put(String.valueOf(k), v));
+                    value = flattenStringMap(stringMap);
                 } else {
-                    value = map;
+                    ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+                    if (adapter != null) {
+                        ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                        Map<Object, Object> converted = new LinkedHashMap<>();
+                        for (Map.Entry<Object, Object> entry : map.entrySet()) {
+                            converted.put(entry.getKey(), typed.deserialize(entry.getValue()));
+                        }
+                        value = converted;
+                    } else {
+                        value = map;
+                    }
                 }
             } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                 value = ConfigSerializer.deserialize((Map<String, Object>) value, fieldType);
@@ -391,6 +483,17 @@ public class ConfigManager {
                 }
                 return serializedList;
             }
+
+            ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+            if (adapter != null) {
+                @SuppressWarnings("unchecked")
+                ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                List<Object> converted = new ArrayList<>(((List<?>) value).size());
+                for (Object item : (List<?>) value) {
+                    converted.add(item != null ? typed.serialize(item) : null);
+                }
+                return converted;
+            }
         }
 
         if (value instanceof Map && Map.class.isAssignableFrom(field.getType())) {
@@ -413,6 +516,20 @@ public class ConfigManager {
                     return expandDottedMap(map);
                 }
             }
+
+            ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+            if (adapter != null) {
+                @SuppressWarnings("unchecked")
+                ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                Map<String, Object> converted = new LinkedHashMap<>();
+                Map<?, ?> map = (Map<?, ?>) value;
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    Object entryValue = entry.getValue();
+                    converted.put(String.valueOf(entry.getKey()),
+                            entryValue != null ? typed.serialize(entryValue) : null);
+                }
+                return converted;
+            }
         }
 
         if (value.getClass().isAnnotationPresent(ConfigSerializable.class)) {
@@ -420,6 +537,9 @@ public class ConfigManager {
         }
 
         ConfigValueAdapter<?> adapter = ConfigAdapters.get(value.getClass());
+        if (adapter == null && field != null) {
+            adapter = ConfigAdapters.get(field.getType());
+        }
         if (adapter != null) {
             @SuppressWarnings("unchecked")
             ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
@@ -585,6 +705,38 @@ public class ConfigManager {
             return null;
 
         return parseValue(stringValue, field.getType());
+    }
+
+    private Map<String, String> flattenStringMap(Map<String, Object> map) {
+        Map<String, String> flat = new LinkedHashMap<>();
+        flatten("", map, flat);
+        return flat;
+    }
+
+    private void flatten(String prefix, Map<String, Object> source, Map<String, String> out) {
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            String key = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+            Object value = entry.getValue();
+            if (value instanceof Map<?, ?> nested) {
+                flatten(key, YamlDocument.castMap(nested), out);
+            } else if (value != null) {
+                out.put(key, String.valueOf(value));
+            }
+        }
+    }
+
+    private Map<String, String> toPlaceholderMap(String... placeholders) {
+        Map<String, String> map = new LinkedHashMap<>();
+        if (placeholders == null || placeholders.length == 0) {
+            return map;
+        }
+        if (placeholders.length % 2 != 0) {
+            throw new IllegalArgumentException("Placeholders must be key/value pairs");
+        }
+        for (int i = 0; i < placeholders.length; i += 2) {
+            map.put(placeholders[i], placeholders[i + 1]);
+        }
+        return map;
     }
 
     private Object parseValue(String value, Class<?> type) {
