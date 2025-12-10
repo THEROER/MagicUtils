@@ -15,6 +15,10 @@ import java.util.stream.Collectors;
  * Generic enum parser to avoid registering a parser per enum type.
  */
 public class EnumTypeParser implements TypeParser<Enum<?>> {
+
+    /** Default constructor. */
+    public EnumTypeParser() {
+    }
     @Override
     public boolean canParse(@NotNull Class<?> type) {
         return type.isEnum();

@@ -10,6 +10,9 @@ import dev.ua.theroer.magicutils.annotations.*;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -122,16 +125,20 @@ public class CommandManager {
 
         PrefixedLoggerGen.debug(logger, "Found command: " + name + ", checking permissions...");
 
+        String baseCommandName = info.name().toLowerCase(Locale.ROOT);
+        String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
         String commandPermission = resolvePermission(info.permission(),
-                "commands." + normalizedName + ".use");
-        if (!commandPermission.isEmpty() && !sender.hasPermission(commandPermission)) {
+                "commands." + baseCommandName);
+        ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+        if (!commandPermission.isEmpty() && !sender.hasPermission(commandPermission)
+                && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
             PrefixedLoggerGen.debug(logger,
                     "Permission denied for " + sender.getName() + " on permission: " + commandPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
         try {
-            return executeCommand(command, info, sender, args, normalizedName);
+            return executeCommand(command, info, sender, args, baseCommandName);
         } catch (Exception e) {
             PrefixedLoggerGen.error(logger, "Error executing command " + name + ": " + e.getMessage());
             e.printStackTrace();
@@ -151,7 +158,7 @@ public class CommandManager {
         // args and execute method exists
         if (executeMethod != null && (subCommands.isEmpty() || args.isEmpty())) {
             PrefixedLoggerGen.debug(logger, "Using direct execute method");
-            return executeDirectMethod(command, info, executeMethod, sender, args);
+            return executeDirectMethod(command, info, executeMethod, sender, args, normalizedCommandName);
         }
 
         // If there are subcommands but no execute method and no args
@@ -169,13 +176,13 @@ public class CommandManager {
         }
 
         // Handle subcommand execution
-        String subCommandName = args.get(0).toLowerCase();
+        String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
         PrefixedLoggerGen.debug(logger, "Looking for subcommand: " + subCommandName);
 
         MagicCommand.SubCommandInfo targetSubCommand = null;
 
         for (MagicCommand.SubCommandInfo subInfo : subCommands) {
-            if (subInfo.annotation.name().toLowerCase().equals(subCommandName)) {
+            if (matchesSubCommand(subInfo, subCommandName)) {
                 targetSubCommand = subInfo;
                 break;
             }
@@ -183,15 +190,18 @@ public class CommandManager {
 
         if (targetSubCommand == null) {
             PrefixedLoggerGen.debug(logger, "Subcommand not found: " + subCommandName + ". Available: " +
-                    subCommands.stream().map(s -> s.annotation.name()).collect(Collectors.toList()));
+                    getAvailableSubCommands(subCommands, sender, normalizedCommandName));
             return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", subCommandName));
         }
 
         PrefixedLoggerGen.debug(logger, "Found subcommand: " + subCommandName + ", checking permissions...");
 
         String subPermission = resolvePermission(targetSubCommand.annotation.permission(),
-                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.annotation.name() + ".use");
-        if (!subPermission.isEmpty() && !sender.hasPermission(subPermission)) {
+                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.annotation.name());
+        ensurePermissionRegistered(subPermission, targetSubCommand.annotation.permissionDefault(),
+                targetSubCommand.annotation.description());
+        if (!subPermission.isEmpty() && !sender.hasPermission(subPermission)
+                && !hasArgumentPermissionOverride(normalizedCommandName, targetSubCommand.annotation.name(), sender)) {
             PrefixedLoggerGen.debug(logger,
                     "Permission denied for subcommand " + subCommandName + " on permission: " + subPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
@@ -200,11 +210,11 @@ public class CommandManager {
         List<String> subArgs = args.size() > 1 ? args.subList(1, args.size()) : new ArrayList<>();
         PrefixedLoggerGen.debug(logger, "Executing subcommand: " + subCommandName + " with args: " + subArgs);
 
-        return executeSubCommand(command, info, targetSubCommand, sender, subArgs);
+        return executeSubCommand(command, info, targetSubCommand, sender, subArgs, normalizedCommandName);
     }
 
     private CommandResult executeDirectMethod(MagicCommand command, CommandInfo info, Method executeMethod, CommandSender sender,
-            List<String> args) {
+            List<String> args, String normalizedCommandName) {
         try {
             List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
 
@@ -212,12 +222,16 @@ public class CommandManager {
             PrefixedLoggerGen.debug(logger,
                     "Method parameter types: " + Arrays.toString(executeMethod.getParameterTypes()));
 
-            Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender);
+            Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender, normalizedCommandName, null);
 
             if (methodArgs == null) {
                 PrefixedLoggerGen.debug(logger, "Failed to parse arguments for direct execute method");
                 String usage = buildUsage(info, null, arguments);
                 return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get("usage", usage));
+            }
+
+            if (!validateArgumentPermissions(normalizedCommandName, null, arguments, methodArgs, sender)) {
+                return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
 
             // Log the actual arguments being passed
@@ -247,7 +261,7 @@ public class CommandManager {
     }
 
     private Object[] parseArgumentsForDirectMethod(List<CommandArgument> arguments, List<String> args,
-            CommandSender sender) {
+            CommandSender sender, String normalizedCommandName, @Nullable String subCommandName) {
         Object[] result = new Object[arguments.size()];
         boolean[] filled = new boolean[arguments.size()];
 
@@ -270,6 +284,22 @@ public class CommandManager {
                 continue; // Skip already filled arguments
 
             CommandArgument argument = arguments.get(i);
+
+            if (lacksArgumentPermission(normalizedCommandName, subCommandName, argument, sender)) {
+                PrefixedLoggerGen.debug(logger,
+                        "Skipping argument " + argument.getName() + " due to missing permission, setting to default/null");
+                if (argument.getDefaultValue() != null) {
+                    result[i] = convertArgument(argument.getDefaultValue(), argument.getType(), sender);
+                } else {
+                    result[i] = null;
+                }
+                filled[i] = true;
+                if (!remainingArgs.isEmpty() && !argument.getType().equals(CommandSender.class)) {
+                    remainingArgs.remove(0);
+                }
+                continue;
+            }
+
             if (argument.isGreedy()) {
                 continue; // Greedy handled in final pass
             }
@@ -290,12 +320,6 @@ public class CommandManager {
 
             // If we found a match, use it
             if (bestMatch != null) {
-                if (argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
-                    PrefixedLoggerGen.debug(logger, "Permission denied for argument " + argument.getName()
-                            + " on permission: " + argument.getPermission());
-                    return null;
-                }
-
                 result[i] = convertArgument(bestMatch, argument.getType(), sender);
                 filled[i] = true;
                 remainingArgs.remove(bestMatchIndex);
@@ -355,12 +379,6 @@ public class CommandManager {
                             "Missing required argument at position " + i + ": " + argument.getName());
                     return null;
                 }
-            }
-
-            if (providedByUser && argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
-                PrefixedLoggerGen.debug(logger, "Permission denied for argument " + argument.getName()
-                        + " on permission: " + argument.getPermission());
-                return null;
             }
 
             result[i] = convertArgument(value, argument.getType(), sender);
@@ -426,7 +444,7 @@ public class CommandManager {
     }
 
     private CommandResult executeSubCommand(MagicCommand command, CommandInfo info, MagicCommand.SubCommandInfo subInfo,
-            CommandSender sender, List<String> args) {
+            CommandSender sender, List<String> args, String normalizedCommandName) {
         try {
             Method method = subInfo.method;
             List<CommandArgument> arguments = MagicCommand.getArguments(method);
@@ -435,12 +453,17 @@ public class CommandManager {
                     "Parsing " + arguments.size() + " arguments for method: " + method.getName());
             PrefixedLoggerGen.debug(logger, "Method parameter types: " + Arrays.toString(method.getParameterTypes()));
 
-            Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender);
+            Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender, normalizedCommandName,
+                    subInfo.annotation.name());
 
             if (methodArgs == null) {
                 PrefixedLoggerGen.debug(logger, "Failed to parse arguments for subcommand");
                 String usage = buildUsage(info, subInfo, arguments);
                 return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get("usage", usage));
+            }
+
+            if (!validateArgumentPermissions(normalizedCommandName, subInfo.annotation.name(), arguments, methodArgs, sender)) {
+                return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
 
             // Log the actual arguments being passed
@@ -490,6 +513,285 @@ public class CommandManager {
         return null;
     }
 
+    private boolean validateArgumentPermissions(String normalizedCommandName, @Nullable String subCommandName,
+            List<CommandArgument> arguments, Object[] values, CommandSender sender) {
+        Map<String, Object> valuesByName = new HashMap<>();
+        Map<String, CommandArgument> argumentsByName = new HashMap<>();
+
+        for (int i = 0; i < arguments.size(); i++) {
+            valuesByName.put(arguments.get(i).getName(), values[i]);
+            argumentsByName.put(arguments.get(i).getName(), arguments.get(i));
+        }
+
+        for (int i = 0; i < arguments.size(); i++) {
+            CommandArgument argument = arguments.get(i);
+            if (!argument.hasPermission()) {
+                continue;
+            }
+
+            if (!shouldCheckPermission(argument, values[i], valuesByName, argumentsByName, sender)) {
+                continue;
+            }
+
+            String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
+            String resolved = resolvePermission(argument.getPermission(), fallback);
+            ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
+                    "Argument " + argument.getName() + " for /" + normalizedCommandName
+                            + (subCommandName != null ? " " + subCommandName : ""));
+            if (resolved != null && !resolved.isEmpty() && !sender.hasPermission(resolved)) {
+                PrefixedLoggerGen.debug(logger, "Skipping permission check for argument " + argument.getName()
+                        + " (missing permission " + resolved + "), treating as optional");
+                continue;
+            }
+        }
+        return true;
+    }
+
+    private boolean canSuggestArgument(String normalizedCommandName, @Nullable String subCommandName,
+            CommandArgument argument, CommandSender sender) {
+        if (!argument.hasPermission()) {
+            return true;
+        }
+        String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
+        String resolved = resolvePermission(argument.getPermission(), fallback);
+        ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
+                "Argument " + argument.getName() + " for /" + normalizedCommandName
+                        + (subCommandName != null ? " " + subCommandName : ""));
+        return resolved == null || resolved.isEmpty() || sender.hasPermission(resolved);
+    }
+
+    private boolean lacksArgumentPermission(String normalizedCommandName, @Nullable String subCommandName,
+            CommandArgument argument, CommandSender sender) {
+        if (!argument.hasPermission()) {
+            return false;
+        }
+        String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
+        String resolved = resolvePermission(argument.getPermission(), fallback);
+        ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
+                "Argument " + argument.getName() + " for /" + normalizedCommandName
+                        + (subCommandName != null ? " " + subCommandName : ""));
+        return resolved != null && !resolved.isEmpty() && !sender.hasPermission(resolved);
+    }
+
+    private boolean shouldCheckPermission(CommandArgument argument, Object value, Map<String, Object> valuesByName,
+            Map<String, CommandArgument> argumentsByName, CommandSender sender) {
+        PermissionConditionType condition = argument.getPermissionCondition();
+        String[] names = argument.getPermissionConditionArgs();
+
+        List<ArgValue> targets = collectTargets(argument, value, names, valuesByName, argumentsByName);
+
+        switch (condition) {
+            case ALWAYS:
+                return true;
+            case NOT_NULL:
+                return targets.stream().anyMatch(av -> av.value != null);
+            case SELF:
+                return targets.stream().anyMatch(av -> av.value != null && isSenderMatch(sender, av.meta(), av.value()));
+            case OTHER:
+            case ANY_OTHER:
+                return targets.stream().anyMatch(av -> av.value != null && !isSenderMatch(sender, av.meta(), av.value()));
+            case DISTINCT:
+                return isDistinct(sender, targets, false);
+            case ALL_DISTINCT:
+                return isDistinct(sender, targets, true);
+            case EXISTS:
+                return targets.stream().anyMatch(av -> av.value != null);
+            case EQUALS:
+                return areAllEqual(sender, targets);
+            case NOT_EQUALS:
+                return areAllDistinct(sender, targets);
+            default:
+                return false;
+        }
+    }
+
+    private List<ArgValue> collectTargets(CommandArgument selfArgument, Object selfValue, String[] names,
+            Map<String, Object> valuesByName, Map<String, CommandArgument> argumentsByName) {
+        List<ArgValue> targets = new ArrayList<>();
+        if (names != null && names.length > 0) {
+            for (String name : names) {
+                Object val = valuesByName.get(name);
+                CommandArgument meta = argumentsByName.getOrDefault(name, selfArgument);
+                targets.add(new ArgValue(meta, val));
+            }
+        } else {
+            targets.add(new ArgValue(selfArgument, selfValue));
+        }
+        return targets;
+    }
+
+    private boolean isDistinct(CommandSender sender, List<ArgValue> targets, boolean requireAllDistinct) {
+        List<ArgValue> nonNull = targets.stream().filter(av -> av.value != null).toList();
+        if (nonNull.size() < 2) {
+            return false;
+        }
+
+        for (int i = 0; i < nonNull.size(); i++) {
+            for (int j = i + 1; j < nonNull.size(); j++) {
+                ArgValue a = nonNull.get(i);
+                ArgValue b = nonNull.get(j);
+                boolean equal = areEqual(sender, a.meta(), a.value(), b.meta(), b.value());
+                if (requireAllDistinct && equal) {
+                    return false;
+                }
+                if (!requireAllDistinct && !equal) {
+                    return true;
+                }
+            }
+        }
+
+        return requireAllDistinct;
+    }
+
+    private boolean areAllEqual(CommandSender sender, List<ArgValue> targets) {
+        List<ArgValue> nonNull = targets.stream().filter(av -> av.value != null).toList();
+        if (nonNull.size() < 2) {
+            return false;
+        }
+        ArgValue first = nonNull.get(0);
+        for (int i = 1; i < nonNull.size(); i++) {
+            ArgValue other = nonNull.get(i);
+            if (!areEqual(sender, first.meta(), first.value(), other.meta(), other.value())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean areAllDistinct(CommandSender sender, List<ArgValue> targets) {
+        return isDistinct(sender, targets, true);
+    }
+
+    private boolean isSenderMatch(CommandSender sender, CommandArgument argument, Object value) {
+        CompareMode mode = argument.getCompareMode();
+        TypeParser<?> parser = typeParserRegistry.findParserForType(argument.getType());
+        if (parser != null) {
+            try {
+                return parser.isSender(sender, value, mode);
+            } catch (Exception ignored) {
+            }
+        }
+        return defaultIsSender(sender, value, mode);
+    }
+
+    private boolean areEqual(CommandSender sender, CommandArgument leftMeta, Object left, CommandArgument rightMeta,
+            Object right) {
+        CompareMode leftMode = leftMeta != null ? leftMeta.getCompareMode() : CompareMode.AUTO;
+        CompareMode rightMode = rightMeta != null ? rightMeta.getCompareMode() : CompareMode.AUTO;
+
+        TypeParser<?> leftParser = leftMeta != null ? typeParserRegistry.findParserForType(leftMeta.getType()) : null;
+        if (leftParser != null) {
+            try {
+                return leftParser.isEqual(sender, left, right, leftMode);
+            } catch (Exception ignored) {
+            }
+        }
+
+        TypeParser<?> rightParser = rightMeta != null ? typeParserRegistry.findParserForType(rightMeta.getType()) : null;
+        if (rightParser != null) {
+            try {
+                return rightParser.isEqual(sender, left, right, rightMode);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return defaultEquals(sender, left, right, leftMode != null ? leftMode : rightMode);
+    }
+
+    private boolean defaultIsSender(CommandSender sender, Object value, CompareMode mode) {
+        return defaultEquals(sender, value, sender, mode);
+    }
+
+    private boolean defaultEquals(CommandSender sender, Object first, Object second, CompareMode mode) {
+        if (first == null || second == null) {
+            return first == second;
+        }
+        if (mode == CompareMode.EQUALS) {
+            return first.equals(second);
+        }
+        if (mode == CompareMode.UUID || mode == CompareMode.AUTO) {
+            UUID aUuid = extractUuid(first);
+            UUID bUuid = extractUuid(second);
+            if (aUuid != null && bUuid != null) {
+                return aUuid.equals(bUuid);
+            }
+            if (mode == CompareMode.UUID) {
+                return false;
+            }
+        }
+        if (mode == CompareMode.NAME || mode == CompareMode.AUTO) {
+            String aName = extractName(first);
+            String bName = extractName(second);
+            if (aName != null && bName != null) {
+                return aName.equalsIgnoreCase(bName);
+            }
+            if (mode == CompareMode.NAME) {
+                return false;
+            }
+        }
+        return first.equals(second);
+    }
+
+    private UUID extractUuid(Object obj) {
+        if (obj instanceof org.bukkit.command.CommandSender cs && cs instanceof org.bukkit.entity.Player) {
+            return ((org.bukkit.entity.Player) cs).getUniqueId();
+        }
+        if (obj instanceof org.bukkit.OfflinePlayer op) {
+            return op.getUniqueId();
+        }
+        if (obj instanceof UUID uuid) {
+            return uuid;
+        }
+        try {
+            var method = obj.getClass().getMethod("getUniqueId");
+            Object res = method.invoke(obj);
+            if (res instanceof UUID uuidRes) {
+                return uuidRes;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private String extractName(Object obj) {
+        if (obj instanceof org.bukkit.command.CommandSender cs) {
+            return cs.getName();
+        }
+        if (obj instanceof org.bukkit.OfflinePlayer op) {
+            return op.getName();
+        }
+        try {
+            var method = obj.getClass().getMethod("getName");
+            Object res = method.invoke(obj);
+            if (res instanceof String s) {
+                return s;
+            }
+        } catch (Exception ignored) {
+        }
+        return obj.toString();
+    }
+
+    private String buildArgumentPermission(String normalizedCommandName, @Nullable String subCommandName, CommandArgument argument) {
+        StringBuilder sb = new StringBuilder("commands.").append(normalizedCommandName);
+        if (subCommandName != null && !subCommandName.isEmpty()) {
+            sb.append(".subcommand.").append(subCommandName);
+        }
+        String node = argument.getPermissionNode();
+        if (node == null || node.isEmpty()) {
+            node = argument.getName();
+        }
+        if (argument.isIncludeArgumentSegment()) {
+            sb.append(".argument.");
+        } else {
+            sb.append(".");
+        }
+        sb.append(node);
+        return sb.toString();
+    }
+
+    private record ArgValue(CommandArgument meta, Object value) {
+    }
+
     /**
      * Gets tab completion suggestions for a command.
      * 
@@ -501,11 +803,11 @@ public class CommandManager {
     public List<String> getSuggestions(String name, CommandSender sender, List<String> args) {
         PrefixedLoggerGen.debug(logger, "Getting suggestions for command: " + name + " with args: " + args);
 
-        // Normalize the command name (remove plugin namespace if present)
-        String normalizedName = normalizeCommandName(name);
-
         MagicCommand command = commands.get(name.toLowerCase());
         CommandInfo info = commandInfos.get(name.toLowerCase());
+        // Normalize the command name (remove plugin namespace if present)
+        String normalizedName = normalizeCommandName(name);
+        String baseCommandName = info != null ? info.name().toLowerCase(Locale.ROOT) : normalizedName;
 
         if (command == null || info == null) {
             PrefixedLoggerGen.debug(logger, "Command not found for suggestions: " + name);
@@ -513,14 +815,17 @@ public class CommandManager {
         }
 
         String commandPermission = resolvePermission(info.permission(),
-                "commands." + normalizedName + ".use");
-        if (!commandPermission.isEmpty() && !sender.hasPermission(commandPermission)) {
+                "commands." + baseCommandName);
+        ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+        String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
+        if (!commandPermission.isEmpty() && !sender.hasPermission(commandPermission)
+                && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
             PrefixedLoggerGen.debug(logger, "No permission for suggestions: " + commandPermission);
             return Arrays.asList("");
         }
 
         try {
-            List<String> suggestions = generateSuggestions(command, info, sender, args, normalizedName);
+            List<String> suggestions = generateSuggestions(command, info, sender, args, baseCommandName);
             PrefixedLoggerGen.debug(logger, "Generated suggestions: " + suggestions);
             return suggestions;
         } catch (Exception e) {
@@ -541,7 +846,7 @@ public class CommandManager {
         if (executeMethod != null && subCommands.isEmpty()) {
             List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
             PrefixedLoggerGen.debug(logger, "Using direct method suggestions with " + arguments.size() + " arguments");
-            return generateDirectMethodSuggestions(command, arguments, sender, args);
+            return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName, null);
         }
 
         // If there are no subcommands and no execute method
@@ -569,7 +874,8 @@ public class CommandManager {
             if (!matchesSubCommand) {
                 // Try to provide suggestions for direct execute method
                 List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
-                List<String> directSuggestions = generateDirectMethodSuggestions(command, arguments, sender, args);
+                List<String> directSuggestions = generateDirectMethodSuggestions(command, arguments, sender, args,
+                        normalizedCommandName, null);
 
                 // Also include subcommands that start with current input
                 List<String> filteredSubCommands = availableSubCommands.stream()
@@ -592,11 +898,11 @@ public class CommandManager {
                     .collect(Collectors.toList());
         }
 
-        String subCommandName = args.get(0).toLowerCase();
+        String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
         MagicCommand.SubCommandInfo targetSubCommand = null;
 
         for (MagicCommand.SubCommandInfo subInfo : subCommands) {
-            if (subInfo.annotation.name().toLowerCase().equals(subCommandName)) {
+            if (matchesSubCommand(subInfo, subCommandName)) {
                 targetSubCommand = subInfo;
                 break;
             }
@@ -607,17 +913,20 @@ public class CommandManager {
         }
 
         String subPermission = resolvePermission(targetSubCommand.annotation.permission(),
-                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.annotation.name() + ".use");
+                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.annotation.name());
+        ensurePermissionRegistered(subPermission, targetSubCommand.annotation.permissionDefault(),
+                targetSubCommand.annotation.description());
         if (!subPermission.isEmpty() && !sender.hasPermission(subPermission)) {
             return Arrays.asList("");
         }
 
         List<String> subArgs = args.subList(1, args.size());
-        return generateArgumentSuggestions(command, targetSubCommand, sender, subArgs, currentInput);
+        return generateArgumentSuggestions(command, targetSubCommand, sender, subArgs, currentInput,
+                normalizedCommandName);
     }
 
     private List<String> generateDirectMethodSuggestions(MagicCommand command, List<CommandArgument> arguments,
-            CommandSender sender, List<String> args) {
+            CommandSender sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
         PrefixedLoggerGen.debug(logger, "generateDirectMethodSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
         PrefixedLoggerGen.debug(logger, "Raw args: " + args);
@@ -674,7 +983,7 @@ public class CommandManager {
             PrefixedLoggerGen.debug(logger,
                     "Generating suggestions for first argument: " + firstArg.argument.getName());
 
-            if (!firstArg.argument.hasPermission() || sender.hasPermission(firstArg.argument.getPermission())) {
+            if (canSuggestArgument(normalizedCommandName, subCommandName, firstArg.argument, sender)) {
                 List<String> firstArgSuggestions = generateSuggestionsForArgument(command, firstArg.argument, sender,
                         "");
                 suggestions.addAll(firstArgSuggestions);
@@ -690,7 +999,7 @@ public class CommandManager {
                         "First argument is optional, also generating suggestions for second argument: "
                                 + secondArg.argument.getName());
 
-                if (!secondArg.argument.hasPermission() || sender.hasPermission(secondArg.argument.getPermission())) {
+                if (canSuggestArgument(normalizedCommandName, subCommandName, secondArg.argument, sender)) {
                     List<String> secondArgSuggestions = generateSuggestionsForArgument(command, secondArg.argument,
                             sender, "");
                     suggestions.addAll(secondArgSuggestions);
@@ -720,7 +1029,7 @@ public class CommandManager {
             PrefixedLoggerGen.debug(logger, "Generating suggestions for current argument " + currentArgIndex + ": "
                     + currentArg.argument.getName() + " with input: '" + currentInput + "'");
 
-            if (!currentArg.argument.hasPermission() || sender.hasPermission(currentArg.argument.getPermission())) {
+            if (canSuggestArgument(normalizedCommandName, subCommandName, currentArg.argument, sender)) {
                 suggestions.addAll(generateSuggestionsForArgument(command, currentArg.argument, sender, currentInput));
             }
         }
@@ -736,7 +1045,7 @@ public class CommandManager {
                 PrefixedLoggerGen.debug(logger, "Current argument is optional, also suggesting for next argument: "
                         + nextArg.argument.getName());
 
-                if (!nextArg.argument.hasPermission() || sender.hasPermission(nextArg.argument.getPermission())) {
+                if (canSuggestArgument(normalizedCommandName, subCommandName, nextArg.argument, sender)) {
                     suggestions.addAll(generateSuggestionsForArgument(command, nextArg.argument, sender, ""));
                 }
             }
@@ -757,7 +1066,7 @@ public class CommandManager {
     }
 
     private List<String> generateArgumentSuggestions(MagicCommand command, MagicCommand.SubCommandInfo subInfo,
-            CommandSender sender, List<String> args, String currentInput) {
+            CommandSender sender, List<String> args, String currentInput, String normalizedCommandName) {
         List<CommandArgument> arguments = MagicCommand.getArguments(subInfo.method);
 
         if (arguments.isEmpty()) {
@@ -787,7 +1096,7 @@ public class CommandManager {
         ArgumentInfo argumentInfo = userInputArguments.get(argIndex);
         CommandArgument argument = argumentInfo.argument;
 
-        if (argument.hasPermission() && !sender.hasPermission(argument.getPermission())) {
+        if (!canSuggestArgument(normalizedCommandName, subInfo.annotation.name(), argument, sender)) {
             return Arrays.asList("");
         }
 
@@ -891,6 +1200,57 @@ public class CommandManager {
         }
 
         return Arrays.asList("");
+    }
+
+    private boolean hasSubOrArgPermission(MagicCommand command, CommandInfo info, CommandSender sender,
+            String baseCommandName, @Nullable String targetSubName) {
+        List<MagicCommand.SubCommandInfo> subs = MagicCommand.getSubCommands(command.getClass());
+        if (targetSubName != null) {
+            for (MagicCommand.SubCommandInfo subInfo : subs) {
+                if (!matchesSubCommand(subInfo, targetSubName)) {
+                    continue;
+                }
+                String subPermission = resolvePermission(subInfo.annotation.permission(),
+                        "commands." + baseCommandName + ".subcommand." + subInfo.annotation.name());
+                if (subPermission.isEmpty() || sender.hasPermission(subPermission)
+                        || hasArgumentPermissionOverride(baseCommandName, subInfo.annotation.name(), sender)) {
+                    return true;
+                }
+            }
+        }
+        // Fallback: any subcommand permission granted
+        for (MagicCommand.SubCommandInfo subInfo : subs) {
+            String subPermission = resolvePermission(subInfo.annotation.permission(),
+                    "commands." + baseCommandName + ".subcommand." + subInfo.annotation.name());
+            if (subPermission.isEmpty() || sender.hasPermission(subPermission)
+                    || hasArgumentPermissionOverride(baseCommandName, subInfo.annotation.name(), sender)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasArgumentPermissionOverride(String baseCommandName, @Nullable String subCommandName,
+            CommandSender sender) {
+        String prefix = "commands." + baseCommandName;
+        if (subCommandName != null && !subCommandName.isEmpty()) {
+            prefix += ".subcommand." + subCommandName;
+        }
+        String argPrefix = prefix + ".argument.";
+        String argPrefixNoSegment = prefix + ".";
+        for (org.bukkit.permissions.PermissionAttachmentInfo pai : sender.getEffectivePermissions()) {
+            if (!pai.getValue()) {
+                continue;
+            }
+            String perm = pai.getPermission();
+            if (perm == null) {
+                continue;
+            }
+            if (perm.startsWith(argPrefix) || perm.startsWith(argPrefixNoSegment)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1090,17 +1450,32 @@ public class CommandManager {
 
     private List<String> getAvailableSubCommandsList(List<MagicCommand.SubCommandInfo> subCommands,
             CommandSender sender, String commandName) {
-        List<String> available = new ArrayList<>();
+        Set<String> available = new LinkedHashSet<>();
 
         for (MagicCommand.SubCommandInfo subInfo : subCommands) {
             String subPermission = resolvePermission(subInfo.annotation.permission(),
-                    "commands." + commandName + ".subcommand." + subInfo.annotation.name() + ".use");
+                    "commands." + commandName + ".subcommand." + subInfo.annotation.name());
             if (subPermission.isEmpty() || sender.hasPermission(subPermission)) {
                 available.add(subInfo.annotation.name());
+                for (String alias : subInfo.annotation.aliases()) {
+                    available.add(alias);
+                }
             }
         }
 
-        return available;
+        return new ArrayList<>(available);
+    }
+
+    private boolean matchesSubCommand(MagicCommand.SubCommandInfo subInfo, String input) {
+        if (subInfo.annotation.name().equalsIgnoreCase(input)) {
+            return true;
+        }
+        for (String alias : subInfo.annotation.aliases()) {
+            if (alias.equalsIgnoreCase(input)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1114,6 +1489,35 @@ public class CommandManager {
             return commandName.substring(commandName.indexOf(":") + 1);
         }
         return commandName;
+    }
+
+    private void ensurePermissionRegistered(String node, MagicPermissionDefault defaultValue, String description) {
+        if (node == null || node.isEmpty()) {
+            return;
+        }
+        var pluginManager = org.bukkit.Bukkit.getPluginManager();
+        Permission existing = pluginManager.getPermission(node);
+        PermissionDefault bukkitDefault = toBukkitDefault(defaultValue);
+        if (existing == null) {
+            Permission permission = new Permission(node, description != null ? description : "", bukkitDefault);
+            pluginManager.addPermission(permission);
+            PrefixedLoggerGen.debug(logger, "Registered permission node: " + node + " (default " + bukkitDefault + ")");
+        } else if (existing.getDefault() != bukkitDefault) {
+            existing.setDefault(bukkitDefault);
+            PrefixedLoggerGen.debug(logger, "Updated permission default for node: " + node + " -> " + bukkitDefault);
+        }
+    }
+
+    private PermissionDefault toBukkitDefault(MagicPermissionDefault defaultValue) {
+        if (defaultValue == null) {
+            return PermissionDefault.OP;
+        }
+        return switch (defaultValue) {
+            case FALSE -> PermissionDefault.FALSE;
+            case NOT_OP -> PermissionDefault.NOT_OP;
+            case TRUE -> PermissionDefault.TRUE;
+            default -> PermissionDefault.OP;
+        };
     }
 
     /**

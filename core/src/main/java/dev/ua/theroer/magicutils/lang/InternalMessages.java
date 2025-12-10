@@ -141,7 +141,7 @@ public enum InternalMessages {
         LanguageManager manager = Messages.getLanguageManager();
         if (manager != null) {
             String message = manager.getMessage(getKey(), replacements);
-            if (!message.equals(getKey())) {
+            if (message != null && !message.equals(getKey()) && !message.startsWith("magicutils.")) {
                 return message;
             }
         }

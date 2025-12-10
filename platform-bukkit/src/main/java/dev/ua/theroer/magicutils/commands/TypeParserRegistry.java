@@ -282,6 +282,22 @@ public class TypeParserRegistry {
     }
 
     /**
+     * Finds the first parser that can handle the given type.
+     *
+     * @param targetType class to resolve
+     * @return parser or null if none match
+     */
+    @Nullable
+    public TypeParser<?> findParserForType(@NotNull Class<?> targetType) {
+        for (TypeParser<?> parser : parsers) {
+            if (parser.canParse(targetType)) {
+                return parser;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Removes a parser from the registry.
      * 
      * @param parser the parser to remove

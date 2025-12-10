@@ -11,6 +11,9 @@ public final class AdaptersBootstrap {
     private AdaptersBootstrap() {
     }
 
+    /**
+     * Register built-in adapters for Bukkit types.
+     */
     public static void registerDefaults() {
         ConfigAdapters.register(Component.class, new ComponentAdapter());
         ConfigAdapters.register(World.class, new WorldAdapter());

@@ -117,7 +117,7 @@ public abstract class MagicCommand {
             }
 
             @Override
-            public String permissionDefault() {
+            public MagicPermissionDefault permissionDefault() {
                 return original.permissionDefault();
             }
         };
@@ -163,9 +163,15 @@ public abstract class MagicCommand {
             String defaultValue = null;
             List<String> suggestions = new ArrayList<>();
             String permission = null;
-            String permissionCondition = null;
+            PermissionConditionType permissionCondition = PermissionConditionType.ALWAYS;
+            String[] permissionConditionArgs = new String[0];
+            CompareMode compareMode = CompareMode.AUTO;
             String permissionMessage = InternalMessages.CMD_NO_PERMISSION.get();
+            String permissionNode = null;
+            boolean includeArgumentSegment = true;
+            MagicPermissionDefault permissionDefault = MagicPermissionDefault.OP;
             boolean greedy = false;
+            boolean hasPermissionAnnotation = false;
 
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation instanceof DefaultValue) {
@@ -182,7 +188,21 @@ public abstract class MagicCommand {
                 if (annotation instanceof Permission) {
                     Permission perm = (Permission) annotation;
                     permission = perm.value();
-                    permissionCondition = perm.when();
+                    permissionCondition = perm.condition();
+                    permissionConditionArgs = perm.conditionArgs();
+                    compareMode = perm.compare();
+                    permissionNode = perm.node();
+                    includeArgumentSegment = perm.includeArgumentSegment();
+                    permissionDefault = perm.defaultValue();
+                    hasPermissionAnnotation = true;
+                    if ((permissionCondition == PermissionConditionType.ALWAYS || permissionCondition == null)
+                            && perm.when() != null && !perm.when().isEmpty()) {
+                        ParsedCondition parsed = parseCondition(perm.when());
+                        if (parsed != null) {
+                            permissionCondition = parsed.condition();
+                            permissionConditionArgs = parsed.args();
+                        }
+                    }
                     permissionMessage = perm.message();
                 }
                 if (annotation instanceof Greedy) {
@@ -197,10 +217,16 @@ public abstract class MagicCommand {
                 builder.defaultValue(defaultValue);
             if (!suggestions.isEmpty())
                 builder.suggestions(suggestions);
-            if (permission != null)
-                builder.permission(permission);
-            if (permissionCondition != null)
-                builder.permissionCondition(permissionCondition);
+            if (hasPermissionAnnotation) {
+                builder.markPermissionDeclared();
+                builder.permission(permission != null ? permission : "");
+            }
+            builder.permissionCondition(permissionCondition);
+            builder.permissionConditionArgs(permissionConditionArgs);
+            builder.compareMode(compareMode);
+            builder.permissionNode(permissionNode);
+            builder.includeArgumentSegment(includeArgumentSegment);
+            builder.permissionDefault(permissionDefault);
             if (permissionMessage != null)
                 builder.permissionMessage(permissionMessage);
             if (greedy)
@@ -211,6 +237,38 @@ public abstract class MagicCommand {
             args.add(builder.build());
         }
         return args;
+    }
+
+    private static ParsedCondition parseCondition(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        String trimmed = raw.trim().toLowerCase(Locale.ROOT);
+        int open = trimmed.indexOf('(');
+        int close = trimmed.lastIndexOf(')');
+        if (open == -1 || close <= open) {
+            return null;
+        }
+        String keyword = trimmed.substring(0, open).trim();
+        String argsPart = trimmed.substring(open + 1, close);
+        String[] parts = Arrays.stream(argsPart.split("[, ]+")).filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+
+        return switch (keyword) {
+            case "self" -> new ParsedCondition(PermissionConditionType.SELF, parts);
+            case "other", "anyother" -> new ParsedCondition(
+                    parts.length > 1 ? PermissionConditionType.ANY_OTHER : PermissionConditionType.OTHER, parts);
+            case "not_null", "notnull" -> new ParsedCondition(PermissionConditionType.NOT_NULL, parts);
+            case "distinct" -> new ParsedCondition(PermissionConditionType.DISTINCT, parts);
+            case "all_distinct", "alldistinct" -> new ParsedCondition(PermissionConditionType.ALL_DISTINCT, parts);
+            case "equals", "eq" -> new ParsedCondition(PermissionConditionType.EQUALS, parts);
+            case "not_equals", "noteq", "neq" -> new ParsedCondition(PermissionConditionType.NOT_EQUALS, parts);
+            case "exists" -> new ParsedCondition(PermissionConditionType.EXISTS, parts);
+            default -> null;
+        };
+    }
+
+    private record ParsedCondition(PermissionConditionType condition, String[] args) {
     }
 
     /**

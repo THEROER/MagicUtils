@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.commands.parsers;
 
 import dev.ua.theroer.magicutils.logger.LoggerGen;
 import dev.ua.theroer.magicutils.commands.TypeParser;
+import dev.ua.theroer.magicutils.commands.CompareMode;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -115,5 +116,38 @@ public class PlayerTypeParser implements TypeParser<Player> {
     @Override
     public int getPriority() {
         return 50;
+    }
+
+    @Override
+    public boolean isEqual(@NotNull CommandSender sender, @Nullable Object first, @Nullable Object second,
+            @NotNull CompareMode mode) {
+        if (first instanceof OfflinePlayer a && second instanceof OfflinePlayer b) {
+            if (mode == CompareMode.UUID || mode == CompareMode.AUTO) {
+                return a.getUniqueId().equals(b.getUniqueId());
+            }
+            if (mode == CompareMode.NAME) {
+                String an = a.getName();
+                String bn = b.getName();
+                if (an != null && bn != null) {
+                    return an.equalsIgnoreCase(bn);
+                }
+                return false;
+            }
+        }
+        return TypeParser.super.isEqual(sender, first, second, mode);
+    }
+
+    @Override
+    public boolean isSender(@NotNull CommandSender sender, @Nullable Object value, @NotNull CompareMode mode) {
+        if (value instanceof OfflinePlayer target && sender instanceof Player self) {
+            if (mode == CompareMode.UUID || mode == CompareMode.AUTO) {
+                return self.getUniqueId().equals(target.getUniqueId());
+            }
+            if (mode == CompareMode.NAME) {
+                String tn = target.getName();
+                return tn != null && tn.equalsIgnoreCase(self.getName());
+            }
+        }
+        return TypeParser.super.isSender(sender, value, mode);
     }
 }

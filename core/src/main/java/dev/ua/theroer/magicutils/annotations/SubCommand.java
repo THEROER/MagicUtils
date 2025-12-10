@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.annotations;
 
+import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -36,11 +38,15 @@ public @interface SubCommand {
 
     /**
      * Specific permission node required to execute the subcommand. If empty, no check is performed.
+     *
+     * @return permission node
      */
     String permission() default "";
 
     /**
-     * Default permission state (string name mirroring Bukkit PermissionDefault).
+     * Default permission state (matches Bukkit PermissionDefault).
+     *
+     * @return default permission
      */
-    String permissionDefault() default "OP";
+    MagicPermissionDefault permissionDefault() default MagicPermissionDefault.OP;
 }

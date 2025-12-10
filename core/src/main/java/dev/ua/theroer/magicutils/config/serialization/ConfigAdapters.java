@@ -48,8 +48,11 @@ public final class ConfigAdapters {
     }
 
     /**
-    * Returns true if an adapter is registered for the given type.
-    */
+     * Returns true if an adapter is registered for the given type.
+     *
+     * @param type class to check
+     * @return true when present
+     */
     public static boolean has(Class<?> type) {
         return ADAPTERS.containsKey(type);
     }

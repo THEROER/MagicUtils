@@ -1,9 +1,15 @@
-package dev.ua.theroer.magicutils.commands;
+package dev.ua.theroer.magicutils;
 
-import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.Suggest;
+import dev.ua.theroer.magicutils.commands.CommandArgument;
+import dev.ua.theroer.magicutils.commands.CommandManager;
+import dev.ua.theroer.magicutils.commands.CommandRegistry;
+import dev.ua.theroer.magicutils.commands.CommandResult;
+import dev.ua.theroer.magicutils.commands.MagicCommand;
+import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,10 +25,23 @@ import org.bukkit.command.CommandSender;
 @CommandInfo(
         name = "mhelp",
         description = "Shows available commands and usages",
-        aliases = {"help"}
+        aliases = {"help"},
+        permissionDefault = MagicPermissionDefault.TRUE
 )
 public class HelpCommand extends MagicCommand {
 
+    /** Default constructor. */
+    public HelpCommand() {
+    }
+
+    /**
+     * Execute help: list commands or details for a specific one.
+     *
+     * @param sender command sender
+     * @param commandName optional command name
+     * @param subCommand optional subcommand
+     * @return result
+     */
     public CommandResult execute(CommandSender sender,
                                  @OptionalArgument @Suggest("getCommandSuggestions") String commandName,
                                  @OptionalArgument String subCommand) {
@@ -113,6 +132,11 @@ public class HelpCommand extends MagicCommand {
                 .collect(Collectors.joining(" "));
     }
 
+    /**
+     * Suggestions for command names.
+     *
+     * @return array of command/alias names
+     */
     public String[] getCommandSuggestions() {
         CommandManager manager = CommandRegistry.getCommandManager();
         if (manager == null) {

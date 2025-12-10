@@ -124,12 +124,19 @@ local Maven; use the thin jars or `-all` shaded variants.
 
 **Usage notes**
 - Group subcommands by adding multiple `@SubCommand` methods on the same class. Built-in suggestion providers ensure tab completion stays relevant.
-- Reuse `CommandContext` to access typed arguments (`context.getOrThrow("player", Player.class)`), command metadata, and raw input.
 - Combine with the `lang` module: return `CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get(sender, "language", arg))` for translated errors.
 - Commands can be reloaded by clearing the registry and re-registering classes; useful during development or when configs change.
+- Permissions support structured conditions via `@Permission`: `condition` (ALWAYS/SELF/OTHER/NOT_NULL/DISTINCT/ALL_DISTINCT), `conditionArgs` (argument names to inspect), `compare` (AUTO/UUID/NAME/EQUALS), `defaultValue` (PermissionDefault.OP/NOT_OP/TRUE/FALSE). See examples below.
 - Example: `examples/commands/ExampleCommand.java`.
 - Built-in `/magicutils reload` and `/magicutils settings` commands exist but are still in progress; expect breaking changes.
 - Import the right annotations: for commands use `dev.ua.theroer.magicutils.annotations.*`; for configs use `dev.ua.theroer.magicutils.config.annotations.*`.
+
+**Permission examples**
+- Command-level: `@CommandInfo(name = "example", permission = "magicutils.example.use", permissionDefault = PermissionDefault.OP)`.
+- Subcommand-specific: `@SubCommand(name = "reset", permission = "magicutils.example.reset", permissionDefault = PermissionDefault.NOT_OP)`.
+- Argument permission tied to sender: `public CommandResult ban(Player sender, @Permission(value = "magicutils.ban.self", condition = PermissionConditionType.SELF, compare = CompareMode.UUID) Player target, @OptionalArgument String reason)`.
+- Argument permission for “other”: `@Permission(value = "magicutils.ban.other", condition = PermissionConditionType.ANY_OTHER, conditionArgs = {"target"}, compare = CompareMode.UUID)`.
+- Skip when argument is null: `@Permission(value = "magicutils.note.edit", condition = PermissionConditionType.NOT_NULL)`.
 
 ### `logger` — rich console & chat logging
 

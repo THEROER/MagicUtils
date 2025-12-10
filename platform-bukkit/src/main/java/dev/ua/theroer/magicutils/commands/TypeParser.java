@@ -101,6 +101,32 @@ public interface TypeParser<T> {
     }
 
     /**
+     * Compare two values under a given mode (parsers may override).
+     *
+     * @param sender command sender
+     * @param first first value
+     * @param second second value
+     * @param mode compare strategy
+     * @return true if equal under mode
+     */
+    default boolean isEqual(@NotNull CommandSender sender, @Nullable Object first, @Nullable Object second,
+            @NotNull CompareMode mode) {
+        return ComparisonUtils.isEqual(first, second, mode);
+    }
+
+    /**
+     * Check if value refers to the sender (parsers may override).
+     *
+     * @param sender command sender
+     * @param value candidate value
+     * @param mode compare strategy
+     * @return true if represents sender
+     */
+    default boolean isSender(@NotNull CommandSender sender, @Nullable Object value, @NotNull CompareMode mode) {
+        return ComparisonUtils.isSender(sender, value, mode);
+    }
+
+    /**
      * Gets the priority of this parser. Higher priority parsers are checked first.
      * 
      * @return the priority value

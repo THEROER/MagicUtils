@@ -5,10 +5,12 @@ import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.Permission;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.annotations.Suggest;
-import dev.ua.theroer.magicutils.commands.CommandContext;
+import dev.ua.theroer.magicutils.commands.CompareMode;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
+import dev.ua.theroer.magicutils.commands.PermissionDefault;
+import dev.ua.theroer.magicutils.commands.PermissionConditionType;
 import dev.ua.theroer.magicutils.commands.parsers.LanguageKeyTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
@@ -19,7 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * Simple command that shows how to wire sub-commands via annotations.
  */
-@CommandInfo(name = "example", description = "MagicUtils command example", permission = true)
+@CommandInfo(name = "example", description = "MagicUtils command example", permission = "magicutils.example.use", permissionDefault = PermissionDefault.NOT_OP)
 public class ExampleCommand extends MagicCommand {
 
     public ExampleCommand(LanguageManager languageManager, JavaPlugin plugin) {
@@ -27,7 +29,7 @@ public class ExampleCommand extends MagicCommand {
     }
 
     @SubCommand(name = "ping", description = "Send yourself a greeting")
-    public CommandResult ping(CommandContext context, Player sender,
+    public CommandResult ping(Player sender,
             @OptionalArgument String targetKey) {
         String key = targetKey != null ? targetKey : InternalMessages.CMD_EXECUTED.getKey();
         Messages.send(sender, InternalMessages.SYS_COMMAND_USAGE.getKey(), "usage", "/example ping");
@@ -35,13 +37,20 @@ public class ExampleCommand extends MagicCommand {
     }
 
     @SubCommand(name = "setlang", description = "Change your language")
-    @Permission("magicutils.example.lang")
-    public CommandResult setLanguage(CommandContext context, Player sender,
+    @Permission(value = "magicutils.example.lang", defaultValue = PermissionDefault.NOT_OP)
+    public CommandResult setLanguage(Player sender,
             @Suggest("@languages") String languageCode) {
         if (!LanguageManagerProvider.get().setPlayerLanguage(sender, languageCode)) {
             return CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get("language", languageCode));
         }
         return CommandResult.success(InternalMessages.SETTINGS_KEY_SET.get("language", languageCode, "key", "lang"));
+    }
+
+    @SubCommand(name = "heal", description = "Heal yourself or another player")
+    public CommandResult heal(Player sender,
+            @Permission(value = "magicutils.example.heal.target", condition = PermissionConditionType.ANY_OTHER, compare = CompareMode.UUID, defaultValue = PermissionDefault.OP) @DefaultValue("@sender") Player target) {
+        target.setHealth(target.getMaxHealth());
+        return CommandResult.success("Healed " + target.getName());
     }
 
     /**
