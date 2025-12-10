@@ -7,8 +7,6 @@ import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.*;
-import dev.ua.theroer.magicutils.commands.AllowedSender;
-import dev.ua.theroer.magicutils.commands.SenderMismatchException;
 
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;

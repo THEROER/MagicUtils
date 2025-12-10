@@ -175,6 +175,16 @@ public class ConfigManager {
     }
 
     /**
+     * Reload all registered configuration instances from disk.
+     */
+    public void reloadAll() {
+        List<ConfigEntry<?>> entries = new ArrayList<>(configs.values());
+        for (ConfigEntry<?> entry : entries) {
+            reload(entry.instance);
+        }
+    }
+
+    /**
      * Unregisters all instances of a config class.
      *
      * @param configClass config type to unload

@@ -35,7 +35,7 @@ final class LanguageDefaults {
         map.put("available_languages", "&aAvailable languages: &f{languages}");
         map.put("language_not_found", "&cLanguage '&f{language}&c' not found!");
         map.put("key_not_found", "&cKey '&f{key}&c' not found in language '&f{language}&c'");
-        map.put("key_value", "&aLanguage: &f{language}\\n&aKey: &f{key}\\n&aValue: &f{value}");
+        map.put("key_value", "&aLanguage: &f{language}\n&aKey: &f{key}\n&aValue: &f{value}");
         map.put("key_set", "&aSet key '&f{key}&a' to '&f{value}&a' in language '&f{language}&a'");
         return map;
     }
@@ -153,7 +153,7 @@ final class LanguageDefaults {
         map.put("available_languages", "&aДоступные языки: &f{languages}");
         map.put("language_not_found", "&cЯзык '&f{language}&c' не найден!");
         map.put("key_not_found", "&cКлюч '&f{key}&c' не найден в языке '&f{language}&c'");
-        map.put("key_value", "&aЯзык: &f{language}\\n&aКлюч: &f{key}\\n&aЗначение: &f{value}");
+        map.put("key_value", "&aЯзык: &f{language}\n&aКлюч: &f{key}\n&aЗначение: &f{value}");
         map.put("key_set", "&aКлюч '&f{key}&a' установлен в '&f{value}&a' для языка '&f{language}&a'");
         return map;
     }
@@ -230,7 +230,7 @@ final class LanguageDefaults {
         map.put("available_languages", "&aДоступні мови: &f{languages}");
         map.put("language_not_found", "&cМова '&f{language}&c' не знайдена!");
         map.put("key_not_found", "&cКлюч '&f{key}&c' не знайдений в мові '&f{language}&c'");
-        map.put("key_value", "&aМова: &f{language}\\n&aКлюч: &f{key}\\n&aЗначення: &f{value}");
+        map.put("key_value", "&aМова: &f{language}\n&aКлюч: &f{key}\n&aЗначення: &f{value}");
         map.put("key_set", "&aКлюч '&f{key}&a' встановлено в '&f{value}&a' для мови '&f{language}&a'");
         return map;
     }
