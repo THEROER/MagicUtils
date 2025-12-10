@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.commands;
 import dev.ua.theroer.magicutils.annotations.*;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.Greedy;
+import dev.ua.theroer.magicutils.commands.AllowedSender;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -172,6 +173,8 @@ public abstract class MagicCommand {
             MagicPermissionDefault permissionDefault = MagicPermissionDefault.OP;
             boolean greedy = false;
             boolean hasPermissionAnnotation = false;
+            AllowedSender[] allowedSenders = new AllowedSender[] { AllowedSender.ANY };
+            boolean isSenderParameter = false;
 
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation instanceof DefaultValue) {
@@ -208,6 +211,10 @@ public abstract class MagicCommand {
                 if (annotation instanceof Greedy) {
                     greedy = true;
                 }
+                if (annotation instanceof dev.ua.theroer.magicutils.annotations.Sender senderAnno) {
+                    isSenderParameter = true;
+                    allowedSenders = senderAnno.value();
+                }
             }
 
             CommandArgument.Builder builder = CommandArgument.builder(name, type);
@@ -233,6 +240,9 @@ public abstract class MagicCommand {
                 builder.greedy();
             if (permissionMessage != null)
                 builder.permissionMessage(permissionMessage);
+            if (isSenderParameter) {
+                builder.sender(allowedSenders);
+            }
 
             args.add(builder.build());
         }

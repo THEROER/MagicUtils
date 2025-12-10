@@ -232,7 +232,7 @@ public class CommandRegistry {
             List<CommandArgument> arguments, Set<String> permissions, EnumMap<MagicPermissionDefault, Integer> counts) {
         String normalized = commandName.toLowerCase(Locale.ROOT);
         for (CommandArgument argument : arguments) {
-            if (!argument.hasPermission()) {
+            if (argument.isSenderParameter() || !argument.hasPermission()) {
                 continue;
             }
             String fallback = buildArgumentPermission(normalized, subCommandName, argument);

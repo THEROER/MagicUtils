@@ -7,9 +7,16 @@ import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.*;
+import dev.ua.theroer.magicutils.commands.AllowedSender;
+import dev.ua.theroer.magicutils.commands.SenderMismatchException;
 
+import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.ProxiedCommandSender;
+import org.bukkit.command.RemoteConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.jetbrains.annotations.Nullable;
@@ -111,8 +118,6 @@ public class CommandManager {
      */
     public CommandResult execute(String name, CommandSender sender, List<String> args) {
         PrefixedLoggerGen.debug(logger, "Attempting to execute command: " + name + " with args: " + args);
-
-        String normalizedName = normalizeCommandName(name);
 
         MagicCommand command = commands.get(name.toLowerCase());
         CommandInfo info = commandInfos.get(name.toLowerCase());
@@ -253,6 +258,9 @@ public class CommandManager {
 
             return commandResult;
 
+        } catch (SenderMismatchException e) {
+            PrefixedLoggerGen.debug(logger, "Sender mismatch: " + e.getMessage());
+            return CommandResult.failure(e.getMessage());
         } catch (Exception e) {
             PrefixedLoggerGen.error(logger, "Error executing direct method: " + e.getMessage());
             e.printStackTrace();
@@ -265,14 +273,20 @@ public class CommandManager {
         Object[] result = new Object[arguments.size()];
         boolean[] filled = new boolean[arguments.size()];
 
-        // First pass: auto-fill CommandSender arguments
+        // First pass: auto-fill sender arguments
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument argument = arguments.get(i);
-            if (argument.getType().equals(CommandSender.class)) {
-                result[i] = sender;
-                filled[i] = true;
-                PrefixedLoggerGen.debug(logger, "Auto-filled CommandSender argument " + i + " (" + argument.getName()
-                        + "): " + sender.getName());
+            if (argument.isSenderParameter() || argument.getType().equals(CommandSender.class)) {
+                try {
+                    result[i] = resolveSenderArgument(sender, argument);
+                    filled[i] = true;
+                    PrefixedLoggerGen.debug(logger, "Auto-filled sender argument " + i + " (" + argument.getName()
+                            + "): " + sender.getName());
+                } catch (SenderMismatchException ex) {
+                    PrefixedLoggerGen.debug(logger, "Sender mismatch for argument " + argument.getName() + ": "
+                            + ex.getMessage());
+                    throw ex;
+                }
             }
         }
 
@@ -484,6 +498,9 @@ public class CommandManager {
 
             return commandResult;
 
+        } catch (SenderMismatchException e) {
+            PrefixedLoggerGen.debug(logger, "Sender mismatch: " + e.getMessage());
+            return CommandResult.failure(e.getMessage());
         } catch (Exception e) {
             PrefixedLoggerGen.error(logger, "Error executing subcommand: " + e.getMessage());
             e.printStackTrace();
@@ -513,6 +530,173 @@ public class CommandManager {
         return null;
     }
 
+    private Object resolveSenderArgument(CommandSender sender, CommandArgument argument) {
+        CommandSender effective = unwrapSender(sender);
+        AllowedSender[] allowed = argument.getAllowedSenders();
+        AllowedSender calleeKind = classifySender(effective);
+        boolean proxied = sender instanceof ProxiedCommandSender;
+
+        if (!isAllowedSender(allowed, calleeKind, proxied)) {
+            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+        }
+
+        Class<?> targetType = argument.getType();
+
+        if (targetType.equals(CommandSender.class)) {
+            return effective;
+        }
+        if (targetType.equals(ProxiedCommandSender.class)) {
+            if (sender instanceof ProxiedCommandSender p) {
+                return p;
+            }
+            // fall through to generic handling
+        }
+        if (targetType.equals(Player.class)) {
+            if (effective instanceof Player p) {
+                return p;
+            }
+            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+        }
+        if (targetType.equals(ConsoleCommandSender.class)) {
+            if (effective instanceof ConsoleCommandSender c) {
+                return c;
+            }
+            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+        }
+        if (targetType.equals(BlockCommandSender.class)) {
+            if (effective instanceof BlockCommandSender b) {
+                return b;
+            }
+            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+        }
+        if (targetType.equals(CommandMinecart.class)) {
+            if (effective instanceof CommandMinecart cart) {
+                return cart;
+            }
+            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+        }
+        if (targetType.equals(RemoteConsoleCommandSender.class)) {
+            if (effective instanceof RemoteConsoleCommandSender r) {
+                return r;
+            }
+            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+        }
+
+        if (targetType.isInstance(effective)) {
+            return targetType.cast(effective);
+        }
+
+        throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+    }
+
+    private CommandSender unwrapSender(CommandSender sender) {
+        if (sender instanceof ProxiedCommandSender proxied && proxied.getCallee() instanceof CommandSender callee) {
+            return callee;
+        }
+        return sender;
+    }
+
+    private AllowedSender classifySender(CommandSender sender) {
+        if (sender instanceof Player) {
+            return AllowedSender.PLAYER;
+        }
+        if (sender instanceof ConsoleCommandSender) {
+            return AllowedSender.CONSOLE;
+        }
+        if (sender instanceof BlockCommandSender) {
+            return AllowedSender.BLOCK;
+        }
+        if (sender instanceof CommandMinecart) {
+            return AllowedSender.MINECART;
+        }
+        if (sender instanceof RemoteConsoleCommandSender) {
+            return AllowedSender.REMOTE;
+        }
+        if (sender instanceof ProxiedCommandSender) {
+            return AllowedSender.PROXIED;
+        }
+        return AllowedSender.ANY;
+    }
+
+    private boolean isAllowedSender(AllowedSender[] allowed, AllowedSender calleeKind, boolean proxied) {
+        if (allowed == null || allowed.length == 0) {
+            return true;
+        }
+        for (AllowedSender a : allowed) {
+            if (a == AllowedSender.ANY) {
+                return true;
+            }
+            if (a == calleeKind) {
+                return true;
+            }
+            if (a == AllowedSender.PROXIED && proxied) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
+        // Prefer explicit allowed list; if ANY present, infer from type
+        Set<AllowedSender> required = new LinkedHashSet<>();
+        if (allowed != null) {
+            required.addAll(Arrays.asList(allowed));
+        }
+        required.remove(AllowedSender.ANY);
+
+        if (required.isEmpty()) {
+            AllowedSender inferred = inferSenderFromType(targetType);
+            if (inferred != AllowedSender.ANY) {
+                required.add(inferred);
+            }
+        }
+
+        if (required.isEmpty()) {
+            return "This command cannot be used by this sender";
+        }
+
+        String messageBody = required.stream()
+                .map(this::describeSender)
+                .distinct()
+                .collect(Collectors.joining(" or "));
+
+        return "This command can only be used by " + messageBody;
+    }
+
+    private AllowedSender inferSenderFromType(Class<?> type) {
+        if (type.equals(Player.class)) {
+            return AllowedSender.PLAYER;
+        }
+        if (type.equals(ConsoleCommandSender.class)) {
+            return AllowedSender.CONSOLE;
+        }
+        if (type.equals(BlockCommandSender.class)) {
+            return AllowedSender.BLOCK;
+        }
+        if (type.equals(CommandMinecart.class)) {
+            return AllowedSender.MINECART;
+        }
+        if (type.equals(RemoteConsoleCommandSender.class)) {
+            return AllowedSender.REMOTE;
+        }
+        if (type.equals(ProxiedCommandSender.class)) {
+            return AllowedSender.PROXIED;
+        }
+        return AllowedSender.ANY;
+    }
+
+    private String describeSender(AllowedSender sender) {
+        return switch (sender) {
+            case PLAYER -> "players";
+            case CONSOLE -> "console";
+            case BLOCK -> "command blocks";
+            case MINECART -> "command minecarts";
+            case PROXIED -> "proxied senders";
+            case REMOTE -> "remote console";
+            default -> "valid senders";
+        };
+    }
+
     private boolean validateArgumentPermissions(String normalizedCommandName, @Nullable String subCommandName,
             List<CommandArgument> arguments, Object[] values, CommandSender sender) {
         Map<String, Object> valuesByName = new HashMap<>();
@@ -525,7 +709,7 @@ public class CommandManager {
 
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument argument = arguments.get(i);
-            if (!argument.hasPermission()) {
+            if (argument.isSenderParameter() || !argument.hasPermission()) {
                 continue;
             }
 
@@ -549,6 +733,9 @@ public class CommandManager {
 
     private boolean canSuggestArgument(String normalizedCommandName, @Nullable String subCommandName,
             CommandArgument argument, CommandSender sender) {
+        if (argument.isSenderParameter()) {
+            return false;
+        }
         if (!argument.hasPermission()) {
             return true;
         }
@@ -562,6 +749,9 @@ public class CommandManager {
 
     private boolean lacksArgumentPermission(String normalizedCommandName, @Nullable String subCommandName,
             CommandArgument argument, CommandSender sender) {
+        if (argument.isSenderParameter()) {
+            return false;
+        }
         if (!argument.hasPermission()) {
             return false;
         }
@@ -943,16 +1133,15 @@ public class CommandManager {
                     + arg.getType().getSimpleName() + ", suggestions: " + arg.getSuggestions() + ")");
         }
 
-        // Build a list of arguments that need user input (skip only CommandSender, not
-        // its subclasses)
+        // Build a list of arguments that need user input (skip sender-bound parameters)
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
             PrefixedLoggerGen.debug(logger,
                     "Checking argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ")");
-            // Only skip if it's exactly CommandSender, not subclasses like Player
-            if (arg.getType().equals(CommandSender.class)) {
-                PrefixedLoggerGen.debug(logger, "  -> Skipped (CommandSender)");
+            // Skip explicit sender parameters
+            if (arg.getType().equals(CommandSender.class) || arg.isSenderParameter()) {
+                PrefixedLoggerGen.debug(logger, "  -> Skipped (sender)");
             } else {
                 userInputArguments.add(new ArgumentInfo(i, arg));
                 PrefixedLoggerGen.debug(logger, "  -> Added as user input argument");
@@ -1073,13 +1262,11 @@ public class CommandManager {
             return Arrays.asList("");
         }
 
-        // Build a list of arguments that need user input (skip only CommandSender, not
-        // its subclasses)
+        // Build a list of arguments that need user input (skip sender-bound params)
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
-            // Only skip if it's exactly CommandSender, not subclasses like Player
-            if (!arg.getType().equals(CommandSender.class)) {
+            if (!arg.getType().equals(CommandSender.class) && !arg.isSenderParameter()) {
                 userInputArguments.add(new ArgumentInfo(i, arg));
             }
         }
@@ -1347,8 +1534,8 @@ public class CommandManager {
      */
     private void appendArgumentsToUsage(StringBuilder usage, List<CommandArgument> arguments, boolean forceOptional) {
         for (CommandArgument arg : arguments) {
-            // Skip CommandSender arguments in usage
-            if (arg.getType().equals(CommandSender.class)) {
+            // Skip CommandSender/sender arguments in usage
+            if (arg.getType().equals(CommandSender.class) || arg.isSenderParameter()) {
                 continue;
             }
 
@@ -1380,7 +1567,7 @@ public class CommandManager {
             usage.append(" ").append(subInfo.annotation.name());
         }
         for (CommandArgument arg : arguments) {
-            if (arg.getType().equals(CommandSender.class)) {
+            if (arg.getType().equals(CommandSender.class) || arg.isSenderParameter()) {
                 continue;
             }
             boolean optional = arg.isOptional() || arg.getDefaultValue() != null;

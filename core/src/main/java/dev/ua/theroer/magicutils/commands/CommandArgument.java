@@ -28,6 +28,8 @@ public class CommandArgument {
     private final MagicPermissionDefault permissionDefault;
     private final boolean greedy;
     private final boolean permissionDeclared;
+    private final boolean senderParameter;
+    private final AllowedSender[] allowedSenders;
 
     private CommandArgument(Builder builder) {
         this.name = builder.name;
@@ -45,6 +47,8 @@ public class CommandArgument {
         this.permissionDefault = builder.permissionDefault;
         this.greedy = builder.greedy;
         this.permissionDeclared = builder.permissionDeclared;
+        this.senderParameter = builder.senderParameter;
+        this.allowedSenders = builder.allowedSenders;
     }
 
     /**
@@ -54,6 +58,24 @@ public class CommandArgument {
      */
     public boolean hasPermission() {
         return permissionDeclared;
+    }
+
+    /**
+     * Whether this argument should be auto-filled with the executing sender.
+     *
+     * @return true if represents sender
+     */
+    public boolean isSenderParameter() {
+        return senderParameter;
+    }
+
+    /**
+     * Allowed sender kinds for this parameter.
+     *
+     * @return array of allowed senders
+     */
+    public AllowedSender[] getAllowedSenders() {
+        return allowedSenders;
     }
 
     /**
@@ -159,6 +181,8 @@ public class CommandArgument {
         private MagicPermissionDefault permissionDefault = MagicPermissionDefault.OP;
         private boolean greedy = false;
         private boolean permissionDeclared = false;
+        private boolean senderParameter = false;
+        private AllowedSender[] allowedSenders = new AllowedSender[] { AllowedSender.ANY };
 
         /**
          * Constructs a new Builder for CommandArgument.
@@ -332,6 +356,18 @@ public class CommandArgument {
          */
         public Builder greedy() {
             this.greedy = true;
+            return this;
+        }
+
+        /**
+        * Mark this parameter as the executing sender and restrict allowed sender types.
+        *
+        * @param allowed allowed sender kinds
+        * @return this builder
+        */
+        public Builder sender(AllowedSender[] allowed) {
+            this.senderParameter = true;
+            this.allowedSenders = allowed != null && allowed.length > 0 ? allowed : new AllowedSender[] { AllowedSender.ANY };
             return this;
         }
 
