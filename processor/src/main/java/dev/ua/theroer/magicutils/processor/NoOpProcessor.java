@@ -4,14 +4,12 @@ import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 
 /**
  * Claims MagicUtils annotations to silence javac's "no processor claimed" warnings.
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class NoOpProcessor extends AbstractProcessor {
     /** Default constructor for service loader. */
     public NoOpProcessor() {
@@ -45,6 +43,11 @@ public class NoOpProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return SUPPORTED;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     @Override

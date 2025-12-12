@@ -1,1 +1,2 @@
 dev.ua.theroer.magicutils.processor.NoOpProcessor
+dev.ua.theroer.magicutils.processor.LogMethodsProcessor

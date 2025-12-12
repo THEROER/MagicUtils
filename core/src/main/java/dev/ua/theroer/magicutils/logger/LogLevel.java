@@ -7,6 +7,8 @@ import lombok.Getter;
  */
 @Getter
 public enum LogLevel {
+    /** Success log level. */
+    SUCCESS("SUCCESS"),
     /** Info log level. */
     INFO("INFO"),
     /** Warn log level. */
@@ -15,8 +17,8 @@ public enum LogLevel {
     ERROR("ERROR"),
     /** Debug log level. */
     DEBUG("DEBUG"),
-    /** Success log level. */
-    SUCCESS("SUCCESS");
+    /** Trace log leve */
+    TRACE("TRACE");
 
     private final String displayName;
 

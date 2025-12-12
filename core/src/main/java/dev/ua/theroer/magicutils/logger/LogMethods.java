@@ -14,7 +14,7 @@ public @interface LogMethods {
      * 
      * @return array of log levels for which to generate methods
      */
-    LogLevel[] levels() default { LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.DEBUG, LogLevel.SUCCESS };
+    LogLevel[] levels() default { LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.DEBUG, LogLevel.SUCCESS, LogLevel.TRACE };
 
     /**
      * Whether to generate static methods
@@ -22,20 +22,4 @@ public @interface LogMethods {
      * @return true if methods should be static, false otherwise
      */
     boolean staticMethods() default true;
-
-    /**
-     * Log levels enum for annotation
-     */
-    enum LogLevel {
-        /** Information level logging */
-        INFO,
-        /** Warning level logging */
-        WARN,
-        /** Error level logging */
-        ERROR,
-        /** Debug level logging */
-        DEBUG,
-        /** Success level logging */
-        SUCCESS
-    }
 }

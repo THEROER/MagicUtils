@@ -1,6 +1,6 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.logger.LoggerGen;
+import dev.ua.theroer.magicutils.Logger;
 
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;
@@ -51,12 +51,12 @@ public class WorldTypeParser implements TypeParser<World> {
         }
 
         if ("@current".equals(value) && sender instanceof Player) {
-            LoggerGen.debug("Resolving @current to world: " + ((Player) sender).getWorld().getName());
+            Logger.debug("Resolving @current to world: " + ((Player) sender).getWorld().getName());
             return ((Player) sender).getWorld();
         }
 
         World world = Bukkit.getWorld(value);
-        LoggerGen.debug("World lookup for '" + value + "': " + (world != null ? world.getName() : "null"));
+        Logger.debug("World lookup for '" + value + "': " + (world != null ? world.getName() : "null"));
         return world;
     }
 

@@ -18,7 +18,8 @@ subprojects {
             'platform-api'     : 'magicutils-api',
             'platform-neoforge': 'magicutils-neoforge',
             'platform-bukkit'  : 'magicutils-bukkit',
-            'core'             : 'magicutils-core'
+            'core'             : 'magicutils-core',
+            'processor'        : 'magicutils-processor'
     ]
     def moduleName = moduleNameMap.getOrDefault(project.name, project.name)
 
@@ -44,6 +45,14 @@ subprojects {
     if (project.name != 'processor') {
         dependencies {
             annotationProcessor project(':processor')
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.compilerArgs += ['-processor',
+                    'dev.ua.theroer.magicutils.processor.LogMethodsProcessor,' +
+                            'dev.ua.theroer.magicutils.processor.NoOpProcessor,' +
+                            'lombok.launch.AnnotationProcessorHider$AnnotationProcessor,' +
+                            'lombok.launch.AnnotationProcessorHider$ClaimingProcessor']
         }
     }
 

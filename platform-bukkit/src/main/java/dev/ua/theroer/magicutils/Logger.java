@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * processor.
  */
 @LogMethods
-public final class Logger {
+public final class Logger extends LoggerMethods {
     @Getter
     private static LoggerConfig config;
     private static ConfigManager configManager;

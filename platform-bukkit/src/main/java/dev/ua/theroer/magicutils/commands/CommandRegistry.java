@@ -2,7 +2,6 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
-import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
@@ -53,9 +52,9 @@ public class CommandRegistry {
             Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
             commandMapField.setAccessible(true);
             commandMap = (CommandMap) commandMapField.get(Bukkit.getServer());
-            PrefixedLoggerGen.info(logger, "Command registry initialized successfully");
+            PrefixedLogger.info(logger, "Command registry initialized successfully");
         } catch (Exception e) {
-            PrefixedLoggerGen.error(logger, "Failed to initialize command registry: " + e.getMessage());
+            PrefixedLogger.error(logger, "Failed to initialize command registry: " + e.getMessage());
             throw new RuntimeException(InternalMessages.ERR_FAILED_GET_COMMANDMAP.get(), e);
         }
     }
@@ -130,17 +129,17 @@ public class CommandRegistry {
         boolean registered = commandMap.register(plugin.getName().toLowerCase(), bukkitCommand);
 
         if (registered) {
-            PrefixedLoggerGen.info(logger, InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(),
+            PrefixedLogger.info(logger, InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(),
                     "aliases", Arrays.toString(info.aliases())));
-            PrefixedLoggerGen.info(logger, InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
+            PrefixedLogger.info(logger, InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
             if (!subCommandUsages.isEmpty()) {
-                PrefixedLoggerGen.info(logger, InternalMessages.SYS_SUBCOMMAND_USAGES.get());
+                PrefixedLogger.info(logger, InternalMessages.SYS_SUBCOMMAND_USAGES.get());
                 for (String subUsage : subCommandUsages) {
-                    PrefixedLoggerGen.info(logger, "  " + subUsage);
+                    PrefixedLogger.info(logger, "  " + subUsage);
                 }
             }
         } else {
-            PrefixedLoggerGen.warn(logger,
+            PrefixedLogger.warn(logger,
                     "Failed to register command: " + info.name() + " (command may already exist)");
         }
 
@@ -173,7 +172,7 @@ public class CommandRegistry {
 
             boolean aliasRegistered = commandMap.register(plugin.getName().toLowerCase(), aliasCommand);
             if (aliasRegistered) {
-                PrefixedLoggerGen.info(logger,
+                PrefixedLogger.info(logger,
                         InternalMessages.SYS_ALIAS_REGISTERED.get("alias", alias, "command", info.name()));
                 // Do not print alias usage; primary usage already covers subcommands.
             }
@@ -260,10 +259,10 @@ public class CommandRegistry {
         if (existing == null) {
             Permission permission = new Permission(node, description != null ? description : "", bukkitDefault);
             pluginManager.addPermission(permission);
-            PrefixedLoggerGen.debug(logger, "Registered permission node: " + node + " (default " + bukkitDefault + ")");
+            PrefixedLogger.debug(logger, "Registered permission node: " + node + " (default " + bukkitDefault + ")");
         } else if (existing.getDefault() != bukkitDefault) {
             existing.setDefault(bukkitDefault);
-            PrefixedLoggerGen.debug(logger, "Updated permission default for node: " + node + " -> " + bukkitDefault);
+            PrefixedLogger.debug(logger, "Updated permission default for node: " + node + " -> " + bukkitDefault);
         }
     }
 
@@ -316,8 +315,8 @@ public class CommandRegistry {
 
     private static void logPermissionSummary(String commandName,
             EnumMap<MagicPermissionDefault, Integer> counts) {
-        PrefixedLoggerGen.info(logger, "Permissions for /" + commandName + ":");
-        counts.forEach((def, count) -> PrefixedLoggerGen.info(logger, "  " + def.name() + ": " + count));
+        PrefixedLogger.info(logger, "Permissions for /" + commandName + ":");
+        counts.forEach((def, count) -> PrefixedLogger.info(logger, "  " + def.name() + ": " + count));
     }
 
     private static String resolvePermission(String annotationPermission, String fallbackPermission) {
@@ -398,12 +397,12 @@ public class CommandRegistry {
             removed |= knownCommands.remove(plugin.getName().toLowerCase() + ":" + commandName.toLowerCase()) != null;
 
             if (removed && !silent) {
-                PrefixedLoggerGen.info(logger, InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
+                PrefixedLogger.info(logger, InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
             }
             return removed;
         } catch (Exception e) {
             if (!silent) {
-                PrefixedLoggerGen.warn(logger, "Failed to unregister command " + commandName + ": " + e.getMessage());
+                PrefixedLogger.warn(logger, "Failed to unregister command " + commandName + ": " + e.getMessage());
             }
             return false;
         }

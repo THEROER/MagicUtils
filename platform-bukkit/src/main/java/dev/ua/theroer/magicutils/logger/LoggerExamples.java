@@ -19,25 +19,25 @@ public class LoggerExamples {
     }
 
     /**
-     * Basic usage examples with the generated LoggerGen class.
+     * Basic usage examples with the generated Logger class.
      */
     public void basicUsageExamples() {
         // Simple logging to default target (BOTH by default)
-        LoggerGen.info("Server started successfully");
-        LoggerGen.error(new RuntimeException("Test exception"));
-        LoggerGen.debug(Map.of("tps", 19.5, "memory", "512MB"));
+        Logger.info("Server started successfully");
+        Logger.error(new RuntimeException("Test exception"));
+        Logger.debug(Map.of("tps", 19.5, "memory", "512MB"));
 
         // Formatted messages
-        LoggerGen.warn("Low memory: %d MB free", 256);
-        LoggerGen.success("Loaded %d players in %d ms", 15, 1234);
+        Logger.warn("Low memory: %d MB free", 256);
+        Logger.success("Loaded %d players in %d ms", 15, 1234);
 
         // Console only
-        LoggerGen.infoConsole("Console-only message");
-        LoggerGen.errorConsole("Error details for administrators");
+        Logger.infoConsole("Console-only message");
+        Logger.errorConsole("Error details for administrators");
 
         // Broadcast to all players
-        LoggerGen.infoAll("Server will restart in 5 minutes");
-        LoggerGen.warnAll("Maintenance mode activated");
+        Logger.infoAll("Server will restart in 5 minutes");
+        Logger.warnAll("Maintenance mode activated");
     }
 
     /**
@@ -48,13 +48,13 @@ public class LoggerExamples {
      */
     public void playerTargetedExamples(Player player, List<Player> players) {
         // Send to specific player
-        LoggerGen.info(player, "Welcome to the server!");
-        LoggerGen.error(player, "You don't have permission for this command");
-        LoggerGen.success(player, "Quest completed! Reward: %d gold", 100);
+        Logger.info(player, "Welcome to the server!");
+        Logger.error(player, "You don't have permission for this command");
+        Logger.success(player, "Quest completed! Reward: %d gold", 100);
 
         // Send to multiple players
-        LoggerGen.warn(players, "PvP will be enabled in 30 seconds");
-        LoggerGen.debug(players, "Debug mode activated for your session");
+        Logger.warn(players, "PvP will be enabled in 30 seconds");
+        Logger.debug(players, "Debug mode activated for your session");
     }
 
     /**
@@ -67,13 +67,13 @@ public class LoggerExamples {
         PrefixedLogger api = Logger.withPrefix("API", "[WebAPI]");
 
         // Use with generated methods
-        PrefixedLoggerGen.info(auth, "Authentication service started");
-        PrefixedLoggerGen.error(auth, "Failed to validate token");
+        PrefixedLogger.info(auth, "Authentication service started");
+        PrefixedLogger.error(auth, "Failed to validate token");
 
-        PrefixedLoggerGen.debug(db, "Executing query: SELECT * FROM users");
-        PrefixedLoggerGen.success(db, "Database connection established");
+        PrefixedLogger.debug(db, "Executing query: SELECT * FROM users");
+        PrefixedLogger.success(db, "Database connection established");
 
-        PrefixedLoggerGen.warn(api, "Rate limit approaching: %d/%d", 450, 500);
+        PrefixedLogger.warn(api, "Rate limit approaching: %d/%d", 450, 500);
     }
 
     /**
@@ -122,14 +122,14 @@ public class LoggerExamples {
      */
     public void localizationExamples(Player player) {
         // Direct localization key (requires @ prefix)
-        LoggerGen.info(player, "@welcome.message");
-        LoggerGen.error(player, "@error.insufficient_permissions");
+        Logger.info(player, "@welcome.message");
+        Logger.error(player, "@error.insufficient_permissions");
 
         // Mixed content with legacy and MiniMessage
-        LoggerGen.success(player, "&aSuccess! <gold>You earned <bold>%d</bold> points!</gold>", 50);
+        Logger.success(player, "&aSuccess! <gold>You earned <bold>%d</bold> points!</gold>", 50);
 
         // Gradient examples (if enabled in config)
-        LoggerGen.infoAll("<gradient:#ff0000:#00ff00>Rainbow announcement!</gradient>");
+        Logger.infoAll("<gradient:#ff0000:#00ff00>Rainbow announcement!</gradient>");
     }
 
     /**
@@ -137,15 +137,15 @@ public class LoggerExamples {
      */
     public void advancedExamples() {
         // Object logging - any object works
-        LoggerGen.debug(new Object() {
+        Logger.debug(new Object() {
             public String toString() {
                 return "CustomObject[id=123, status=ACTIVE]";
             }
         });
 
         // Collections and maps are formatted nicely
-        LoggerGen.info(List.of("item1", "item2", "item3"));
-        LoggerGen.debug(Map.of(
+        Logger.info(List.of("item1", "item2", "item3"));
+        Logger.debug(Map.of(
                 "server", "survival",
                 "players", 45,
                 "tps", 19.97));
@@ -173,28 +173,28 @@ public class LoggerExamples {
      * @param player target player
      */
     public void migrationExamples(Player player) {
-        // OLD: LoggerGen.info("message")
+        // OLD: Logger.info("message")
         // NEW:
-        LoggerGen.info("message");
+        Logger.info("message");
 
-        // OLD: LoggerGen.error(exception)
+        // OLD: Logger.error(exception)
         // NEW:
         Exception e = new Exception("test");
-        LoggerGen.error(e);
+        Logger.error(e);
 
         // OLD: Logger.broadcast("message")
         // NEW:
-        LoggerGen.broadcast("message");
+        Logger.broadcast("message");
         // or
-        LoggerGen.infoAll("message");
+        Logger.infoAll("message");
 
-        // OLD: prefixedLoggerGen.info("message")
+        // OLD: prefixedLogger.info("message")
         // NEW:
         PrefixedLogger module = Logger.withPrefix("Module");
-        PrefixedLoggerGen.info(module, "message");
+        PrefixedLogger.info(module, "message");
 
         // OLD: Logger.send(LogLevel.INFO, "message", player)
         // NEW:
-        LoggerGen.info(player, "message");
+        Logger.info(player, "message");
     }
 }

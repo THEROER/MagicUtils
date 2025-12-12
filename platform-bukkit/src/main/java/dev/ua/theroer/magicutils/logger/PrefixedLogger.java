@@ -14,7 +14,7 @@ import java.util.Collection;
  */
 @Getter @Setter
 @LogMethods(staticMethods = false)
-public class PrefixedLogger {
+public class PrefixedLogger extends PrefixedLoggerMethods {
     private final String name;
     private final String prefix;
     private boolean enabled;

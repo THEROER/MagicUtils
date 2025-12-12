@@ -2,7 +2,6 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
-import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
 import dev.ua.theroer.magicutils.commands.parsers.*;
 
 import org.bukkit.command.CommandSender;
@@ -56,7 +55,7 @@ public class TypeParserRegistry {
         register(new ListTypeParser());
         register(new LanguageKeyTypeParser());
 
-        PrefixedLoggerGen.debug(logger, "Registered " + parsers.size() + " default type parsers");
+        PrefixedLogger.debug(logger, "Registered " + parsers.size() + " default type parsers");
     }
 
     /**
@@ -68,7 +67,7 @@ public class TypeParserRegistry {
         parsers.add(parser);
         // Sort by priority (highest first)
         parsers.sort((a, b) -> Integer.compare(b.getPriority(), a.getPriority()));
-        PrefixedLoggerGen.debug(logger, "Registered type parser: " + parser.getClass().getSimpleName());
+        PrefixedLogger.debug(logger, "Registered type parser: " + parser.getClass().getSimpleName());
     }
 
     /**
@@ -92,27 +91,27 @@ public class TypeParserRegistry {
     @Nullable
     @SuppressWarnings("unchecked")
     public <T> T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull CommandSender sender) {
-        PrefixedLoggerGen.debug(logger, "Parsing value: '" + value + "' to type: " + targetType.getSimpleName());
+        PrefixedLogger.debug(logger, "Parsing value: '" + value + "' to type: " + targetType.getSimpleName());
 
         for (TypeParser<?> parser : parsers) {
             if (parser.canParse(targetType)) {
-                PrefixedLoggerGen.debug(logger, "Using parser: " + parser.getClass().getSimpleName());
+                PrefixedLogger.debug(logger, "Using parser: " + parser.getClass().getSimpleName());
                 try {
                     @SuppressWarnings("rawtypes")
                     Object result = parser.parse(value, (Class) targetType, sender);
                     if (result != null || value == null) {
-                        PrefixedLoggerGen.debug(logger, "Successfully parsed to: "
+                        PrefixedLogger.debug(logger, "Successfully parsed to: "
                                 + (result != null ? result.getClass().getSimpleName() + "=" + result : "null"));
                         return (T) result;
                     }
                 } catch (Exception e) {
-                    PrefixedLoggerGen.debug(logger,
+                    PrefixedLogger.debug(logger,
                             "Parser " + parser.getClass().getSimpleName() + " failed: " + e.getMessage());
                 }
             }
         }
 
-        PrefixedLoggerGen.debug(logger, "No suitable parser found for type: " + targetType.getSimpleName());
+        PrefixedLogger.debug(logger, "No suitable parser found for type: " + targetType.getSimpleName());
         return null;
     }
 
@@ -149,25 +148,25 @@ public class TypeParserRegistry {
      */
     @NotNull
     public List<String> parseSuggestion(@NotNull String source, @NotNull CommandSender sender) {
-        PrefixedLoggerGen.debug(logger, "Parsing suggestion source: '" + source + "'");
+        PrefixedLogger.debug(logger, "Parsing suggestion source: '" + source + "'");
 
         for (TypeParser<?> parser : parsers) {
             if (parser.canParseSuggestion(source)) {
-                PrefixedLoggerGen.debug(logger, "Using parser for suggestion: " + parser.getClass().getSimpleName());
+                PrefixedLogger.debug(logger, "Using parser for suggestion: " + parser.getClass().getSimpleName());
                 try {
                     List<String> result = parser.parseSuggestion(source, sender);
                     if (!result.isEmpty()) {
-                        PrefixedLoggerGen.debug(logger, "Successfully parsed " + result.size() + " suggestions");
+                        PrefixedLogger.debug(logger, "Successfully parsed " + result.size() + " suggestions");
                         return result;
                     }
                 } catch (Exception e) {
-                    PrefixedLoggerGen.debug(logger,
+                    PrefixedLogger.debug(logger,
                             "Parser " + parser.getClass().getSimpleName() + " failed: " + e.getMessage());
                 }
             }
         }
 
-        PrefixedLoggerGen.debug(logger, "No suitable parser found for suggestion source: " + source);
+        PrefixedLogger.debug(logger, "No suitable parser found for suggestion source: " + source);
         if ("@sender".equalsIgnoreCase(source)) {
             return new ArrayList<>();
         }
@@ -185,7 +184,7 @@ public class TypeParserRegistry {
     @NotNull
     public List<String> parseSuggestionFiltered(@NotNull String source, @NotNull String currentInput,
             @NotNull CommandSender sender) {
-        PrefixedLoggerGen.debug(logger,
+        PrefixedLogger.debug(logger,
                 "Parsing filtered suggestion source: '" + source + "' with input: '" + currentInput + "'");
 
         List<String> suggestions = parseSuggestion(source, sender);
@@ -243,23 +242,23 @@ public class TypeParserRegistry {
 
     private List<String> getSuggestionsInternal(@NotNull Class<?> targetType, @NotNull CommandSender sender,
             @Nullable CommandArgument argument) {
-        PrefixedLoggerGen.debug(logger, "Getting suggestions for type: " + targetType.getSimpleName());
+        PrefixedLogger.debug(logger, "Getting suggestions for type: " + targetType.getSimpleName());
 
         for (TypeParser<?> parser : parsers) {
             if (parser.canParse(targetType)) {
-                PrefixedLoggerGen.debug(logger, "Using parser for suggestions: " + parser.getClass().getSimpleName());
+                PrefixedLogger.debug(logger, "Using parser for suggestions: " + parser.getClass().getSimpleName());
                 try {
                     List<String> suggestions = parser.getSuggestions(sender, argument);
-                    PrefixedLoggerGen.debug(logger, "Got " + suggestions.size() + " suggestions");
+                    PrefixedLogger.debug(logger, "Got " + suggestions.size() + " suggestions");
                     return suggestions;
                 } catch (Exception e) {
-                    PrefixedLoggerGen.debug(logger, "Parser " + parser.getClass().getSimpleName()
+                    PrefixedLogger.debug(logger, "Parser " + parser.getClass().getSimpleName()
                             + " failed to get suggestions: " + e.getMessage());
                 }
             }
         }
 
-        PrefixedLoggerGen.debug(logger, "No suitable parser found for suggestions");
+        PrefixedLogger.debug(logger, "No suitable parser found for suggestions");
         return new ArrayList<>();
     }
 
@@ -307,7 +306,7 @@ public class TypeParserRegistry {
     public boolean unregister(@NotNull TypeParser<?> parser) {
         boolean removed = parsers.remove(parser);
         if (removed) {
-            PrefixedLoggerGen.debug(logger, "Unregistered type parser: " + parser.getClass().getSimpleName());
+            PrefixedLogger.debug(logger, "Unregistered type parser: " + parser.getClass().getSimpleName());
         }
         return removed;
     }
@@ -326,7 +325,7 @@ public class TypeParserRegistry {
             if (parserClass.isInstance(parser)) {
                 iterator.remove();
                 count++;
-                PrefixedLoggerGen.debug(logger, "Unregistered type parser: " + parser.getClass().getSimpleName());
+                PrefixedLogger.debug(logger, "Unregistered type parser: " + parser.getClass().getSimpleName());
             }
         }
         return count;
