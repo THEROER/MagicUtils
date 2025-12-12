@@ -26,6 +26,25 @@ public record SlotPolicy(
         Predicate<Player> permission,
         BiPredicate<Player, ItemStack> validator,
         Consumer<ItemStack> onChange) {
+
+    /**
+     * Compact constructor to defensively copy the placeholder item.
+     */
+    public SlotPolicy {
+        if (placeholder != null) {
+            placeholder = placeholder.clone();
+        }
+    }
+
+    /**
+     * Safe placeholder accessor that returns a copy to avoid shared mutations.
+     *
+     * @return cloned placeholder item or null when none is set
+     */
+    @Override
+    public ItemStack placeholder() {
+        return placeholder != null ? placeholder.clone() : null;
+    }
     /**
      * Creates a basic editable slot policy.
      * 
@@ -92,7 +111,7 @@ public record SlotPolicy(
          * @return this builder for chaining
          */
         public Builder placeholder(ItemStack placeholder) {
-            this.placeholder = placeholder;
+            this.placeholder = placeholder != null ? placeholder.clone() : null;
             return this;
         }
 
@@ -157,7 +176,8 @@ public record SlotPolicy(
          * @return the configured SlotPolicy
          */
         public SlotPolicy build() {
-            return new SlotPolicy(editable, consumesItem, placeholder, id, permission, validator, onChange);
+            ItemStack placeholderCopy = placeholder != null ? placeholder.clone() : null;
+            return new SlotPolicy(editable, consumesItem, placeholderCopy, id, permission, validator, onChange);
         }
     }
 

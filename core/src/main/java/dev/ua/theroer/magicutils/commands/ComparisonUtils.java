@@ -75,7 +75,7 @@ public final class ComparisonUtils {
             if (res instanceof UUID uuidRes) {
                 return uuidRes;
             }
-        } catch (Exception ignored) {
+        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
         return null;
     }
@@ -93,7 +93,7 @@ public final class ComparisonUtils {
             if (res instanceof String s) {
                 return s;
             }
-        } catch (Exception ignored) {
+        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
         return obj != null ? obj.toString() : null;
     }

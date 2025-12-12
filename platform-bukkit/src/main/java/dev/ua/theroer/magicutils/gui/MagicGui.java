@@ -13,6 +13,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.PrefixedLoggerGen;
+import lombok.Getter;
+
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
@@ -30,9 +32,12 @@ public class MagicGui {
     private static final PrefixedLogger logger = Logger.create("MagicGui", "[GUI]");
 
     private final JavaPlugin plugin;
+    @Getter
     private final Inventory inventory;
     private final Map<Integer, Consumer<InventoryClickEvent>> buttonCallbacks = new HashMap<>();
+    @Getter
     private final Player owner;
+    @Getter
     private final UUID ownerUuid;
     private Consumer<InventoryCloseEvent> closeCallback;
 
@@ -58,12 +63,7 @@ public class MagicGui {
      * @param title  the title of the GUI (supports MiniMessage)
      */
     public MagicGui(JavaPlugin plugin, Player owner, int size, String title) {
-        this.plugin = plugin;
-        this.owner = owner;
-        this.ownerUuid = owner.getUniqueId();
-        this.PLACEHOLDER_KEY = new NamespacedKey(plugin, "gui_placeholder");
-        Component titleComponent = Logger.parseSmart(title);
-        this.inventory = Bukkit.createInventory(owner, size, titleComponent);
+        this(plugin, owner, size, Logger.parseSmart(title));
     }
 
     /**
@@ -169,22 +169,11 @@ public class MagicGui {
      * @return created ItemStack
      */
     public ItemStack createItem(Material material, String name, List<String> lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-
-        if (name != null) {
-            meta.displayName(Logger.parseSmart(name));
-        }
-
-        if (lore != null && !lore.isEmpty()) {
-            List<Component> loreComponents = lore.stream()
-                    .map(line -> Logger.parseSmart(line))
-                    .toList();
-            meta.lore(loreComponents);
-        }
-
-        item.setItemMeta(meta);
-        return item;
+        Component displayName = name != null ? Logger.parseSmart(name) : null;
+        List<Component> loreComponents = lore == null || lore.isEmpty()
+                ? null
+                : lore.stream().map(Logger::parseSmart).toList();
+        return createItem(material, displayName, loreComponents);
     }
 
     /**
@@ -207,7 +196,9 @@ public class MagicGui {
             meta.lore(lore);
         }
 
-        item.setItemMeta(meta);
+        if (!item.setItemMeta(meta)) {
+            throw new IllegalStateException("Failed to apply item meta for " + material);
+        }
         return item;
     }
 
@@ -302,12 +293,9 @@ public class MagicGui {
      * @return the placeholder ItemStack
      */
     private ItemStack createPlaceholder(Material material, String name) {
-        ItemStack item = new ItemStack(material);
+        ItemStack item = createItem(material, name, null);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            // Set display name
-            meta.displayName(Logger.parseSmart(name));
-            // Add NBT tag to identify as placeholder
             meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
         }
@@ -403,24 +391,6 @@ public class MagicGui {
     public void refreshSlots(int... slots) {
         // This would be implemented by subclasses or screens
         // that know how to re-render specific slots
-    }
-
-    /**
-     * Get the underlying inventory.
-     * 
-     * @return inventory
-     */
-    public Inventory getInventory() {
-        return inventory;
-    }
-
-    /**
-     * Get the GUI owner.
-     * 
-     * @return owner player
-     */
-    public Player getOwner() {
-        return owner;
     }
 
     /**

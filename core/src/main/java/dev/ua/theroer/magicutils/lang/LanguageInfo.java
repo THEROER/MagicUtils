@@ -1,8 +1,11 @@
 package dev.ua.theroer.magicutils.lang;
 
+import lombok.Getter;
+
 /**
  * Information about a language.
  */
+@Getter
 public class LanguageInfo {
     private final String code;
     private final String name;
@@ -22,42 +25,6 @@ public class LanguageInfo {
         this.name = name;
         this.author = author;
         this.version = version;
-    }
-
-    /**
-     * Gets the ISO language code.
-     * 
-     * @return the ISO language code
-     */
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * Gets the display name of the language.
-     * 
-     * @return the display name of the language
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Gets the author of the language.
-     * 
-     * @return the author of the language
-     */
-    public String getAuthor() {
-        return author;
-    }
-
-    /**
-     * Gets the version of the language.
-     * 
-     * @return the version of the language
-     */
-    public String getVersion() {
-        return version;
     }
 
     @Override

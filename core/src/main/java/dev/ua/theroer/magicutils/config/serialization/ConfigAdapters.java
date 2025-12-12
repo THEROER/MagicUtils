@@ -1,8 +1,8 @@
 package dev.ua.theroer.magicutils.config.serialization;
 
 import dev.ua.theroer.magicutils.config.adapters.EnumAdapter;
-import lombok.Getter;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Simple registry for config value adapters.
  */
 public final class ConfigAdapters {
-    @Getter
     private static final Map<Class<?>, ConfigValueAdapter<?>> ADAPTERS = new ConcurrentHashMap<>();
 
     private ConfigAdapters() {
@@ -37,8 +36,11 @@ public final class ConfigAdapters {
      */
     @SuppressWarnings("unchecked")
     public static <T> ConfigValueAdapter<T> get(Class<T> type) {
+        if (type == null) {
+            return null;
+        }
         ConfigValueAdapter<T> adapter = (ConfigValueAdapter<T>) ADAPTERS.get(type);
-        if (adapter == null && type != null && type.isEnum()) {
+        if (adapter == null && type.isEnum()) {
             @SuppressWarnings({"rawtypes"})
             EnumAdapter<?> enumAdapter = new EnumAdapter(type.asSubclass(Enum.class));
             ADAPTERS.put(type, enumAdapter);
@@ -55,5 +57,14 @@ public final class ConfigAdapters {
      */
     public static boolean has(Class<?> type) {
         return ADAPTERS.containsKey(type);
+    }
+
+    /**
+     * Provides read-only access to registered adapters.
+     *
+     * @return unmodifiable view of adapters map
+     */
+    public static Map<Class<?>, ConfigValueAdapter<?>> getAdaptersView() {
+        return Collections.unmodifiableMap(ADAPTERS);
     }
 }

@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.lang.messages.*;
+import lombok.Getter;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import java.util.function.Function;
  * 
  * Constructor initializes all message categories with their default values.
  */
+@Getter
 @ConfigFile("lang/{lang}.yml")
 @Comment("Language file for MagicUtils")
 public class LanguageConfig {
@@ -68,68 +70,13 @@ public class LanguageConfig {
     @Comment("Custom messages defined by plugins")
     private Map<String, String> customMessages = new HashMap<>();
 
-    // Getters
-    /**
-     * Gets the language metadata.
-     * 
-     * @return the language metadata instance
-     */
-    public LanguageMetadata getMetadata() {
-        return metadata;
-    }
-
-    /**
-     * Gets the command messages configuration.
-     * 
-     * @return the command messages instance
-     */
-    public CommandMessages getCommands() {
-        return commands;
-    }
-
-    /**
-     * Gets the settings messages configuration.
-     * 
-     * @return the settings messages instance
-     */
-    public SettingsMessages getSettings() {
-        return settings;
-    }
-
-    /**
-     * Gets the reload messages configuration.
-     * 
-     * @return the reload messages instance
-     */
-    public ReloadMessages getReload() {
-        return reload;
-    }
-
-    /**
-     * Gets the system messages configuration.
-     * 
-     * @return the system messages instance
-     */
-    public SystemMessages getSystem() {
-        return system;
-    }
-
-    /**
-     * Gets the error messages configuration.
-     * 
-     * @return the error messages instance
-     */
-    public ErrorMessages getErrors() {
-        return errors;
-    }
-
     /**
      * Gets the custom messages map.
      * 
      * @return map of custom message keys to values
      */
     public Map<String, String> getCustomMessages() {
-        return customMessages;
+        return new HashMap<>(customMessages);
     }
 
     /**

@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.config.annotations;
 
+import lombok.Getter;
+
 /**
  * Interface for processing list items during configuration loading.
  * 
@@ -21,6 +23,7 @@ public interface ListItemProcessor<T> {
      * @param <T> the type of the item
      */
     class ProcessResult<T> {
+        @Getter
         private final T value;
         private final boolean modified;
         private final boolean useDefault;
@@ -62,15 +65,6 @@ public interface ListItemProcessor<T> {
          */
         public static <T> ProcessResult<T> replaceWithDefault() {
             return new ProcessResult<>(null, false, true);
-        }
-
-        /**
-         * Gets the processed value.
-         * 
-         * @return the processed value, or null if shouldUseDefault() is true
-         */
-        public T getValue() {
-            return value;
         }
 
         /**

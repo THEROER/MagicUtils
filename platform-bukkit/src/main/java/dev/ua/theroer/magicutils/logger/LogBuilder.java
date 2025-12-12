@@ -1,14 +1,15 @@
 package dev.ua.theroer.magicutils.logger;
 
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.Logger.LogLevel;
 import lombok.Getter;
 import lombok.Singular;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,15 +18,19 @@ import java.util.Map;
  * This builder provides a flexible way to construct and send log messages
  * with various targeting options, formatting, and customization.
  */
-@Getter
 public class LogBuilder {
     private final LogLevel level;
+    @Getter
     private LogTarget target;
+    @Getter
     private boolean broadcast = false;
+    @Getter
     private Player player;
     @Singular("recipient")
     private List<CommandSender> recipients;
+    @Getter
     private PrefixMode prefixOverride;
+    @Getter
     private boolean noPrefix = false;
     @Singular("resolver")
     private List<TagResolver> tagResolvers;
@@ -39,8 +44,44 @@ public class LogBuilder {
      */
     public LogBuilder(LogLevel level) {
         this.level = level;
-        this.recipients = new java.util.ArrayList<>();
-        this.tagResolvers = new java.util.ArrayList<>();
+        this.recipients = new ArrayList<>();
+        this.tagResolvers = new ArrayList<>();
+    }
+
+    /**
+     * Snapshot of current recipients (players or senders).
+     *
+     * @return copy of recipients list
+     */
+    public List<CommandSender> getRecipients() {
+        return new ArrayList<>(recipients);
+    }
+
+    /**
+     * Additional MiniMessage tag resolvers attached to this builder.
+     *
+     * @return copy of resolver list
+     */
+    public List<TagResolver> getTagResolvers() {
+        return new ArrayList<>(tagResolvers);
+    }
+
+    /**
+     * Formatting arguments passed to {@link #args(Object...)}.
+     *
+     * @return defensive copy of arguments or null
+     */
+    public Object[] getArgs() {
+        return args != null ? args.clone() : null;
+    }
+
+    /**
+     * Named placeholders provided via {@link #placeholders(Map)}.
+     *
+     * @return copy of placeholders or null
+     */
+    public Map<String, Object> getPlaceholders() {
+        return placeholders != null ? new HashMap<>(placeholders) : null;
     }
 
     /**
@@ -49,7 +90,7 @@ public class LogBuilder {
      * @param target where to send the message (CHAT, CONSOLE, BOTH)
      * @return this LogBuilder instance for method chaining
      */
-    public LogBuilder target(LogTarget target) {
+public LogBuilder target(LogTarget target) {
         this.target = target;
         return this;
     }
@@ -181,7 +222,7 @@ public class LogBuilder {
      * @return this LogBuilder instance for method chaining
      */
     public LogBuilder args(Object... args) {
-        this.args = args;
+        this.args = args != null ? args.clone() : null;
         return this;
     }
 
@@ -192,7 +233,7 @@ public class LogBuilder {
      * @return this LogBuilder instance for method chaining
      */
     public LogBuilder placeholders(Map<String, Object> placeholders) {
-        this.placeholders = placeholders;
+        this.placeholders = placeholders != null ? new HashMap<>(placeholders) : null;
         return this;
     }
 
@@ -256,7 +297,7 @@ public class LogBuilder {
         // Prepare recipients collection
         Collection<? extends Player> playerRecipients = null;
         if (!recipients.isEmpty()) {
-            List<Player> players = new java.util.ArrayList<>();
+            List<Player> players = new ArrayList<>();
             for (CommandSender sender : recipients) {
                 if (sender instanceof Player) {
                     players.add((Player) sender);

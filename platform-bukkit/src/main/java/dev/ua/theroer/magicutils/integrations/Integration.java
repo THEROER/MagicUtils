@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.integrations;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import dev.ua.theroer.magicutils.Logger;
+import lombok.Getter;
 
 /**
  * Abstract class for all integrations with external plugins
@@ -16,6 +17,7 @@ public abstract class Integration<T> {
     /** The plugin instance that creates this integration */
     protected final JavaPlugin plugin;
     /** The name of the target plugin for integration */
+    @Getter
     protected final String targetPlugin;
     /** The integration implementation instance */
     protected T implementation;
@@ -128,14 +130,5 @@ public abstract class Integration<T> {
      */
     protected void onIntegrationDisabled() {
         // Does nothing by default
-    }
-
-    /**
-     * Gets the target plugin name
-     * 
-     * @return target plugin name
-     */
-    public String getTargetPlugin() {
-        return targetPlugin;
     }
 }

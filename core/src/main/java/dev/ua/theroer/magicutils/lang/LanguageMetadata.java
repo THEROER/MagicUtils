@@ -2,11 +2,13 @@ package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
+import lombok.Getter;
 import dev.ua.theroer.magicutils.config.annotations.Comment;
 
 /**
  * Language metadata
  */
+@Getter
 public class LanguageMetadata {
     /**
      * Default constructor for LanguageMetadata.
@@ -33,40 +35,4 @@ public class LanguageMetadata {
     @DefaultValue("1.0")
     @Comment("Version of the language file")
     private String version;
-
-    /**
-     * Gets the display name of the language.
-     * 
-     * @return the display name of the language
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Gets the ISO language code.
-     * 
-     * @return the ISO language code
-     */
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * Gets the author of the language file.
-     * 
-     * @return the author of the language file
-     */
-    public String getAuthor() {
-        return author;
-    }
-
-    /**
-     * Gets the version of the language file.
-     * 
-     * @return the version of the language file
-     */
-    public String getVersion() {
-        return version;
-    }
 }

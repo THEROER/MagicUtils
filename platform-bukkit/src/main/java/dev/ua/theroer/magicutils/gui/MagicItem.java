@@ -1,8 +1,7 @@
 package dev.ua.theroer.magicutils.gui;
 
+import dev.ua.theroer.magicutils.Logger;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -21,7 +20,6 @@ import java.util.List;
 public final class MagicItem {
     private final ItemStack stack;
     private final ItemMeta meta;
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     private MagicItem(Material material) {
         this.stack = new ItemStack(material);
@@ -46,7 +44,7 @@ public final class MagicItem {
      */
     public MagicItem name(String name) {
         if (name != null) {
-            meta.displayName(miniMessage.deserialize(name).decoration(TextDecoration.ITALIC, false));
+            meta.displayName(Logger.parseSmart(name));
         }
         return this;
     }
@@ -73,7 +71,7 @@ public final class MagicItem {
     public MagicItem lore(List<String> lore) {
         if (lore != null && !lore.isEmpty()) {
             List<Component> loreComponents = lore.stream()
-                    .map(line -> miniMessage.deserialize(line).decoration(TextDecoration.ITALIC, false))
+                    .map(Logger::parseSmart)
                     .toList();
             meta.lore(loreComponents);
         }
@@ -118,7 +116,7 @@ public final class MagicItem {
         }
 
         for (String line : lines) {
-            currentLore.add(miniMessage.deserialize(line).decoration(TextDecoration.ITALIC, false));
+            currentLore.add(Logger.parseSmart(line));
         }
 
         meta.lore(currentLore);
@@ -255,7 +253,7 @@ public final class MagicItem {
      */
     public ItemStack build() {
         stack.setItemMeta(meta);
-        return stack;
+        return stack.clone();
     }
 
     /**

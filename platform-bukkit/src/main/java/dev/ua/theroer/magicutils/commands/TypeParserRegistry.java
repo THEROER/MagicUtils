@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Registry for managing type parsers that handle both parsing and suggestions.
@@ -195,7 +196,7 @@ public class TypeParserRegistry {
 
         return suggestions.stream()
                 .filter(suggestion -> suggestion.toLowerCase().startsWith(currentInput.toLowerCase()))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     /**
@@ -237,7 +238,7 @@ public class TypeParserRegistry {
         final String lowered = currentInput.toLowerCase();
         return suggestions.stream()
                 .filter(suggestion -> suggestion != null && suggestion.toLowerCase().startsWith(lowered))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     private List<String> getSuggestionsInternal(@NotNull Class<?> targetType, @NotNull CommandSender sender,

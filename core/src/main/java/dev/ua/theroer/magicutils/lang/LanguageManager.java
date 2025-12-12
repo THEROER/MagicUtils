@@ -12,8 +12,11 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +35,7 @@ public class LanguageManager {
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
+    @Getter
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
     private LanguageConfig fallbackConfig;
@@ -170,15 +174,6 @@ public class LanguageManager {
         } else {
             fallbackConfig = currentConfig;
         }
-    }
-
-    /**
-     * Get the language currently active for the manager.
-     *
-     * @return currently active language code
-     */
-    public String getCurrentLanguage() {
-        return currentLanguage;
     }
 
     /**
@@ -617,7 +612,10 @@ public class LanguageManager {
     private void saveLanguageTranslations(String languageCode, Map<String, Map<String, String>> translations) {
         try {
             File langFile = platform.configDir().resolve("lang/" + languageCode + ".yml").toFile();
-            langFile.getParentFile().mkdirs();
+            Path parent = langFile.toPath().getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
 
             Map<String, Object> data = new HashMap<>();
             if (langFile.exists()) {
@@ -642,7 +640,7 @@ public class LanguageManager {
             options.setIndent(2);
             options.setDefaultScalarStyle(DumperOptions.ScalarStyle.SINGLE_QUOTED);
             Yaml yaml = new Yaml(options);
-            try (FileWriter writer = new FileWriter(langFile)) {
+            try (Writer writer = Files.newBufferedWriter(langFile.toPath(), StandardCharsets.UTF_8)) {
                 yaml.dump(data, writer);
             }
         } catch (IOException e) {
@@ -685,7 +683,7 @@ public class LanguageManager {
             if (res instanceof UUID uuid) {
                 return uuid;
             }
-        } catch (Exception ignored) {
+        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
         return null;
     }
@@ -707,7 +705,7 @@ public class LanguageManager {
                         }
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (ReflectiveOperationException ignored) {
             }
         }
         throw new IllegalArgumentException("Platform provider is required to initialize LanguageManager");

@@ -27,6 +27,7 @@ public class CommandRegistry {
     @Getter
     private static CommandManager commandManager;
     private static CommandMap commandMap;
+    @Getter
     private static JavaPlugin plugin;
     @Getter
     private static String permissionPrefix;
@@ -356,15 +357,6 @@ public class CommandRegistry {
      */
     public static boolean isInitialized() {
         return commandManager != null && commandMap != null && plugin != null;
-    }
-
-    /**
-     * Gets the plugin instance.
-     * 
-     * @return the plugin instance
-     */
-    public static JavaPlugin getPlugin() {
-        return plugin;
     }
 
     private static void unregisterIfOwned(String name) {

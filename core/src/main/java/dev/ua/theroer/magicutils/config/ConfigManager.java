@@ -9,12 +9,14 @@ import lombok.Getter;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
@@ -206,8 +208,18 @@ public class ConfigManager {
         processFields(instance, yaml, instance.getClass());
     }
 
+    private static void ensureParentDirectory(File file) throws IOException {
+        if (file == null) {
+            return;
+        }
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs() && !parent.exists()) {
+            throw new IOException("Failed to create directory " + parent);
+        }
+    }
+
     private <T> void createDefaultConfig(T instance, File configFile, ConfigMetadata metadata) throws Exception {
-        configFile.getParentFile().mkdirs();
+        ensureParentDirectory(configFile);
 
         YamlDocument yaml = new YamlDocument();
 
@@ -338,10 +350,9 @@ public class ConfigManager {
             return;
         }
 
-        if (value != null) {
-            Class<?> fieldType = field.getType();
+        Class<?> fieldType = field.getType();
 
-            if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
+        if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
                 ParameterizedType listType = (ParameterizedType) field.getGenericType();
                 Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
 
@@ -372,7 +383,7 @@ public class ConfigManager {
                 if (processor != null) {
                     value = processList(field, (List<?>) value);
                 }
-            } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
+        } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
                 ParameterizedType mapType = (ParameterizedType) field.getGenericType();
                 Class<?> keyType = (Class<?>) mapType.getActualTypeArguments()[0];
                 Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
@@ -414,14 +425,13 @@ public class ConfigManager {
                         value = map;
                     }
                 }
-            } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
+        } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                 value = ConfigSerializer.deserialize((Map<String, Object>) value, fieldType);
-            } else {
-                ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
-                if (adapter != null) {
-                    ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
-                    value = typed.deserialize(value);
-                }
+        } else {
+            ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
+            if (adapter != null) {
+                ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
+                value = typed.deserialize(value);
             }
         }
 
@@ -1059,7 +1069,7 @@ public class ConfigManager {
                 YamlDocument yaml = new YamlDocument();
                 saveFields(entry.instance, yaml, entry.instance.getClass(), "");
 
-                entry.file.getParentFile().mkdirs();
+                ensureParentDirectory(entry.file);
                 yaml.save(entry.file);
                 entry.refreshLastModified();
             } catch (Exception e) {
@@ -1091,6 +1101,9 @@ public class ConfigManager {
         File file = entry.file;
         Path filePath = file.toPath().toAbsolutePath();
         Path directory = filePath.getParent();
+        if (directory == null) {
+            directory = filePath;
+        }
 
         fileIndex.computeIfAbsent(filePath, key -> ConcurrentHashMap.newKeySet()).add(entry.key);
 
@@ -1098,9 +1111,7 @@ public class ConfigManager {
             ensureWatchService();
 
             if (!directoryWatchKeys.containsKey(directory)) {
-                if (!directory.toFile().exists()) {
-                    directory.toFile().mkdirs();
-                }
+                Files.createDirectories(directory);
 
                 WatchKey watchKey = directory.register(watchService,
                         StandardWatchEventKinds.ENTRY_CREATE,
@@ -1288,7 +1299,7 @@ public class ConfigManager {
         }
     }
 
-    private static class ConfigMetadata {
+    private static final class ConfigMetadata {
         @Getter
         private final String filePath;
         @Getter
@@ -1301,9 +1312,14 @@ public class ConfigManager {
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
                 path = path.replace("{" + entry.getKey() + "}", entry.getValue());
             }
-            this.filePath = sanitizePath(path, baseDir);
-            this.autoCreate = annotation.autoCreate();
-            this.templatePath = annotation.template();
+
+            String resolvedPath = sanitizePath(path, baseDir);
+            boolean auto = annotation.autoCreate();
+            String template = annotation.template();
+
+            this.filePath = resolvedPath;
+            this.autoCreate = auto;
+            this.templatePath = template;
         }
 
         private String sanitizePath(String path, Path baseDir) {
@@ -1403,8 +1419,8 @@ public class ConfigManager {
         }
 
         void save(File file) throws IOException {
-            file.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(file)) {
+            ensureParentDirectory(file);
+            try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
                 if (header != null && !header.isEmpty()) {
                     for (String line : header) {
                         writer.write("# " + line + System.lineSeparator());
@@ -1463,7 +1479,7 @@ public class ConfigManager {
         }
 
         @SuppressWarnings("unchecked")
-        private static void writeWithComments(FileWriter writer, Yaml yaml,
+        private static void writeWithComments(Writer writer, Yaml yaml,
                                               Map<String, Object> map,
                                               Map<String, List<String>> comments,
                                               String pathPrefix,
@@ -1495,7 +1511,7 @@ public class ConfigManager {
             }
         }
 
-        private static void writeList(FileWriter writer, Yaml yaml, List<?> list,
+        private static void writeList(Writer writer, Yaml yaml, List<?> list,
                                       Map<String, List<String>> comments, String pathPrefix, int indentLevel) throws IOException {
             String indent = "  ".repeat(indentLevel);
             for (int i = 0; i < list.size(); i++) {
@@ -1523,7 +1539,7 @@ public class ConfigManager {
             }
         }
 
-        private static void writeMultilineValue(FileWriter writer, String value, int indentLevel) throws IOException {
+        private static void writeMultilineValue(Writer writer, String value, int indentLevel) throws IOException {
             String indent = "  ".repeat(indentLevel);
             String[] lines = value.split("\\r?\\n", -1);
             for (String line : lines) {

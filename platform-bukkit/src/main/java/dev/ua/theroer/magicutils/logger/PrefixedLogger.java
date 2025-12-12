@@ -1,7 +1,6 @@
 package dev.ua.theroer.magicutils.logger;
 
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.Logger.LogLevel;
 import lombok.Getter;
 import lombok.Setter;
 

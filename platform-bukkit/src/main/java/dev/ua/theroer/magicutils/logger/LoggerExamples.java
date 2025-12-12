@@ -158,7 +158,7 @@ public class LoggerExamples {
 
         // Direct universal send for special cases
         Logger.send(
-                Logger.LogLevel.INFO,
+                LogLevel.INFO,
                 "Special message",
                 null, // no single player
                 List.of(), // empty recipients

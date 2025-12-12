@@ -1,6 +1,8 @@
 package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
@@ -12,28 +14,11 @@ import java.util.Map;
  * Static language helper using LanguageManager.
  */
 public class Messages {
+    @Setter @Getter
     private static LanguageManager languageManager;
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     private Messages() {
-    }
-
-    /**
-     * Configure global language manager.
-     *
-     * @param manager language manager to use
-     */
-    public static void setLanguageManager(LanguageManager manager) {
-        languageManager = manager;
-    }
-
-    /**
-     * Access the configured language manager.
-     *
-     * @return current language manager (may be null)
-     */
-    public static LanguageManager getLanguageManager() {
-        return languageManager;
     }
 
     /**
@@ -113,7 +98,7 @@ public class Messages {
             if (res instanceof UUID uuid) {
                 return uuid;
             }
-        } catch (Exception ignored) {
+        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
         return null;
     }

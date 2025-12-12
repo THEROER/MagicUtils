@@ -6,6 +6,7 @@ import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -158,14 +159,14 @@ public class ConfigSerializer {
                         // Recursive deserialization - security check is already in deserialize method
                         field.set(instance, deserialize((Map<String, Object>) value, fieldType));
                     }
-                } catch (Exception e) {
+                } catch (ReflectiveOperationException | ClassCastException | IllegalArgumentException e) {
                     // Skip field
                 }
             }
 
             return instance;
 
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | ClassCastException | IllegalArgumentException e) {
             throw new RuntimeException("Failed to deserialize " + clazz.getName(), e);
         }
     }
@@ -283,21 +284,27 @@ public class ConfigSerializer {
     private static Class<?> extractListElementType(Field field) {
         if (field == null) return null;
         if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) return null;
-        try {
-            return (Class<?>) parameterizedType.getActualTypeArguments()[0];
-        } catch (Exception e) {
-            return null;
+        Type arg = parameterizedType.getActualTypeArguments()[0];
+        if (arg instanceof Class<?> cls) {
+            return cls;
         }
+        if (arg instanceof ParameterizedType pt && pt.getRawType() instanceof Class<?> raw) {
+            return raw;
+        }
+        return null;
     }
 
     private static Class<?> extractMapValueType(Field field) {
         if (field == null) return null;
         if (!(field.getGenericType() instanceof ParameterizedType parameterizedType)) return null;
-        try {
-            return (Class<?>) parameterizedType.getActualTypeArguments()[1];
-        } catch (Exception e) {
-            return null;
+        Type arg = parameterizedType.getActualTypeArguments()[1];
+        if (arg instanceof Class<?> cls) {
+            return cls;
         }
+        if (arg instanceof ParameterizedType pt && pt.getRawType() instanceof Class<?> raw) {
+            return raw;
+        }
+        return null;
     }
 
     private static String resolveKey(Field field) {

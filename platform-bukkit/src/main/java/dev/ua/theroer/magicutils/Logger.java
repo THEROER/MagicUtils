@@ -1,22 +1,20 @@
 package dev.ua.theroer.magicutils;
 
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.logger.LogLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
-import org.bukkit.Bukkit;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.config.SubLoggerConfig;
 import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.utils.ColorUtils;
-import dev.ua.theroer.magicutils.utils.placeholders.PlaceholderProcessor;
 import dev.ua.theroer.magicutils.logger.LogBuilder;
+import dev.ua.theroer.magicutils.logger.LogDispatcher;
+import dev.ua.theroer.magicutils.logger.LogMessageFormatter;
 import dev.ua.theroer.magicutils.logger.LogMethods;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.PrefixMode;
@@ -27,11 +25,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.command.CommandSender;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,26 +42,13 @@ public final class Logger {
     private static LoggerConfig config;
     private static ConfigManager configManager;
 
-    private static String[] chatDefaultGradient;
-    private static String[] consoleDefaultGradient;
-
-    private static String[] chatErrorColors;
-    private static String[] chatWarnColors;
-    private static String[] chatDebugColors;
-    private static String[] chatSuccessColors;
-
-    private static String[] consoleErrorColors;
-    private static String[] consoleWarnColors;
-    private static String[] consoleDebugColors;
-    private static String[] consoleSuccessColors;
-
-    @Setter
+    @Getter @Setter
     private static LanguageManager languageManager;
 
     // Prefix settings
-    @Setter
+    @Getter @Setter
     private static PrefixMode chatPrefixMode = PrefixMode.FULL;
-    @Setter
+    @Getter @Setter
     private static PrefixMode consolePrefixMode = PrefixMode.SHORT;
     @Getter @Setter
     private static String customPrefix = "[UAP]";
@@ -80,6 +62,7 @@ public final class Logger {
     private static boolean consoleUseGradient = false;
 
     // Plugin instance for thread safety
+    @Getter
     private static JavaPlugin pluginInstance;
 
     /**
@@ -96,12 +79,6 @@ public final class Logger {
 
     @Getter
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
-            .character('&')
-            .hexColors()
-            .useUnusualXRepeatedCharacterHexFormat()
-            .build();
-
     @Getter
     private static final Map<String, PrefixedLogger> prefixedLoggers = new HashMap<>();
 
@@ -178,107 +155,8 @@ public final class Logger {
             consoleStripFormatting = config.getConsole().isStripFormatting();
         }
 
-        if (config.getChat().isAutoGenerateColors()) {
-            generateChatColors();
-        } else {
-            loadChatColorsFromConfig();
-        }
-
-        if (config.getConsole().isAutoGenerateColors()) {
-            generateConsoleColors();
-        } else {
-            loadConsoleColorsFromConfig();
-        }
-
         // Load sub-logger configurations
         loadSubLoggers();
-    }
-
-    /**
-     * Generate chat colors automatically
-     */
-    private static void generateChatColors() {
-        String[] baseColors = ColorUtils.getMainAndSecondaryColor(config.getPluginName());
-        chatDefaultGradient = baseColors;
-        chatErrorColors = new String[] { "#ff4444", ColorUtils.adjustHue(baseColors[0], -30) };
-        chatWarnColors = new String[] { "#ffaa00", ColorUtils.adjustHue(baseColors[0], 45) };
-        chatDebugColors = new String[] { "#00aaff", ColorUtils.adjustHue(baseColors[0], 180) };
-        chatSuccessColors = new String[] { "#00ff44", ColorUtils.adjustHue(baseColors[0], 120) };
-    }
-
-    /**
-     * Generate console colors automatically
-     */
-    private static void generateConsoleColors() {
-        String[] baseColors = ColorUtils.getMainAndSecondaryColor(config.getPluginName());
-        consoleDefaultGradient = new String[] {
-                ColorUtils.adjustBrightness(baseColors[0], 1.2f),
-                ColorUtils.adjustBrightness(baseColors[1], 1.2f)
-        };
-        consoleErrorColors = new String[] { "#ff6666", ColorUtils.adjustHue(baseColors[0], -20) };
-        consoleWarnColors = new String[] { "#ffcc22", ColorUtils.adjustHue(baseColors[0], 55) };
-        consoleDebugColors = new String[] { "#22aaff", ColorUtils.adjustHue(baseColors[0], 170) };
-        consoleSuccessColors = new String[] { "#22ff66", ColorUtils.adjustHue(baseColors[0], 110) };
-    }
-
-    /**
-     * Load chat colors from configuration
-     */
-    private static void loadChatColorsFromConfig() {
-        var gradient = config.getChatGradient();
-        if (gradient != null) {
-            chatDefaultGradient = gradient;
-        }
-
-        var errorColors = config.getChatColors("error");
-        if (errorColors != null) {
-            chatErrorColors = errorColors;
-        }
-
-        var warnColors = config.getChatColors("warn");
-        if (warnColors != null) {
-            chatWarnColors = warnColors;
-        }
-
-        var debugColors = config.getChatColors("debug");
-        if (debugColors != null) {
-            chatDebugColors = debugColors;
-        }
-
-        var successColors = config.getChatColors("success");
-        if (successColors != null) {
-            chatSuccessColors = successColors;
-        }
-    }
-
-    /**
-     * Load console colors from configuration
-     */
-    private static void loadConsoleColorsFromConfig() {
-        var gradient = config.getConsoleGradient();
-        if (gradient != null) {
-            consoleDefaultGradient = gradient;
-        }
-
-        var errorColors = config.getConsoleColors("error");
-        if (errorColors != null) {
-            consoleErrorColors = errorColors;
-        }
-
-        var warnColors = config.getConsoleColors("warn");
-        if (warnColors != null) {
-            consoleWarnColors = warnColors;
-        }
-
-        var debugColors = config.getConsoleColors("debug");
-        if (debugColors != null) {
-            consoleDebugColors = debugColors;
-        }
-
-        var successColors = config.getConsoleColors("success");
-        if (successColors != null) {
-            consoleSuccessColors = successColors;
-        }
     }
 
     /**
@@ -333,10 +211,10 @@ public final class Logger {
         Component component = parseMessage(message, level, target, player, players, placeholders);
 
         // Determine recipients
-        Collection<CommandSender> recipients = determineRecipients(player, players, broadcast, target);
+        Collection<CommandSender> recipients = LogDispatcher.determineRecipients(player, players, broadcast, target);
 
         // Deliver the message
-        deliverMessage(component, recipients, target);
+        LogDispatcher.deliver(pluginInstance, component, recipients, target);
     }
 
     /**
@@ -443,281 +321,7 @@ public final class Logger {
             @Nullable Player directPlayer,
             @Nullable Collection<? extends Player> playerCollection,
             Object... placeholdersArgs) {
-        // First, convert Object to string representation
-        String messageStr;
-        Player singlePlayer = null;
-
-        if (message instanceof Component) {
-            // If already a Component, serialize to MiniMessage format
-            messageStr = miniMessage.serialize((Component) message);
-        } else if (message instanceof Throwable) {
-            // Format exception with stack trace
-            messageStr = formatThrowable((Throwable) message);
-        } else {
-            // Use String.valueOf for any other object
-            messageStr = String.valueOf(message);
-        }
-
-        if (placeholdersArgs != null && placeholdersArgs.length > 0) {
-            Object lastArg = placeholdersArgs[placeholdersArgs.length - 1];
-            if (lastArg instanceof Player) {
-                singlePlayer = (Player) lastArg;
-            }
-        }
-
-        if (directPlayer != null) {
-            singlePlayer = directPlayer;
-        }
-
-        Player targetPlayer = singlePlayer != null ? singlePlayer
-                : PlaceholderProcessor.pickPrimaryPlayer(directPlayer, playerCollection);
-
-        messageStr = PlaceholderProcessor.applyPlaceholders(pluginInstance, targetPlayer, messageStr, placeholdersArgs);
-        messageStr = PlaceholderProcessor.applyPapi(pluginInstance, messageStr, targetPlayer);
-        messageStr = applyLocalization(messageStr);
-        messageStr = PlaceholderProcessor.applyPapi(pluginInstance, messageStr, targetPlayer);
-        messageStr = PlaceholderProcessor.applyPlaceholders(pluginInstance, targetPlayer, messageStr, placeholdersArgs);
-        messageStr = ColorUtils.legacyToMiniMessage(messageStr);
-
-        // Build prefix based on target
-        String prefix = "";
-        if (target == LogTarget.CONSOLE || target == LogTarget.BOTH) {
-            prefix = buildPrefix(level, consolePrefixMode, true);
-        } else {
-            prefix = buildPrefix(level, chatPrefixMode, false);
-        }
-
-        // Combine prefix and message
-        String finalMessage = prefix.isEmpty() ? messageStr : prefix + " " + messageStr;
-
-        // Apply gradient if needed
-        if (!prefix.isEmpty() && shouldUseGradient(target)) {
-            String[] colors = getColorsForLevel(level, target == LogTarget.CONSOLE);
-            String gradientTag = ColorUtils.createGradientTag(colors);
-            finalMessage = "<reset>" + gradientTag + finalMessage + "</gradient>";
-        } else {
-            finalMessage = "<reset>" + finalMessage;
-        }
-
-        // Parse to Component
-        Component component = miniMessage.deserialize(finalMessage, TagResolver.standard());
-
-        // Strip formatting for console if needed
-        if ((target == LogTarget.CONSOLE || target == LogTarget.BOTH) && consoleStripFormatting) {
-            component = Component.text(PlainTextComponentSerializer.plainText().serialize(component));
-        }
-
-        return component;
-    }
-
-    /**
-     * Formats a Throwable into a readable string with stack trace.
-     */
-    private static String formatThrowable(Throwable throwable) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<red>").append(throwable.getClass().getSimpleName()).append(": ")
-                .append(throwable.getMessage()).append("</red>\n");
-
-        for (StackTraceElement element : throwable.getStackTrace()) {
-            sb.append("<gray>  at ").append(element.toString()).append("</gray>\n");
-        }
-
-        if (throwable.getCause() != null) {
-            sb.append("<yellow>Caused by: </yellow>");
-            sb.append(formatThrowable(throwable.getCause()));
-        }
-
-        return sb.toString();
-    }
-
-    /**
-     * Applies localization to a message string.
-     * 
-     * @param messageStr the message string to localize
-     * @return the localized message string
-     */
-    private static String applyLocalization(String messageStr) {
-        if (config != null && config.isAutoLocalization() && languageManager != null && messageStr != null
-                && messageStr.startsWith("@")) {
-            String localized = languageManager.getMessage(messageStr.substring(1));
-            if (!localized.equals(messageStr)) {
-                return localized;
-            }
-        }
-        return messageStr;
-    }
-
-    /**
-     * Builds the prefix string based on mode and level.
-     */
-    private static String buildPrefix(LogLevel level, PrefixMode mode, boolean forConsole) {
-        if (mode == PrefixMode.NONE) {
-            return "";
-        }
-
-        String prefixText;
-        switch (mode) {
-            case SHORT:
-                prefixText = config != null ? config.getShortName() : "UAP";
-                break;
-            case FULL:
-                prefixText = config != null ? config.getPluginName() : "UnknownPlugin";
-                break;
-            case CUSTOM:
-                prefixText = customPrefix;
-                break;
-            default:
-                prefixText = "";
-        }
-
-        // For levels other than INFO, append the level name
-        if (level != LogLevel.INFO) {
-            prefixText = prefixText + " " + level.name();
-        }
-
-        return "[" + prefixText + "]";
-    }
-
-    /**
-     * Determines if gradient should be used based on target.
-     */
-    private static boolean shouldUseGradient(LogTarget target) {
-        if (target == LogTarget.CONSOLE) {
-            return consoleUseGradient;
-        } else if (target == LogTarget.CHAT) {
-            return config != null && config.getPrefix() != null && config.getPrefix().isUseGradientChat();
-        }
-        return true; // Default for BOTH
-    }
-
-    /**
-     * Determines the recipients based on parameters.
-     */
-    private static Collection<CommandSender> determineRecipients(
-            @Nullable Player player,
-            @Nullable Collection<? extends Player> players,
-            boolean broadcast,
-            LogTarget target) {
-
-        // Console doesn't need recipients
-        if (target == LogTarget.CONSOLE) {
-            return Collections.emptyList();
-        }
-
-        // Broadcast to all
-        if (broadcast) {
-            return new ArrayList<>(Bukkit.getOnlinePlayers());
-        }
-
-        // Collect recipients
-        List<CommandSender> recipients = new ArrayList<>();
-
-        if (player != null) {
-            recipients.add(player);
-        }
-
-        if (players != null && !players.isEmpty()) {
-            recipients.addAll(players);
-        }
-
-        return recipients;
-    }
-
-    /**
-     * Delivers the message to recipients in a thread-safe manner.
-     */
-    private static void deliverMessage(Component component, Collection<CommandSender> recipients, LogTarget target) {
-        if (target == LogTarget.CONSOLE || target == LogTarget.BOTH) {
-            Bukkit.getConsoleSender().sendMessage(component);
-        }
-
-        if (target == LogTarget.CHAT || target == LogTarget.BOTH) {
-            if (!recipients.isEmpty()) {
-                if (Bukkit.isPrimaryThread()) {
-                    recipients.forEach(r -> r.sendMessage(component));
-                } else {
-                    Bukkit.getScheduler().runTask(pluginInstance,
-                            () -> recipients.forEach(r -> r.sendMessage(component)));
-                }
-            }
-        }
-    }
-
-    /**
-     * Map of legacy color codes to MiniMessage codes.
-     */
-    private static final Map<Character, String> LEGACY_TO_MM = Map.ofEntries(
-            Map.entry('0', "<black>"),
-            Map.entry('1', "<dark_blue>"),
-            Map.entry('2', "<dark_green>"),
-            Map.entry('3', "<dark_aqua>"),
-            Map.entry('4', "<dark_red>"),
-            Map.entry('5', "<dark_purple>"),
-            Map.entry('6', "<gold>"),
-            Map.entry('7', "<gray>"),
-            Map.entry('8', "<dark_gray>"),
-            Map.entry('9', "<blue>"),
-            Map.entry('a', "<green>"),
-            Map.entry('b', "<aqua>"),
-            Map.entry('c', "<red>"),
-            Map.entry('d', "<light_purple>"),
-            Map.entry('e', "<yellow>"),
-            Map.entry('f', "<white>"),
-            Map.entry('k', "<obfuscated>"),
-            Map.entry('l', "<bold>"),
-            Map.entry('m', "<strikethrough>"),
-            Map.entry('n', "<underlined>"),
-            Map.entry('o', "<italic>"),
-            Map.entry('r', "<reset>"));
-
-    /**
-     * Converts legacy color codes to MiniMessage codes.
-     * 
-     * @param in the string to convert
-     * @return the converted string
-     */
-    private static String legacyToMiniMessage(String in) {
-        if (in == null || in.isEmpty())
-            return in;
-
-        String s = in.replace('§', '&');
-
-        StringBuilder out = new StringBuilder(s.length() + 16);
-        for (int i = 0; i < s.length();) {
-            if (i + 13 < s.length()
-                    && s.charAt(i) == '&'
-                    && (s.charAt(i + 1) == 'x' || s.charAt(i + 1) == 'X')
-                    && s.charAt(i + 2) == '&' && s.charAt(i + 4) == '&'
-                    && s.charAt(i + 6) == '&' && s.charAt(i + 8) == '&'
-                    && s.charAt(i + 10) == '&' && s.charAt(i + 12) == '&') {
-
-                char a = s.charAt(i + 3), b = s.charAt(i + 5), c = s.charAt(i + 7),
-                        d = s.charAt(i + 9), e = s.charAt(i + 11), f = s.charAt(i + 13);
-                String hex = ("" + a + b + c + d + e + f).toLowerCase();
-                out.append("<#").append(hex).append(">");
-                i += 14;
-                continue;
-            }
-            if (i + 7 <= s.length() && s.charAt(i) == '&' && s.charAt(i + 1) == '#') {
-                String hex = s.substring(i + 2, i + 8);
-                if (hex.matches("(?i)[0-9a-f]{6}")) {
-                    out.append("<#").append(hex).append(">");
-                    i += 8;
-                    continue;
-                }
-            }
-            if (i + 1 < s.length() && s.charAt(i) == '&') {
-                char code = Character.toLowerCase(s.charAt(i + 1));
-                String tag = LEGACY_TO_MM.get(code);
-                if (tag != null) {
-                    out.append(tag);
-                    i += 2;
-                    continue;
-                }
-            }
-            out.append(s.charAt(i++));
-        }
-        return out.toString();
+        return LogMessageFormatter.format(message, level, target, directPlayer, playerCollection, placeholdersArgs);
     }
 
     /**
@@ -731,16 +335,12 @@ public final class Logger {
             return Component.empty();
         boolean hasMini = input.indexOf('<') >= 0 && input.indexOf('>') > input.indexOf('<');
         boolean hasLegacy = input.indexOf('&') >= 0 || input.indexOf('§') >= 0;
-        Component comp;
-        if (hasMini && hasLegacy) {
-            comp = miniMessage.deserialize(legacyToMiniMessage(input));
-        } else if (hasMini) {
-            comp = miniMessage.deserialize(input);
-        } else if (hasLegacy) {
-            comp = LEGACY.deserialize(input.replace('§', '&'));
-        } else {
-            comp = Component.text(input);
+        String source = input;
+        if (hasLegacy) {
+            source = ColorUtils.legacyToMiniMessage(source);
+            hasMini = true;
         }
+        Component comp = hasMini ? miniMessage.deserialize(source) : Component.text(source);
         if (comp.decoration(TextDecoration.ITALIC) == TextDecoration.State.NOT_SET) {
             comp = comp.decoration(TextDecoration.ITALIC, false);
         }
@@ -748,26 +348,19 @@ public final class Logger {
     }
 
     /**
-     * Get colors array for specific log level
+     * Resolves colors for the specified log level directly from the active configuration.
+     * Falls back to built-in defaults if the configuration isn't available yet.
+     *
+     * @param level log level being rendered
+     * @param forConsole true to use console palette, false for chat palette
+     * @return array of colors representing a gradient for the given level/target
      */
-    private static String[] getColorsForLevel(LogLevel level, boolean forConsole) {
-        if (forConsole) {
-            return switch (level) {
-                case ERROR -> consoleErrorColors;
-                case WARN -> consoleWarnColors;
-                case DEBUG -> consoleDebugColors;
-                case SUCCESS -> consoleSuccessColors;
-                default -> consoleDefaultGradient;
-            };
-        } else {
-            return switch (level) {
-                case ERROR -> chatErrorColors;
-                case WARN -> chatWarnColors;
-                case DEBUG -> chatDebugColors;
-                case SUCCESS -> chatSuccessColors;
-                default -> chatDefaultGradient;
-            };
+    public static String[] resolveColorsForLevel(LogLevel level, boolean forConsole) {
+        LoggerConfig cfg = config;
+        if (cfg == null) {
+            return LoggerConfig.defaultColors(level);
         }
+        return cfg.resolveColors(level, forConsole);
     }
 
     /**
@@ -832,37 +425,6 @@ public final class Logger {
         PrefixedLogger logger = prefixedLoggers.get(name);
         if (logger != null) {
             logger.setEnabled(enabled);
-        }
-    }
-
-    /**
-     * Logging levels enumeration.
-     */
-    public enum LogLevel {
-        /** Info log level. */
-        INFO("INFO"),
-        /** Warn log level. */
-        WARN("WARN"),
-        /** Error log level. */
-        ERROR("ERROR"),
-        /** Debug log level. */
-        DEBUG("DEBUG"),
-        /** Success log level. */
-        SUCCESS("SUCCESS");
-
-        private final String displayName;
-
-        LogLevel(String displayName) {
-            this.displayName = displayName;
-        }
-
-        /**
-         * Gets the display name of the log level.
-         * 
-         * @return the display name
-         */
-        public String getDisplayName() {
-            return displayName;
         }
     }
 }

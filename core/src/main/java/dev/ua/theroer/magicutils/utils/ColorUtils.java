@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -93,7 +94,7 @@ public final class ColorUtils {
     public static String[] getMainAndSecondaryColor(String name) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(name.getBytes());
+            byte[] hash = md.digest(name.getBytes(StandardCharsets.UTF_8));
 
             int r = 100 + (hash[0] & 0xFF) % 156;
             int g = 100 + (hash[1] & 0xFF) % 156;

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 
 /**
@@ -17,18 +18,25 @@ public class CommandArgument {
     private final Class<?> type;
     private final boolean optional;
     private final String defaultValue;
+    @Getter(AccessLevel.NONE)
     private final List<String> suggestions;
     private final String permission;
+    @Getter
     private final PermissionConditionType permissionCondition;
+    @Getter(AccessLevel.NONE)
     private final String[] permissionConditionArgs;
+    @Getter
     private final CompareMode compareMode;
     private final String permissionMessage;
+    @Getter
     private final String permissionNode;
     private final boolean includeArgumentSegment;
+    @Getter
     private final MagicPermissionDefault permissionDefault;
     private final boolean greedy;
     private final boolean permissionDeclared;
     private final boolean senderParameter;
+    @Getter(AccessLevel.NONE)
     private final AllowedSender[] allowedSenders;
 
     private CommandArgument(Builder builder) {
@@ -39,7 +47,9 @@ public class CommandArgument {
         this.suggestions = new ArrayList<>(builder.suggestions);
         this.permission = builder.permission;
         this.permissionCondition = builder.permissionCondition;
-        this.permissionConditionArgs = builder.permissionConditionArgs;
+        this.permissionConditionArgs = builder.permissionConditionArgs != null
+                ? builder.permissionConditionArgs.clone()
+                : new String[0];
         this.compareMode = builder.compareMode;
         this.permissionMessage = builder.permissionMessage;
         this.permissionNode = builder.permissionNode;
@@ -48,7 +58,9 @@ public class CommandArgument {
         this.greedy = builder.greedy;
         this.permissionDeclared = builder.permissionDeclared;
         this.senderParameter = builder.senderParameter;
-        this.allowedSenders = builder.allowedSenders;
+        this.allowedSenders = builder.allowedSenders != null
+                ? builder.allowedSenders.clone()
+                : new AllowedSender[] { AllowedSender.ANY };
     }
 
     /**
@@ -75,7 +87,7 @@ public class CommandArgument {
      * @return array of allowed senders
      */
     public AllowedSender[] getAllowedSenders() {
-        return allowedSenders;
+        return allowedSenders.clone();
     }
 
     /**
@@ -88,48 +100,12 @@ public class CommandArgument {
     }
 
     /**
-     * Condition type controlling when to check permission.
-     *
-     * @return condition type
-     */
-    public PermissionConditionType getPermissionCondition() {
-        return permissionCondition;
-    }
-
-    /**
      * Names of arguments participating in the permission condition.
      *
      * @return array of argument names
      */
     public String[] getPermissionConditionArgs() {
-        return permissionConditionArgs;
-    }
-
-    /**
-     * Comparison strategy for permission checks.
-     *
-     * @return compare mode
-     */
-    public CompareMode getCompareMode() {
-        return compareMode;
-    }
-
-    /**
-     * Default permission state for this argument.
-     *
-     * @return permission default
-     */
-    public MagicPermissionDefault getPermissionDefault() {
-        return permissionDefault;
-    }
-
-    /**
-     * Custom permission node segment (defaults to argument name).
-     *
-     * @return custom node or null
-     */
-    public String getPermissionNode() {
-        return permissionNode;
+        return permissionConditionArgs.clone();
     }
 
     /**
@@ -143,12 +119,21 @@ public class CommandArgument {
 
     /**
      * Checks if argument contains specific suggestion.
-     * 
+     *
      * @param suggestion the suggestion to check
      * @return true if suggestion exists
      */
     public boolean hasSuggestion(String suggestion) {
         return suggestions.contains(suggestion);
+    }
+
+    /**
+     * Available suggestions for this argument.
+     *
+     * @return copy of suggestion list
+     */
+    public List<String> getSuggestions() {
+        return new ArrayList<>(suggestions);
     }
 
     /**
@@ -269,7 +254,7 @@ public class CommandArgument {
          * @return this builder
          */
         public Builder permissionConditionArgs(String[] args) {
-            this.permissionConditionArgs = args != null ? args : new String[0];
+            this.permissionConditionArgs = args != null ? args.clone() : new String[0];
             return this;
         }
 
@@ -367,7 +352,8 @@ public class CommandArgument {
         */
         public Builder sender(AllowedSender[] allowed) {
             this.senderParameter = true;
-            this.allowedSenders = allowed != null && allowed.length > 0 ? allowed : new AllowedSender[] { AllowedSender.ANY };
+            this.allowedSenders = allowed != null && allowed.length > 0 ? allowed.clone()
+                    : new AllowedSender[] { AllowedSender.ANY };
             return this;
         }
 
