@@ -76,7 +76,24 @@ public class LanguageConfig {
      * @return map of custom message keys to values
      */
     public Map<String, String> getCustomMessages() {
-        return new HashMap<>(customMessages);
+        return customMessages;
+    }
+
+    /**
+     * Adds or updates a custom message entry.
+     *
+     * @param key message key
+     * @param value message text (null removes the key)
+     */
+    public void putCustomMessage(String key, String value) {
+        if (key == null || key.isEmpty()) {
+            return;
+        }
+        if (value == null) {
+            customMessages.remove(key);
+        } else {
+            customMessages.put(key, value);
+        }
     }
 
     /**

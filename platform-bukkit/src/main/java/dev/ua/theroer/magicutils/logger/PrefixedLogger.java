@@ -138,6 +138,15 @@ public class PrefixedLogger extends PrefixedLoggerMethods {
     }
 
     /**
+     * Creates a fluent log builder for info level messages with no prefix.
+     * 
+     * @return a new LogBuilder instance for chaining
+     */
+    public LogBuilder noPrefix() {
+        return new PrefixedLogBuilder(LogLevel.INFO).noPrefix();
+    }
+
+    /**
      * Creates a fluent log builder for info level.
      * 
      * @return LogBuilder for info level logging

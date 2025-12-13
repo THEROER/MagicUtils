@@ -99,6 +99,12 @@ public class LanguageManager {
 
             loadedLanguages.put(languageCode, config);
 
+            try {
+                configManager.save(config);
+            } catch (Exception e) {
+                logger.warn("Failed to persist language file for: " + languageCode, e);
+            }
+
             if (languageCode.equals(currentLanguage)) {
                 currentConfig = config;
             }
@@ -116,19 +122,13 @@ public class LanguageManager {
     }
 
     private void initializeLanguageDefaults(LanguageConfig config, String languageCode) {
-        String metaCode = config.getMetadata() != null ? config.getMetadata().getCode() : null;
-        boolean isNewFile = ("en".equalsIgnoreCase(metaCode) || metaCode == null) && !languageCode.equals("en");
-
-        if (isNewFile) {
-            Map<String, Map<String, String>> translations = createTranslations(languageCode);
-
-            if (!translations.isEmpty()) {
-                saveLanguageTranslations(languageCode, translations);
-                try {
-                    configManager.reload(config);
-                } catch (Exception e) {
-                    logger.warn("Failed to reload language config after setting translations", e);
-                }
+        Map<String, Map<String, String>> translations = createTranslations(languageCode);
+        if (!translations.isEmpty()) {
+            saveLanguageTranslations(languageCode, translations);
+            try {
+                configManager.reload(config);
+            } catch (Exception e) {
+                logger.warn("Failed to reload language config after setting translations", e);
             }
         }
     }
@@ -156,6 +156,28 @@ public class LanguageManager {
         this.currentLanguage = languageCode;
         this.currentConfig = loadedLanguages.get(languageCode);
         return true;
+    }
+
+    /**
+     * Add or update a custom message for a specific language (or current language when null).
+     * Saves the language file immediately.
+     *
+     * @param languageCode target language or null for current
+     * @param key message key
+     * @param value message text (null removes the key)
+     */
+    public void putCustomMessage(String languageCode, String key, String value) {
+        String code = languageCode != null ? languageCode : currentLanguage;
+        LanguageConfig cfg = loadedLanguages.get(code);
+        if (cfg == null) {
+            return;
+        }
+        cfg.putCustomMessage(key, value);
+        try {
+            configManager.save(cfg);
+        } catch (Exception e) {
+            logger.warn("Failed to save custom message '" + key + "' for language " + code, e);
+        }
     }
 
     /**
@@ -630,7 +652,7 @@ public class LanguageManager {
 
             for (Map.Entry<String, Map<String, String>> section : translations.entrySet()) {
                 for (Map.Entry<String, String> entry : section.getValue().entrySet()) {
-                    applyPath(data, section.getKey() + "." + entry.getKey(), entry.getValue());
+                    applyPathIfAbsent(data, section.getKey() + "." + entry.getKey(), entry.getValue());
                 }
             }
 
@@ -657,7 +679,7 @@ public class LanguageManager {
     }
 
     @SuppressWarnings("unchecked")
-    private void applyPath(Map<String, Object> root, String path, Object value) {
+    private void applyPathIfAbsent(Map<String, Object> root, String path, Object value) {
         String[] parts = path.split("\\.");
         Map<String, Object> current = root;
         for (int i = 0; i < parts.length - 1; i++) {
@@ -669,7 +691,11 @@ public class LanguageManager {
             }
             current = (Map<String, Object>) child;
         }
-        current.put(parts[parts.length - 1], value);
+        String leaf = parts[parts.length - 1];
+        Object existing = current.get(leaf);
+        if (existing == null) {
+            current.put(leaf, value);
+        }
     }
 
     private UUID extractUuid(Object obj) {

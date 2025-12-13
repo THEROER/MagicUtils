@@ -100,6 +100,14 @@ final class LanguageDefaults {
     static Map<String, Map<String, String>> localizedSections(String languageCode) {
         Map<String, Map<String, String>> translations = new LinkedHashMap<>();
         switch (languageCode) {
+            case "en":
+                translations.put("language", englishMetadata());
+                translations.put("magicutils.commands", englishCommands());
+                translations.put("magicutils.settings", englishSettings());
+                translations.put("magicutils.reload", englishReload());
+                translations.put("magicutils.system", englishSystem());
+                translations.put("magicutils.errors", englishErrors());
+                break;
             case "ru":
                 translations.put("language", russianMetadata());
                 translations.put("magicutils.commands", russianCommands());
@@ -120,6 +128,15 @@ final class LanguageDefaults {
                 break;
         }
         return translations;
+    }
+
+    private static Map<String, String> englishMetadata() {
+        LinkedHashMap<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("name", DEFAULT_NAME);
+        metadata.put("code", DEFAULT_CODE);
+        metadata.put("author", DEFAULT_AUTHOR);
+        metadata.put("version", DEFAULT_VERSION);
+        return metadata;
     }
 
     private static Map<String, String> russianMetadata() {
