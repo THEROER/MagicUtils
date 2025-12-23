@@ -1,7 +1,7 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
 import dev.ua.theroer.magicutils.commands.TypeParser;
-import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.commands.CompareMode;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -18,11 +18,17 @@ import java.util.List;
  * suggestions.
  */
 public class PlayerTypeParser implements TypeParser<Player> {
+    private final PrefixedLogger logger;
 
     /**
      * Default constructor for PlayerTypeParser.
      */
     public PlayerTypeParser() {
+        this(null);
+    }
+
+    public PlayerTypeParser(PrefixedLogger logger) {
+        this.logger = logger;
     }
 
     @Override
@@ -38,12 +44,16 @@ public class PlayerTypeParser implements TypeParser<Player> {
         }
 
         if ("@sender".equals(value) && sender instanceof Player) {
-            Logger.debug("Resolving @sender to: " + sender.getName());
+            if (logger != null) {
+                logger.debug("Resolving @sender to: " + sender.getName());
+            }
             return (Player) sender;
         }
 
         Player player = Bukkit.getPlayer(value);
-        Logger.debug("Player lookup for '" + value + "': " + (player != null ? player.getName() : "null"));
+        if (logger != null) {
+            logger.debug("Player lookup for '" + value + "': " + (player != null ? player.getName() : "null"));
+        }
         return player;
     }
 

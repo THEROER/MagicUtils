@@ -71,15 +71,6 @@ public class LanguageConfig {
     private Map<String, String> customMessages = new HashMap<>();
 
     /**
-     * Gets the custom messages map.
-     * 
-     * @return map of custom message keys to values
-     */
-    public Map<String, String> getCustomMessages() {
-        return customMessages;
-    }
-
-    /**
      * Adds or updates a custom message entry.
      *
      * @param key message key

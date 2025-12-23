@@ -1,6 +1,6 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -16,11 +16,17 @@ import java.util.List;
  * Type parser for OfflinePlayer arguments.
  */
 public class OfflinePlayerTypeParser implements TypeParser<OfflinePlayer> {
+    private final PrefixedLogger logger;
 
     /**
      * Default constructor for OfflinePlayerTypeParser.
      */
     public OfflinePlayerTypeParser() {
+        this(null);
+    }
+
+    public OfflinePlayerTypeParser(PrefixedLogger logger) {
+        this.logger = logger;
     }
 
     @Override
@@ -37,21 +43,27 @@ public class OfflinePlayerTypeParser implements TypeParser<OfflinePlayer> {
         }
 
         if ("@sender".equals(value) && sender instanceof Player) {
-            Logger.debug("Resolving @sender to: " + sender.getName());
+            if (logger != null) {
+                logger.debug("Resolving @sender to: " + sender.getName());
+            }
             return (OfflinePlayer) sender;
         }
 
         // Try online player first
         Player onlinePlayer = Bukkit.getPlayer(value);
         if (onlinePlayer != null) {
-            Logger.debug("OfflinePlayer lookup found online player: " + onlinePlayer.getName());
+            if (logger != null) {
+                logger.debug("OfflinePlayer lookup found online player: " + onlinePlayer.getName());
+            }
             return onlinePlayer;
         }
 
         // Then try offline player
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(value);
-        Logger.debug("OfflinePlayer lookup for '" + value + "': " +
-                (offlinePlayer.hasPlayedBefore() ? "found" : "not found"));
+        if (logger != null) {
+            logger.debug("OfflinePlayer lookup for '" + value + "': " +
+                    (offlinePlayer.hasPlayedBefore() ? "found" : "not found"));
+        }
         return offlinePlayer;
     }
 

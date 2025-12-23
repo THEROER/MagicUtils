@@ -25,6 +25,7 @@ public interface ListItemProcessor<T> {
     class ProcessResult<T> {
         @Getter
         private final T value;
+        @Getter
         private final boolean modified;
         private final boolean useDefault;
 
@@ -65,15 +66,6 @@ public interface ListItemProcessor<T> {
          */
         public static <T> ProcessResult<T> replaceWithDefault() {
             return new ProcessResult<>(null, false, true);
-        }
-
-        /**
-         * Checks if the item was modified during processing.
-         * 
-         * @return true if the item was modified
-         */
-        public boolean isModified() {
-            return modified;
         }
 
         /**

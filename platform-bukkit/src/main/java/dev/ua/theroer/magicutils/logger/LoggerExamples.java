@@ -11,11 +11,13 @@ import java.util.Map;
  * This class demonstrates all the new logging approaches after the refactoring.
  */
 public class LoggerExamples {
+    private final Logger logger;
 
     /**
      * Default constructor for LoggerExamples.
      */
-    public LoggerExamples() {
+    public LoggerExamples(Logger logger) {
+        this.logger = logger;
     }
 
     /**
@@ -23,21 +25,21 @@ public class LoggerExamples {
      */
     public void basicUsageExamples() {
         // Simple logging to default target (BOTH by default)
-        Logger.info("Server started successfully");
-        Logger.error(new RuntimeException("Test exception"));
-        Logger.debug(Map.of("tps", 19.5, "memory", "512MB"));
+        logger.info("Server started successfully");
+        logger.error(new RuntimeException("Test exception"));
+        logger.debug(Map.of("tps", 19.5, "memory", "512MB"));
 
         // Formatted messages
-        Logger.warn("Low memory: %d MB free", 256);
-        Logger.success("Loaded %d players in %d ms", 15, 1234);
+        logger.warn("Low memory: %d MB free", 256);
+        logger.success("Loaded %d players in %d ms", 15, 1234);
 
         // Console only
-        Logger.infoConsole("Console-only message");
-        Logger.errorConsole("Error details for administrators");
+        logger.infoConsole("Console-only message");
+        logger.errorConsole("Error details for administrators");
 
         // Broadcast to all players
-        Logger.infoAll("Server will restart in 5 minutes");
-        Logger.warnAll("Maintenance mode activated");
+        logger.infoAll("Server will restart in 5 minutes");
+        logger.warnAll("Maintenance mode activated");
     }
 
     /**
@@ -48,13 +50,13 @@ public class LoggerExamples {
      */
     public void playerTargetedExamples(Player player, List<Player> players) {
         // Send to specific player
-        Logger.info(player, "Welcome to the server!");
-        Logger.error(player, "You don't have permission for this command");
-        Logger.success(player, "Quest completed! Reward: %d gold", 100);
+        logger.info(player, "Welcome to the server!");
+        logger.error(player, "You don't have permission for this command");
+        logger.success(player, "Quest completed! Reward: %d gold", 100);
 
         // Send to multiple players
-        Logger.warn(players, "PvP will be enabled in 30 seconds");
-        Logger.debug(players, "Debug mode activated for your session");
+        logger.warn(players, "PvP will be enabled in 30 seconds");
+        logger.debug(players, "Debug mode activated for your session");
     }
 
     /**
@@ -62,9 +64,9 @@ public class LoggerExamples {
      */
     public void prefixedLoggerExamples() {
         // Create prefixed loggers for modules
-        PrefixedLogger auth = Logger.withPrefix("Auth");
-        PrefixedLogger db = Logger.withPrefix("Database");
-        PrefixedLogger api = Logger.withPrefix("API", "[WebAPI]");
+        PrefixedLogger auth = logger.withPrefix("Auth");
+        PrefixedLogger db = logger.withPrefix("Database");
+        PrefixedLogger api = logger.withPrefix("API", "[WebAPI]");
 
         // Use with generated methods
         PrefixedLogger.info(auth, "Authentication service started");
@@ -84,29 +86,29 @@ public class LoggerExamples {
      */
     public void fluentApiExamples(Player player, List<Player> moderators) {
         // Basic fluent usage
-        Logger.info()
+        logger.info()
                 .to(player)
                 .send("Your request has been processed");
 
         // No prefix for clean messages
-        Logger.warn()
+        logger.warn()
                 .to(moderators)
                 .noPrefix()
                 .send("&cSuspicious activity detected from player: " + player.getName());
 
         // Console only with custom formatting
-        Logger.error()
+        logger.error()
                 .toConsole()
                 .prefixMode(PrefixMode.SHORT)
                 .send(new IllegalStateException("Invalid game state"));
 
         // Broadcast with formatting
-        Logger.success()
+        logger.success()
                 .toAll()
                 .send("<rainbow>Event started! %d players participating</rainbow>", 25);
 
         // Complex targeting
-        Logger.debug()
+        logger.debug()
                 .to(moderators)
                 .target(LogTarget.BOTH)
                 .send(Map.of(
@@ -122,14 +124,14 @@ public class LoggerExamples {
      */
     public void localizationExamples(Player player) {
         // Direct localization key (requires @ prefix)
-        Logger.info(player, "@welcome.message");
-        Logger.error(player, "@error.insufficient_permissions");
+        logger.info(player, "@welcome.message");
+        logger.error(player, "@error.insufficient_permissions");
 
         // Mixed content with legacy and MiniMessage
-        Logger.success(player, "&aSuccess! <gold>You earned <bold>%d</bold> points!</gold>", 50);
+        logger.success(player, "&aSuccess! <gold>You earned <bold>%d</bold> points!</gold>", 50);
 
         // Gradient examples (if enabled in config)
-        Logger.infoAll("<gradient:#ff0000:#00ff00>Rainbow announcement!</gradient>");
+        logger.infoAll("<gradient:#ff0000:#00ff00>Rainbow announcement!</gradient>");
     }
 
     /**
@@ -137,27 +139,27 @@ public class LoggerExamples {
      */
     public void advancedExamples() {
         // Object logging - any object works
-        Logger.debug(new Object() {
+        logger.debug(new Object() {
             public String toString() {
                 return "CustomObject[id=123, status=ACTIVE]";
             }
         });
 
         // Collections and maps are formatted nicely
-        Logger.info(List.of("item1", "item2", "item3"));
-        Logger.debug(Map.of(
+        logger.info(List.of("item1", "item2", "item3"));
+        logger.debug(Map.of(
                 "server", "survival",
                 "players", 45,
                 "tps", 19.97));
 
         // Runtime configuration changes
-        Logger.setChatPrefixMode(PrefixMode.SHORT);
-        Logger.setConsolePrefixMode(PrefixMode.NONE);
-        Logger.setDefaultTarget(LogTarget.CONSOLE);
-        Logger.setConsoleStripFormatting(true);
+        logger.setChatPrefixMode(PrefixMode.SHORT);
+        logger.setConsolePrefixMode(PrefixMode.NONE);
+        logger.setDefaultTarget(LogTarget.CONSOLE);
+        logger.setConsoleStripFormatting(true);
 
         // Direct universal send for special cases
-        Logger.send(
+        logger.send(
                 LogLevel.INFO,
                 "Special message",
                 null, // no single player
@@ -175,26 +177,26 @@ public class LoggerExamples {
     public void migrationExamples(Player player) {
         // OLD: Logger.info("message")
         // NEW:
-        Logger.info("message");
+        logger.info("message");
 
         // OLD: Logger.error(exception)
         // NEW:
         Exception e = new Exception("test");
-        Logger.error(e);
+        logger.error(e);
 
         // OLD: Logger.broadcast("message")
         // NEW:
-        Logger.broadcast("message");
+        logger.broadcast("message");
         // or
-        Logger.infoAll("message");
+        logger.infoAll("message");
 
         // OLD: prefixedLogger.info("message")
         // NEW:
-        PrefixedLogger module = Logger.withPrefix("Module");
+        PrefixedLogger module = logger.withPrefix("Module");
         PrefixedLogger.info(module, "message");
 
         // OLD: Logger.send(LogLevel.INFO, "message", player)
         // NEW:
-        Logger.info(player, "message");
+        logger.info(player, "message");
     }
 }

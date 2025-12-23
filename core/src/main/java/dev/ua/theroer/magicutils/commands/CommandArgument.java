@@ -73,15 +73,6 @@ public class CommandArgument {
     }
 
     /**
-     * Whether this argument should be auto-filled with the executing sender.
-     *
-     * @return true if represents sender
-     */
-    public boolean isSenderParameter() {
-        return senderParameter;
-    }
-
-    /**
      * Allowed sender kinds for this parameter.
      *
      * @return array of allowed senders
@@ -106,15 +97,6 @@ public class CommandArgument {
      */
     public String[] getPermissionConditionArgs() {
         return permissionConditionArgs.clone();
-    }
-
-    /**
-     * Whether permission node should include ".argument." prefix.
-     *
-     * @return true if ".argument." is included
-     */
-    public boolean isIncludeArgumentSegment() {
-        return includeArgumentSegment;
     }
 
     /**

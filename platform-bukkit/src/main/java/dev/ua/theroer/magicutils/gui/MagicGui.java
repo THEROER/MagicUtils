@@ -10,8 +10,7 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.logger.MessageParser;
 import lombok.Getter;
 
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,12 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 /**
  * Advanced GUI system with MiniMessage support and convenience methods.
  */
 public class MagicGui {
-    private static final PrefixedLogger logger = Logger.create("MagicGui", "[GUI]");
+    private final Logger logger;
 
     private final JavaPlugin plugin;
     @Getter
@@ -62,7 +62,7 @@ public class MagicGui {
      * @param title  the title of the GUI (supports MiniMessage)
      */
     public MagicGui(JavaPlugin plugin, Player owner, int size, String title) {
-        this(plugin, owner, size, Logger.parseSmart(title));
+        this(plugin, owner, size, MessageParser.parseSmart(title));
     }
 
     /**
@@ -77,6 +77,7 @@ public class MagicGui {
         this.plugin = plugin;
         this.owner = owner;
         this.ownerUuid = owner.getUniqueId();
+        this.logger = plugin.getLogger();
         this.PLACEHOLDER_KEY = new NamespacedKey(plugin, "gui_placeholder");
         this.inventory = Bukkit.createInventory(owner, size, title);
     }
@@ -168,10 +169,10 @@ public class MagicGui {
      * @return created ItemStack
      */
     public ItemStack createItem(Material material, String name, List<String> lore) {
-        Component displayName = name != null ? Logger.parseSmart(name) : null;
+        Component displayName = name != null ? MessageParser.parseSmart(name) : null;
         List<Component> loreComponents = lore == null || lore.isEmpty()
                 ? null
-                : lore.stream().map(Logger::parseSmart).toList();
+                : lore.stream().map(MessageParser::parseSmart).toList();
         return createItem(material, displayName, loreComponents);
     }
 
@@ -399,8 +400,7 @@ public class MagicGui {
      * @param policy the slot policy
      */
     public void makeEditable(int slot, SlotPolicy policy) {
-        PrefixedLogger.debug(logger,
-                "[MagicGui] Making slot " + slot + " editable with policy: editable=" + policy.editable() +
+        logger.fine("[MagicGui] Making slot " + slot + " editable with policy: editable=" + policy.editable() +
                         ", consumesItem=" + policy.consumesItem() + ", hasPlaceholder=" + (policy.placeholder() != null)
                         +
                         ", id=" + policy.id());
@@ -531,18 +531,18 @@ public class MagicGui {
     }
 
     void handleClick(InventoryClickEvent event) {
-        PrefixedLogger.debug(logger, "[MagicGui] handleClick called");
+        logger.fine("[MagicGui] handleClick called");
 
         // Check if click is from owner
         if (!event.getWhoClicked().getUniqueId().equals(ownerUuid)) {
-            PrefixedLogger.debug(logger, "[MagicGui] Click cancelled - not owner");
+            logger.fine("[MagicGui] Click cancelled - not owner");
             event.setCancelled(true);
             return;
         }
 
         // Check if view is valid
         if (event.getView() == null || event.getView().getTopInventory() == null) {
-            PrefixedLogger.error(logger, "[MagicGui] Invalid inventory view in click event");
+            logger.severe("[MagicGui] Invalid inventory view in click event");
             event.setCancelled(true);
             return;
         }
@@ -554,15 +554,14 @@ public class MagicGui {
         // Debug logging
         String guiTitle = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
                 .serialize(event.getView().title());
-        PrefixedLogger.debug(logger, "[MagicGui] === Click Event ===");
-        PrefixedLogger.debug(logger, "[MagicGui] GUI: " + guiTitle);
-        PrefixedLogger.debug(logger, "[MagicGui] Slot: " + slot + " (isGuiArea=" + isGuiArea + ")");
-        PrefixedLogger.debug(logger,
-                "[MagicGui] Action: " + event.getAction() + ", isShiftClick=" + event.isShiftClick());
-        PrefixedLogger.debug(logger, "[MagicGui] Cursor: " + event.getCursor());
-        PrefixedLogger.debug(logger, "[MagicGui] Current: " + event.getCurrentItem());
-        PrefixedLogger.debug(logger, "[MagicGui] Has editable slots: " + hasEditableSlots());
-        PrefixedLogger.debug(logger, "[MagicGui] Slot policies count: " + slotPolicies.size());
+        logger.fine("[MagicGui] === Click Event ===");
+        logger.fine("[MagicGui] GUI: " + guiTitle);
+        logger.fine("[MagicGui] Slot: " + slot + " (isGuiArea=" + isGuiArea + ")");
+        logger.fine("[MagicGui] Action: " + event.getAction() + ", isShiftClick=" + event.isShiftClick());
+        logger.fine("[MagicGui] Cursor: " + event.getCursor());
+        logger.fine("[MagicGui] Current: " + event.getCurrentItem());
+        logger.fine("[MagicGui] Has editable slots: " + hasEditableSlots());
+        logger.fine("[MagicGui] Slot policies count: " + slotPolicies.size());
 
         // Handle special actions that affect multiple slots
         switch (event.getAction()) {
@@ -589,11 +588,11 @@ public class MagicGui {
                     return;
                 }
                 // Handle editable slot
-                PrefixedLogger.debug(logger, "[MagicGui] Handling editable slot click");
+                logger.fine("[MagicGui] Handling editable slot click");
                 handleEditableSlotClick(event, slot, policy);
             } else {
                 // Not editable - cancel and check for callback
-                PrefixedLogger.debug(logger, "[MagicGui] Slot " + slot + " is not editable, cancelling");
+                logger.fine("[MagicGui] Slot " + slot + " is not editable, cancelling");
                 event.setCancelled(true);
                 Consumer<InventoryClickEvent> callback = buttonCallbacks.get(slot);
                 if (callback != null) {
@@ -602,8 +601,7 @@ public class MagicGui {
                         try {
                             callback.accept(event);
                         } catch (Exception e) {
-                            PrefixedLogger.error(logger,
-                                    "Error in button callback for slot " + slot + ": " + e.getMessage());
+                            logger.severe("Error in button callback for slot " + slot + ": " + e.getMessage());
                             e.printStackTrace();
                         }
                     }
@@ -613,10 +611,10 @@ public class MagicGui {
             // Clicked in player inventory
             if (!hasEditableSlots()) {
                 // No editable slots - block all interactions
-                PrefixedLogger.debug(logger, "[MagicGui] Blocking player inventory click - no editable slots");
+                logger.fine("[MagicGui] Blocking player inventory click - no editable slots");
                 event.setCancelled(true);
             } else {
-                PrefixedLogger.debug(logger, "[MagicGui] Allowing player inventory click - has editable slots");
+                logger.fine("[MagicGui] Allowing player inventory click - has editable slots");
             }
         }
     }
@@ -626,13 +624,13 @@ public class MagicGui {
 
         // Check permission
         if (policy.permission() != null && !policy.permission().test(player)) {
-            PrefixedLogger.debug(logger, "[MagicGui] Permission denied for slot " + slot);
+            logger.fine("[MagicGui] Permission denied for slot " + slot);
             event.setCancelled(true);
             player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
 
-        PrefixedLogger.debug(logger, "[MagicGui] Editable slot policy: consumesItem=" + policy.consumesItem() +
+        logger.fine("[MagicGui] Editable slot policy: consumesItem=" + policy.consumesItem() +
                 ", hasPlaceholder=" + (policy.placeholder() != null) +
                 ", hasValidator=" + (policy.validator() != null) +
                 ", hasOnChange=" + (policy.onChange() != null));
@@ -642,14 +640,14 @@ public class MagicGui {
         ItemStack placeholder = policy.placeholder();
         boolean consumesItem = policy.consumesItem();
 
-        PrefixedLogger.debug(logger, "[MagicGui] Editable slot " + slot + " clicked, consumesItem=" + consumesItem
+        logger.fine("[MagicGui] Editable slot " + slot + " clicked, consumesItem=" + consumesItem
                 + ", action=" + event.getAction());
 
         // Handle placeholder logic
         if (placeholder != null && current != null && current.isSimilar(placeholder)) {
             // Trying to take placeholder
             if (cursor == null || cursor.getType() == Material.AIR) {
-                PrefixedLogger.debug(logger, "[MagicGui] Preventing placeholder pickup");
+                logger.fine("[MagicGui] Preventing placeholder pickup");
                 event.setCancelled(true);
                 return;
             }
@@ -667,7 +665,7 @@ public class MagicGui {
                 if (cursor != null && cursor.getType() != Material.AIR) {
                     // Validate item
                     if (policy.validator() != null && !policy.validator().test(player, cursor)) {
-                        PrefixedLogger.debug(logger, "[MagicGui] Item validation failed for slot " + slot);
+                        logger.fine("[MagicGui] Item validation failed for slot " + slot);
                         event.setCancelled(true);
                         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                         return;
@@ -810,8 +808,7 @@ public class MagicGui {
                     try {
                         policy.onChange().accept(finalItem);
                     } catch (Exception e) {
-                        PrefixedLogger.error(logger,
-                                "Error in onChange callback for slot " + slot + ": " + e.getMessage());
+                        logger.severe("Error in onChange callback for slot " + slot + ": " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
@@ -902,7 +899,7 @@ public class MagicGui {
             try {
                 closeCallback.accept(event);
             } catch (Exception e) {
-                PrefixedLogger.error(logger, "Error in close callback: " + e.getMessage());
+                logger.severe("Error in close callback: " + e.getMessage());
                 e.printStackTrace();
             }
         }

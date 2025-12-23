@@ -1,6 +1,6 @@
 package dev.ua.theroer.magicutils.gui;
 
-import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.logger.MessageParser;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -44,7 +44,7 @@ public final class MagicItem {
      */
     public MagicItem name(String name) {
         if (name != null) {
-            meta.displayName(Logger.parseSmart(name));
+            meta.displayName(MessageParser.parseSmart(name));
         }
         return this;
     }
@@ -71,7 +71,7 @@ public final class MagicItem {
     public MagicItem lore(List<String> lore) {
         if (lore != null && !lore.isEmpty()) {
             List<Component> loreComponents = lore.stream()
-                    .map(Logger::parseSmart)
+                    .map(MessageParser::parseSmart)
                     .toList();
             meta.lore(loreComponents);
         }
@@ -116,7 +116,7 @@ public final class MagicItem {
         }
 
         for (String line : lines) {
-            currentLore.add(Logger.parseSmart(line));
+            currentLore.add(MessageParser.parseSmart(line));
         }
 
         meta.lore(currentLore);

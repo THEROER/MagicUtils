@@ -2,8 +2,9 @@ package dev.ua.theroer.magicutils.integrations;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.ua.theroer.magicutils.Logger;
 import lombok.Getter;
+
+import java.util.logging.Logger;
 
 /**
  * Abstract class for all integrations with external plugins
@@ -16,6 +17,7 @@ public abstract class Integration<T> {
 
     /** The plugin instance that creates this integration */
     protected final JavaPlugin plugin;
+    private final Logger logger;
     /** The name of the target plugin for integration */
     @Getter
     protected final String targetPlugin;
@@ -35,6 +37,7 @@ public abstract class Integration<T> {
     protected Integration(JavaPlugin plugin, String targetPlugin) {
         this.plugin = plugin;
         this.targetPlugin = targetPlugin;
+        this.logger = plugin != null ? plugin.getLogger() : Logger.getLogger("MagicUtils");
     }
 
     /**
@@ -75,18 +78,18 @@ public abstract class Integration<T> {
             try {
                 implementation = createImplementation();
                 onIntegrationEnabled();
-                Logger.info().toConsole().send(targetPlugin + " detected: integration enabled.");
+                logInfo(targetPlugin + " detected: integration enabled.");
             } catch (Throwable e) {
                 available = false;
                 implementation = createFallback();
                 onIntegrationFailed(e);
-                Logger.warn().toConsole().send("Failed to initialize integration with " + targetPlugin
+                logWarn("Failed to initialize integration with " + targetPlugin
                         + ", using fallback. " + e.getMessage());
             }
         } else {
             implementation = createFallback();
             onIntegrationDisabled();
-            Logger.info().toConsole().send(targetPlugin + " not found: using fallback.");
+            logInfo(targetPlugin + " not found: using fallback.");
         }
 
         initialized = true;
@@ -130,5 +133,17 @@ public abstract class Integration<T> {
      */
     protected void onIntegrationDisabled() {
         // Does nothing by default
+    }
+
+    private void logInfo(String message) {
+        if (logger != null) {
+            logger.info(message);
+        }
+    }
+
+    private void logWarn(String message) {
+        if (logger != null) {
+            logger.warning(message);
+        }
     }
 }

@@ -29,9 +29,11 @@ import org.bukkit.command.CommandSender;
         permissionDefault = MagicPermissionDefault.TRUE
 )
 public class HelpCommand extends MagicCommand {
+    private final Logger logger;
 
     /** Default constructor. */
-    public HelpCommand() {
+    public HelpCommand(Logger logger) {
+        this.logger = logger;
     }
 
     /**
@@ -59,14 +61,14 @@ public class HelpCommand extends MagicCommand {
                 }
             }
 
-            Logger.noPrefix().to(sender).send("§eAvailable commands (" + unique.size() + "):");
+            logger.noPrefix().to(sender).send("§eAvailable commands (" + unique.size() + "):");
             unique.forEach((name, cmd) -> {
                 CommandInfo info = MagicCommand.getCommandInfo(cmd.getClass()).orElse(null);
                 if (info == null) return;
                 String usage = manager.generateUsage(cmd, info);
-                Logger.noPrefix().to(sender).send(" §7" + usage + " §8- §f" + info.description());
+                logger.noPrefix().to(sender).send(" §7" + usage + " §8- §f" + info.description());
             });
-            Logger.noPrefix().to(sender).send("§7Use /mhelp <command> for details.");
+            logger.noPrefix().to(sender).send("§7Use /mhelp <command> for details.");
             return CommandResult.success(false, "");
         }
 
@@ -94,16 +96,16 @@ public class HelpCommand extends MagicCommand {
         }
 
         List<MagicCommand.SubCommandInfo> subs = MagicCommand.getSubCommands(target.getClass());
-        Logger.noPrefix().to(sender).send("§e/" + info.name() + " §7- §f" + info.description());
-        Logger.noPrefix().to(sender).send("§7Usage: §f" + manager.generateUsage(target, info));
+        logger.noPrefix().to(sender).send("§e/" + info.name() + " §7- §f" + info.description());
+        logger.noPrefix().to(sender).send("§7Usage: §f" + manager.generateUsage(target, info));
 
         if (subCommand == null || subCommand.isEmpty()) {
             if (!subs.isEmpty()) {
-                Logger.noPrefix().to(sender).send("§7Subcommands:");
+                logger.noPrefix().to(sender).send("§7Subcommands:");
                 for (MagicCommand.SubCommandInfo sub : subs) {
                     List<CommandArgument> args = MagicCommand.getArguments(sub.method);
                     String argStr = formatArgs(args);
-                    Logger.noPrefix().to(sender).send(" §f/" + info.name() + " " + sub.annotation.name() +
+                    logger.noPrefix().to(sender).send(" §f/" + info.name() + " " + sub.annotation.name() +
                             (argStr.isEmpty() ? "" : " " + argStr) +
                             (sub.annotation.description().isEmpty() ? "" : " §8- §7" + sub.annotation.description()));
                 }
@@ -117,8 +119,8 @@ public class HelpCommand extends MagicCommand {
             }
             List<CommandArgument> args = MagicCommand.getArguments(match.method);
             String argStr = formatArgs(args);
-            Logger.noPrefix().to(sender).send("§7Subcommand: §f" + match.annotation.name());
-            Logger.noPrefix().to(sender).send("§7Usage: §f/" + info.name() + " " + match.annotation.name() +
+            logger.noPrefix().to(sender).send("§7Subcommand: §f" + match.annotation.name());
+            logger.noPrefix().to(sender).send("§7Usage: §f/" + info.name() + " " + match.annotation.name() +
                     (argStr.isEmpty() ? "" : " " + argStr));
         }
 

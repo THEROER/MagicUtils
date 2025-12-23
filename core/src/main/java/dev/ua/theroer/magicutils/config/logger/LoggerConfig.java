@@ -326,6 +326,8 @@ public class LoggerConfig {
         DefaultSettings target = new DefaultSettings();
         if (source != null) {
             target.setTarget(source.getTarget());
+            target.setTextMaxLength(source.getTextMaxLength());
+            target.setPlaceholderEngineOrder(source.getPlaceholderEngineOrder());
         }
         return target;
     }

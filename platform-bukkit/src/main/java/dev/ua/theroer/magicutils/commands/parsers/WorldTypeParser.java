@@ -1,6 +1,6 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.bukkit.Bukkit;
@@ -17,11 +17,17 @@ import java.util.List;
  * Type parser for World arguments with @current support.
  */
 public class WorldTypeParser implements TypeParser<World> {
+    private final PrefixedLogger logger;
 
     /**
      * Default constructor for WorldTypeParser.
      */
     public WorldTypeParser() {
+        this(null);
+    }
+
+    public WorldTypeParser(PrefixedLogger logger) {
+        this.logger = logger;
     }
 
     /**
@@ -51,12 +57,16 @@ public class WorldTypeParser implements TypeParser<World> {
         }
 
         if ("@current".equals(value) && sender instanceof Player) {
-            Logger.debug("Resolving @current to world: " + ((Player) sender).getWorld().getName());
+            if (logger != null) {
+                logger.debug("Resolving @current to world: " + ((Player) sender).getWorld().getName());
+            }
             return ((Player) sender).getWorld();
         }
 
         World world = Bukkit.getWorld(value);
-        Logger.debug("World lookup for '" + value + "': " + (world != null ? world.getName() : "null"));
+        if (logger != null) {
+            logger.debug("World lookup for '" + value + "': " + (world != null ? world.getName() : "null"));
+        }
         return world;
     }
 

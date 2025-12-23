@@ -18,6 +18,7 @@ subprojects {
             'platform-api'     : 'magicutils-api',
             'platform-neoforge': 'magicutils-neoforge',
             'platform-bukkit'  : 'magicutils-bukkit',
+            'platform-fabric'  : 'magicutils-fabric',
             'core'             : 'magicutils-core',
             'processor'        : 'magicutils-processor'
     ]
@@ -28,6 +29,7 @@ subprojects {
         maven { url 'https://oss.sonatype.org/content/groups/public/' }
         maven { url 'https://repo.papermc.io/repository/maven-public/' }
         maven { url 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+        maven { url 'https://maven.nucleoid.xyz' }
         maven { url 'https://maven.neoforged.net/releases' }
     }
 
@@ -66,6 +68,7 @@ subprojects {
 
     tasks.withType(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configureEach {
         archiveClassifier.set('all')
+        zip64 true
         mergeServiceFiles()
         relocate 'org.yaml.snakeyaml', 'dev.ua.theroer.magicutils.shaded.snakeyaml'
         if (project.name == 'processor') {
@@ -77,20 +80,22 @@ subprojects {
         dependsOn tasks.named('shadowJar')
     }
 
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                artifactId = moduleName
-                if (project.name == 'processor') {
-                    from components.java
-                } else {
-                    from components.java
+    if (project.name != 'platform-fabric') {
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    artifactId = moduleName
+                    if (project.name == 'processor') {
+                        from components.java
+                    } else {
+                        from components.java
+                    }
                 }
-            }
-            if (project.name != 'processor') {
-                register('mavenShadow', MavenPublication) {
-                    artifactId = "${moduleName}-all"
-                    artifact tasks.named('shadowJar')
+                if (project.name != 'processor') {
+                    register('mavenShadow', MavenPublication) {
+                        artifactId = "${moduleName}-all"
+                        artifact tasks.named('shadowJar')
+                    }
                 }
             }
         }

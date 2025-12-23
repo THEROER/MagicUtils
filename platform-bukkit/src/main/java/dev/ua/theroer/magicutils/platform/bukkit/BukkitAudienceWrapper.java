@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.platform.bukkit;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -11,6 +12,7 @@ import java.util.UUID;
  * Wraps a Bukkit {@link CommandSender} as a platform-agnostic {@link Audience}.
  */
 public class BukkitAudienceWrapper implements Audience {
+    @Getter
     private final CommandSender sender;
 
     /**

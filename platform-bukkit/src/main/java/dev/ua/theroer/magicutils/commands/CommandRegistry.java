@@ -21,7 +21,8 @@ import java.util.*;
  * Handles registration and initialization of commands in the plugin.
  */
 public class CommandRegistry {
-    private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
+    private static PrefixedLogger logger;
+    private static Logger messageLogger;
 
     @Getter
     private static CommandManager commandManager;
@@ -43,18 +44,23 @@ public class CommandRegistry {
      * @param plugin           the JavaPlugin instance
      * @param permissionPrefix the prefix for permissions
      */
-    public static void initialize(JavaPlugin plugin, String permissionPrefix) {
+    public static void initialize(JavaPlugin plugin, String permissionPrefix, Logger loggerInstance) {
         CommandRegistry.plugin = plugin;
         CommandRegistry.permissionPrefix = permissionPrefix;
-        CommandRegistry.commandManager = new CommandManager(permissionPrefix, plugin.getName());
+        if (loggerInstance == null) {
+            throw new IllegalArgumentException("Logger instance is required");
+        }
+        logger = loggerInstance.withPrefix("Commands", "[Commands]");
+        messageLogger = loggerInstance;
+        CommandRegistry.commandManager = new CommandManager(permissionPrefix, plugin.getName(), logger);
 
         try {
             Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
             commandMapField.setAccessible(true);
             commandMap = (CommandMap) commandMapField.get(Bukkit.getServer());
-            PrefixedLogger.info(logger, "Command registry initialized successfully");
+            logger.info("Command registry initialized successfully");
         } catch (Exception e) {
-            PrefixedLogger.error(logger, "Failed to initialize command registry: " + e.getMessage());
+            logger.error("Failed to initialize command registry: " + e.getMessage());
             throw new RuntimeException(InternalMessages.ERR_FAILED_GET_COMMANDMAP.get(), e);
         }
     }
@@ -104,7 +110,9 @@ public class CommandRegistry {
         BukkitCommandWrapper bukkitCommand = BukkitCommandWrapper.create(
                 info.name(),
                 commandManager,
-                Arrays.asList(info.aliases()));
+                Arrays.asList(info.aliases()),
+                logger,
+                messageLogger);
 
         bukkitCommand.setDescription(info.description());
         bukkitCommand.setUsage(usage);
@@ -129,17 +137,17 @@ public class CommandRegistry {
         boolean registered = commandMap.register(plugin.getName().toLowerCase(), bukkitCommand);
 
         if (registered) {
-            PrefixedLogger.info(logger, InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(),
+            logger.info(InternalMessages.SYS_COMMAND_REGISTERED.get("command", info.name(),
                     "aliases", Arrays.toString(info.aliases())));
-            PrefixedLogger.info(logger, InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
+            logger.info(InternalMessages.SYS_COMMAND_USAGE.get("usage", usage));
             if (!subCommandUsages.isEmpty()) {
-                PrefixedLogger.info(logger, InternalMessages.SYS_SUBCOMMAND_USAGES.get());
+                logger.info(InternalMessages.SYS_SUBCOMMAND_USAGES.get());
                 for (String subUsage : subCommandUsages) {
-                    PrefixedLogger.info(logger, "  " + subUsage);
+                    logger.info("  " + subUsage);
                 }
             }
         } else {
-            PrefixedLogger.warn(logger,
+            logger.warn(
                     "Failed to register command: " + info.name() + " (command may already exist)");
         }
 
@@ -153,7 +161,9 @@ public class CommandRegistry {
             BukkitCommandWrapper aliasCommand = BukkitCommandWrapper.create(
                     alias,
                     commandManager,
-                    Arrays.asList(info.name()));
+                    Arrays.asList(info.name()),
+                    logger,
+                    messageLogger);
             aliasCommand.setDescription(info.description());
             aliasCommand.setUsage(aliasUsage);
             if (!commandPermission.isEmpty()) {
@@ -172,7 +182,7 @@ public class CommandRegistry {
 
             boolean aliasRegistered = commandMap.register(plugin.getName().toLowerCase(), aliasCommand);
             if (aliasRegistered) {
-                PrefixedLogger.info(logger,
+                logger.info(
                         InternalMessages.SYS_ALIAS_REGISTERED.get("alias", alias, "command", info.name()));
                 // Do not print alias usage; primary usage already covers subcommands.
             }
@@ -259,10 +269,10 @@ public class CommandRegistry {
         if (existing == null) {
             Permission permission = new Permission(node, description != null ? description : "", bukkitDefault);
             pluginManager.addPermission(permission);
-            PrefixedLogger.debug(logger, "Registered permission node: " + node + " (default " + bukkitDefault + ")");
+            logger.debug("Registered permission node: " + node + " (default " + bukkitDefault + ")");
         } else if (existing.getDefault() != bukkitDefault) {
             existing.setDefault(bukkitDefault);
-            PrefixedLogger.debug(logger, "Updated permission default for node: " + node + " -> " + bukkitDefault);
+            logger.debug("Updated permission default for node: " + node + " -> " + bukkitDefault);
         }
     }
 
@@ -315,8 +325,8 @@ public class CommandRegistry {
 
     private static void logPermissionSummary(String commandName,
             EnumMap<MagicPermissionDefault, Integer> counts) {
-        PrefixedLogger.info(logger, "Permissions for /" + commandName + ":");
-        counts.forEach((def, count) -> PrefixedLogger.info(logger, "  " + def.name() + ": " + count));
+        logger.info("Permissions for /" + commandName + ":");
+        counts.forEach((def, count) -> logger.info("  " + def.name() + ": " + count));
     }
 
     private static String resolvePermission(String annotationPermission, String fallbackPermission) {
@@ -397,12 +407,12 @@ public class CommandRegistry {
             removed |= knownCommands.remove(plugin.getName().toLowerCase() + ":" + commandName.toLowerCase()) != null;
 
             if (removed && !silent) {
-                PrefixedLogger.info(logger, InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
+                logger.info(InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
             }
             return removed;
         } catch (Exception e) {
             if (!silent) {
-                PrefixedLogger.warn(logger, "Failed to unregister command " + commandName + ": " + e.getMessage());
+                logger.warn("Failed to unregister command " + commandName + ": " + e.getMessage());
             }
             return false;
         }

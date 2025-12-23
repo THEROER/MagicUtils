@@ -179,5 +179,18 @@ public final class ColorUtils {
         }
         return out.toString();
     }
+
+    /**
+     * Converts ampersand color codes to legacy section sign codes.
+     *
+     * @param input string with legacy color codes (&amp;a, &amp;#ff0000, etc.)
+     * @return string with section sign color codes
+     */
+    public static String toLegacy(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return input.replace('&', '§');
+    }
 }
 

@@ -1,2 +1,9 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url 'https://maven.fabricmc.net/' }
+    }
+}
+
 rootProject.name = 'MagicUtils'
-include 'platform-api', 'core', 'platform-bukkit', 'platform-neoforge', 'processor'
+include 'platform-api', 'core', 'platform-bukkit', 'platform-neoforge', 'platform-fabric', 'processor'

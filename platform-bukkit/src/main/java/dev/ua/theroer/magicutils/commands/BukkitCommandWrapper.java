@@ -5,7 +5,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
@@ -21,7 +20,8 @@ import java.util.ArrayList;
  * command system.
  */
 public class BukkitCommandWrapper extends Command {
-    private static final PrefixedLogger logger = Logger.create("Commands", "[Commands]");
+    private final PrefixedLogger commandLogger;
+    private final dev.ua.theroer.magicutils.Logger messageLogger;
     private final CommandManager commandManager;
 
     @Getter
@@ -35,9 +35,14 @@ public class BukkitCommandWrapper extends Command {
      * @param commandManager the command manager
      * @param aliases        the command aliases
      */
-    private BukkitCommandWrapper(String name, CommandManager commandManager) {
+    private BukkitCommandWrapper(String name,
+                                 CommandManager commandManager,
+                                 PrefixedLogger commandLogger,
+                                 dev.ua.theroer.magicutils.Logger messageLogger) {
         super(name);
         this.commandManager = commandManager;
+        this.commandLogger = commandLogger;
+        this.messageLogger = messageLogger;
     }
 
     /**
@@ -48,8 +53,12 @@ public class BukkitCommandWrapper extends Command {
      * @param aliases        optional aliases
      * @return fully initialised wrapper
      */
-    public static BukkitCommandWrapper create(String name, CommandManager commandManager, List<String> aliases) {
-        BukkitCommandWrapper wrapper = new BukkitCommandWrapper(name, commandManager);
+    public static BukkitCommandWrapper create(String name,
+                                              CommandManager commandManager,
+                                              List<String> aliases,
+                                              PrefixedLogger commandLogger,
+                                              dev.ua.theroer.magicutils.Logger messageLogger) {
+        BukkitCommandWrapper wrapper = new BukkitCommandWrapper(name, commandManager, commandLogger, messageLogger);
         if (aliases != null && !aliases.isEmpty()) {
             wrapper.setAliases(aliases);
         }
@@ -67,7 +76,7 @@ public class BukkitCommandWrapper extends Command {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         try {
-            PrefixedLogger.debug(logger, "Executing command: " + commandLabel + " with args: "
+            commandLogger.debug("Executing command: " + commandLabel + " with args: "
                     + Arrays.toString(args) + " by " + sender.getName());
 
             CommandResult result = commandManager.execute(commandLabel, sender, Arrays.asList(args));
@@ -75,26 +84,26 @@ public class BukkitCommandWrapper extends Command {
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
                     if (sender instanceof Player) {
-                        Logger.success().to((Player) sender).send(result.getMessage());
+                        messageLogger.success().to((Player) sender).send(result.getMessage());
                     } else {
-                        Logger.success(result.getMessage());
+                        messageLogger.success(result.getMessage());
                     }
                 } else {
                     if (sender instanceof Player) {
-                        Logger.error().to((Player) sender).send(result.getMessage());
+                        messageLogger.error().to((Player) sender).send(result.getMessage());
                     } else {
-                        Logger.error(result.getMessage());
+                        messageLogger.error(result.getMessage());
                     }
                 }
             }
 
             return result.isSuccess();
         } catch (Exception e) {
-            Logger.error("Error executing command " + commandLabel + ": " + e.getMessage());
+            messageLogger.error("Error executing command " + commandLabel + ": " + e.getMessage());
             if (sender instanceof Player) {
-                Logger.error().to((Player) sender).send(InternalMessages.CMD_INTERNAL_ERROR.get());
+                messageLogger.error().to((Player) sender).send(InternalMessages.CMD_INTERNAL_ERROR.get());
             } else {
-                Logger.error(InternalMessages.CMD_INTERNAL_ERROR.get());
+                messageLogger.error(InternalMessages.CMD_INTERNAL_ERROR.get());
             }
             e.printStackTrace();
             return false;
@@ -113,7 +122,7 @@ public class BukkitCommandWrapper extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias,
             @NotNull String[] args) {
         try {
-            PrefixedLogger.debug(logger,
+            commandLogger.debug(
                     "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
 
             List<String> suggestions = commandManager.getSuggestions(alias, sender, Arrays.asList(args));
@@ -125,11 +134,11 @@ public class BukkitCommandWrapper extends Command {
                 }
             }
 
-            PrefixedLogger.debug(logger,
+            commandLogger.debug(
                     "Generated " + filteredSuggestions.size() + " suggestions: " + filteredSuggestions);
             return filteredSuggestions;
         } catch (Exception e) {
-            Logger.error("Error generating tab completions for " + alias + ": " + e.getMessage());
+            messageLogger.error("Error generating tab completions for " + alias + ": " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>();
         }

@@ -34,6 +34,7 @@ public class LogMethodsProcessor extends AbstractProcessor {
     private static final String RUNTIME_LOG_LEVEL = "dev.ua.theroer.magicutils.logger.LogLevel";
     private static final String RUNTIME_LOG_TARGET = "dev.ua.theroer.magicutils.logger.LogTarget";
     private static final Set<String> DEFAULT_LEVELS = Set.of("TRACE", "INFO", "WARN", "ERROR", "DEBUG", "SUCCESS");
+    private static final String DEFAULT_AUDIENCE_TYPE = "dev.ua.theroer.magicutils.platform.Audience";
 
     private Filer filer;
 
@@ -83,8 +84,9 @@ public class LogMethodsProcessor extends AbstractProcessor {
 
         Set<String> levels = extractLevels(type);
         boolean staticMethods = shouldGenerateStatic(type);
+        String audienceType = resolveAudienceType(type);
 
-        String source = buildSource(packageName, generatedName, simpleName, levels, staticMethods);
+        String source = buildSource(packageName, generatedName, simpleName, levels, staticMethods, audienceType);
         try {
             JavaFileObject file = filer.createSourceFile(packageName + "." + generatedName, type);
             try (Writer writer = file.openWriter()) {
@@ -126,7 +128,8 @@ public class LogMethodsProcessor extends AbstractProcessor {
         return DEFAULT_LEVELS;
     }
 
-    private String buildSource(String packageName, String generatedName, String loggerClass, Set<String> levels, boolean staticMethods) {
+    private String buildSource(String packageName, String generatedName, String loggerClass, Set<String> levels,
+            boolean staticMethods, String audienceType) {
         StringBuilder sb = new StringBuilder();
         if (!packageName.isEmpty()) {
             sb.append("package ").append(packageName).append(";\n\n");
@@ -156,16 +159,16 @@ public class LogMethodsProcessor extends AbstractProcessor {
                 addMethod(sb, true, false, loggerClass, methodBase + "All", "String fmt, Object... args",
                         loggerClass + ".send(" + levelRef + ", String.format(fmt, args), null, null, " + RUNTIME_LOG_TARGET + ".BOTH, true);");
 
-                addMethod(sb, true, false, loggerClass, methodBase, "org.bukkit.entity.Player p, Object msg",
+                addMethod(sb, true, false, loggerClass, methodBase, audienceType + " p, Object msg",
                         loggerClass + ".send(" + levelRef + ", msg, p, null, " + RUNTIME_LOG_TARGET + ".CHAT, false);");
-                addMethod(sb, true, false, loggerClass, methodBase, "org.bukkit.entity.Player p, String fmt, Object... args",
+                addMethod(sb, true, false, loggerClass, methodBase, audienceType + " p, String fmt, Object... args",
                         loggerClass + ".send(" + levelRef + ", String.format(fmt, args), p, null, " + RUNTIME_LOG_TARGET + ".CHAT, false);");
 
                 addMethod(sb, true, false, loggerClass, methodBase,
-                        "java.util.Collection<? extends org.bukkit.entity.Player> players, Object msg",
+                        "java.util.Collection<? extends " + audienceType + "> players, Object msg",
                         loggerClass + ".send(" + levelRef + ", msg, null, players, " + RUNTIME_LOG_TARGET + ".CHAT, false);");
                 addMethod(sb, true, false, loggerClass, methodBase,
-                        "java.util.Collection<? extends org.bukkit.entity.Player> players, String fmt, Object... args",
+                        "java.util.Collection<? extends " + audienceType + "> players, String fmt, Object... args",
                         loggerClass + ".send(" + levelRef + ", String.format(fmt, args), null, players, " + RUNTIME_LOG_TARGET + ".CHAT, false);");
             }
 
@@ -177,11 +180,11 @@ public class LogMethodsProcessor extends AbstractProcessor {
         } else {
             // Declare abstract hooks that subclass must implement (PrefixedLogger already has them)
             sb.append("    protected abstract void send(").append(RUNTIME_LOG_LEVEL).append(" level, Object message);\n")
-                    .append("    protected abstract void send(").append(RUNTIME_LOG_LEVEL).append(" level, Object message, org.bukkit.entity.Player player);\n")
-                    .append("    protected abstract void send(").append(RUNTIME_LOG_LEVEL).append(" level, Object message, org.bukkit.entity.Player player, boolean all);\n")
+                    .append("    protected abstract void send(").append(RUNTIME_LOG_LEVEL).append(" level, Object message, ").append(audienceType).append(" player);\n")
+                    .append("    protected abstract void send(").append(RUNTIME_LOG_LEVEL).append(" level, Object message, ").append(audienceType).append(" player, boolean all);\n")
                     .append("    protected abstract void sendToConsole(").append(RUNTIME_LOG_LEVEL).append(" level, Object message);\n")
                     .append("    protected abstract void sendToPlayers(").append(RUNTIME_LOG_LEVEL)
-                    .append(" level, Object message, java.util.Collection<? extends org.bukkit.entity.Player> players);\n\n");
+                    .append(" level, Object message, java.util.Collection<? extends ").append(audienceType).append("> players);\n\n");
 
             for (String level : levels) {
                 String methodBase = level.toLowerCase(Locale.ROOT);
@@ -202,16 +205,16 @@ public class LogMethodsProcessor extends AbstractProcessor {
                 addMethod(sb, false, true, loggerClass, methodBase + "All", "String fmt, Object... args",
                         "this.send(" + levelRef + ", String.format(fmt, args), null, true);");
 
-                addMethod(sb, false, true, loggerClass, methodBase, "org.bukkit.entity.Player p, Object msg",
+                addMethod(sb, false, true, loggerClass, methodBase, audienceType + " p, Object msg",
                         "this.send(" + levelRef + ", msg, p);");
-                addMethod(sb, false, true, loggerClass, methodBase, "org.bukkit.entity.Player p, String fmt, Object... args",
+                addMethod(sb, false, true, loggerClass, methodBase, audienceType + " p, String fmt, Object... args",
                         "this.send(" + levelRef + ", String.format(fmt, args), p);");
 
                 addMethod(sb, false, true, loggerClass, methodBase,
-                        "java.util.Collection<? extends org.bukkit.entity.Player> players, Object msg",
+                        "java.util.Collection<? extends " + audienceType + "> players, Object msg",
                         "this.sendToPlayers(" + levelRef + ", msg, players);");
                 addMethod(sb, false, true, loggerClass, methodBase,
-                        "java.util.Collection<? extends org.bukkit.entity.Player> players, String fmt, Object... args",
+                        "java.util.Collection<? extends " + audienceType + "> players, String fmt, Object... args",
                         "this.sendToPlayers(" + levelRef + ", String.format(fmt, args), players);");
             }
         }
@@ -259,5 +262,25 @@ public class LogMethodsProcessor extends AbstractProcessor {
             }
         }
         return true;
+    }
+
+    private String resolveAudienceType(TypeElement type) {
+        for (AnnotationMirror mirror : type.getAnnotationMirrors()) {
+            if (mirror.getAnnotationType().toString().equals(LOG_METHODS_ANNOTATION)) {
+                for (var entry : mirror.getElementValues().entrySet()) {
+                    ExecutableElement key = entry.getKey();
+                    if (key.getSimpleName().contentEquals("audienceType")) {
+                        Object value = entry.getValue().getValue();
+                        if (value instanceof String) {
+                            String resolved = ((String) value).trim();
+                            if (!resolved.isEmpty()) {
+                                return resolved;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return DEFAULT_AUDIENCE_TYPE;
     }
 }

@@ -22,4 +22,11 @@ public @interface LogMethods {
      * @return true if methods should be static, false otherwise
      */
     boolean staticMethods() default true;
+
+    /**
+     * Audience type used for player-targeted overloads.
+     *
+     * @return fully-qualified type name for audience/player parameters
+     */
+    String audienceType() default "dev.ua.theroer.magicutils.platform.Audience";
 }

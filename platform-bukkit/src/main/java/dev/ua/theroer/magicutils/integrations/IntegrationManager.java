@@ -2,7 +2,7 @@ package dev.ua.theroer.magicutils.integrations;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.ua.theroer.magicutils.Logger;
+import java.util.logging.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +15,7 @@ import java.util.function.Function;
 public class IntegrationManager {
 
     private final JavaPlugin plugin;
+    private final Logger logger;
     private final Map<String, Integration<?>> integrations = new ConcurrentHashMap<>();
 
     /**
@@ -24,6 +25,7 @@ public class IntegrationManager {
      */
     public IntegrationManager(JavaPlugin plugin) {
         this.plugin = plugin;
+        this.logger = plugin != null ? plugin.getLogger() : Logger.getLogger("MagicUtils");
     }
 
     /**
@@ -36,7 +38,7 @@ public class IntegrationManager {
      */
     public <T> Integration<T> register(String key, Integration<T> integration) {
         integrations.put(key, integration);
-        Logger.info().toConsole().send("Registered integration: " + key + " -> " + integration.getTargetPlugin());
+        logInfo("Registered integration: " + key + " -> " + integration.getTargetPlugin());
         return integration;
     }
 
@@ -93,16 +95,16 @@ public class IntegrationManager {
      * Useful for eager loading on plugin startup
      */
     public void initializeAll() {
-        Logger.info().toConsole().send("Initializing all integrations...");
+        logInfo("Initializing all integrations...");
         for (Map.Entry<String, Integration<?>> entry : integrations.entrySet()) {
             String key = entry.getKey();
             Integration<?> integration = entry.getValue();
             try {
                 integration.isAvailable(); // This will trigger initialization
-                Logger.info().toConsole().send("Integration " + key + " initialized: " +
+                logInfo("Integration " + key + " initialized: " +
                         (integration.isAvailable() ? "available" : "unavailable"));
             } catch (Exception e) {
-                Logger.error().toConsole().send("Error initializing integration " + key + ": " + e.getMessage());
+                logWarn("Error initializing integration " + key + ": " + e.getMessage());
             }
         }
     }
@@ -127,6 +129,18 @@ public class IntegrationManager {
      */
     public void clear() {
         integrations.clear();
-        Logger.info().toConsole().send("All integrations cleared");
+        logInfo("All integrations cleared");
+    }
+
+    private void logInfo(String message) {
+        if (logger != null) {
+            logger.info(message);
+        }
+    }
+
+    private void logWarn(String message) {
+        if (logger != null) {
+            logger.warning(message);
+        }
     }
 }

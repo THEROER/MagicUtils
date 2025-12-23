@@ -4,6 +4,9 @@ import dev.ua.theroer.magicutils.config.annotations.Comment;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Default settings for logger behavior.
  * Controls default message routing and formatting options.
@@ -20,4 +23,12 @@ public class DefaultSettings {
     @ConfigValue("target")
     @Comment("Default target for messages (CHAT, CONSOLE, BOTH)")
     private String target = "BOTH";
+
+    @ConfigValue("text-max-length")
+    @Comment("Max JSON length for Component/Text conversion (Fabric only)")
+    private int textMaxLength = 262_144;
+
+    @ConfigValue("placeholder-engine-order")
+    @Comment("Order for external placeholder engines (MINI_PLACEHOLDERS, PB4, PAPI)")
+    private List<String> placeholderEngineOrder = new ArrayList<>(List.of("MINI_PLACEHOLDERS", "PB4"));
 }

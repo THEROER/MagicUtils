@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api 'net.kyori:adventure-api:4.14.0'
+    api 'net.kyori:adventure-api:4.24.0'
     compileOnly 'org.jetbrains:annotations:24.0.1'
     compileOnly 'org.projectlombok:lombok:1.18.32'
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
