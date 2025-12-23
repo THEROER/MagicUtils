@@ -91,7 +91,11 @@ public final class FabricPlaceholderRegistrar implements MagicPlaceholders.Place
         try {
             Class.forName(probeClass);
             Class<?> backend = Class.forName(backendClass);
-            return (FabricPlaceholderBackend) backend.getDeclaredConstructor().newInstance();
+            try {
+                return (FabricPlaceholderBackend) backend.getDeclaredConstructor(LoggerCore.class).newInstance(logger);
+            } catch (NoSuchMethodException ignored) {
+                return (FabricPlaceholderBackend) backend.getDeclaredConstructor().newInstance();
+            }
         } catch (Throwable ignored) {
             return null;
         }

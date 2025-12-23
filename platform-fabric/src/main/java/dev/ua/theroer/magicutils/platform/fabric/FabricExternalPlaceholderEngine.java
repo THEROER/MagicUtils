@@ -79,20 +79,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
 
     @Override
     public String apply(Audience audience, String text) {
-        if (!pb4Available() || text == null || text.isEmpty()) {
-            return text;
-        }
-        LoggerConfig config = logger.getConfig();
-        if (!isEngineEnabled(config, ENGINE_PB4) || !isPb4BeforeMini(config)) {
-            return text;
-        }
-        Object context = resolvePb4Context(audience);
-        if (context == null) {
-            return text;
-        }
-        String resolved = replacePb4(text, context, PB4_PERCENT_PATTERN);
-        resolved = replacePb4(resolved, context, PB4_BRACE_PATTERN);
-        return resolved;
+        return applyPb4(audience, text, true);
     }
 
     @Override
@@ -227,6 +214,26 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return null;
         }
         return null;
+    }
+
+    String applyPb4(Audience audience, String text, boolean respectOrder) {
+        if (!pb4Available() || text == null || text.isEmpty()) {
+            return text;
+        }
+        LoggerConfig config = logger.getConfig();
+        if (!isEngineEnabled(config, ENGINE_PB4)) {
+            return text;
+        }
+        if (respectOrder && !isPb4BeforeMini(config)) {
+            return text;
+        }
+        Object context = resolvePb4Context(audience);
+        if (context == null) {
+            return text;
+        }
+        String resolved = replacePb4(text, context, PB4_PERCENT_PATTERN);
+        resolved = replacePb4(resolved, context, PB4_BRACE_PATTERN);
+        return resolved;
     }
 
     private ServerPlayerEntity extractPlayer(Audience audience) {

@@ -13,11 +13,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class PapiPlaceholderBackend implements BukkitPlaceholderBackend {
-    private final JavaPlugin plugin;
     private final Map<String, MagicUtilsExpansion> expansions = new ConcurrentHashMap<>();
 
     PapiPlaceholderBackend(JavaPlugin plugin) {
-        this.plugin = plugin;
     }
 
     @Override

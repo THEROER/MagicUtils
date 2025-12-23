@@ -57,6 +57,10 @@ public class LoggerConfig {
     @Comment("Whether to show debug messages for command processing")
     private boolean debugCommands = false;
 
+    @ConfigValue("debug-placeholders")
+    @Comment("Whether to log placeholder resolution details")
+    private boolean debugPlaceholders = false;
+
     @ConfigValue("auto-localization")
     @Comment("Whether to automatically localize messages using LanguageManager")
     @Setter
@@ -328,6 +332,8 @@ public class LoggerConfig {
             target.setTarget(source.getTarget());
             target.setTextMaxLength(source.getTextMaxLength());
             target.setPlaceholderEngineOrder(source.getPlaceholderEngineOrder());
+            target.setMiniPlaceholdersMode(source.getMiniPlaceholdersMode());
+            target.setPb4Mode(source.getPb4Mode());
         }
         return target;
     }
