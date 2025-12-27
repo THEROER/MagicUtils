@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "magicutils-config",
+  "version": "${version}",
+  "name": "MagicUtils Config",
+  "description": "Config system for MagicUtils.",
+  "authors": [
+    "THEROER"
+  ],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "*",
+    "java": ">=21"
+  }
+}

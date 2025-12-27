@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "magicutils-placeholders",
+  "version": "${version}",
+  "name": "MagicUtils Placeholders",
+  "description": "Placeholder registry for MagicUtils.",
+  "authors": [
+    "THEROER"
+  ],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "*",
+    "java": ">=21"
+  }
+}

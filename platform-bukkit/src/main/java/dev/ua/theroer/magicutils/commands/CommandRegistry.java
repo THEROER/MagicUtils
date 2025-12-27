@@ -3,7 +3,6 @@ package dev.ua.theroer.magicutils.commands;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
-import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.commands.parsers.LanguageKeyTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.OfflinePlayerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
@@ -17,7 +16,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -117,6 +115,23 @@ public class CommandRegistry {
     }
 
     /**
+     * Registers multiple builder-defined commands at once.
+     *
+     * @param specs command specs to register
+     */
+    public static void registerAll(CommandSpec<?>... specs) {
+        if (commandManager == null) {
+            throw new IllegalStateException(InternalMessages.ERR_REGISTRY_NOT_INITIALIZED.get());
+        }
+        if (specs == null) {
+            return;
+        }
+        for (CommandSpec<?> spec : specs) {
+            register(spec);
+        }
+    }
+
+    /**
      * Registers a single command.
      * 
      * @param command the command to register
@@ -187,7 +202,7 @@ public class CommandRegistry {
                     "Failed to register command: " + info.name() + " (command may already exist)");
         }
 
-        generatePermissions(clazz, info);
+        generatePermissions(command, info);
 
         // Register aliases with same usage information
         for (String alias : info.aliases()) {
@@ -225,7 +240,19 @@ public class CommandRegistry {
         }
     }
 
-    private static void generatePermissions(Class<?> clazz, CommandInfo info) {
+    /**
+     * Registers a single builder-defined command.
+     *
+     * @param spec command spec to register
+     */
+    public static void register(CommandSpec<?> spec) {
+        if (spec == null) {
+            return;
+        }
+        register(new DynamicCommand(spec));
+    }
+
+    private static void generatePermissions(MagicCommand command, CommandInfo info) {
         Set<String> permissions = new LinkedHashSet<>();
         EnumMap<MagicPermissionDefault, Integer> counts = new EnumMap<>(MagicPermissionDefault.class);
 
@@ -237,35 +264,34 @@ public class CommandRegistry {
             incrementCount(counts, info.permissionDefault());
         }
 
-        Method executeMethod = findExecuteMethod(clazz);
-        if (executeMethod != null) {
-            List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
-            registerArgumentPermissions(info.name(), null, arguments, permissions, counts);
+        CommandManager.CommandAction<CommandSender> directAction = commandManager.getDirectAction(command, info);
+        if (directAction != null) {
+            registerArgumentPermissions(info.name(), null, directAction.arguments(), permissions, counts);
         }
 
-        for (MagicCommand.SubCommandInfo subInfo : MagicCommand.getSubCommands(clazz)) {
-            SubCommand sub = subInfo.annotation;
-            String subPermission = resolvePermission(sub.permission(),
-                    "commands." + info.name() + ".subcommand." + sub.name());
+        for (CommandManager.CommandAction<CommandSender> subInfo : commandManager.getSubCommandActions(command)) {
+            String subPermission = resolvePermission(subInfo.permission(),
+                    "commands." + info.name() + ".subcommand." + subInfo.name());
             if (!subPermission.isEmpty()) {
-                permissions.add(subPermission + " (" + sub.permissionDefault() + ")");
-                String description = !sub.description().isEmpty() ? sub.description() : info.description();
-                platform.ensurePermissionRegistered(subPermission, sub.permissionDefault(), description);
-                incrementCount(counts, sub.permissionDefault());
+                permissions.add(subPermission + " (" + subInfo.permissionDefault() + ")");
+                String description = !subInfo.description().isEmpty() ? subInfo.description() : info.description();
+                platform.ensurePermissionRegistered(subPermission, subInfo.permissionDefault(), description);
+                incrementCount(counts, subInfo.permissionDefault());
             }
 
-            List<CommandArgument> arguments = MagicCommand.getArguments(subInfo.method);
-            registerArgumentPermissions(info.name(), sub.name(), arguments, permissions, counts);
+            registerArgumentPermissions(info.name(), subInfo.name(), subInfo.arguments(), permissions, counts);
         }
 
         // Wildcards for convenience
-        String commandWildcard = "commands." + info.name() + ".*";
-        platform.ensurePermissionRegistered(commandWildcard, info.permissionDefault(), "All permissions for /" + info.name());
+        String commandWildcard = resolvePermission(null, "commands." + info.name() + ".*");
+        platform.ensurePermissionRegistered(commandWildcard, info.permissionDefault(),
+                "All permissions for /" + info.name());
         permissions.add(commandWildcard + " (" + info.permissionDefault() + ")");
         incrementCount(counts, info.permissionDefault());
 
-        String subWildcard = "commands." + info.name() + ".subcommand.*";
-        platform.ensurePermissionRegistered(subWildcard, info.permissionDefault(), "All subcommands for /" + info.name());
+        String subWildcard = resolvePermission(null, "commands." + info.name() + ".subcommand.*");
+        platform.ensurePermissionRegistered(subWildcard, info.permissionDefault(),
+                "All subcommands for /" + info.name());
         permissions.add(subWildcard + " (" + info.permissionDefault() + ")");
         incrementCount(counts, info.permissionDefault());
 
@@ -292,15 +318,6 @@ public class CommandRegistry {
             platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(), desc);
             incrementCount(counts, argument.getPermissionDefault());
         }
-    }
-
-    private static Method findExecuteMethod(Class<?> clazz) {
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getName().equals("execute") && !method.isAnnotationPresent(SubCommand.class)) {
-                return method;
-            }
-        }
-        return null;
     }
 
     private static String buildArgumentPermission(String normalizedCommandName, String subCommandName, CommandArgument argument) {

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "magicutils-commands",
+  "version": "${version}",
+  "name": "MagicUtils Commands",
+  "description": "Command framework for MagicUtils.",
+  "authors": [
+    "THEROER"
+  ],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "*",
+    "java": ">=21",
+    "magicutils-logger": "*"
+  }
+}

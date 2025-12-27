@@ -1,0 +1,13 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':config')
+    api project(':lang')
+    implementation 'net.kyori:adventure-text-minimessage:4.24.0'
+    implementation 'net.kyori:adventure-text-serializer-plain:4.24.0'
+    compileOnly 'org.jetbrains:annotations:24.0.1'
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+}

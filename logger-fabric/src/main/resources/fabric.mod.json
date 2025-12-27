@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "magicutils-logger-fabric",
+  "version": "${version}",
+  "name": "MagicUtils Logger (Fabric)",
+  "description": "Fabric logger integration for MagicUtils.",
+  "authors": [
+    "THEROER"
+  ],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "*",
+    "java": ">=21",
+    "magicutils-logger": "*",
+    "magicutils-placeholders-fabric": "*",
+    "magicutils": "*"
+  }
+}

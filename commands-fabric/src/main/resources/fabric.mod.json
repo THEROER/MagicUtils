@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "magicutils-commands-fabric",
+  "version": "${version}",
+  "name": "MagicUtils Commands (Fabric)",
+  "description": "Fabric command integration for MagicUtils.",
+  "authors": [
+    "THEROER"
+  ],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "*",
+    "java": ">=21",
+    "magicutils-commands": "*",
+    "magicutils-logger-fabric": "*",
+    "magicutils": "*"
+  }
+}

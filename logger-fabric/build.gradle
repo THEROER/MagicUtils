@@ -1,0 +1,50 @@
+plugins {
+    id 'fabric-loom' version '1.13.6'
+}
+
+def minecraftVersion = project.findProperty('minecraft_version') ?: '1.21.10'
+def yarnMappings = project.findProperty('yarn_mappings') ?: '1.21.10+build.3'
+def loaderVersion = project.findProperty('loader_version') ?: '0.18.3'
+
+dependencies {
+    api project(':logger')
+    api project(':platform-fabric')
+    api project(':placeholders-fabric')
+
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
+    mappings "net.fabricmc:yarn:${yarnMappings}:v2"
+    modCompileOnly "net.fabricmc:fabric-loader:${loaderVersion}"
+
+    implementation 'net.kyori:adventure-text-minimessage:4.24.0'
+    implementation 'net.kyori:adventure-text-serializer-ansi:4.24.0'
+    implementation 'net.kyori:adventure-text-serializer-plain:4.24.0'
+
+    compileOnly 'org.jetbrains:annotations:24.0.1'
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+}
+
+tasks.named('remapJar') {
+    dependsOn tasks.named('jar')
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'magicutils-logger-fabric'
+            from components.java
+            artifacts.removeAll { it.classifier == null && it.extension == 'jar' }
+            artifact(tasks.named('remapJar')) {
+                builtBy tasks.named('remapJar')
+            }
+        }
+        register('mavenShadow', MavenPublication) {
+            artifactId = 'magicutils-logger-fabric-all'
+            artifact tasks.named('shadowJar')
+        }
+    }
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = false
+}
