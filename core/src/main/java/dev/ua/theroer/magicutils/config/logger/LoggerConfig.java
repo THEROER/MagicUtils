@@ -53,10 +53,6 @@ public class LoggerConfig {
     @Setter
     private String shortName = "";
 
-    @ConfigValue("debug-commands")
-    @Comment("Whether to show debug messages for command processing")
-    private boolean debugCommands = false;
-
     @ConfigValue("debug-placeholders")
     @Comment("Whether to log placeholder resolution details")
     private boolean debugPlaceholders = false;

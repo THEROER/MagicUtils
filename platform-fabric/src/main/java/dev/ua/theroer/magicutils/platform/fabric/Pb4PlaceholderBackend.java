@@ -108,7 +108,7 @@ final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
         if (logger == null || logger.getConfig() == null) {
             return false;
         }
-        return logger.getConfig().isDebugPlaceholders() || logger.getConfig().isDebugCommands();
+        return logger.getConfig().isDebugPlaceholders();
     }
 
     private static String sanitize(String value) {

@@ -91,7 +91,6 @@ public final class BukkitConsoleAudience implements Audience {
         }
         Level jul = toJulLevel(level);
         if (!logger.isLoggable(jul)) {
-            logger.log(Level.INFO, message);
             return;
         }
         logger.log(jul, message);
@@ -189,8 +188,6 @@ public final class BukkitConsoleAudience implements Audience {
                     case DEBUG -> {
                         if (isEnabled(isDebugEnabled, logger)) {
                             debug.invoke(logger, message);
-                        } else {
-                            info.invoke(logger, message);
                         }
                     }
                     case TRACE -> {
@@ -198,8 +195,6 @@ public final class BukkitConsoleAudience implements Audience {
                             trace.invoke(logger, message);
                         } else if (isEnabled(isDebugEnabled, logger)) {
                             debug.invoke(logger, message);
-                        } else {
-                            info.invoke(logger, message);
                         }
                     }
                     case SUCCESS, INFO -> info.invoke(logger, message);

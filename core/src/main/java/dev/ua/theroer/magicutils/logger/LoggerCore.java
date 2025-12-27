@@ -204,9 +204,6 @@ public class LoggerCore extends LoggerCoreMethods {
                      LogTarget target,
                      boolean broadcast,
                      Object... placeholders) {
-        if (LogLevel.DEBUG == level && config != null && !config.isDebugCommands()) {
-            return;
-        }
         Component component = parseMessage(message, level, target, audience, audiences, placeholders);
         Collection<Audience> recipients = LogDispatcher.determineRecipients(audience, audiences, broadcast, target, platform);
         LogDispatcher.deliver(platform, component, recipients, target);

@@ -80,8 +80,6 @@ public final class FabricConsoleAudience implements Audience {
             case DEBUG -> {
                 if (slf4j.isDebugEnabled()) {
                     slf4j.debug(message);
-                } else {
-                    slf4j.info(message);
                 }
             }
             case TRACE -> {
@@ -89,8 +87,6 @@ public final class FabricConsoleAudience implements Audience {
                     slf4j.trace(message);
                 } else if (slf4j.isDebugEnabled()) {
                     slf4j.debug(message);
-                } else {
-                    slf4j.info(message);
                 }
             }
             case SUCCESS, INFO -> slf4j.info(message);
