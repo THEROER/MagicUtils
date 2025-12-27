@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
+import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -81,6 +83,9 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         if (targetType.equals(ServerCommandSource.class)) {
             return sender;
         }
+        if (targetType.equals(MagicSender.class)) {
+            return new FabricMagicSender(sender, opLevel);
+        }
         if (targetType.equals(ServerPlayerEntity.class)) {
             ServerPlayerEntity player = getPlayerSafe(sender);
             if (player != null) {
@@ -99,6 +104,41 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         }
 
         throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+    }
+
+    private static final class FabricMagicSender implements MagicSender {
+        private final ServerCommandSource sender;
+        private final Audience audience;
+        private final int opLevel;
+
+        private FabricMagicSender(ServerCommandSource sender, int opLevel) {
+            this.sender = sender;
+            this.opLevel = opLevel;
+            this.audience = new FabricCommandAudience(sender, false);
+        }
+
+        @Override
+        public Audience audience() {
+            return audience;
+        }
+
+        @Override
+        public String name() {
+            return sender != null ? sender.getName() : "unknown";
+        }
+
+        @Override
+        public boolean hasPermission(String permission) {
+            if (permission == null || permission.isEmpty()) {
+                return true;
+            }
+            return sender != null && sender.hasPermissionLevel(opLevel);
+        }
+
+        @Override
+        public Object handle() {
+            return sender;
+        }
     }
 
     private ServerPlayerEntity getPlayerSafe(ServerCommandSource sender) {

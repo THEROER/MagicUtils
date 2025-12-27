@@ -32,7 +32,6 @@ public final class CommandRegistry {
     @Getter
     private static CommandManager<ServerCommandSource> commandManager;
     private static FabricCommandPlatform platform;
-    private static String permissionPrefix;
     private static String modName;
 
     private CommandRegistry() {
@@ -59,7 +58,6 @@ public final class CommandRegistry {
      */
     public static void initialize(String modName, String permissionPrefix, Logger loggerInstance, int opLevel) {
         CommandRegistry.modName = modName != null ? modName : "";
-        CommandRegistry.permissionPrefix = permissionPrefix;
         if (loggerInstance == null) {
             throw new IllegalArgumentException("Logger instance is required");
         }

@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
+import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitAudienceWrapper;
 import org.bukkit.Bukkit;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
@@ -90,6 +92,9 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
         if (targetType.equals(CommandSender.class)) {
             return effective;
         }
+        if (targetType.equals(MagicSender.class)) {
+            return new BukkitMagicSender(effective);
+        }
         if (targetType.equals(ProxiedCommandSender.class)) {
             if (sender instanceof ProxiedCommandSender p) {
                 return p;
@@ -131,6 +136,39 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
         }
 
         throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
+    }
+
+    private static final class BukkitMagicSender implements MagicSender {
+        private final CommandSender sender;
+        private final Audience audience;
+
+        private BukkitMagicSender(CommandSender sender) {
+            this.sender = sender;
+            this.audience = new BukkitAudienceWrapper(sender);
+        }
+
+        @Override
+        public Audience audience() {
+            return audience;
+        }
+
+        @Override
+        public String name() {
+            return sender != null ? sender.getName() : "unknown";
+        }
+
+        @Override
+        public boolean hasPermission(String permission) {
+            if (permission == null || permission.isEmpty()) {
+                return true;
+            }
+            return sender != null && sender.hasPermission(permission);
+        }
+
+        @Override
+        public Object handle() {
+            return sender;
+        }
     }
 
     @Override

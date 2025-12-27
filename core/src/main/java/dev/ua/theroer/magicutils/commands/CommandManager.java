@@ -271,7 +271,7 @@ public class CommandManager<S> {
         // First pass: auto-fill sender arguments
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument argument = arguments.get(i);
-            if (argument.isSenderParameter() || platform.isSenderType(argument.getType())) {
+            if (isSenderArgument(argument)) {
                 try {
                     result[i] = platform.resolveSenderArgument(sender, argument);
                     filled[i] = true;
@@ -302,7 +302,7 @@ public class CommandManager<S> {
                     result[i] = null;
                 }
                 filled[i] = true;
-                if (!remainingArgs.isEmpty() && !platform.isSenderType(argument.getType())) {
+                if (!remainingArgs.isEmpty() && !isSenderArgument(argument)) {
                     remainingArgs.remove(0);
                 }
                 continue;
@@ -511,6 +511,10 @@ public class CommandManager<S> {
         return null;
     }
 
+    private boolean isSenderArgument(CommandArgument argument) {
+        return argument.isSenderParameter() || platform.isSenderType(argument.getType());
+    }
+
     private boolean validateArgumentPermissions(String normalizedCommandName, @Nullable String subCommandName,
             List<CommandArgument> arguments, Object[] values, S sender) {
         Map<String, Object> valuesByName = new HashMap<>();
@@ -523,7 +527,7 @@ public class CommandManager<S> {
 
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument argument = arguments.get(i);
-            if (argument.isSenderParameter() || !argument.hasPermission()) {
+            if (isSenderArgument(argument) || !argument.hasPermission()) {
                 continue;
             }
 
@@ -548,7 +552,7 @@ public class CommandManager<S> {
 
     private boolean canSuggestArgument(String normalizedCommandName, @Nullable String subCommandName,
             CommandArgument argument, S sender) {
-        if (argument.isSenderParameter()) {
+        if (isSenderArgument(argument)) {
             return false;
         }
         if (!argument.hasPermission()) {
@@ -565,7 +569,7 @@ public class CommandManager<S> {
 
     private boolean lacksArgumentPermission(String normalizedCommandName, @Nullable String subCommandName,
             CommandArgument argument, S sender) {
-        if (argument.isSenderParameter()) {
+        if (isSenderArgument(argument)) {
             return false;
         }
         if (!argument.hasPermission()) {
@@ -893,7 +897,7 @@ public class CommandManager<S> {
             CommandArgument arg = arguments.get(i);
             logger.debug("Checking argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ")");
             // Skip explicit sender parameters
-            if (platform.isSenderType(arg.getType()) || arg.isSenderParameter()) {
+            if (isSenderArgument(arg)) {
                 logger.debug("  -> Skipped (sender)");
             } else {
                 userInputArguments.add(new ArgumentInfo(i, arg));
@@ -1016,7 +1020,7 @@ public class CommandManager<S> {
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
-            if (!platform.isSenderType(arg.getType()) && !arg.isSenderParameter()) {
+            if (!isSenderArgument(arg)) {
                 userInputArguments.add(new ArgumentInfo(i, arg));
             }
         }
@@ -1318,7 +1322,7 @@ public class CommandManager<S> {
     private void appendArgumentsToUsage(StringBuilder usage, List<CommandArgument> arguments, boolean forceOptional) {
         for (CommandArgument arg : arguments) {
             // Skip sender arguments in usage
-            if (platform.isSenderType(arg.getType()) || arg.isSenderParameter()) {
+            if (isSenderArgument(arg)) {
                 continue;
             }
 
@@ -1350,7 +1354,7 @@ public class CommandManager<S> {
             usage.append(" ").append(subInfo.annotation.name());
         }
         for (CommandArgument arg : arguments) {
-            if (platform.isSenderType(arg.getType()) || arg.isSenderParameter()) {
+            if (isSenderArgument(arg)) {
                 continue;
             }
             boolean optional = arg.isOptional() || arg.getDefaultValue() != null;

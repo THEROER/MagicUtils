@@ -80,7 +80,7 @@ public interface CommandPlatform<S> {
      * @return true if it should be auto-filled by sender
      */
     default boolean isSenderType(Class<?> type) {
-        return senderType().equals(type);
+        return senderType().equals(type) || type == MagicSender.class;
     }
 
     /**
