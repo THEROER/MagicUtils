@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Type parser for OfflinePlayer arguments.
  */
-public class OfflinePlayerTypeParser implements TypeParser<OfflinePlayer> {
+public class OfflinePlayerTypeParser implements TypeParser<CommandSender, OfflinePlayer> {
     private final PrefixedLogger logger;
 
     /**

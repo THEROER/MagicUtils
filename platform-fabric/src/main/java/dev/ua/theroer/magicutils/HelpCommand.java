@@ -9,8 +9,7 @@ import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.HelpCommandSupport;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
 import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
-
-import org.bukkit.command.CommandSender;
+import net.minecraft.server.command.ServerCommandSource;
 
 /**
  * Simple help command that lists all registered commands and their subcommands.
@@ -32,22 +31,22 @@ public class HelpCommand extends MagicCommand {
     /**
      * Execute help: list commands or details for a specific one.
      *
-     * @param sender command sender
+     * @param source command source
      * @param commandName optional command name
      * @param subCommand optional subcommand
      * @return result
      */
-    public CommandResult execute(CommandSender sender,
+    public CommandResult execute(ServerCommandSource source,
                                  @OptionalArgument @Suggest("getCommandSuggestions") String commandName,
                                  @OptionalArgument String subCommand) {
-        CommandManager<CommandSender> manager = CommandRegistry.getCommandManager();
+        CommandManager<ServerCommandSource> manager = CommandRegistry.getCommandManager();
         HelpCommandSupport.HelpResult result = HelpCommandSupport.build(manager, commandName, subCommand);
         if (!result.success()) {
             return CommandResult.failure(result.errorMessage());
         }
 
         for (String line : result.lines()) {
-            logger.noPrefix().to(sender).send(line);
+            logger.noPrefix().to(source).send(line);
         }
         return CommandResult.success(false, "");
     }

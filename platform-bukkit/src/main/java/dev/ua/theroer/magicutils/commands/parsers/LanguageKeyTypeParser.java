@@ -17,7 +17,7 @@ import org.bukkit.configuration.ConfigurationSection;
 /**
  * Type parser for language key suggestions.
  */
-public class LanguageKeyTypeParser implements TypeParser<String> {
+public class LanguageKeyTypeParser implements TypeParser<CommandSender, String> {
     /**
      * Default constructor for LanguageKeyTypeParser.
      */

@@ -1,6 +1,5 @@
 package dev.ua.theroer.magicutils.commands;
 
-import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,14 +9,15 @@ import java.util.stream.Collectors;
 /**
  * Unified interface for parsing command arguments and providing suggestions.
  * Combines functionality of ArgumentTypeParser and SuggestionParser.
- * 
+ *
+ * @param <S> sender type
  * @param <T> the type that this parser handles
  */
-public interface TypeParser<T> {
+public interface TypeParser<S, T> {
 
     /**
      * Checks if this parser can handle the given type.
-     * 
+     *
      * @param type the class type to check
      * @return true if this parser can handle the type
      */
@@ -25,23 +25,23 @@ public interface TypeParser<T> {
 
     /**
      * Parses the given value to the target type.
-     * 
+     *
      * @param value      the string value to parse
      * @param targetType the target class type
      * @param sender     the command sender (for context like @sender)
      * @return the parsed object or null if parsing failed
      */
     @Nullable
-    T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull CommandSender sender);
+    T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull S sender);
 
     /**
      * Gets suggestions for this type.
-     * 
+     *
      * @param sender the command sender for context
      * @return list of all possible suggestions
      */
     @NotNull
-    List<String> getSuggestions(@NotNull CommandSender sender);
+    List<String> getSuggestions(@NotNull S sender);
 
     /**
      * Gets suggestions for this type with access to the argument metadata.
@@ -51,20 +51,20 @@ public interface TypeParser<T> {
      * @return list of suggestions
      */
     @NotNull
-    default List<String> getSuggestions(@NotNull CommandSender sender, @Nullable CommandArgument argument) {
+    default List<String> getSuggestions(@NotNull S sender, @Nullable CommandArgument argument) {
         return getSuggestions(sender);
     }
 
     /**
      * Gets filtered suggestions based on current input.
-     * 
+     *
      * @param currentInput the current user input for filtering
      * @param sender       the command sender for context
      * @param argument     the command argument for context
      * @return filtered list of suggestions
      */
     @NotNull
-    default List<String> getSuggestionsFiltered(@Nullable String currentInput, @NotNull CommandSender sender,
+    default List<String> getSuggestionsFiltered(@Nullable String currentInput, @NotNull S sender,
             @Nullable CommandArgument argument) {
         List<String> base = getSuggestions(sender, argument);
         if (currentInput == null || currentInput.isEmpty()) {
@@ -80,7 +80,7 @@ public interface TypeParser<T> {
     /**
      * Checks if this parser can handle a special suggestion source.
      * This allows parsers to handle special syntax like @players, @worlds, etc.
-     * 
+     *
      * @param source the suggestion source to check
      * @return true if this parser can handle the source
      */
@@ -90,13 +90,13 @@ public interface TypeParser<T> {
 
     /**
      * Parses a special suggestion source and returns suggestions.
-     * 
+     *
      * @param source the suggestion source
      * @param sender the command sender for context
      * @return list of suggestions from the source
      */
     @NotNull
-    default List<String> parseSuggestion(@NotNull String source, @NotNull CommandSender sender) {
+    default List<String> parseSuggestion(@NotNull String source, @NotNull S sender) {
         return getSuggestions(sender);
     }
 
@@ -109,7 +109,7 @@ public interface TypeParser<T> {
      * @param mode compare strategy
      * @return true if equal under mode
      */
-    default boolean isEqual(@NotNull CommandSender sender, @Nullable Object first, @Nullable Object second,
+    default boolean isEqual(@NotNull S sender, @Nullable Object first, @Nullable Object second,
             @NotNull CompareMode mode) {
         return ComparisonUtils.isEqual(first, second, mode);
     }
@@ -122,13 +122,13 @@ public interface TypeParser<T> {
      * @param mode compare strategy
      * @return true if represents sender
      */
-    default boolean isSender(@NotNull CommandSender sender, @Nullable Object value, @NotNull CompareMode mode) {
+    default boolean isSender(@NotNull S sender, @Nullable Object value, @NotNull CompareMode mode) {
         return ComparisonUtils.isSender(sender, value, mode);
     }
 
     /**
      * Gets the priority of this parser. Higher priority parsers are checked first.
-     * 
+     *
      * @return the priority value
      */
     default int getPriority() {

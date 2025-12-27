@@ -64,11 +64,13 @@ local Maven; use the thin jars or `-all` shaded variants.
 ### `config` — annotation-driven configuration
 
 **Highlights**
-- Map YAML directly to POJOs using `@ConfigFile`, `@ConfigSection`, `@ConfigValue`,
+- Map YAML/JSON/JSONC/TOML directly to POJOs using `@ConfigFile`, `@ConfigSection`, `@ConfigValue`,
   `@Comment`, `@ConfigReloadable`, and friends.
 - Diff-aware saving: only modified values are written back, keeping user edits intact.
 - Built-in filesystem watcher can reload files changed on disk and notify listeners.
 - Placeholders in file paths (`lang/{lang}.yml`) supported out of the box.
+- Format selection is extension-based; drop `config/<name>.format` (or `config/magicutils.format`) to switch formats
+  and auto-migrate when a different format already exists.
 - Plays nicely with Lombok — most built-in configs are a single class with annotations and getters.
 
 **Key types**

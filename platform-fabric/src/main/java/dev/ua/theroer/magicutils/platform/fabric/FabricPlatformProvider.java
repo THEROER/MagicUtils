@@ -41,9 +41,10 @@ public final class FabricPlatformProvider implements Platform {
     }
 
     public FabricPlatformProvider(Supplier<MinecraftServer> serverSupplier, Logger slf4j, Path configDir) {
+        Logger effective = slf4j != null ? slf4j : LoggerFactory.getLogger("MagicUtils-Fabric");
         this.serverSupplier = serverSupplier != null ? serverSupplier : () -> null;
-        this.logger = new FabricPlatformLogger(slf4j);
-        this.consoleAudience = new FabricConsoleAudience(this.logger);
+        this.logger = new FabricPlatformLogger(effective);
+        this.consoleAudience = new FabricConsoleAudience(this.logger, effective.getName());
         this.configDir = configDir != null ? configDir : Path.of("config");
     }
 

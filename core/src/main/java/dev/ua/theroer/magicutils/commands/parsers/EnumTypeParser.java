@@ -1,8 +1,7 @@
 package dev.ua.theroer.magicutils.commands.parsers;
 
-import dev.ua.theroer.magicutils.commands.TypeParser;
 import dev.ua.theroer.magicutils.commands.CommandArgument;
-import org.bukkit.command.CommandSender;
+import dev.ua.theroer.magicutils.commands.TypeParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,11 +13,12 @@ import java.util.stream.Collectors;
 /**
  * Generic enum parser to avoid registering a parser per enum type.
  */
-public class EnumTypeParser implements TypeParser<Enum<?>> {
+public class EnumTypeParser<S> implements TypeParser<S, Enum<?>> {
 
     /** Default constructor. */
     public EnumTypeParser() {
     }
+
     @Override
     public boolean canParse(@NotNull Class<?> type) {
         return type.isEnum();
@@ -26,26 +26,26 @@ public class EnumTypeParser implements TypeParser<Enum<?>> {
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public Enum<?> parse(@Nullable String value, @NotNull Class targetType, @NotNull CommandSender sender) {
+    public Enum<?> parse(@Nullable String value, @NotNull Class<Enum<?>> targetType, @NotNull S sender) {
         if (value == null) {
             return null;
         }
         String normalized = value.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
         try {
-            return Enum.valueOf(targetType, normalized);
+            return Enum.valueOf((Class) targetType, normalized);
         } catch (IllegalArgumentException ex) {
             return null;
         }
     }
 
     @Override
-    public List<String> getSuggestions(@NotNull CommandSender sender) {
+    public List<String> getSuggestions(@NotNull S sender) {
         return List.of();
     }
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public List<String> getSuggestions(@NotNull CommandSender sender, @Nullable CommandArgument argument) {
+    public List<String> getSuggestions(@NotNull S sender, @Nullable CommandArgument argument) {
         if (argument == null) {
             return List.of();
         }
@@ -64,7 +64,7 @@ public class EnumTypeParser implements TypeParser<Enum<?>> {
     }
 
     @Override
-    public List<String> parseSuggestion(@NotNull String source, @NotNull CommandSender sender) {
+    public List<String> parseSuggestion(@NotNull String source, @NotNull S sender) {
         return List.of();
     }
 }

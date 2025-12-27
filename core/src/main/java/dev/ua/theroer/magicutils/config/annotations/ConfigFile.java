@@ -12,7 +12,9 @@ import java.lang.annotation.*;
 public @interface ConfigFile {
     /**
      * Path to the configuration file relative to plugin's data folder.
-     * 
+     * If the path ends with a supported extension (yml/yaml/json/jsonc/toml),
+     * MagicUtils can switch formats via {@code <name>.format} or {@code magicutils.format}.
+     *
      * @return the file path
      */
     String value();

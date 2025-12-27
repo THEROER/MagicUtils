@@ -3,7 +3,8 @@ package dev.ua.theroer.magicutils.config.annotations;
 import java.lang.annotation.*;
 
 /**
- * Adds a comment to a configuration field in the generated YAML file.
+ * Adds a comment to a configuration field in the generated YAML/JSONC/TOML file.
+ * Comments are ignored for formats that do not support them.
  */
 @Target({ ElementType.FIELD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)

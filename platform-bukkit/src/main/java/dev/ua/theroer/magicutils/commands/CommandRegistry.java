@@ -3,15 +3,18 @@ package dev.ua.theroer.magicutils.commands;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
-import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
+import dev.ua.theroer.magicutils.commands.parsers.LanguageKeyTypeParser;
+import dev.ua.theroer.magicutils.commands.parsers.OfflinePlayerTypeParser;
+import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
+import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
-import org.bukkit.permissions.Permission;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.permissions.PermissionDefault;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -25,7 +28,8 @@ public class CommandRegistry {
     private static Logger messageLogger;
 
     @Getter
-    private static CommandManager commandManager;
+    private static CommandManager<CommandSender> commandManager;
+    private static BukkitCommandPlatform platform;
     private static CommandMap commandMap;
     @Getter
     private static JavaPlugin plugin;
@@ -52,7 +56,39 @@ public class CommandRegistry {
         }
         logger = loggerInstance.withPrefix("Commands", "[Commands]");
         messageLogger = loggerInstance;
-        CommandRegistry.commandManager = new CommandManager(permissionPrefix, plugin.getName(), logger);
+        CommandLogger commandLogger = new CommandLogger() {
+            @Override
+            public void debug(String message) {
+                logger.debug(message);
+            }
+
+            @Override
+            public void info(String message) {
+                logger.info(message);
+            }
+
+            @Override
+            public void warn(String message) {
+                logger.warn(message);
+            }
+
+            @Override
+            public void error(String message) {
+                logger.error(message);
+            }
+        };
+
+        platform = new BukkitCommandPlatform(commandLogger);
+
+        TypeParserRegistry<CommandSender> parserRegistry = TypeParserRegistry.createWithDefaults(commandLogger);
+        parserRegistry.register(new PlayerTypeParser(logger));
+        parserRegistry.register(new OfflinePlayerTypeParser(logger));
+        parserRegistry.register(new WorldTypeParser(logger));
+        LanguageKeyTypeParser.setPlugin(plugin);
+        parserRegistry.register(new LanguageKeyTypeParser());
+
+        CommandRegistry.commandManager = new CommandManager<>(permissionPrefix, plugin.getName(),
+                commandLogger, platform, parserRegistry);
 
         try {
             Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
@@ -197,7 +233,7 @@ public class CommandRegistry {
                 "commands." + info.name());
         if (!commandPermission.isEmpty()) {
             permissions.add(commandPermission + " (" + info.permissionDefault() + ")");
-            ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+            platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
             incrementCount(counts, info.permissionDefault());
         }
 
@@ -214,7 +250,7 @@ public class CommandRegistry {
             if (!subPermission.isEmpty()) {
                 permissions.add(subPermission + " (" + sub.permissionDefault() + ")");
                 String description = !sub.description().isEmpty() ? sub.description() : info.description();
-                ensurePermissionRegistered(subPermission, sub.permissionDefault(), description);
+                platform.ensurePermissionRegistered(subPermission, sub.permissionDefault(), description);
                 incrementCount(counts, sub.permissionDefault());
             }
 
@@ -224,12 +260,12 @@ public class CommandRegistry {
 
         // Wildcards for convenience
         String commandWildcard = "commands." + info.name() + ".*";
-        ensurePermissionRegistered(commandWildcard, info.permissionDefault(), "All permissions for /" + info.name());
+        platform.ensurePermissionRegistered(commandWildcard, info.permissionDefault(), "All permissions for /" + info.name());
         permissions.add(commandWildcard + " (" + info.permissionDefault() + ")");
         incrementCount(counts, info.permissionDefault());
 
         String subWildcard = "commands." + info.name() + ".subcommand.*";
-        ensurePermissionRegistered(subWildcard, info.permissionDefault(), "All subcommands for /" + info.name());
+        platform.ensurePermissionRegistered(subWildcard, info.permissionDefault(), "All subcommands for /" + info.name());
         permissions.add(subWildcard + " (" + info.permissionDefault() + ")");
         incrementCount(counts, info.permissionDefault());
 
@@ -253,39 +289,9 @@ public class CommandRegistry {
             permissions.add(resolved + " (" + argument.getPermissionDefault() + ")");
             String desc = "Argument " + argument.getName() + " for /" + commandName
                     + (subCommandName != null ? " " + subCommandName : "");
-            ensurePermissionRegistered(resolved, argument.getPermissionDefault(), desc);
+            platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(), desc);
             incrementCount(counts, argument.getPermissionDefault());
         }
-    }
-
-    private static void ensurePermissionRegistered(String node, MagicPermissionDefault defaultValue,
-            String description) {
-        if (node == null || node.isEmpty()) {
-            return;
-        }
-        var pluginManager = Bukkit.getPluginManager();
-        Permission existing = pluginManager.getPermission(node);
-        PermissionDefault bukkitDefault = toBukkitDefault(defaultValue);
-        if (existing == null) {
-            Permission permission = new Permission(node, description != null ? description : "", bukkitDefault);
-            pluginManager.addPermission(permission);
-            logger.debug("Registered permission node: " + node + " (default " + bukkitDefault + ")");
-        } else if (existing.getDefault() != bukkitDefault) {
-            existing.setDefault(bukkitDefault);
-            logger.debug("Updated permission default for node: " + node + " -> " + bukkitDefault);
-        }
-    }
-
-    private static PermissionDefault toBukkitDefault(MagicPermissionDefault defaultValue) {
-        if (defaultValue == null) {
-            return PermissionDefault.OP;
-        }
-        return switch (defaultValue) {
-            case FALSE -> PermissionDefault.FALSE;
-            case NOT_OP -> PermissionDefault.NOT_OP;
-            case TRUE -> PermissionDefault.TRUE;
-            default -> PermissionDefault.OP;
-        };
     }
 
     private static Method findExecuteMethod(Class<?> clazz) {

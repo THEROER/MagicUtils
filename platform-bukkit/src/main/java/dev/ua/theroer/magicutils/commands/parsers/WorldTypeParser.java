@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Type parser for World arguments with @current support.
  */
-public class WorldTypeParser implements TypeParser<World> {
+public class WorldTypeParser implements TypeParser<CommandSender, World> {
     private final PrefixedLogger logger;
 
     /**

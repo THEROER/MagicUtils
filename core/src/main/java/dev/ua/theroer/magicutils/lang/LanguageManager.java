@@ -7,14 +7,15 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -35,6 +36,7 @@ public class LanguageManager {
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
+    private static final ObjectMapper YAML_MAPPER = createYamlMapper();
     @Getter
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
@@ -640,13 +642,10 @@ public class LanguageManager {
             }
 
             Map<String, Object> data = new HashMap<>();
-            if (langFile.exists()) {
-                try (FileInputStream in = new FileInputStream(langFile)) {
-                    Yaml yaml = new Yaml();
-                    Object loaded = yaml.load(in);
-                    if (loaded instanceof Map) {
-                        data.putAll(castMap((Map<?, ?>) loaded));
-                    }
+            if (langFile.exists() && langFile.length() > 0) {
+                Map<String, Object> loaded = YAML_MAPPER.readValue(langFile, new TypeReference<>() {});
+                if (loaded != null) {
+                    data.putAll(castMap(loaded));
                 }
             }
 
@@ -656,18 +655,20 @@ public class LanguageManager {
                 }
             }
 
-            DumperOptions options = new DumperOptions();
-            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-            options.setIndicatorIndent(1);
-            options.setIndent(2);
-            options.setDefaultScalarStyle(DumperOptions.ScalarStyle.SINGLE_QUOTED);
-            Yaml yaml = new Yaml(options);
-            try (Writer writer = Files.newBufferedWriter(langFile.toPath(), StandardCharsets.UTF_8)) {
-                yaml.dump(data, writer);
-            }
+            ObjectWriter writer = YAML_MAPPER.writerWithDefaultPrettyPrinter();
+            writer.writeValue(langFile, data);
         } catch (IOException e) {
             logger.warn("Failed to save language translations for: " + languageCode, e);
         }
+    }
+
+    private static ObjectMapper createYamlMapper() {
+        YAMLFactory factory = YAMLFactory.builder()
+                .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                .build();
+        ObjectMapper mapper = new ObjectMapper(factory);
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        return mapper;
     }
 
     private Map<String, Object> castMap(Map<?, ?> raw) {

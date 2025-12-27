@@ -22,7 +22,7 @@ import java.util.ArrayList;
 public class BukkitCommandWrapper extends Command {
     private final PrefixedLogger commandLogger;
     private final dev.ua.theroer.magicutils.Logger messageLogger;
-    private final CommandManager commandManager;
+    private final CommandManager<CommandSender> commandManager;
 
     @Getter
     @Setter
@@ -36,7 +36,7 @@ public class BukkitCommandWrapper extends Command {
      * @param aliases        the command aliases
      */
     private BukkitCommandWrapper(String name,
-                                 CommandManager commandManager,
+                                 CommandManager<CommandSender> commandManager,
                                  PrefixedLogger commandLogger,
                                  dev.ua.theroer.magicutils.Logger messageLogger) {
         super(name);
@@ -54,7 +54,7 @@ public class BukkitCommandWrapper extends Command {
      * @return fully initialised wrapper
      */
     public static BukkitCommandWrapper create(String name,
-                                              CommandManager commandManager,
+                                              CommandManager<CommandSender> commandManager,
                                               List<String> aliases,
                                               PrefixedLogger commandLogger,
                                               dev.ua.theroer.magicutils.Logger messageLogger) {

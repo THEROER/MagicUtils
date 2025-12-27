@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class BukkitPlatformProvider implements Platform {
     private final JavaPlugin plugin;
     private final PlatformLogger logger;
+    private final Audience consoleAudience;
     private final BukkitScheduler scheduler;
 
     /**
@@ -30,6 +31,7 @@ public class BukkitPlatformProvider implements Platform {
         this.plugin = plugin;
         this.logger = new BukkitPlatformLogger(plugin.getLogger());
         this.scheduler = Bukkit.getScheduler();
+        this.consoleAudience = new BukkitConsoleAudience(plugin.getLogger(), plugin.getName());
         AdaptersBootstrap.registerDefaults();
     }
 
@@ -45,7 +47,7 @@ public class BukkitPlatformProvider implements Platform {
 
     @Override
     public Audience console() {
-        return wrap(Bukkit.getConsoleSender());
+        return consoleAudience;
     }
 
     @Override

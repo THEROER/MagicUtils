@@ -9,8 +9,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
 
-import org.jetbrains.annotations.Nullable;
-
 /**
  * Abstract base class for all custom commands.
  * Provides utilities for command info, subcommands, and argument parsing.
@@ -180,7 +178,7 @@ public abstract class MagicCommand {
                     defaultValue = ((DefaultValue) annotation).value();
                     optional = true;
                 }
-                if (annotation instanceof OptionalArgument || annotation instanceof Nullable) {
+                if (annotation instanceof OptionalArgument || isNullableAnnotation(annotation)) {
                     optional = true;
                 }
                 if (annotation instanceof Suggest) {
@@ -278,6 +276,17 @@ public abstract class MagicCommand {
     }
 
     private record ParsedCondition(PermissionConditionType condition, String[] args) {
+    }
+
+    private static boolean isNullableAnnotation(Annotation annotation) {
+        if (annotation == null) {
+            return false;
+        }
+        String name = annotation.annotationType().getName();
+        if (name == null) {
+            return false;
+        }
+        return name.endsWith(".Nullable") || name.endsWith(".CheckForNull");
     }
 
     /**

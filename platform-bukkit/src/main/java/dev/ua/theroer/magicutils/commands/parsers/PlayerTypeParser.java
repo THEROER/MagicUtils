@@ -17,7 +17,7 @@ import java.util.List;
  * Type parser for Player arguments with @sender support and automatic
  * suggestions.
  */
-public class PlayerTypeParser implements TypeParser<Player> {
+public class PlayerTypeParser implements TypeParser<CommandSender, Player> {
     private final PrefixedLogger logger;
 
     /**

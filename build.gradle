@@ -70,7 +70,6 @@ subprojects {
         archiveClassifier.set('all')
         zip64 true
         mergeServiceFiles()
-        relocate 'org.yaml.snakeyaml', 'dev.ua.theroer.magicutils.shaded.snakeyaml'
         if (project.name == 'processor') {
             enabled = false
         }

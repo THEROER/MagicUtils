@@ -15,7 +15,7 @@ import java.util.Set;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Minimal example that maps a YAML file to a POJO and reacts to runtime reloads.
+ * Minimal example that maps a config file to a POJO and reacts to runtime reloads.
  */
 public final class ConfigExample {
 

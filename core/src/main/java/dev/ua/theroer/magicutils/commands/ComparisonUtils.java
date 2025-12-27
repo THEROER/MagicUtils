@@ -77,6 +77,14 @@ public final class ComparisonUtils {
             }
         } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
+        try {
+            var method = obj.getClass().getMethod("getUuid");
+            Object res = method.invoke(obj);
+            if (res instanceof UUID uuidRes) {
+                return uuidRes;
+            }
+        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
+        }
         return null;
     }
 
@@ -92,6 +100,16 @@ public final class ComparisonUtils {
             Object res = method.invoke(obj);
             if (res instanceof String s) {
                 return s;
+            }
+            if (res != null) {
+                try {
+                    var getString = res.getClass().getMethod("getString");
+                    Object strRes = getString.invoke(res);
+                    if (strRes instanceof String s) {
+                        return s;
+                    }
+                } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
+                }
             }
         } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }

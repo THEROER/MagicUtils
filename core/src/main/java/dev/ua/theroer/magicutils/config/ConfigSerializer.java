@@ -20,8 +20,8 @@ public class ConfigSerializer {
     }
 
     /**
-     * Serializes an object to a map for YAML.
-     * 
+     * Serializes an object to a config-friendly map.
+     *
      * @param obj the object to serialize
      * @return the serialized map representation
      */
@@ -186,7 +186,9 @@ public class ConfigSerializer {
                     @SuppressWarnings("unchecked")
                     ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                     result.add(typed.serialize(item));
-                } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && !(item instanceof Map)) {
+                } else if (elementType.isAnnotationPresent(ConfigSerializable.class)
+                        && elementType.isInstance(item)
+                        && !(item instanceof Map)) {
                     result.add(serialize(item));
                 } else {
                     result.add(serializeDynamic(item));
@@ -245,7 +247,9 @@ public class ConfigSerializer {
                     @SuppressWarnings("unchecked")
                     ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                     result.put(key, typed.serialize(value));
-                } else if (valueType.isAnnotationPresent(ConfigSerializable.class) && !(value instanceof Map)) {
+                } else if (valueType.isAnnotationPresent(ConfigSerializable.class)
+                        && valueType.isInstance(value)
+                        && !(value instanceof Map)) {
                     result.put(key, serialize(value));
                 } else {
                     result.put(key, serializeDynamic(value));

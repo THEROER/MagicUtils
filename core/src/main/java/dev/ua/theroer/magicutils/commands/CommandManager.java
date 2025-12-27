@@ -1,39 +1,39 @@
 package dev.ua.theroer.magicutils.commands;
 
-import lombok.Getter;
-
-import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.annotations.CommandInfo;
+import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
-import dev.ua.theroer.magicutils.annotations.*;
-
-import org.bukkit.command.BlockCommandSender;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.command.ProxiedCommandSender;
-import org.bukkit.command.RemoteConsoleCommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.minecart.CommandMinecart;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * Manages registration, execution, and tab completion of commands.
  */
-public class CommandManager {
-    private final PrefixedLogger logger;
+public class CommandManager<S> {
+    private final CommandLogger logger;
+    private final CommandPlatform<S> platform;
 
     private final Map<String, MagicCommand> commands = new ConcurrentHashMap<>();
     private final Map<String, CommandInfo> commandInfos = new ConcurrentHashMap<>();
     private final String permissionPrefix;
     private final String pluginName;
     @Getter
-    private final TypeParserRegistry typeParserRegistry;
+    private final TypeParserRegistry<S> typeParserRegistry;
 
     /**
      * Constructs a new CommandManager.
@@ -41,12 +41,17 @@ public class CommandManager {
      * @param permissionPrefix the prefix for permissions
      * @param pluginName       the plugin name for namespaced commands
      */
-    public CommandManager(String permissionPrefix, String pluginName, PrefixedLogger logger) {
+    public CommandManager(String permissionPrefix,
+                          String pluginName,
+                          CommandLogger logger,
+                          CommandPlatform<S> platform,
+                          TypeParserRegistry<S> typeParserRegistry) {
         this.permissionPrefix = permissionPrefix;
-        this.pluginName = pluginName.toLowerCase();
-        this.logger = logger;
-        this.typeParserRegistry = TypeParserRegistry.createWithDefaults(logger);
-        logger.debug("CommandManager initialized with permission prefix: " + permissionPrefix
+        this.pluginName = pluginName != null ? pluginName.toLowerCase(Locale.ROOT) : "";
+        this.logger = logger != null ? logger : CommandLogger.noop();
+        this.platform = Objects.requireNonNull(platform, "platform");
+        this.typeParserRegistry = Objects.requireNonNull(typeParserRegistry, "typeParserRegistry");
+        this.logger.debug("CommandManager initialized with permission prefix: " + permissionPrefix
                 + " and plugin name: " + pluginName);
     }
 
@@ -112,7 +117,7 @@ public class CommandManager {
      * @param args   the command arguments
      * @return the result of command execution
      */
-    public CommandResult execute(String name, CommandSender sender, List<String> args) {
+    public CommandResult execute(String name, S sender, List<String> args) {
         logger.debug("Attempting to execute command: " + name + " with args: " + args);
 
         MagicCommand command = commands.get(name.toLowerCase());
@@ -129,10 +134,10 @@ public class CommandManager {
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
         String commandPermission = resolvePermission(info.permission(),
                 "commands." + baseCommandName);
-        ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
-        if (!commandPermission.isEmpty() && !sender.hasPermission(commandPermission)
+        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+        if (!commandPermission.isEmpty() && !platform.hasPermission(sender, commandPermission, info.permissionDefault())
                 && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
-            logger.debug("Permission denied for " + sender.getName() + " on permission: " + commandPermission);
+            logger.debug("Permission denied for " + platform.getName(sender) + " on permission: " + commandPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
@@ -145,7 +150,7 @@ public class CommandManager {
         }
     }
 
-    private CommandResult executeCommand(MagicCommand command, CommandInfo info, CommandSender sender,
+    private CommandResult executeCommand(MagicCommand command, CommandInfo info, S sender,
             List<String> args, String normalizedCommandName) {
         List<MagicCommand.SubCommandInfo> subCommands = MagicCommand.getSubCommands(command.getClass());
         Method executeMethod = getExecuteMethod(command.getClass());
@@ -197,9 +202,9 @@ public class CommandManager {
 
         String subPermission = resolvePermission(targetSubCommand.annotation.permission(),
                 "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.annotation.name());
-        ensurePermissionRegistered(subPermission, targetSubCommand.annotation.permissionDefault(),
+        platform.ensurePermissionRegistered(subPermission, targetSubCommand.annotation.permissionDefault(),
                 targetSubCommand.annotation.description());
-        if (!subPermission.isEmpty() && !sender.hasPermission(subPermission)
+        if (!subPermission.isEmpty() && !platform.hasPermission(sender, subPermission, targetSubCommand.annotation.permissionDefault())
                 && !hasArgumentPermissionOverride(normalizedCommandName, targetSubCommand.annotation.name(), sender)) {
             logger.debug("Permission denied for subcommand " + subCommandName + " on permission: " + subPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
@@ -211,7 +216,7 @@ public class CommandManager {
         return executeSubCommand(command, info, targetSubCommand, sender, subArgs, normalizedCommandName);
     }
 
-    private CommandResult executeDirectMethod(MagicCommand command, CommandInfo info, Method executeMethod, CommandSender sender,
+    private CommandResult executeDirectMethod(MagicCommand command, CommandInfo info, Method executeMethod, S sender,
             List<String> args, String normalizedCommandName) {
         try {
             List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
@@ -259,19 +264,19 @@ public class CommandManager {
     }
 
     private Object[] parseArgumentsForDirectMethod(List<CommandArgument> arguments, List<String> args,
-            CommandSender sender, String normalizedCommandName, @Nullable String subCommandName) {
+            S sender, String normalizedCommandName, @Nullable String subCommandName) {
         Object[] result = new Object[arguments.size()];
         boolean[] filled = new boolean[arguments.size()];
 
         // First pass: auto-fill sender arguments
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument argument = arguments.get(i);
-            if (argument.isSenderParameter() || argument.getType().equals(CommandSender.class)) {
+            if (argument.isSenderParameter() || platform.isSenderType(argument.getType())) {
                 try {
-                    result[i] = resolveSenderArgument(sender, argument);
+                    result[i] = platform.resolveSenderArgument(sender, argument);
                     filled[i] = true;
                     logger.debug("Auto-filled sender argument " + i + " (" + argument.getName()
-                            + "): " + sender.getName());
+                            + "): " + platform.getName(sender));
                 } catch (SenderMismatchException ex) {
                     logger.debug("Sender mismatch for argument " + argument.getName() + ": "
                             + ex.getMessage());
@@ -297,7 +302,7 @@ public class CommandManager {
                     result[i] = null;
                 }
                 filled[i] = true;
-                if (!remainingArgs.isEmpty() && !argument.getType().equals(CommandSender.class)) {
+                if (!remainingArgs.isEmpty() && !platform.isSenderType(argument.getType())) {
                     remainingArgs.remove(0);
                 }
                 continue;
@@ -398,7 +403,7 @@ public class CommandManager {
         return result;
     }
 
-    private boolean isArgumentMatch(CommandArgument argument, String userArg, CommandSender sender) {
+    private boolean isArgumentMatch(CommandArgument argument, String userArg, S sender) {
         if (argument.isGreedy()) {
             return false;
         }
@@ -424,7 +429,7 @@ public class CommandManager {
         return false;
     }
 
-    private boolean argumentHasSuggestion(CommandArgument argument, String value, CommandSender sender) {
+    private boolean argumentHasSuggestion(CommandArgument argument, String value, S sender) {
         for (String suggestionSource : argument.getSuggestions()) {
             // Use the suggestion parser to get all possible values
             List<String> suggestions = typeParserRegistry.parseSuggestion(suggestionSource, sender);
@@ -438,7 +443,7 @@ public class CommandManager {
     }
 
     private CommandResult executeSubCommand(MagicCommand command, CommandInfo info, MagicCommand.SubCommandInfo subInfo,
-            CommandSender sender, List<String> args, String normalizedCommandName) {
+            S sender, List<String> args, String normalizedCommandName) {
         try {
             Method method = subInfo.method;
             List<CommandArgument> arguments = MagicCommand.getArguments(method);
@@ -486,7 +491,7 @@ public class CommandManager {
         }
     }
 
-    private Object convertArgument(String value, Class<?> type, CommandSender sender) {
+    private Object convertArgument(String value, Class<?> type, S sender) {
         logger.debug("Converting argument: '" + value + "' to type: " + type.getSimpleName());
 
         // Use the argument parser registry to convert the argument
@@ -506,175 +511,8 @@ public class CommandManager {
         return null;
     }
 
-    private Object resolveSenderArgument(CommandSender sender, CommandArgument argument) {
-        CommandSender effective = unwrapSender(sender);
-        AllowedSender[] allowed = argument.getAllowedSenders();
-        AllowedSender calleeKind = classifySender(effective);
-        boolean proxied = sender instanceof ProxiedCommandSender;
-
-        if (!isAllowedSender(allowed, calleeKind, proxied)) {
-            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-        }
-
-        Class<?> targetType = argument.getType();
-
-        if (targetType.equals(CommandSender.class)) {
-            return effective;
-        }
-        if (targetType.equals(ProxiedCommandSender.class)) {
-            if (sender instanceof ProxiedCommandSender p) {
-                return p;
-            }
-            // fall through to generic handling
-        }
-        if (targetType.equals(Player.class)) {
-            if (effective instanceof Player p) {
-                return p;
-            }
-            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-        }
-        if (targetType.equals(ConsoleCommandSender.class)) {
-            if (effective instanceof ConsoleCommandSender c) {
-                return c;
-            }
-            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-        }
-        if (targetType.equals(BlockCommandSender.class)) {
-            if (effective instanceof BlockCommandSender b) {
-                return b;
-            }
-            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-        }
-        if (targetType.equals(CommandMinecart.class)) {
-            if (effective instanceof CommandMinecart cart) {
-                return cart;
-            }
-            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-        }
-        if (targetType.equals(RemoteConsoleCommandSender.class)) {
-            if (effective instanceof RemoteConsoleCommandSender r) {
-                return r;
-            }
-            throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-        }
-
-        if (targetType.isInstance(effective)) {
-            return targetType.cast(effective);
-        }
-
-        throw new SenderMismatchException(buildSenderError(argument.getType(), allowed));
-    }
-
-    private CommandSender unwrapSender(CommandSender sender) {
-        if (sender instanceof ProxiedCommandSender proxied && proxied.getCallee() instanceof CommandSender callee) {
-            return callee;
-        }
-        return sender;
-    }
-
-    private AllowedSender classifySender(CommandSender sender) {
-        if (sender instanceof Player) {
-            return AllowedSender.PLAYER;
-        }
-        if (sender instanceof ConsoleCommandSender) {
-            return AllowedSender.CONSOLE;
-        }
-        if (sender instanceof BlockCommandSender) {
-            return AllowedSender.BLOCK;
-        }
-        if (sender instanceof CommandMinecart) {
-            return AllowedSender.MINECART;
-        }
-        if (sender instanceof RemoteConsoleCommandSender) {
-            return AllowedSender.REMOTE;
-        }
-        if (sender instanceof ProxiedCommandSender) {
-            return AllowedSender.PROXIED;
-        }
-        return AllowedSender.ANY;
-    }
-
-    private boolean isAllowedSender(AllowedSender[] allowed, AllowedSender calleeKind, boolean proxied) {
-        if (allowed == null || allowed.length == 0) {
-            return true;
-        }
-        for (AllowedSender a : allowed) {
-            if (a == AllowedSender.ANY) {
-                return true;
-            }
-            if (a == calleeKind) {
-                return true;
-            }
-            if (a == AllowedSender.PROXIED && proxied) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
-        // Prefer explicit allowed list; if ANY present, infer from type
-        Set<AllowedSender> required = new LinkedHashSet<>();
-        if (allowed != null) {
-            required.addAll(Arrays.asList(allowed));
-        }
-        required.remove(AllowedSender.ANY);
-
-        if (required.isEmpty()) {
-            AllowedSender inferred = inferSenderFromType(targetType);
-            if (inferred != AllowedSender.ANY) {
-                required.add(inferred);
-            }
-        }
-
-        if (required.isEmpty()) {
-            return "This command cannot be used by this sender";
-        }
-
-        String messageBody = required.stream()
-                .map(this::describeSender)
-                .distinct()
-                .collect(Collectors.joining(" or "));
-
-        return "This command can only be used by " + messageBody;
-    }
-
-    private AllowedSender inferSenderFromType(Class<?> type) {
-        if (type.equals(Player.class)) {
-            return AllowedSender.PLAYER;
-        }
-        if (type.equals(ConsoleCommandSender.class)) {
-            return AllowedSender.CONSOLE;
-        }
-        if (type.equals(BlockCommandSender.class)) {
-            return AllowedSender.BLOCK;
-        }
-        if (type.equals(CommandMinecart.class)) {
-            return AllowedSender.MINECART;
-        }
-        if (type.equals(RemoteConsoleCommandSender.class)) {
-            return AllowedSender.REMOTE;
-        }
-        if (type.equals(ProxiedCommandSender.class)) {
-            return AllowedSender.PROXIED;
-        }
-        return AllowedSender.ANY;
-    }
-
-    private String describeSender(AllowedSender sender) {
-        return switch (sender) {
-            case PLAYER -> "players";
-            case CONSOLE -> "console";
-            case BLOCK -> "command blocks";
-            case MINECART -> "command minecarts";
-            case PROXIED -> "proxied senders";
-            case REMOTE -> "remote console";
-            default -> "valid senders";
-        };
-    }
-
     private boolean validateArgumentPermissions(String normalizedCommandName, @Nullable String subCommandName,
-            List<CommandArgument> arguments, Object[] values, CommandSender sender) {
+            List<CommandArgument> arguments, Object[] values, S sender) {
         Map<String, Object> valuesByName = new HashMap<>();
         Map<String, CommandArgument> argumentsByName = new HashMap<>();
 
@@ -695,10 +533,11 @@ public class CommandManager {
 
             String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
             String resolved = resolvePermission(argument.getPermission(), fallback);
-            ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
+            platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
                     "Argument " + argument.getName() + " for /" + normalizedCommandName
                             + (subCommandName != null ? " " + subCommandName : ""));
-            if (resolved != null && !resolved.isEmpty() && !sender.hasPermission(resolved)) {
+            if (resolved != null && !resolved.isEmpty()
+                    && !platform.hasPermission(sender, resolved, argument.getPermissionDefault())) {
                 logger.debug("Skipping permission check for argument " + argument.getName()
                         + " (missing permission " + resolved + "), treating as optional");
                 continue;
@@ -708,7 +547,7 @@ public class CommandManager {
     }
 
     private boolean canSuggestArgument(String normalizedCommandName, @Nullable String subCommandName,
-            CommandArgument argument, CommandSender sender) {
+            CommandArgument argument, S sender) {
         if (argument.isSenderParameter()) {
             return false;
         }
@@ -717,14 +556,15 @@ public class CommandManager {
         }
         String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
         String resolved = resolvePermission(argument.getPermission(), fallback);
-        ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
+        platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
                 "Argument " + argument.getName() + " for /" + normalizedCommandName
                         + (subCommandName != null ? " " + subCommandName : ""));
-        return resolved == null || resolved.isEmpty() || sender.hasPermission(resolved);
+        return resolved == null || resolved.isEmpty()
+                || platform.hasPermission(sender, resolved, argument.getPermissionDefault());
     }
 
     private boolean lacksArgumentPermission(String normalizedCommandName, @Nullable String subCommandName,
-            CommandArgument argument, CommandSender sender) {
+            CommandArgument argument, S sender) {
         if (argument.isSenderParameter()) {
             return false;
         }
@@ -733,14 +573,15 @@ public class CommandManager {
         }
         String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
         String resolved = resolvePermission(argument.getPermission(), fallback);
-        ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
+        platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
                 "Argument " + argument.getName() + " for /" + normalizedCommandName
                         + (subCommandName != null ? " " + subCommandName : ""));
-        return resolved != null && !resolved.isEmpty() && !sender.hasPermission(resolved);
+        return resolved != null && !resolved.isEmpty()
+                && !platform.hasPermission(sender, resolved, argument.getPermissionDefault());
     }
 
     private boolean shouldCheckPermission(CommandArgument argument, Object value, Map<String, Object> valuesByName,
-            Map<String, CommandArgument> argumentsByName, CommandSender sender) {
+            Map<String, CommandArgument> argumentsByName, S sender) {
         PermissionConditionType condition = argument.getPermissionCondition();
         String[] names = argument.getPermissionConditionArgs();
 
@@ -786,7 +627,7 @@ public class CommandManager {
         return targets;
     }
 
-    private boolean isDistinct(CommandSender sender, List<ArgValue> targets, boolean requireAllDistinct) {
+    private boolean isDistinct(S sender, List<ArgValue> targets, boolean requireAllDistinct) {
         List<ArgValue> nonNull = targets.stream().filter(av -> av.value != null).toList();
         if (nonNull.size() < 2) {
             return false;
@@ -809,7 +650,7 @@ public class CommandManager {
         return requireAllDistinct;
     }
 
-    private boolean areAllEqual(CommandSender sender, List<ArgValue> targets) {
+    private boolean areAllEqual(S sender, List<ArgValue> targets) {
         List<ArgValue> nonNull = targets.stream().filter(av -> av.value != null).toList();
         if (nonNull.size() < 2) {
             return false;
@@ -824,13 +665,13 @@ public class CommandManager {
         return true;
     }
 
-    private boolean areAllDistinct(CommandSender sender, List<ArgValue> targets) {
+    private boolean areAllDistinct(S sender, List<ArgValue> targets) {
         return isDistinct(sender, targets, true);
     }
 
-    private boolean isSenderMatch(CommandSender sender, CommandArgument argument, Object value) {
+    private boolean isSenderMatch(S sender, CommandArgument argument, Object value) {
         CompareMode mode = argument.getCompareMode();
-        TypeParser<?> parser = typeParserRegistry.findParserForType(argument.getType());
+        TypeParser<S, ?> parser = typeParserRegistry.findParserForType(argument.getType());
         if (parser != null) {
             try {
                 return parser.isSender(sender, value, mode);
@@ -840,12 +681,12 @@ public class CommandManager {
         return defaultIsSender(sender, value, mode);
     }
 
-    private boolean areEqual(CommandSender sender, CommandArgument leftMeta, Object left, CommandArgument rightMeta,
+    private boolean areEqual(S sender, CommandArgument leftMeta, Object left, CommandArgument rightMeta,
             Object right) {
         CompareMode leftMode = leftMeta != null ? leftMeta.getCompareMode() : CompareMode.AUTO;
         CompareMode rightMode = rightMeta != null ? rightMeta.getCompareMode() : CompareMode.AUTO;
 
-        TypeParser<?> leftParser = leftMeta != null ? typeParserRegistry.findParserForType(leftMeta.getType()) : null;
+        TypeParser<S, ?> leftParser = leftMeta != null ? typeParserRegistry.findParserForType(leftMeta.getType()) : null;
         if (leftParser != null) {
             try {
                 return leftParser.isEqual(sender, left, right, leftMode);
@@ -853,7 +694,7 @@ public class CommandManager {
             }
         }
 
-        TypeParser<?> rightParser = rightMeta != null ? typeParserRegistry.findParserForType(rightMeta.getType()) : null;
+        TypeParser<S, ?> rightParser = rightMeta != null ? typeParserRegistry.findParserForType(rightMeta.getType()) : null;
         if (rightParser != null) {
             try {
                 return rightParser.isEqual(sender, left, right, rightMode);
@@ -864,77 +705,12 @@ public class CommandManager {
         return defaultEquals(sender, left, right, leftMode != null ? leftMode : rightMode);
     }
 
-    private boolean defaultIsSender(CommandSender sender, Object value, CompareMode mode) {
-        return defaultEquals(sender, value, sender, mode);
+    private boolean defaultIsSender(S sender, Object value, CompareMode mode) {
+        return ComparisonUtils.isSender(sender, value, mode);
     }
 
-    private boolean defaultEquals(CommandSender sender, Object first, Object second, CompareMode mode) {
-        if (first == null || second == null) {
-            return first == second;
-        }
-        if (mode == CompareMode.EQUALS) {
-            return first.equals(second);
-        }
-        if (mode == CompareMode.UUID || mode == CompareMode.AUTO) {
-            UUID aUuid = extractUuid(first);
-            UUID bUuid = extractUuid(second);
-            if (aUuid != null && bUuid != null) {
-                return aUuid.equals(bUuid);
-            }
-            if (mode == CompareMode.UUID) {
-                return false;
-            }
-        }
-        if (mode == CompareMode.NAME || mode == CompareMode.AUTO) {
-            String aName = extractName(first);
-            String bName = extractName(second);
-            if (aName != null && bName != null) {
-                return aName.equalsIgnoreCase(bName);
-            }
-            if (mode == CompareMode.NAME) {
-                return false;
-            }
-        }
-        return first.equals(second);
-    }
-
-    private UUID extractUuid(Object obj) {
-        if (obj instanceof org.bukkit.command.CommandSender cs && cs instanceof org.bukkit.entity.Player) {
-            return ((org.bukkit.entity.Player) cs).getUniqueId();
-        }
-        if (obj instanceof org.bukkit.OfflinePlayer op) {
-            return op.getUniqueId();
-        }
-        if (obj instanceof UUID uuid) {
-            return uuid;
-        }
-        try {
-            var method = obj.getClass().getMethod("getUniqueId");
-            Object res = method.invoke(obj);
-            if (res instanceof UUID uuidRes) {
-                return uuidRes;
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
-    }
-
-    private String extractName(Object obj) {
-        if (obj instanceof org.bukkit.command.CommandSender cs) {
-            return cs.getName();
-        }
-        if (obj instanceof org.bukkit.OfflinePlayer op) {
-            return op.getName();
-        }
-        try {
-            var method = obj.getClass().getMethod("getName");
-            Object res = method.invoke(obj);
-            if (res instanceof String s) {
-                return s;
-            }
-        } catch (Exception ignored) {
-        }
-        return obj.toString();
+    private boolean defaultEquals(S sender, Object first, Object second, CompareMode mode) {
+        return ComparisonUtils.isEqual(first, second, mode);
     }
 
     private String buildArgumentPermission(String normalizedCommandName, @Nullable String subCommandName, CommandArgument argument) {
@@ -966,7 +742,7 @@ public class CommandManager {
      * @param args   the command arguments
      * @return a list of suggestions
      */
-    public List<String> getSuggestions(String name, CommandSender sender, List<String> args) {
+    public List<String> getSuggestions(String name, S sender, List<String> args) {
         logger.debug("Getting suggestions for command: " + name + " with args: " + args);
 
         MagicCommand command = commands.get(name.toLowerCase());
@@ -982,9 +758,10 @@ public class CommandManager {
 
         String commandPermission = resolvePermission(info.permission(),
                 "commands." + baseCommandName);
-        ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
-        if (!commandPermission.isEmpty() && !sender.hasPermission(commandPermission)
+        if (!commandPermission.isEmpty()
+                && !platform.hasPermission(sender, commandPermission, info.permissionDefault())
                 && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
             logger.debug("No permission for suggestions: " + commandPermission);
             return Arrays.asList("");
@@ -1000,7 +777,7 @@ public class CommandManager {
         }
     }
 
-    private List<String> generateSuggestions(MagicCommand command, CommandInfo info, CommandSender sender,
+    private List<String> generateSuggestions(MagicCommand command, CommandInfo info, S sender,
             List<String> args, String normalizedCommandName) {
         List<MagicCommand.SubCommandInfo> subCommands = MagicCommand.getSubCommands(command.getClass());
         Method executeMethod = getExecuteMethod(command.getClass());
@@ -1080,9 +857,10 @@ public class CommandManager {
 
         String subPermission = resolvePermission(targetSubCommand.annotation.permission(),
                 "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.annotation.name());
-        ensurePermissionRegistered(subPermission, targetSubCommand.annotation.permissionDefault(),
+        platform.ensurePermissionRegistered(subPermission, targetSubCommand.annotation.permissionDefault(),
                 targetSubCommand.annotation.description());
-        if (!subPermission.isEmpty() && !sender.hasPermission(subPermission)) {
+        if (!subPermission.isEmpty()
+                && !platform.hasPermission(sender, subPermission, targetSubCommand.annotation.permissionDefault())) {
             return Arrays.asList("");
         }
 
@@ -1092,7 +870,7 @@ public class CommandManager {
     }
 
     private List<String> generateDirectMethodSuggestions(MagicCommand command, List<CommandArgument> arguments,
-            CommandSender sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
+            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
         logger.debug("generateDirectMethodSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
         logger.debug("Raw args: " + args);
@@ -1115,7 +893,7 @@ public class CommandManager {
             CommandArgument arg = arguments.get(i);
             logger.debug("Checking argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ")");
             // Skip explicit sender parameters
-            if (arg.getType().equals(CommandSender.class) || arg.isSenderParameter()) {
+            if (platform.isSenderType(arg.getType()) || arg.isSenderParameter()) {
                 logger.debug("  -> Skipped (sender)");
             } else {
                 userInputArguments.add(new ArgumentInfo(i, arg));
@@ -1227,7 +1005,7 @@ public class CommandManager {
     }
 
     private List<String> generateArgumentSuggestions(MagicCommand command, MagicCommand.SubCommandInfo subInfo,
-            CommandSender sender, List<String> args, String currentInput, String normalizedCommandName) {
+            S sender, List<String> args, String currentInput, String normalizedCommandName) {
         List<CommandArgument> arguments = MagicCommand.getArguments(subInfo.method);
 
         if (arguments.isEmpty()) {
@@ -1238,7 +1016,7 @@ public class CommandManager {
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
-            if (!arg.getType().equals(CommandSender.class) && !arg.isSenderParameter()) {
+            if (!platform.isSenderType(arg.getType()) && !arg.isSenderParameter()) {
                 userInputArguments.add(new ArgumentInfo(i, arg));
             }
         }
@@ -1263,7 +1041,7 @@ public class CommandManager {
     }
 
     private List<String> generateSuggestionsForArgument(MagicCommand command, CommandArgument argument,
-            CommandSender sender, String currentInput) {
+            S sender, String currentInput) {
         logger.debug("generateSuggestionsForArgument called for argument: " + argument.getName()
                 + " with input: '" + currentInput + "'");
         logger.debug("Argument suggestions: " + argument.getSuggestions());
@@ -1312,7 +1090,7 @@ public class CommandManager {
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> processSuggestionSource(MagicCommand command, String source, CommandSender sender,
+    private List<String> processSuggestionSource(MagicCommand command, String source, S sender,
             String currentInput) {
         logger.debug("Processing suggestion source: " + source);
 
@@ -1338,18 +1116,37 @@ public class CommandManager {
             logger.debug("Failed to call suggestion method " + source + ": " + e.getMessage());
         }
 
-        try {
-            Method method = command.getClass().getMethod(source, Player.class);
-            Player player = sender instanceof Player ? (Player) sender : null;
-            Object result = method.invoke(command, player);
+        Class<?> playerType = platform.playerType();
+        if (playerType != null) {
+            try {
+                Method method = command.getClass().getMethod(source, playerType);
+                Object player = platform.getPlayerSender(sender);
+                Object result = method.invoke(command, player);
 
-            if (result instanceof String[]) {
-                return Arrays.asList((String[]) result);
-            } else if (result instanceof List) {
-                return (List<String>) result;
+                if (result instanceof String[]) {
+                    return Arrays.asList((String[]) result);
+                } else if (result instanceof List) {
+                    return (List<String>) result;
+                }
+            } catch (Exception e) {
+                logger.debug("Failed to call suggestion method " + source + " with player parameter: " + e.getMessage());
             }
-        } catch (Exception e) {
-            logger.debug("Failed to call suggestion method " + source + " with Player parameter: " + e.getMessage());
+        }
+
+        Class<?> senderType = platform.senderType();
+        if (senderType != null) {
+            try {
+                Method method = command.getClass().getMethod(source, senderType);
+                Object result = method.invoke(command, sender);
+
+                if (result instanceof String[]) {
+                    return Arrays.asList((String[]) result);
+                } else if (result instanceof List) {
+                    return (List<String>) result;
+                }
+            } catch (Exception e) {
+                logger.debug("Failed to call suggestion method " + source + " with sender parameter: " + e.getMessage());
+            }
         }
 
         if ("@sender".equalsIgnoreCase(source)) {
@@ -1359,7 +1156,7 @@ public class CommandManager {
         return Arrays.asList("");
     }
 
-    private boolean hasSubOrArgPermission(MagicCommand command, CommandInfo info, CommandSender sender,
+    private boolean hasSubOrArgPermission(MagicCommand command, CommandInfo info, S sender,
             String baseCommandName, @Nullable String targetSubName) {
         List<MagicCommand.SubCommandInfo> subs = MagicCommand.getSubCommands(command.getClass());
         if (targetSubName != null) {
@@ -1369,7 +1166,8 @@ public class CommandManager {
                 }
                 String subPermission = resolvePermission(subInfo.annotation.permission(),
                         "commands." + baseCommandName + ".subcommand." + subInfo.annotation.name());
-                if (subPermission.isEmpty() || sender.hasPermission(subPermission)
+                if (subPermission.isEmpty()
+                        || platform.hasPermission(sender, subPermission, subInfo.annotation.permissionDefault())
                         || hasArgumentPermissionOverride(baseCommandName, subInfo.annotation.name(), sender)) {
                     return true;
                 }
@@ -1379,7 +1177,8 @@ public class CommandManager {
         for (MagicCommand.SubCommandInfo subInfo : subs) {
             String subPermission = resolvePermission(subInfo.annotation.permission(),
                     "commands." + baseCommandName + ".subcommand." + subInfo.annotation.name());
-            if (subPermission.isEmpty() || sender.hasPermission(subPermission)
+            if (subPermission.isEmpty()
+                    || platform.hasPermission(sender, subPermission, subInfo.annotation.permissionDefault())
                     || hasArgumentPermissionOverride(baseCommandName, subInfo.annotation.name(), sender)) {
                 return true;
             }
@@ -1388,26 +1187,14 @@ public class CommandManager {
     }
 
     private boolean hasArgumentPermissionOverride(String baseCommandName, @Nullable String subCommandName,
-            CommandSender sender) {
+            S sender) {
         String prefix = "commands." + baseCommandName;
         if (subCommandName != null && !subCommandName.isEmpty()) {
             prefix += ".subcommand." + subCommandName;
         }
         String argPrefix = prefix + ".argument.";
         String argPrefixNoSegment = prefix + ".";
-        for (org.bukkit.permissions.PermissionAttachmentInfo pai : sender.getEffectivePermissions()) {
-            if (!pai.getValue()) {
-                continue;
-            }
-            String perm = pai.getPermission();
-            if (perm == null) {
-                continue;
-            }
-            if (perm.startsWith(argPrefix) || perm.startsWith(argPrefixNoSegment)) {
-                return true;
-            }
-        }
-        return false;
+        return platform.hasPermissionByPrefix(sender, argPrefix, argPrefixNoSegment);
     }
 
     /**
@@ -1485,6 +1272,32 @@ public class CommandManager {
     }
 
     /**
+     * Formats argument list for usage display, skipping sender parameters.
+     *
+     * @param arguments arguments to format
+     * @return formatted argument string without leading/trailing spaces
+     */
+    public String formatArguments(List<CommandArgument> arguments) {
+        return formatArguments(arguments, false);
+    }
+
+    /**
+     * Formats argument list for usage display, skipping sender parameters.
+     *
+     * @param arguments     arguments to format
+     * @param forceOptional whether to force all arguments to be optional
+     * @return formatted argument string without leading/trailing spaces
+     */
+    public String formatArguments(List<CommandArgument> arguments, boolean forceOptional) {
+        if (arguments == null || arguments.isEmpty()) {
+            return "";
+        }
+        StringBuilder usage = new StringBuilder();
+        appendArgumentsToUsage(usage, arguments, forceOptional);
+        return usage.toString().trim();
+    }
+
+    /**
      * Appends arguments to usage string.
      * 
      * @param usage     the usage string builder
@@ -1504,8 +1317,8 @@ public class CommandManager {
      */
     private void appendArgumentsToUsage(StringBuilder usage, List<CommandArgument> arguments, boolean forceOptional) {
         for (CommandArgument arg : arguments) {
-            // Skip CommandSender/sender arguments in usage
-            if (arg.getType().equals(CommandSender.class) || arg.isSenderParameter()) {
+            // Skip sender arguments in usage
+            if (platform.isSenderType(arg.getType()) || arg.isSenderParameter()) {
                 continue;
             }
 
@@ -1537,7 +1350,7 @@ public class CommandManager {
             usage.append(" ").append(subInfo.annotation.name());
         }
         for (CommandArgument arg : arguments) {
-            if (arg.getType().equals(CommandSender.class) || arg.isSenderParameter()) {
+            if (platform.isSenderType(arg.getType()) || arg.isSenderParameter()) {
                 continue;
             }
             boolean optional = arg.isOptional() || arg.getDefaultValue() != null;
@@ -1600,19 +1413,20 @@ public class CommandManager {
         }
     }
 
-    private String getAvailableSubCommands(List<MagicCommand.SubCommandInfo> subCommands, CommandSender sender,
+    private String getAvailableSubCommands(List<MagicCommand.SubCommandInfo> subCommands, S sender,
             String commandName) {
         return String.join(", ", getAvailableSubCommandsList(subCommands, sender, commandName));
     }
 
     private List<String> getAvailableSubCommandsList(List<MagicCommand.SubCommandInfo> subCommands,
-            CommandSender sender, String commandName) {
+            S sender, String commandName) {
         Set<String> available = new LinkedHashSet<>();
 
         for (MagicCommand.SubCommandInfo subInfo : subCommands) {
             String subPermission = resolvePermission(subInfo.annotation.permission(),
                     "commands." + commandName + ".subcommand." + subInfo.annotation.name());
-            if (subPermission.isEmpty() || sender.hasPermission(subPermission)) {
+            if (subPermission.isEmpty()
+                    || platform.hasPermission(sender, subPermission, subInfo.annotation.permissionDefault())) {
                 available.add(subInfo.annotation.name());
                 for (String alias : subInfo.annotation.aliases()) {
                     available.add(alias);
@@ -1646,35 +1460,6 @@ public class CommandManager {
             return commandName.substring(commandName.indexOf(":") + 1);
         }
         return commandName;
-    }
-
-    private void ensurePermissionRegistered(String node, MagicPermissionDefault defaultValue, String description) {
-        if (node == null || node.isEmpty()) {
-            return;
-        }
-        var pluginManager = org.bukkit.Bukkit.getPluginManager();
-        Permission existing = pluginManager.getPermission(node);
-        PermissionDefault bukkitDefault = toBukkitDefault(defaultValue);
-        if (existing == null) {
-            Permission permission = new Permission(node, description != null ? description : "", bukkitDefault);
-            pluginManager.addPermission(permission);
-            logger.debug("Registered permission node: " + node + " (default " + bukkitDefault + ")");
-        } else if (existing.getDefault() != bukkitDefault) {
-            existing.setDefault(bukkitDefault);
-            logger.debug("Updated permission default for node: " + node + " -> " + bukkitDefault);
-        }
-    }
-
-    private PermissionDefault toBukkitDefault(MagicPermissionDefault defaultValue) {
-        if (defaultValue == null) {
-            return PermissionDefault.OP;
-        }
-        return switch (defaultValue) {
-            case FALSE -> PermissionDefault.FALSE;
-            case NOT_OP -> PermissionDefault.NOT_OP;
-            case TRUE -> PermissionDefault.TRUE;
-            default -> PermissionDefault.OP;
-        };
     }
 
     /**

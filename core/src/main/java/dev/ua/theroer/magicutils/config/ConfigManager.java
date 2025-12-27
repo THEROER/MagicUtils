@@ -8,7 +8,6 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import lombok.Getter;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
@@ -32,13 +31,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.DumperOptions.ScalarStyle;
-
-import org.yaml.snakeyaml.Yaml;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.dataformat.toml.TomlFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 
 /**
- * Platform-agnostic configuration manager using annotation-driven mapping and SnakeYAML.
+ * Platform-agnostic configuration manager using annotation-driven mapping and Jackson (YAML/JSON/JSONC/TOML).
  */
 public class ConfigManager {
     private final Platform platform;
@@ -55,6 +60,12 @@ public class ConfigManager {
     private WatchService watchService;
     private ExecutorService watcherExecutor;
     private volatile boolean shuttingDown = false;
+    private static final String EXT_TOKEN = "{ext}";
+    private static final String GLOBAL_FORMAT_FILE = "magicutils.format";
+    private static final String GLOBAL_FORMAT_PROPERTY = "magicutils.config.format";
+    private static final String GLOBAL_FORMAT_ENV = "MAGICUTILS_CONFIG_FORMAT";
+    private static final String DEFAULT_EXTENSION = "yml";
+    private static final List<String> SUPPORTED_EXTENSIONS = List.of("jsonc", "json", "yml", "yaml", "toml");
 
     /**
      * Creates a new ConfigManager for the provided platform.
@@ -93,8 +104,9 @@ public class ConfigManager {
             }
 
             Map<String, String> placeholdersCopy = placeholders == null ? new HashMap<>() : new HashMap<>(placeholders);
-
-            ConfigMetadata metadata = new ConfigMetadata(configFile, placeholdersCopy, platform.configDir());
+            FormatDecision formatDecision = resolveFormatDecision(configFile, placeholdersCopy);
+            ConfigMetadata metadata = new ConfigMetadata(formatDecision.targetPath(), configFile.autoCreate(),
+                    configFile.template(), platform.configDir());
             ConfigKey key = new ConfigKey(configClass, metadata.getFilePath());
 
             @SuppressWarnings("unchecked")
@@ -104,7 +116,16 @@ public class ConfigManager {
             }
 
             T instance = configClass.getDeclaredConstructor().newInstance();
-            loadConfig(instance, metadata);
+            if (formatDecision.sourcePath() != null) {
+                ConfigMetadata sourceMetadata = new ConfigMetadata(formatDecision.sourcePath(), configFile.autoCreate(),
+                        configFile.template(), platform.configDir());
+                loadConfig(instance, sourceMetadata);
+                saveConfigToFile(instance, metadata);
+                logger.info("Migrated config " + sourceMetadata.getFilePath()
+                        + " -> " + metadata.getFilePath());
+            } else {
+                loadConfig(instance, metadata);
+            }
 
             ConfigEntry<T> entry = new ConfigEntry<>(key, instance, metadata,
                     platform.configDir().resolve(metadata.getFilePath()).toFile());
@@ -204,8 +225,8 @@ public class ConfigManager {
             createDefaultConfig(instance, configFile, metadata);
         }
 
-        YamlDocument yaml = YamlDocument.load(configFile);
-        processFields(instance, yaml, instance.getClass());
+        ConfigDocument document = ConfigDocument.load(configFile);
+        processFields(instance, document, instance.getClass());
     }
 
     private static void ensureParentDirectory(File file) throws IOException {
@@ -221,19 +242,19 @@ public class ConfigManager {
     private <T> void createDefaultConfig(T instance, File configFile, ConfigMetadata metadata) throws Exception {
         ensureParentDirectory(configFile);
 
-        YamlDocument yaml = new YamlDocument();
+        ConfigDocument document = ConfigDocument.empty();
 
         Comment classComment = instance.getClass().getAnnotation(Comment.class);
         if (classComment != null) {
-            yaml.setHeader(Arrays.asList(classComment.value().split("\n")));
+            document.setHeader(Arrays.asList(classComment.value().split("\n")));
         }
 
-        writeDefaults(instance, yaml, instance.getClass(), "");
-        yaml.save(configFile);
+        writeDefaults(instance, document, instance.getClass(), "");
+        document.save(configFile);
         logger.info("Created default config: " + configFile.getName());
     }
 
-    private void writeDefaults(Object instance, YamlDocument yaml, Class<?> clazz, String prefix) throws Exception {
+    private void writeDefaults(Object instance, ConfigDocument document, Class<?> clazz, String prefix) throws Exception {
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
 
@@ -257,8 +278,8 @@ public class ConfigManager {
                 Map<String, Object> sectionData = new LinkedHashMap<>();
                 Map<String, List<String>> comments = new LinkedHashMap<>();
                 writeSectionToMap(sectionInstance, sectionData, "", comments);
-                yaml.set(path, sectionData, comments.get(path));
-                yaml.addComments(comments, path.isEmpty() ? "" : path + ".");
+                document.set(path, sectionData, comments.get(path));
+                document.addComments(comments, path.isEmpty() ? "" : path + ".");
                 continue;
             }
 
@@ -273,15 +294,15 @@ public class ConfigManager {
                 }
 
                 if (defaultValue != null) {
-                    Object valueToSave = prepareForYaml(defaultValue, field);
-                    yaml.set(path, valueToSave, commentLines(field.getAnnotation(Comment.class)));
+                    Object valueToSave = prepareForConfig(defaultValue, field);
+                    document.set(path, valueToSave, commentLines(field.getAnnotation(Comment.class)));
                     field.set(instance, cloneIfNeeded(defaultValue));
                 }
             }
         }
     }
 
-    private void processFields(Object instance, YamlDocument yaml, Class<?> clazz) throws Exception {
+    private void processFields(Object instance, ConfigDocument document, Class<?> clazz) throws Exception {
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
 
@@ -297,23 +318,23 @@ public class ConfigManager {
                     sectionInstance = field.getType().getDeclaredConstructor().newInstance();
                     field.set(instance, sectionInstance);
                 }
-                YamlSection subsection = yaml.getConfigurationSection(path);
+                ConfigSectionView subsection = document.getConfigurationSection(path);
                 if (subsection != null) {
-                    processFields(sectionInstance, new YamlDocument(subsection.unwrap(), yaml.header), field.getType());
+                    processFields(sectionInstance, new ConfigDocument(subsection.unwrap(), document.header), field.getType());
                 }
                 continue;
             }
 
             ConfigValue configValue = field.getAnnotation(ConfigValue.class);
             if (configValue != null) {
-                loadFieldValue(instance, field, yaml, path);
+                loadFieldValue(instance, field, document, path);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void loadFieldValue(Object instance, Field field, YamlDocument yaml, String path) throws Exception {
-        if (!yaml.contains(path)) {
+    private void loadFieldValue(Object instance, Field field, ConfigDocument document, String path) throws Exception {
+        if (!document.contains(path)) {
             Object existingValue = field.get(instance);
             if (existingValue != null) {
                 return;
@@ -332,9 +353,9 @@ public class ConfigManager {
             return;
         }
 
-        Object value = yaml.get(path);
+        Object value = document.get(path);
 
-        // If YAML contains null or explicit null value
+        // If config contains null or explicit null value
         if (value == null) {
             Object fallback = field.get(instance);
             if (fallback == null) {
@@ -488,7 +509,7 @@ public class ConfigManager {
         return result;
     }
 
-    private Object prepareForYaml(Object value, Field field) throws Exception {
+    private Object prepareForConfig(Object value, Field field) throws Exception {
         if (value == null) {
             return null;
         }
@@ -497,9 +518,15 @@ public class ConfigManager {
             ParameterizedType listType = (ParameterizedType) field.getGenericType();
             Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
             if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
-                List<Map<String, Object>> serializedList = new ArrayList<>();
+                List<Object> serializedList = new ArrayList<>();
                 for (Object item : (List<?>) value) {
-                    serializedList.add(item != null ? ConfigSerializer.serialize(item) : null);
+                    if (item == null) {
+                        serializedList.add(null);
+                    } else if (elementType.isInstance(item)) {
+                        serializedList.add(ConfigSerializer.serialize(item));
+                    } else {
+                        serializedList.add(item);
+                    }
                 }
                 return serializedList;
             }
@@ -524,8 +551,14 @@ public class ConfigManager {
                 Map<?, ?> map = (Map<?, ?>) value;
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
                     Object entryValue = entry.getValue();
-                    serializedMap.put(String.valueOf(entry.getKey()),
-                            entryValue != null ? ConfigSerializer.serialize(entryValue) : null);
+                    if (entryValue == null) {
+                        serializedMap.put(String.valueOf(entry.getKey()), null);
+                    } else if (valueType.isInstance(entryValue)) {
+                        serializedMap.put(String.valueOf(entry.getKey()),
+                                ConfigSerializer.serialize(entryValue));
+                    } else {
+                        serializedMap.put(String.valueOf(entry.getKey()), entryValue);
+                    }
                 }
                 return serializedMap;
             }
@@ -607,7 +640,7 @@ public class ConfigManager {
                     value = getPrimitiveDefault(field.getType());
                 }
                 if (value != null) {
-                    Object prepared = prepareForYaml(value, field);
+                    Object prepared = prepareForConfig(value, field);
                     applyPath(out, path, prepared);
                     comments.put(path, commentLines(field.getAnnotation(Comment.class)));
                 }
@@ -625,7 +658,7 @@ public class ConfigManager {
                 child = new LinkedHashMap<String, Object>();
                 current.put(part, child);
             }
-            current = YamlDocument.castMap((Map<?, ?>) child);
+            current = ConfigDocument.castMap((Map<?, ?>) child);
         }
         current.put(parts[parts.length - 1], value);
     }
@@ -738,7 +771,7 @@ public class ConfigManager {
             String key = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
             Object value = entry.getValue();
             if (value instanceof Map<?, ?> nested) {
-                flatten(key, YamlDocument.castMap(nested), out);
+                flatten(key, ConfigDocument.castMap(nested), out);
             } else if (value != null) {
                 out.put(key, String.valueOf(value));
             }
@@ -757,6 +790,184 @@ public class ConfigManager {
             map.put(placeholders[i], placeholders[i + 1]);
         }
         return map;
+    }
+
+    private String applyPlaceholders(String path, Map<String, String> placeholders) {
+        if (path == null || placeholders == null || placeholders.isEmpty()) {
+            return path;
+        }
+        String resolved = path;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            resolved = resolved.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return resolved;
+    }
+
+    private FormatDecision resolveFormatDecision(ConfigFile configFile, Map<String, String> placeholders) {
+        String template = applyPlaceholders(configFile.value(), placeholders);
+        boolean hasExtToken = template.contains(EXT_TOKEN);
+        String defaultExt = null;
+        String detectionPath = template;
+
+        if (hasExtToken) {
+            defaultExt = normalizeExtension(placeholders != null ? placeholders.get("ext") : null);
+            if (defaultExt == null) {
+                defaultExt = DEFAULT_EXTENSION;
+            }
+            detectionPath = template.replace(EXT_TOKEN, defaultExt);
+        }
+
+        ExtensionInfo extensionInfo = extractExtension(detectionPath);
+        if (extensionInfo == null) {
+            String fixedPath = hasExtToken ? detectionPath : template;
+            return FormatDecision.fixed(fixedPath);
+        }
+
+        String basePath = extensionInfo.basePath;
+        if (defaultExt == null) {
+            defaultExt = extensionInfo.extension;
+        }
+
+        Map<String, Path> existing = findExistingFormats(basePath);
+        String preferredExt = resolvePreferredFormat(basePath);
+        String targetExt;
+        String sourceExt = null;
+
+        if (preferredExt != null) {
+            targetExt = preferredExt;
+            if (!existing.containsKey(preferredExt) && !existing.isEmpty()) {
+                sourceExt = chooseMigrationSource(existing);
+            }
+        } else if (existing.containsKey(defaultExt)) {
+            targetExt = defaultExt;
+        } else if (existing.size() == 1) {
+            targetExt = existing.keySet().iterator().next();
+        } else if (!existing.isEmpty()) {
+            targetExt = chooseByPriority(existing.keySet(), defaultExt);
+            logger.warn("Multiple config formats found for '" + basePath + "'. Using '" + targetExt
+                    + "'. Add '" + basePath + ".format' to pick a default.");
+        } else {
+            targetExt = defaultExt;
+        }
+
+        String targetPath = buildPath(template, basePath, hasExtToken, targetExt);
+        String sourcePath = sourceExt != null ? buildPath(template, basePath, hasExtToken, sourceExt) : null;
+        return new FormatDecision(targetPath, sourcePath, targetExt, sourceExt, true);
+    }
+
+    private String resolvePreferredFormat(String basePath) {
+        String fromFile = readFormatFile(platform.configDir().resolve(basePath + ".format"));
+        if (fromFile != null) {
+            return fromFile;
+        }
+        String fromProperty = normalizeExtension(System.getProperty(GLOBAL_FORMAT_PROPERTY));
+        if (fromProperty != null) {
+            return fromProperty;
+        }
+        String fromEnv = normalizeExtension(System.getenv(GLOBAL_FORMAT_ENV));
+        if (fromEnv != null) {
+            return fromEnv;
+        }
+        return readFormatFile(platform.configDir().resolve(GLOBAL_FORMAT_FILE));
+    }
+
+    private String readFormatFile(Path formatFile) {
+        if (formatFile == null || !Files.exists(formatFile)) {
+            return null;
+        }
+        try {
+            for (String line : Files.readAllLines(formatFile)) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith("//")) {
+                    continue;
+                }
+                String normalized = normalizeExtension(trimmed);
+                if (normalized == null) {
+                    logger.warn("Unsupported config format '" + trimmed + "' in " + formatFile.getFileName());
+                }
+                return normalized;
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to read config format file: " + formatFile, e);
+        }
+        return null;
+    }
+
+    private String normalizeExtension(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if (normalized.startsWith(".")) {
+            normalized = normalized.substring(1);
+        }
+        return SUPPORTED_EXTENSIONS.contains(normalized) ? normalized : null;
+    }
+
+    private ExtensionInfo extractExtension(String path) {
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        int dot = path.lastIndexOf('.');
+        if (dot <= slash || dot >= path.length() - 1) {
+            return null;
+        }
+        String ext = path.substring(dot + 1).toLowerCase(Locale.ROOT);
+        if (!SUPPORTED_EXTENSIONS.contains(ext)) {
+            return null;
+        }
+        String basePath = path.substring(0, dot);
+        return new ExtensionInfo(basePath, ext);
+    }
+
+    private String buildPath(String template, String basePath, boolean hasExtToken, String ext) {
+        if (hasExtToken) {
+            return template.replace(EXT_TOKEN, ext);
+        }
+        return basePath + "." + ext;
+    }
+
+    private Map<String, Path> findExistingFormats(String basePath) {
+        Map<String, Path> existing = new LinkedHashMap<>();
+        for (String ext : SUPPORTED_EXTENSIONS) {
+            Path candidate = platform.configDir().resolve(basePath + "." + ext);
+            if (Files.exists(candidate)) {
+                existing.put(ext, candidate);
+            }
+        }
+        return existing;
+    }
+
+    private String chooseByPriority(Set<String> existing, String defaultExt) {
+        if (defaultExt != null && existing.contains(defaultExt)) {
+            return defaultExt;
+        }
+        for (String ext : SUPPORTED_EXTENSIONS) {
+            if (existing.contains(ext)) {
+                return ext;
+            }
+        }
+        return existing.iterator().next();
+    }
+
+    private String chooseMigrationSource(Map<String, Path> existing) {
+        String chosen = null;
+        long newest = Long.MIN_VALUE;
+        for (Map.Entry<String, Path> entry : existing.entrySet()) {
+            try {
+                long modified = Files.getLastModifiedTime(entry.getValue()).toMillis();
+                if (modified > newest) {
+                    newest = modified;
+                    chosen = entry.getKey();
+                }
+            } catch (IOException ignored) {
+                if (chosen == null) {
+                    chosen = entry.getKey();
+                }
+            }
+        }
+        return chosen != null ? chosen : existing.keySet().iterator().next();
     }
 
     private Object parseValue(String value, Class<?> type) {
@@ -867,7 +1078,7 @@ public class ConfigManager {
         }
     }
 
-    private void saveFields(Object instance, YamlDocument yaml, Class<?> clazz, String prefix) throws Exception {
+    private void saveFields(Object instance, ConfigDocument document, Class<?> clazz, String prefix) throws Exception {
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
 
@@ -898,15 +1109,23 @@ public class ConfigManager {
                 Map<String, Object> sectionData = new LinkedHashMap<>();
                 Map<String, List<String>> comments = new LinkedHashMap<>();
                 writeSectionToMap(value, sectionData, "", comments);
-                yaml.set(path, sectionData, comments.get(path));
-                yaml.addComments(comments, path.isEmpty() ? "" : path + ".");
+                document.set(path, sectionData, comments.get(path));
+                document.addComments(comments, path.isEmpty() ? "" : path + ".");
                 continue;
             }
 
-            Object valueToSave = prepareForYaml(value, field);
+            Object valueToSave = prepareForConfig(value, field);
 
-            yaml.set(path, valueToSave, commentLines(field.getAnnotation(Comment.class)));
+            document.set(path, valueToSave, commentLines(field.getAnnotation(Comment.class)));
         }
+    }
+
+    private void saveConfigToFile(Object instance, ConfigMetadata metadata) throws Exception {
+        ConfigDocument document = ConfigDocument.empty();
+        saveFields(instance, document, instance.getClass(), "");
+        File file = metadata.resolveFile(platform.configDir());
+        ensureParentDirectory(file);
+        document.save(file);
     }
 
     /**
@@ -1066,11 +1285,11 @@ public class ConfigManager {
                     entry.refreshLastModified();
                 }
 
-                YamlDocument yaml = new YamlDocument();
-                saveFields(entry.instance, yaml, entry.instance.getClass(), "");
+                ConfigDocument document = ConfigDocument.empty();
+                saveFields(entry.instance, document, entry.instance.getClass(), "");
 
                 ensureParentDirectory(entry.file);
-                yaml.save(entry.file);
+                document.save(entry.file);
                 entry.refreshLastModified();
             } catch (Exception e) {
             logger.error("Failed to save config " + entry.key.configClass.getName() + " (" + entry.metadata.getFilePath()
@@ -1239,6 +1458,17 @@ public class ConfigManager {
         fileIndex.clear();
     }
 
+    private record ExtensionInfo(String basePath, String extension) {
+    }
+
+    private record FormatDecision(String targetPath, String sourcePath,
+                                  String targetExt, String sourceExt,
+                                  boolean formatAware) {
+        static FormatDecision fixed(String targetPath) {
+            return new FormatDecision(targetPath, null, null, null, false);
+        }
+    }
+
     private static final class ConfigKey {
         private final Class<?> configClass;
         private final String filePath;
@@ -1307,19 +1537,10 @@ public class ConfigManager {
         @Getter
         private final String templatePath;
 
-        ConfigMetadata(ConfigFile annotation, Map<String, String> placeholders, Path baseDir) {
-            String path = annotation.value();
-            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-                path = path.replace("{" + entry.getKey() + "}", entry.getValue());
-            }
-
-            String resolvedPath = sanitizePath(path, baseDir);
-            boolean auto = annotation.autoCreate();
-            String template = annotation.template();
-
-            this.filePath = resolvedPath;
-            this.autoCreate = auto;
-            this.templatePath = template;
+        ConfigMetadata(String filePath, boolean autoCreate, String templatePath, Path baseDir) {
+            this.filePath = sanitizePath(filePath, baseDir);
+            this.autoCreate = autoCreate;
+            this.templatePath = templatePath;
         }
 
         private String sanitizePath(String path, Path baseDir) {
@@ -1350,22 +1571,32 @@ public class ConfigManager {
     }
 
     /**
-     * Minimal YAML document helper backed by SnakeYAML.
+     * Minimal config document helper backed by Jackson.
      */
-    private static class YamlDocument extends YamlSection {
+    private static class ConfigDocument extends ConfigSectionView {
+        private static final ObjectMapper SCALAR_MAPPER = JsonMapper.builder().build();
         private final Map<String, Object> data;
         private final Map<String, List<String>> comments;
         private List<String> header;
 
-        YamlDocument() {
-            this(new LinkedHashMap<>(), null);
-        }
-
-        YamlDocument(Map<String, Object> backing, List<String> header) {
+        private ConfigDocument(Map<String, Object> backing, List<String> header) {
             super(backing);
             this.data = backing;
             this.header = header;
             this.comments = new LinkedHashMap<>();
+        }
+
+        static ConfigDocument empty() {
+            return new ConfigDocument(new LinkedHashMap<>(), null);
+        }
+
+        static ConfigDocument load(File file) throws IOException {
+            if (file == null || !file.exists()) {
+                return empty();
+            }
+            ConfigFormat format = ConfigFormat.fromFile(file);
+            Map<String, Object> map = format.read(file);
+            return new ConfigDocument(map, null);
         }
 
         void addComments(Map<String, List<String>> map, String prefix) {
@@ -1375,18 +1606,6 @@ public class ConfigManager {
                 String key = e.getKey();
                 String full = prefix.isEmpty() ? key : prefix + key;
                 comments.put(full, e.getValue());
-            }
-        }
-
-        static YamlDocument load(File file) throws IOException {
-            if (file == null || !file.exists()) {
-                return new YamlDocument();
-            }
-            try (FileInputStream in = new FileInputStream(file)) {
-                Yaml yaml = new Yaml();
-                Object loaded = yaml.load(in);
-                Map<String, Object> map = loaded instanceof Map ? castMap((Map<?, ?>) loaded) : new LinkedHashMap<>();
-                return new YamlDocument(map, null);
             }
         }
 
@@ -1405,10 +1624,10 @@ public class ConfigManager {
             return navigate(data, path).found;
         }
 
-        YamlSection getConfigurationSection(String path) {
+        ConfigSectionView getConfigurationSection(String path) {
             NavigateResult res = navigate(data, path);
             if (res.found && res.value instanceof Map) {
-                return new YamlSection(castMap((Map<?, ?>) res.value));
+                return new ConfigSectionView(castMap((Map<?, ?>) res.value));
             }
             return null;
         }
@@ -1419,21 +1638,7 @@ public class ConfigManager {
         }
 
         void save(File file) throws IOException {
-            ensureParentDirectory(file);
-            try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
-                if (header != null && !header.isEmpty()) {
-                    for (String line : header) {
-                        writer.write("# " + line + System.lineSeparator());
-                    }
-                }
-                DumperOptions options = new DumperOptions();
-                options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-                options.setIndent(2);
-                options.setIndicatorIndent(1);
-                options.setDefaultScalarStyle(ScalarStyle.PLAIN);
-                Yaml yaml = new Yaml(options);
-                writeWithComments(writer, yaml, data, comments, "", 0);
-            }
+            ConfigFormat.fromFile(file).write(file, data, header, comments);
         }
 
         private static void applyPath(Map<String, Object> root, String path, Object value) {
@@ -1478,8 +1683,51 @@ public class ConfigManager {
         private record NavigateResult(boolean found, Object value) {
         }
 
+        private static void writeYamlWithComments(File file,
+                                                  Map<String, Object> map,
+                                                  List<String> header,
+                                                  Map<String, List<String>> comments) throws IOException {
+            try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+                if (header != null && !header.isEmpty()) {
+                    for (String line : header) {
+                        writer.write("# " + line + System.lineSeparator());
+                    }
+                }
+                writeWithComments(writer, map, comments, "", 0);
+            }
+        }
+
+        private static void writeJsonWithComments(File file,
+                                                  Map<String, Object> map,
+                                                  List<String> header,
+                                                  Map<String, List<String>> comments) throws IOException {
+            try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+                if (header != null && !header.isEmpty()) {
+                    for (String line : header) {
+                        writer.write("// " + line + System.lineSeparator());
+                    }
+                }
+                writeJsonObject(writer, map, comments, "", 0);
+                writer.write(System.lineSeparator());
+            }
+        }
+
+        private static void writeTomlWithComments(File file,
+                                                  Map<String, Object> map,
+                                                  List<String> header,
+                                                  Map<String, List<String>> comments) throws IOException {
+            try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+                if (header != null && !header.isEmpty()) {
+                    for (String line : header) {
+                        writer.write("# " + line + System.lineSeparator());
+                    }
+                }
+                writeTomlTableBody(writer, map, comments, "");
+            }
+        }
+
         @SuppressWarnings("unchecked")
-        private static void writeWithComments(Writer writer, Yaml yaml,
+        private static void writeWithComments(Writer writer,
                                               Map<String, Object> map,
                                               Map<String, List<String>> comments,
                                               String pathPrefix,
@@ -1497,22 +1745,182 @@ public class ConfigManager {
                 Object value = entry.getValue();
                 if (value instanceof Map) {
                     writer.write(indent + key + ":" + System.lineSeparator());
-                    writeWithComments(writer, yaml, (Map<String, Object>) value, comments, currentPath, indentLevel + 1);
+                    writeWithComments(writer, castMap((Map<?, ?>) value), comments, currentPath, indentLevel + 1);
                 } else if (value instanceof List) {
                     writer.write(indent + key + ":" + System.lineSeparator());
-                    writeList(writer, yaml, (List<?>) value, comments, currentPath, indentLevel + 1);
+                    writeList(writer, (List<?>) value, comments, currentPath, indentLevel + 1);
                 } else if (value instanceof String str && str.contains("\n")) {
                     writer.write(indent + key + ": |" + System.lineSeparator());
                     writeMultilineValue(writer, str, indentLevel + 1);
                 } else {
-                    String dumped = yaml.dump(value).trim();
-                    writer.write(indent + key + ": " + dumped + System.lineSeparator());
+                    writer.write(indent + key + ": " + formatScalar(value) + System.lineSeparator());
                 }
             }
         }
 
-        private static void writeList(Writer writer, Yaml yaml, List<?> list,
-                                      Map<String, List<String>> comments, String pathPrefix, int indentLevel) throws IOException {
+        private static void writeJsonObject(Writer writer,
+                                            Map<String, Object> map,
+                                            Map<String, List<String>> comments,
+                                            String pathPrefix,
+                                            int indentLevel) throws IOException {
+            writer.write("{");
+            if (map.isEmpty()) {
+                writer.write("}");
+                return;
+            }
+            writer.write(System.lineSeparator());
+            int index = 0;
+            int size = map.size();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                String currentPath = pathPrefix.isEmpty() ? key : pathPrefix + "." + key;
+                List<String> commentLines = comments != null ? comments.get(currentPath) : null;
+                writeCommentLines(writer, commentLines, "// ", indentLevel + 1);
+                String indent = "  ".repeat(indentLevel + 1);
+                writer.write(indent + formatJsonKey(key) + ": ");
+                writeJsonValue(writer, entry.getValue(), comments, currentPath, indentLevel + 1);
+                if (index < size - 1) {
+                    writer.write(",");
+                }
+                writer.write(System.lineSeparator());
+                index++;
+            }
+            writer.write("  ".repeat(indentLevel) + "}");
+        }
+
+        private static void writeJsonArray(Writer writer,
+                                           List<?> list,
+                                           Map<String, List<String>> comments,
+                                           String pathPrefix,
+                                           int indentLevel) throws IOException {
+            writer.write("[");
+            if (list.isEmpty()) {
+                writer.write("]");
+                return;
+            }
+            writer.write(System.lineSeparator());
+            for (int i = 0; i < list.size(); i++) {
+                Object elem = list.get(i);
+                String currentPath = pathPrefix + "[" + i + "]";
+                List<String> commentLines = comments != null ? comments.get(currentPath) : null;
+                writeCommentLines(writer, commentLines, "// ", indentLevel + 1);
+                String indent = "  ".repeat(indentLevel + 1);
+                writer.write(indent);
+                writeJsonValue(writer, elem, comments, currentPath, indentLevel + 1);
+                if (i < list.size() - 1) {
+                    writer.write(",");
+                }
+                writer.write(System.lineSeparator());
+            }
+            writer.write("  ".repeat(indentLevel) + "]");
+        }
+
+        @SuppressWarnings("unchecked")
+        private static void writeJsonValue(Writer writer,
+                                           Object value,
+                                           Map<String, List<String>> comments,
+                                           String pathPrefix,
+                                           int indentLevel) throws IOException {
+            if (value instanceof Map) {
+                writeJsonObject(writer, castMap((Map<?, ?>) value), comments, pathPrefix, indentLevel);
+            } else if (value instanceof List) {
+                writeJsonArray(writer, (List<?>) value, comments, pathPrefix, indentLevel);
+            } else {
+                writer.write(formatScalar(value));
+            }
+        }
+
+        private static void writeTomlTable(Writer writer,
+                                           Map<String, Object> map,
+                                           Map<String, List<String>> comments,
+                                           String pathPrefix) throws IOException {
+            if (!pathPrefix.isEmpty()) {
+                List<String> commentLines = comments != null ? comments.get(pathPrefix) : null;
+                writeCommentLines(writer, commentLines, "# ", 0);
+                writer.write("[" + formatTomlPath(pathPrefix) + "]" + System.lineSeparator());
+            }
+            writeTomlTableBody(writer, map, comments, pathPrefix);
+        }
+
+        private static void writeTomlArrayTable(Writer writer,
+                                                List<?> list,
+                                                Map<String, List<String>> comments,
+                                                String pathPrefix) throws IOException {
+            if (list.isEmpty()) {
+                return;
+            }
+            boolean first = true;
+            for (int i = 0; i < list.size(); i++) {
+                Object elem = list.get(i);
+                if (!(elem instanceof Map)) {
+                    continue;
+                }
+                if (first) {
+                    List<String> commentLines = comments != null ? comments.get(pathPrefix) : null;
+                    writeCommentLines(writer, commentLines, "# ", 0);
+                }
+                writer.write("[[" + formatTomlPath(pathPrefix) + "]]" + System.lineSeparator());
+                writeTomlTableBody(writer, castMap((Map<?, ?>) elem), comments, pathPrefix);
+                if (i < list.size() - 1) {
+                    writer.write(System.lineSeparator());
+                }
+                first = false;
+            }
+        }
+
+        private static void writeTomlTableBody(Writer writer,
+                                               Map<String, Object> map,
+                                               Map<String, List<String>> comments,
+                                               String pathPrefix) throws IOException {
+            Map<String, Map<String, Object>> tables = new LinkedHashMap<>();
+            Map<String, List<?>> arrayTables = new LinkedHashMap<>();
+            boolean wroteValue = false;
+
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                Object value = entry.getValue();
+                if (value instanceof Map) {
+                    tables.put(key, castMap((Map<?, ?>) value));
+                    continue;
+                }
+                if (value instanceof List<?> list && isListOfMaps(list)) {
+                    arrayTables.put(key, list);
+                    continue;
+                }
+                String formatted = formatTomlValue(value);
+                if (formatted == null) {
+                    continue;
+                }
+                String currentPath = pathPrefix.isEmpty() ? key : pathPrefix + "." + key;
+                List<String> commentLines = comments != null ? comments.get(currentPath) : null;
+                writeCommentLines(writer, commentLines, "# ", 0);
+                writer.write(formatTomlKey(key) + " = " + formatted + System.lineSeparator());
+                wroteValue = true;
+            }
+
+            boolean wroteBlock = wroteValue;
+            for (Map.Entry<String, Map<String, Object>> entry : tables.entrySet()) {
+                if (wroteBlock) {
+                    writer.write(System.lineSeparator());
+                }
+                String tablePath = pathPrefix.isEmpty() ? entry.getKey() : pathPrefix + "." + entry.getKey();
+                writeTomlTable(writer, entry.getValue(), comments, tablePath);
+                wroteBlock = true;
+            }
+            for (Map.Entry<String, List<?>> entry : arrayTables.entrySet()) {
+                if (wroteBlock) {
+                    writer.write(System.lineSeparator());
+                }
+                String tablePath = pathPrefix.isEmpty() ? entry.getKey() : pathPrefix + "." + entry.getKey();
+                writeTomlArrayTable(writer, entry.getValue(), comments, tablePath);
+                wroteBlock = true;
+            }
+        }
+
+        private static void writeList(Writer writer, List<?> list,
+                                      Map<String, List<String>> comments,
+                                      String pathPrefix,
+                                      int indentLevel) throws IOException {
             String indent = "  ".repeat(indentLevel);
             for (int i = 0; i < list.size(); i++) {
                 Object elem = list.get(i);
@@ -1525,16 +1933,15 @@ public class ConfigManager {
                 }
                 if (elem instanceof Map) {
                     writer.write(indent + "- " + System.lineSeparator());
-                    writeWithComments(writer, yaml, YamlDocument.castMap((Map<?, ?>) elem), comments, currentPath, indentLevel + 1);
+                    writeWithComments(writer, castMap((Map<?, ?>) elem), comments, currentPath, indentLevel + 1);
                 } else if (elem instanceof List) {
                     writer.write(indent + "- " + System.lineSeparator());
-                    writeList(writer, yaml, (List<?>) elem, comments, currentPath, indentLevel + 1);
+                    writeList(writer, (List<?>) elem, comments, currentPath, indentLevel + 1);
                 } else if (elem instanceof String str && str.contains("\n")) {
                     writer.write(indent + "- |" + System.lineSeparator());
                     writeMultilineValue(writer, str, indentLevel + 2);
                 } else {
-                    String dumped = yaml.dump(elem).trim();
-                    writer.write(indent + "- " + dumped + System.lineSeparator());
+                    writer.write(indent + "- " + formatScalar(elem) + System.lineSeparator());
                 }
             }
         }
@@ -1546,15 +1953,193 @@ public class ConfigManager {
                 writer.write(indent + line + System.lineSeparator());
             }
         }
+
+        private static void writeCommentLines(Writer writer,
+                                              List<String> lines,
+                                              String prefix,
+                                              int indentLevel) throws IOException {
+            if (lines == null || lines.isEmpty()) {
+                return;
+            }
+            String indent = "  ".repeat(indentLevel);
+            for (String line : lines) {
+                writer.write(indent + prefix + line + System.lineSeparator());
+            }
+        }
+
+        private static boolean isListOfMaps(List<?> list) {
+            if (list == null || list.isEmpty()) {
+                return false;
+            }
+            for (Object item : list) {
+                if (!(item instanceof Map)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static String formatTomlValue(Object value) {
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Map) {
+                return null;
+            }
+            if (value instanceof List<?> list) {
+                List<String> parts = new ArrayList<>();
+                for (Object item : list) {
+                    if (item instanceof Map) {
+                        return null;
+                    }
+                    String formatted = formatTomlValue(item);
+                    if (formatted != null) {
+                        parts.add(formatted);
+                    }
+                }
+                return "[" + String.join(", ", parts) + "]";
+            }
+            return formatScalar(value);
+        }
+
+        private static String formatJsonKey(String key) {
+            if (key == null) {
+                return "\"\"";
+            }
+            return formatScalar(key);
+        }
+
+        private static String formatTomlKey(String key) {
+            if (key == null) {
+                return "\"\"";
+            }
+            return formatScalar(key);
+        }
+
+        private static String formatTomlPath(String path) {
+            if (path == null || path.isEmpty()) {
+                return "";
+            }
+            String[] parts = path.split("\\.");
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                if (i > 0) {
+                    builder.append('.');
+                }
+                builder.append(formatTomlKey(parts[i]));
+            }
+            return builder.toString();
+        }
+
+        private static String formatScalar(Object value) {
+            if (value == null) {
+                return "null";
+            }
+            try {
+                return SCALAR_MAPPER.writeValueAsString(value).trim();
+            } catch (JsonProcessingException e) {
+                return String.valueOf(value);
+            }
+        }
+    }
+
+    private enum ConfigFormat {
+        YAML(Set.of("yml", "yaml"), createYamlMapper()),
+        JSON(Set.of("json"), createJsonMapper()),
+        JSONC(Set.of("jsonc"), createJsonCMapper()),
+        TOML(Set.of("toml"), createTomlMapper());
+
+        private final Set<String> extensions;
+        private final ObjectMapper mapper;
+
+        ConfigFormat(Set<String> extensions, ObjectMapper mapper) {
+            this.extensions = extensions;
+            this.mapper = mapper;
+        }
+
+        static ConfigFormat fromFile(File file) {
+            if (file == null) {
+                return YAML;
+            }
+            String name = file.getName().toLowerCase(Locale.ROOT);
+            int dot = name.lastIndexOf('.');
+            if (dot <= 0 || dot == name.length() - 1) {
+                return YAML;
+            }
+            String ext = name.substring(dot + 1);
+            for (ConfigFormat format : values()) {
+                if (format.extensions.contains(ext)) {
+                    return format;
+                }
+            }
+            return YAML;
+        }
+
+        Map<String, Object> read(File file) throws IOException {
+            if (file == null || !file.exists() || file.length() == 0) {
+                return new LinkedHashMap<>();
+            }
+            Map<String, Object> map = mapper.readValue(file, new TypeReference<>() {});
+            return map == null ? new LinkedHashMap<>() : ConfigDocument.castMap(map);
+        }
+
+        void write(File file, Map<String, Object> data, List<String> header,
+                   Map<String, List<String>> comments) throws IOException {
+            ensureParentDirectory(file);
+            if (this == YAML) {
+                ConfigDocument.writeYamlWithComments(file, data, header, comments);
+                return;
+            }
+            if (this == JSONC) {
+                ConfigDocument.writeJsonWithComments(file, data, header, comments);
+                return;
+            }
+            if (this == TOML) {
+                ConfigDocument.writeTomlWithComments(file, data, header, comments);
+                return;
+            }
+            ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+            writer.writeValue(file, data);
+        }
+
+        private static ObjectMapper createYamlMapper() {
+            YAMLFactory factory = YAMLFactory.builder()
+                    .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                    .build();
+            ObjectMapper mapper = new ObjectMapper(factory);
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            return mapper;
+        }
+
+        private static ObjectMapper createJsonMapper() {
+            return JsonMapper.builder()
+                    .enable(SerializationFeature.INDENT_OUTPUT)
+                    .build();
+        }
+
+        private static ObjectMapper createJsonCMapper() {
+            return JsonMapper.builder()
+                    .enable(SerializationFeature.INDENT_OUTPUT)
+                    .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
+                    .enable(JsonReadFeature.ALLOW_YAML_COMMENTS)
+                    .enable(JsonReadFeature.ALLOW_TRAILING_COMMA)
+                    .build();
+        }
+
+        private static ObjectMapper createTomlMapper() {
+            ObjectMapper mapper = new ObjectMapper(new TomlFactory());
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            return mapper;
+        }
     }
 
     /**
-     * Lightweight view over a YAML section (backed by a map).
+     * Lightweight view over a configuration section (backed by a map).
      */
-    private static class YamlSection {
+    private static class ConfigSectionView {
         private final Map<String, Object> backing;
 
-        YamlSection(Map<String, Object> backing) {
+        ConfigSectionView(Map<String, Object> backing) {
             this.backing = backing;
         }
 
