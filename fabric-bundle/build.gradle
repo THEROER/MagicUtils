@@ -1,5 +1,6 @@
 plugins {
     id 'fabric-loom' version '1.13.6'
+    id 'maven-publish'
 }
 
 def minecraftVersion = project.findProperty('minecraft_version') ?: '1.21.10'
@@ -25,6 +26,13 @@ def bundleProjects = [
         ':core'
 ]
 
+def bundleRemappedProjects = [
+        ':platform-fabric',
+        ':logger-fabric',
+        ':commands-fabric',
+        ':placeholders-fabric'
+]
+
 def bundleNamedProjects = [
         ':platform-fabric',
         ':logger-fabric',
@@ -35,7 +43,14 @@ def bundleNamedProjects = [
 dependencies {
     minecraft "com.mojang:minecraft:${minecraftVersion}"
     mappings "net.fabricmc:yarn:${yarnMappings}:v2"
-    modCompileOnly "net.fabricmc:fabric-loader:${loaderVersion}"
+    modImplementation "net.fabricmc:fabric-loader:${loaderVersion}"
+
+    bundleProjects.each { dep ->
+        include project(dep)
+    }
+    bundleRemappedProjects.each { dep ->
+        include project(path: dep, configuration: 'jiJRemap')
+    }
 
     bundleProjects.each { dep ->
         bundleShadow project(dep)
@@ -46,8 +61,6 @@ dependencies {
 }
 
 tasks.named('remapJar') {
-    dependsOn tasks.named('shadowJar')
-    inputFile.set(tasks.named('shadowJar').flatMap { it.archiveFile })
     zip64 = true
 }
 
@@ -55,15 +68,10 @@ tasks.named('shadowJar') {
     archiveClassifier.set('dev')
     configurations = [project.configurations.bundleShadow]
     exclude 'fabric.mod.json'
-    exclude 'META-INF/jars/**'
     mergeServiceFiles()
     from('src/main/resources') {
         include 'fabric.mod.json'
     }
-}
-
-tasks.named('jar') {
-    enabled = false
 }
 
 publishing {
@@ -73,11 +81,11 @@ publishing {
             artifact(tasks.named('remapJar')) {
                 builtBy tasks.named('remapJar')
             }
+            artifact(tasks.named('sourcesJar'))
+            artifact(tasks.named('javadocJar'))
             artifact(tasks.named('shadowJar')) {
                 classifier = 'dev'
             }
-            artifact(tasks.named('sourcesJar'))
-            artifact(tasks.named('javadocJar'))
             pom.withXml {
                 def node = asNode()
                 node.children().removeAll { it.name() == 'dependencies' }

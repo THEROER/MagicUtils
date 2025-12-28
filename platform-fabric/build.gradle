@@ -44,6 +44,17 @@ publishing {
     }
 }
 
+configurations {
+    jiJRemap {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+}
+
+artifacts {
+    jiJRemap(tasks.named('remapJar'))
+}
+
 tasks.withType(GenerateModuleMetadata).configureEach {
     enabled = false
 }
