@@ -37,11 +37,11 @@ subprojects {
 
     repositories {
         mavenCentral()
-        maven { url 'https://oss.sonatype.org/content/groups/public/' }
-        maven { url 'https://repo.papermc.io/repository/maven-public/' }
-        maven { url 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
-        maven { url 'https://maven.nucleoid.xyz' }
-        maven { url 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://oss.sonatype.org/content/groups/public/' }
+        maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+        maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+        maven { url = 'https://maven.nucleoid.xyz' }
+        maven { url = 'https://maven.neoforged.net/releases' }
     }
 
     java {
@@ -55,10 +55,11 @@ subprojects {
         options.compilerArgs += ['-Xlint:all,-processing', '-parameters']
     }
 
+    def projectVersion = project.version
     tasks.processResources {
-        inputs.property 'version', project.version
+        inputs.property 'version', projectVersion
         filesMatching('fabric.mod.json') {
-            expand(version: project.version)
+            expand(version: projectVersion)
         }
     }
 
@@ -86,7 +87,7 @@ subprojects {
 
     tasks.withType(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configureEach {
         archiveClassifier.set('all')
-        zip64 true
+        zip64 = true
         mergeServiceFiles()
         if (project.name == 'processor') {
             enabled = false

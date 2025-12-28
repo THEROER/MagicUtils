@@ -28,19 +28,21 @@ tasks.named('remapJar') {
     dependsOn tasks.named('jar')
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId = 'magicutils-logger-fabric'
-            from components.java
-            artifacts.removeAll { it.classifier == null && it.extension == 'jar' }
-            artifact(tasks.named('remapJar')) {
-                builtBy tasks.named('remapJar')
+afterEvaluate {
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                artifactId = 'magicutils-logger-fabric'
+                from components.java
+                artifacts.removeAll { it.classifier == null && it.extension == 'jar' }
+                artifact(tasks.named('remapJar')) {
+                    builtBy tasks.named('remapJar')
+                }
             }
-        }
-        register('mavenShadow', MavenPublication) {
-            artifactId = 'magicutils-logger-fabric-all'
-            artifact tasks.named('shadowJar')
+            register('mavenShadow', MavenPublication) {
+                artifactId = 'magicutils-logger-fabric-all'
+                artifact tasks.named('shadowJar')
+            }
         }
     }
 }
