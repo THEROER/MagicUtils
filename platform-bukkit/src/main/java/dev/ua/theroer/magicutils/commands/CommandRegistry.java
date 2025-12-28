@@ -45,6 +45,7 @@ public class CommandRegistry {
      * 
      * @param plugin           the JavaPlugin instance
      * @param permissionPrefix the prefix for permissions
+     * @param loggerInstance   logger instance for command output
      */
     public static void initialize(JavaPlugin plugin, String permissionPrefix, Logger loggerInstance) {
         CommandRegistry.plugin = plugin;

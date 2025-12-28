@@ -22,10 +22,21 @@ public final class FabricConsoleAudience implements Audience {
     private final PlatformLogger logger;
     private final String baseLoggerName;
 
+    /**
+     * Creates a console audience with default logger name handling.
+     *
+     * @param logger platform logger
+     */
     public FabricConsoleAudience(PlatformLogger logger) {
         this(logger, null);
     }
 
+    /**
+     * Creates a console audience that logs with a base logger name.
+     *
+     * @param logger platform logger
+     * @param baseLoggerName base name for sub-loggers
+     */
     public FabricConsoleAudience(PlatformLogger logger, String baseLoggerName) {
         this.logger = logger;
         this.baseLoggerName = baseLoggerName != null && !baseLoggerName.isBlank() ? baseLoggerName : null;

@@ -5,6 +5,9 @@ import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Bridges MagicPlaceholders to Fabric placeholder backends.
+ */
 public final class FabricPlaceholderRegistrar implements MagicPlaceholders.PlaceholderListener {
     private static final AtomicBoolean INSTALLED = new AtomicBoolean();
 
@@ -24,6 +27,11 @@ public final class FabricPlaceholderRegistrar implements MagicPlaceholders.Place
         );
     }
 
+    /**
+     * Installs the registrar and registers existing placeholders.
+     *
+     * @param logger logger core
+     */
     public static void install(LoggerCore logger) {
         if (logger == null) {
             return;

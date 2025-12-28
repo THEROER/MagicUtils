@@ -7,5 +7,11 @@ package dev.ua.theroer.magicutils.commands;
  */
 @FunctionalInterface
 public interface CommandExecutor<S> {
+    /**
+     * Executes the command with the given execution context.
+     *
+     * @param execution execution context
+     * @return command result
+     */
     CommandResult execute(CommandExecution<S> execution);
 }

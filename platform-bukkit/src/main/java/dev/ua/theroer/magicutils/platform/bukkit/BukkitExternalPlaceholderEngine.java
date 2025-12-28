@@ -13,6 +13,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class BukkitExternalPlaceholderEngine implements ExternalPlaceholderEngine {
     private final PlaceholderApiIntegration integration;
 
+    /**
+     * Creates a PlaceholderAPI bridge for a plugin.
+     *
+     * @param plugin owning plugin
+     */
     public BukkitExternalPlaceholderEngine(JavaPlugin plugin) {
         this.integration = plugin != null ? new PlaceholderApiIntegration(plugin) : null;
     }

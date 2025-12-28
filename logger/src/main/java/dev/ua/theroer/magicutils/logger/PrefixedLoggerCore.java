@@ -9,6 +9,7 @@ import java.util.Collection;
 /**
  * Core prefixed logger with shared formatting logic.
  */
+@SuppressWarnings("doclint:missing")
 public class PrefixedLoggerCore {
     @Getter
     private final LoggerCore logger;

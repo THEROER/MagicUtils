@@ -22,6 +22,10 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Fabric-specific external placeholder engine adapter.
+ */
+@SuppressWarnings("doclint:missing")
 public final class FabricExternalPlaceholderEngine implements ExternalPlaceholderEngine {
     private static final Pattern PB4_PERCENT_PATTERN = Pattern
             .compile("(?<!((?<!(\\\\))\\\\))[%](?<id>[^%]+)[%]");
@@ -42,6 +46,11 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
     private final Method pb4ContextOfPlayer;
     private final Method pb4ContextOfServer;
 
+    /**
+     * Creates the placeholder engine adapter.
+     *
+     * @param logger logger core
+     */
     public FabricExternalPlaceholderEngine(LoggerCore logger) {
         this.logger = logger;
         this.miniAudienceGlobalPlaceholders = resolveMiniAudienceGlobalPlaceholders();

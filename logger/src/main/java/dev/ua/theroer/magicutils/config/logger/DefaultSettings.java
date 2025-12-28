@@ -40,13 +40,23 @@ public class DefaultSettings {
     @Comment("PB4 placeholder mode (COMPONENT, RAW)")
     private Pb4Mode pb4Mode = Pb4Mode.COMPONENT;
 
+    /**
+     * Rendering mode for MiniPlaceholders integration.
+     */
     public enum MiniPlaceholdersMode {
+        /** Component output mode. */
         COMPONENT,
+        /** Tag output mode. */
         TAG
     }
 
+    /**
+     * Rendering mode for PB4 placeholders integration.
+     */
     public enum Pb4Mode {
+        /** Component output mode. */
         COMPONENT,
+        /** Raw text output mode. */
         RAW
     }
 }

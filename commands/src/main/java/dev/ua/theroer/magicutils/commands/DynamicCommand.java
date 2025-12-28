@@ -6,6 +6,11 @@ package dev.ua.theroer.magicutils.commands;
 public final class DynamicCommand extends MagicCommand {
     private final CommandSpec<?> spec;
 
+    /**
+     * Creates a dynamic command from a command spec.
+     *
+     * @param spec command specification
+     */
     public DynamicCommand(CommandSpec<?> spec) {
         if (spec == null) {
             throw new IllegalArgumentException("Command spec is required");
@@ -20,6 +25,11 @@ public final class DynamicCommand extends MagicCommand {
         }
     }
 
+    /**
+     * Returns the backing command spec.
+     *
+     * @return command spec
+     */
     public CommandSpec<?> spec() {
         return spec;
     }

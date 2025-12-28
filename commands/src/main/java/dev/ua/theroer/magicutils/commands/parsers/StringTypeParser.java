@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * Type parser for String arguments.
+ *
+ * @param <S> sender type
  */
 public class StringTypeParser<S> implements TypeParser<S, String> {
 

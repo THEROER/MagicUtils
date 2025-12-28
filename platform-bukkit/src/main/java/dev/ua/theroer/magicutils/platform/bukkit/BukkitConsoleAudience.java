@@ -25,6 +25,12 @@ public final class BukkitConsoleAudience implements Audience {
     private final Map<String, Logger> loggerCache = new ConcurrentHashMap<>();
     private final Map<String, Object> componentLoggerCache = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a console audience backed by a JUL logger.
+     *
+     * @param baseLogger base logger
+     * @param baseLoggerName base name for nested loggers
+     */
     public BukkitConsoleAudience(Logger baseLogger, String baseLoggerName) {
         this.baseLogger = baseLogger;
         this.baseLoggerName = baseLoggerName != null && !baseLoggerName.isBlank()

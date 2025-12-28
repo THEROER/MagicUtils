@@ -26,10 +26,21 @@ import java.util.stream.Collectors;
 public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
     private final CommandLogger logger;
 
+    /**
+     * Creates a Bukkit platform wrapper.
+     *
+     * @param logger command logger
+     */
     public BukkitCommandPlatform(CommandLogger logger) {
         this.logger = logger != null ? logger : CommandLogger.noop();
     }
 
+    /**
+     * Wraps a Bukkit sender into {@link MagicSender}.
+     *
+     * @param sender Bukkit sender
+     * @return wrapped sender or null if unavailable
+     */
     public static @Nullable MagicSender wrapMagicSender(CommandSender sender) {
         if (sender == null) {
             return null;

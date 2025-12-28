@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * Type parser for Long arguments.
+ *
+ * @param <S> sender type
  */
 public class LongTypeParser<S> implements TypeParser<S, Long> {
 

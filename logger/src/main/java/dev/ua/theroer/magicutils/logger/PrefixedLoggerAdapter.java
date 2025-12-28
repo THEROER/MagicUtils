@@ -12,6 +12,7 @@ import java.util.Objects;
  * @param <P> platform audience type (Player, ServerPlayerEntity, etc.)
  * @param <B> log builder type
  */
+@SuppressWarnings("doclint:missing")
 public interface PrefixedLoggerAdapter<P, B extends LogBuilderCore> {
     PrefixedLoggerCore getCore();
 

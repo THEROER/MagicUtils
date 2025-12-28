@@ -20,14 +20,29 @@ import java.util.stream.Collectors;
 public class FabricCommandPlatform implements CommandPlatform<ServerCommandSource> {
     private final int opLevel;
 
+    /**
+     * Creates a platform wrapper using op level 2.
+     */
     public FabricCommandPlatform() {
         this(2);
     }
 
+    /**
+     * Creates a platform wrapper with a custom op level fallback.
+     *
+     * @param opLevel op level to use for permission fallback
+     */
     public FabricCommandPlatform(int opLevel) {
         this.opLevel = opLevel;
     }
 
+    /**
+     * Wraps a Fabric sender into {@link MagicSender}.
+     *
+     * @param sender Fabric sender
+     * @param opLevel op-level fallback for permissions
+     * @return wrapped sender or null if unavailable
+     */
     public static @Nullable MagicSender wrapMagicSender(ServerCommandSource sender, int opLevel) {
         if (sender == null) {
             return null;

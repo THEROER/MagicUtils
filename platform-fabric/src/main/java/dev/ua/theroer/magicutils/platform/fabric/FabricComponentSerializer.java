@@ -20,6 +20,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * Utility for converting between Adventure components and Fabric Text.
+ */
+@SuppressWarnings("doclint:missing")
 public final class FabricComponentSerializer {
     private static final GsonComponentSerializer GSON = GsonComponentSerializer.gson();
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();

@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * Type parser for Boolean arguments.
+ *
+ * @param <S> sender type
  */
 public class BooleanTypeParser<S> implements TypeParser<S, Boolean> {
 

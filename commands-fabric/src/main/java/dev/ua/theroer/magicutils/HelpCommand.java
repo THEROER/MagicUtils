@@ -15,7 +15,11 @@ import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
         permissionDefault = MagicPermissionDefault.TRUE
 )
 public class HelpCommand extends HelpCommandBase {
-    /** Default constructor. */
+    /**
+     * Creates the help command.
+     *
+     * @param logger platform logger
+     */
     public HelpCommand(Logger logger) {
         super(logger != null ? logger.getCore() : null, CommandRegistry::getCommandManager);
     }

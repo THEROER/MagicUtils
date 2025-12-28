@@ -27,6 +27,11 @@ public class PlayerTypeParser implements TypeParser<CommandSender, Player> {
         this(null);
     }
 
+    /**
+     * Creates the parser with optional debug logging.
+     *
+     * @param logger prefixed logger
+     */
     public PlayerTypeParser(PrefixedLogger logger) {
         this.logger = logger;
     }

@@ -13,6 +13,7 @@ import java.util.List;
  *
  * @param <S> sender type
  */
+@SuppressWarnings("doclint:missing")
 public final class CommandSpec<S> {
     private final String name;
     private final String description;
@@ -104,6 +105,7 @@ public final class CommandSpec<S> {
         };
     }
 
+    @SuppressWarnings("doclint:missing")
     public static final class Builder<S> {
         private final String name;
         private String description = "";

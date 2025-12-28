@@ -17,16 +17,37 @@ public class HelpCommandBase extends MagicCommand {
     private final Supplier<CommandManager<?>> managerSupplier;
     private final String helpCommand;
 
+    /**
+     * Creates a help command using the default command name.
+     *
+     * @param logger logger core
+     * @param managerSupplier supplier for command manager
+     */
     public HelpCommandBase(LoggerCore logger, Supplier<CommandManager<?>> managerSupplier) {
         this(logger, managerSupplier, "mhelp");
     }
 
+    /**
+     * Creates a help command with a custom command name.
+     *
+     * @param logger logger core
+     * @param managerSupplier supplier for command manager
+     * @param helpCommand help command name
+     */
     public HelpCommandBase(LoggerCore logger, Supplier<CommandManager<?>> managerSupplier, String helpCommand) {
         this.logger = logger;
         this.managerSupplier = managerSupplier != null ? managerSupplier : () -> null;
         this.helpCommand = helpCommand;
     }
 
+    /**
+     * Executes the help command.
+     *
+     * @param sender command sender
+     * @param commandName optional command filter
+     * @param subCommand optional subcommand filter
+     * @return command result
+     */
     public CommandResult execute(MagicSender sender,
                                  @OptionalArgument @Suggest("getCommandSuggestions") String commandName,
                                  @OptionalArgument String subCommand) {
@@ -43,10 +64,21 @@ public class HelpCommandBase extends MagicCommand {
         return CommandResult.success(false, "");
     }
 
+    /**
+     * Returns suggestions for known command names.
+     *
+     * @return command name suggestions
+     */
     public String[] getCommandSuggestions() {
         return HelpCommandSupport.getCommandSuggestions(managerSupplier.get());
     }
 
+    /**
+     * Sends a formatted line to the sender.
+     *
+     * @param sender command sender
+     * @param line line to send
+     */
     protected void sendLine(MagicSender sender, String line) {
         if (sender == null) {
             return;

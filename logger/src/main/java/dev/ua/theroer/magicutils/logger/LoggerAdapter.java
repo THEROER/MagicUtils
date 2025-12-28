@@ -17,6 +17,7 @@ import java.util.Objects;
  * @param <P> platform audience type (Player, ServerPlayerEntity, etc.)
  * @param <L> prefixed logger implementation type
  */
+@SuppressWarnings("doclint:missing")
 public interface LoggerAdapter<P, L> {
     LoggerCore getCore();
 

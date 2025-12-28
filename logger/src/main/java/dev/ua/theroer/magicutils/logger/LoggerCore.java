@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
  * Platform-agnostic logger core with configurable formatting and placeholders.
  */
 @LogMethods(staticMethods = false, audienceType = "dev.ua.theroer.magicutils.platform.Audience")
+@SuppressWarnings("doclint:missing")
 public class LoggerCore extends LoggerCoreMethods {
     private static final String LOGGER_DIR_PLACEHOLDER = "logger_dir";
     private static final String LOGGER_DIR_DEFAULT = ".";

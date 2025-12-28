@@ -33,6 +33,7 @@ import java.util.Map;
  * Fabric logger adapter backed by {@link LoggerCore}.
  */
 @LogMethods(staticMethods = false, audienceType = "net.minecraft.server.network.ServerPlayerEntity")
+@SuppressWarnings("doclint:missing")
 public final class Logger extends LoggerMethods implements LoggerAdapter<ServerPlayerEntity, PrefixedLogger> {
     private final LoggerCore core;
     private final Map<String, PrefixedLogger> prefixedLoggers = new HashMap<>();

@@ -5,6 +5,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Registers MagicPlaceholders with Bukkit placeholder backend when available.
+ */
 public final class BukkitPlaceholderRegistrar implements MagicPlaceholders.PlaceholderListener {
     private static final AtomicBoolean INSTALLED = new AtomicBoolean();
 
@@ -14,6 +17,11 @@ public final class BukkitPlaceholderRegistrar implements MagicPlaceholders.Place
         this.backend = createBackend(plugin);
     }
 
+    /**
+     * Installs the registrar for the plugin.
+     *
+     * @param plugin owning plugin
+     */
     public static void install(JavaPlugin plugin) {
         if (plugin == null) {
             return;

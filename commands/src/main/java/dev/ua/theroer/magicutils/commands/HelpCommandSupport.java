@@ -18,6 +18,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+/**
+ * Static helpers for building formatted help output.
+ */
+@SuppressWarnings("doclint:missing")
 public final class HelpCommandSupport {
     private static final String DEFAULT_HELP_COMMAND = "mhelp";
     private static final HelpStyle DEFAULT_STYLE = new HelpStyle(
@@ -33,6 +37,14 @@ public final class HelpCommandSupport {
     private HelpCommandSupport() {
     }
 
+    /**
+     * Result of help rendering.
+     *
+     * @param success true when help rendering succeeds
+     * @param lines formatted output lines
+     * @param errorMessage error message when rendering fails
+     */
+    @SuppressWarnings("doclint:missing")
     public record HelpResult(boolean success, List<String> lines, String errorMessage) {
         public static HelpResult success(List<String> lines) {
             return new HelpResult(true, lines != null ? lines : List.of(), null);

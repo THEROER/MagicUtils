@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 /**
  * Generic enum parser to avoid registering a parser per enum type.
+ *
+ * @param <S> sender type
  */
 public class EnumTypeParser<S> implements TypeParser<S, Enum<?>> {
 

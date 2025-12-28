@@ -12,6 +12,7 @@ import java.util.Map;
 /**
  * Bukkit-specific log builder with Player/CommandSender helpers.
  */
+@SuppressWarnings("doclint:missing")
 public class LogBuilder extends LogBuilderCore {
     private final Logger logger;
 

@@ -25,6 +25,11 @@ public class OfflinePlayerTypeParser implements TypeParser<CommandSender, Offlin
         this(null);
     }
 
+    /**
+     * Creates the parser with optional debug logging.
+     *
+     * @param logger prefixed logger
+     */
     public OfflinePlayerTypeParser(PrefixedLogger logger) {
         this.logger = logger;
     }

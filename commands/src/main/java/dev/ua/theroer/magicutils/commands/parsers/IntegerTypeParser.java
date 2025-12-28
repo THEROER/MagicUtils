@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * Type parser for Integer arguments.
+ *
+ * @param <S> sender type
  */
 public class IntegerTypeParser<S> implements TypeParser<S, Integer> {
 

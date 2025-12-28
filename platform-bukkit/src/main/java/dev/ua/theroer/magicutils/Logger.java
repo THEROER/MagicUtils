@@ -27,6 +27,7 @@ import java.util.Map;
  * Bukkit/Paper logger adapter backed by {@link LoggerCore}.
  */
 @LogMethods(staticMethods = false, audienceType = "org.bukkit.entity.Player")
+@SuppressWarnings("doclint:missing")
 public final class Logger extends LoggerMethods implements LoggerAdapter<Player, PrefixedLogger> {
     @Getter
     private final LoggerCore core;

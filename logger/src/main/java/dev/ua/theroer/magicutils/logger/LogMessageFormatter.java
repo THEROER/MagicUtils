@@ -26,6 +26,7 @@ public final class LogMessageFormatter {
      * @param message arbitrary value (String, Component, Throwable, etc.)
      * @param level log level to render
      * @param target log target describing prefix/colors
+     * @param prefixOverride optional prefix mode override
      * @param directAudience explicit audience recipient (may be null)
      * @param audienceCollection collection of audiences to consider for placeholder context
      * @param placeholdersArgs placeholder arguments passed by logger

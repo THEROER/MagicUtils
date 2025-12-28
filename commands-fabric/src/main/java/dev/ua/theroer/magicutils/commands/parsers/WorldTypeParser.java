@@ -24,6 +24,11 @@ public class WorldTypeParser implements TypeParser<ServerCommandSource, ServerWo
         this(null);
     }
 
+    /**
+     * Creates the parser with optional debug logging.
+     *
+     * @param logger prefixed logger
+     */
     public WorldTypeParser(PrefixedLogger logger) {
         this.logger = logger;
     }

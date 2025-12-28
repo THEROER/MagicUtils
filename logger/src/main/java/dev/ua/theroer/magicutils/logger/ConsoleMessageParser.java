@@ -9,6 +9,12 @@ public final class ConsoleMessageParser {
     private ConsoleMessageParser() {
     }
 
+    /**
+     * Parses a console message and extracts level, sub-logger, and prefix text.
+     *
+     * @param message raw console message
+     * @return parsed message metadata
+     */
     public static ParsedMessage parse(String message) {
         if (message == null || message.isEmpty()) {
             return new ParsedMessage(message, LogLevel.INFO, null, "");
@@ -94,6 +100,9 @@ public final class ConsoleMessageParser {
         }
     }
 
+    /**
+     * Parsed representation of a console message.
+     */
     public static final class ParsedMessage {
         private final String message;
         private final LogLevel level;
@@ -107,18 +116,38 @@ public final class ConsoleMessageParser {
             this.prefixText = prefixText;
         }
 
+        /**
+         * Returns the message body without the parsed prefix.
+         *
+         * @return message body
+         */
         public String message() {
             return message;
         }
 
+        /**
+         * Returns the parsed log level.
+         *
+         * @return log level
+         */
         public LogLevel level() {
             return level;
         }
 
+        /**
+         * Returns the parsed sub-logger name, if any.
+         *
+         * @return sub-logger name or null
+         */
         public String subLogger() {
             return subLogger;
         }
 
+        /**
+         * Returns the raw prefix text that was parsed.
+         *
+         * @return prefix text
+         */
         public String prefixText() {
             return prefixText;
         }

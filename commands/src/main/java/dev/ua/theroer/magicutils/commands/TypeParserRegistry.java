@@ -36,6 +36,7 @@ public class TypeParserRegistry<S> {
     /**
      * Factory to register built-in parsers after construction.
      *
+     * @param <S> sender type
      * @param logger command logger
      * @return registry preloaded with default parsers
      */

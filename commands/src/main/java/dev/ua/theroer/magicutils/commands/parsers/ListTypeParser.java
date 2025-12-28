@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
 /**
  * Type parser for handling list suggestions like {value1,value2,value3}.
  * This parser doesn't parse values but provides suggestions from list syntax.
+ *
+ * @param <S> sender type
  */
 public class ListTypeParser<S> implements TypeParser<S, String> {
     private static final Pattern LIST_PATTERN = Pattern.compile("^\\{([^}]+)\\}$");

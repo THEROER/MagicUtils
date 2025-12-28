@@ -12,10 +12,20 @@ import java.util.UUID;
 public final class FabricAudience implements Audience {
     private final ServerPlayerEntity player;
 
+    /**
+     * Creates an audience for the given player.
+     *
+     * @param player player instance
+     */
     public FabricAudience(ServerPlayerEntity player) {
         this.player = player;
     }
 
+    /**
+     * Returns the wrapped player instance.
+     *
+     * @return player instance
+     */
     public ServerPlayerEntity getPlayer() {
         return player;
     }

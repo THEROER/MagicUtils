@@ -15,6 +15,8 @@ public class LoggerExamples {
 
     /**
      * Default constructor for LoggerExamples.
+     *
+     * @param logger logger instance
      */
     public LoggerExamples(Logger logger) {
         this.logger = logger;

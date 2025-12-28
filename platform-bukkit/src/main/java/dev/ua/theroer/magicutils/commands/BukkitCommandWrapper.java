@@ -30,10 +30,11 @@ public class BukkitCommandWrapper extends Command {
 
     /**
      * Constructs a new BukkitCommandWrapper.
-     * 
+     *
      * @param name           the command name
      * @param commandManager the command manager
-     * @param aliases        the command aliases
+     * @param commandLogger  command logger
+     * @param messageLogger  message logger
      */
     private BukkitCommandWrapper(String name,
                                  CommandManager<CommandSender> commandManager,
@@ -51,6 +52,8 @@ public class BukkitCommandWrapper extends Command {
      * @param name           command name
      * @param commandManager manager to delegate execution
      * @param aliases        optional aliases
+     * @param commandLogger  command logger
+     * @param messageLogger  message logger
      * @return fully initialised wrapper
      */
     public static BukkitCommandWrapper create(String name,

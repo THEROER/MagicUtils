@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 
 /**
  * Manages registration, execution, and tab completion of commands.
+ *
+ * @param <S> sender type
  */
 public class CommandManager<S> {
     private final CommandLogger logger;
@@ -38,9 +40,12 @@ public class CommandManager<S> {
 
     /**
      * Constructs a new CommandManager.
-     * 
+     *
      * @param permissionPrefix the prefix for permissions
      * @param pluginName       the plugin name for namespaced commands
+     * @param logger           command logger implementation
+     * @param platform         platform adapter
+     * @param typeParserRegistry type parser registry
      */
     public CommandManager(String permissionPrefix,
                           String pluginName,
@@ -553,6 +558,12 @@ public class CommandManager<S> {
         return null;
     }
 
+    /**
+     * Returns true when the argument represents the sender parameter.
+     *
+     * @param argument command argument
+     * @return true if sender argument
+     */
     public boolean isSenderArgument(CommandArgument argument) {
         return argument.isSenderParameter() || platform.isSenderType(argument.getType());
     }

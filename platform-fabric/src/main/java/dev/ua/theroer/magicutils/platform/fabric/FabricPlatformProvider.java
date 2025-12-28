@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 /**
  * Platform provider for Fabric runtime.
  */
+@SuppressWarnings("doclint:missing")
 public final class FabricPlatformProvider implements Platform, ConfigNamespaceProvider, ConfigFormatProvider {
     private final Supplier<MinecraftServer> serverSupplier;
     private final PlatformLogger logger;

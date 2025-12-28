@@ -16,6 +16,13 @@ public final class ComponentPrefixStripper {
     private ComponentPrefixStripper() {
     }
 
+    /**
+     * Strips a plain-text prefix from the component.
+     *
+     * @param component component to trim
+     * @param prefixText prefix text to remove
+     * @return component without the prefix
+     */
     public static Component stripPrefix(Component component, String prefixText) {
         if (component == null || prefixText == null || prefixText.isBlank()) {
             return component;

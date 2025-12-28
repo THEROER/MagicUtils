@@ -10,6 +10,7 @@ import java.util.List;
  *
  * @param <S> sender type
  */
+@SuppressWarnings("doclint:missing")
 public final class SubCommandSpec<S> {
     private final String name;
     private final String description;
@@ -67,6 +68,7 @@ public final class SubCommandSpec<S> {
         return new Builder<>(name);
     }
 
+    @SuppressWarnings("doclint:missing")
     public static final class Builder<S> {
         private final String name;
         private String description = "";

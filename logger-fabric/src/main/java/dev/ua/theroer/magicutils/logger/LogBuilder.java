@@ -12,6 +12,7 @@ import java.util.Map;
 /**
  * Fabric-specific log builder with player helpers.
  */
+@SuppressWarnings("doclint:missing")
 public class LogBuilder extends LogBuilderCore {
     private final Logger logger;
 

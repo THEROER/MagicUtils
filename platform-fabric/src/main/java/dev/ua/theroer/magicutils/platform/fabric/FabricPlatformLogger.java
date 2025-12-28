@@ -9,6 +9,11 @@ import org.slf4j.Logger;
 public final class FabricPlatformLogger implements PlatformLogger {
     private final Logger delegate;
 
+    /**
+     * Creates a logger wrapper.
+     *
+     * @param delegate slf4j logger
+     */
     public FabricPlatformLogger(Logger delegate) {
         this.delegate = delegate;
     }
