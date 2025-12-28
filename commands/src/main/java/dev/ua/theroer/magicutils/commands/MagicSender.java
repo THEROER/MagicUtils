@@ -9,6 +9,26 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface MagicSender {
     /**
+     * Wrap raw sender instance into MagicSender if a platform adapter is available.
+     *
+     * @param sender raw sender instance
+     * @return wrapped sender or null if unsupported
+     */
+    static @Nullable MagicSender wrap(Object sender) {
+        return MagicSenderAdapters.wrap(sender);
+    }
+
+    /**
+     * Checks permission on raw sender using registered adapters.
+     *
+     * @param sender raw sender instance
+     * @param permission permission node
+     * @return true if granted
+     */
+    static boolean hasPermission(Object sender, String permission) {
+        return MagicSenderAdapters.hasPermission(sender, permission);
+    }
+    /**
      * Audience for sending messages back to the sender.
      *
      * @return audience wrapper

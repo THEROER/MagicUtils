@@ -1,6 +1,7 @@
 package examples.commands;
 
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
+import dev.ua.theroer.magicutils.annotations.DefaultValue;
 import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.Permission;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
@@ -9,7 +10,7 @@ import dev.ua.theroer.magicutils.commands.CompareMode;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
-import dev.ua.theroer.magicutils.commands.PermissionDefault;
+import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
 import dev.ua.theroer.magicutils.commands.PermissionConditionType;
 import dev.ua.theroer.magicutils.commands.parsers.LanguageKeyTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
@@ -21,7 +22,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * Simple command that shows how to wire sub-commands via annotations.
  */
-@CommandInfo(name = "example", description = "MagicUtils command example", permission = "magicutils.example.use", permissionDefault = PermissionDefault.NOT_OP)
+@CommandInfo(name = "example", description = "MagicUtils command example", permission = "magicutils.example.use", permissionDefault = MagicPermissionDefault.NOT_OP)
 public class ExampleCommand extends MagicCommand {
 
     public ExampleCommand(LanguageManager languageManager, JavaPlugin plugin) {
@@ -37,7 +38,7 @@ public class ExampleCommand extends MagicCommand {
     }
 
     @SubCommand(name = "setlang", description = "Change your language")
-    @Permission(value = "magicutils.example.lang", defaultValue = PermissionDefault.NOT_OP)
+    @Permission(value = "magicutils.example.lang", defaultValue = MagicPermissionDefault.NOT_OP)
     public CommandResult setLanguage(Player sender,
             @Suggest("@languages") String languageCode) {
         if (!LanguageManagerProvider.get().setPlayerLanguage(sender, languageCode)) {
@@ -48,7 +49,7 @@ public class ExampleCommand extends MagicCommand {
 
     @SubCommand(name = "heal", description = "Heal yourself or another player")
     public CommandResult heal(Player sender,
-            @Permission(value = "magicutils.example.heal.target", condition = PermissionConditionType.ANY_OTHER, compare = CompareMode.UUID, defaultValue = PermissionDefault.OP) @DefaultValue("@sender") Player target) {
+            @Permission(value = "magicutils.example.heal.target", condition = PermissionConditionType.ANY_OTHER, compare = CompareMode.UUID, defaultValue = MagicPermissionDefault.OP) @DefaultValue("@sender") Player target) {
         target.setHealth(target.getMaxHealth());
         return CommandResult.success("Healed " + target.getName());
     }

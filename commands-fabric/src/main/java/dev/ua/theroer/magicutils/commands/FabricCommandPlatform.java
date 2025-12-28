@@ -28,6 +28,13 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         this.opLevel = opLevel;
     }
 
+    public static @Nullable MagicSender wrapMagicSender(ServerCommandSource sender, int opLevel) {
+        if (sender == null) {
+            return null;
+        }
+        return new FabricMagicSender(sender, opLevel);
+    }
+
     @Override
     public Class<?> senderType() {
         return ServerCommandSource.class;

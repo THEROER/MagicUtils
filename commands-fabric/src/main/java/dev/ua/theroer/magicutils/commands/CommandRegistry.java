@@ -14,6 +14,7 @@ import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import lombok.Getter;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,6 +94,23 @@ public final class CommandRegistry {
 
         CommandRegistry.commandManager = new CommandManager<>(permissionPrefix, CommandRegistry.modName,
                 commandLogger, platform, parserRegistry);
+        MagicSenderAdapters.register("fabric", new MagicSenderAdapter() {
+            @Override
+            public boolean supports(Object sender) {
+                return sender instanceof ServerCommandSource || sender instanceof ServerPlayerEntity;
+            }
+
+            @Override
+            public MagicSender wrap(Object sender) {
+                if (sender instanceof ServerCommandSource source) {
+                    return FabricCommandPlatform.wrapMagicSender(source, opLevel);
+                }
+                if (sender instanceof ServerPlayerEntity player) {
+                    return FabricCommandPlatform.wrapMagicSender(player.getCommandSource(), opLevel);
+                }
+                return null;
+            }
+        });
         logger.info("Command registry initialized successfully");
     }
 

@@ -30,6 +30,13 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
         this.logger = logger != null ? logger : CommandLogger.noop();
     }
 
+    public static @Nullable MagicSender wrapMagicSender(CommandSender sender) {
+        if (sender == null) {
+            return null;
+        }
+        return new BukkitMagicSender(sender);
+    }
+
     @Override
     public Class<?> senderType() {
         return CommandSender.class;

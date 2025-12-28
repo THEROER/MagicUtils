@@ -87,6 +87,17 @@ public class CommandRegistry {
 
         CommandRegistry.commandManager = new CommandManager<>(permissionPrefix, plugin.getName(),
                 commandLogger, platform, parserRegistry);
+        MagicSenderAdapters.register("bukkit", new MagicSenderAdapter() {
+            @Override
+            public boolean supports(Object sender) {
+                return sender instanceof CommandSender;
+            }
+
+            @Override
+            public MagicSender wrap(Object sender) {
+                return BukkitCommandPlatform.wrapMagicSender((CommandSender) sender);
+            }
+        });
 
         try {
             Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");

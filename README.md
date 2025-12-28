@@ -1,8 +1,10 @@
 # MagicUtils
 
-Utility toolkit for Bukkit/Paper + NeoForge that consolidates configuration,
-localisation, commands, logging, GUI helpers, and scheduling. Published to
-local Maven; use the thin jars or `-all` shaded variants.
+Modular toolkit for Bukkit/Paper, Fabric, and NeoForge that consolidates
+configuration, localisation, commands, logging, placeholders, GUI helpers,
+and scheduling. Published to local Maven; use thin jars (or `-all` shaded
+variants for non-Fabric). Fabric distributions are provided as a jar-in-jar
+bundle (`magicutils-fabric-bundle`).
 
 ---
 
@@ -10,15 +12,21 @@ local Maven; use the thin jars or `-all` shaded variants.
 
 1. [Quick Start](#quick-start)
 2. [Module Reference](#module-reference)
+   - [core](#core--shared-foundation)
    - [config](#config--annotation-driven-configuration)
+   - [config-yaml](#config-yaml--yaml-format-support)
+   - [config-toml](#config-toml--toml-format-support)
    - [lang](#lang--localisation--messaging)
    - [commands](#commands--declarative-command-framework)
    - [logger](#logger--rich-console--chat-logging)
-   - [gui](#gui--inventory-ui-helpers)
-   - [utils](#utils--scheduling-helpers)
+   - [gui](#gui--bukkit-inventory-ui-helpers)
+   - [utils](#utils--bukkit-scheduling-helpers)
    - [platform](#platform--platform-abstractions)
+   - [fabric-adapters](#fabric-adapters--brigadier--logging)
+   - [fabric-bundle](#fabric-bundle--jar-in-jar-distribution)
    - [placeholders](#placeholders--custom--papi-integration)
    - [annotations](#annotations--shared-metadata)
+   - [processor](#processor--annotation-helper)
 3. [Recipes](#recipes)
 4. [Troubleshooting](#troubleshooting)
 5. [Contributing](#contributing)
@@ -29,29 +37,42 @@ local Maven; use the thin jars or `-all` shaded variants.
 
 1. **Publish to Maven Local** (choose target)
    ```bash
-   ./gradlew :platform-bukkit:publishToMavenLocal   # Paper/Bukkit
-   ./gradlew :platform-neoforge:publishToMavenLocal # NeoForge
+   ./gradlew :platform-bukkit:publishToMavenLocal    # Paper/Bukkit
+   ./gradlew :fabric-bundle:publishToMavenLocal      # Fabric (jar-in-jar)
+   ./gradlew :platform-neoforge:publishToMavenLocal  # NeoForge
    ```
-2. **Declare the dependency** in your plugin build script:
+2. **Declare the dependency** in your build script.
+   **Bukkit/Paper:**
    ```kts
-   repositories {
-       mavenLocal()
-   }
+   repositories { mavenLocal() }
 
    dependencies {
-       implementation("dev.ua.theroer:magicutils-bukkit:<version>")    // or magicutils-neoforge
-       // if you prefer shaded runtime: implementation("dev.ua.theroer:magicutils-bukkit-all:<version>")
+       implementation("dev.ua.theroer:magicutils-bukkit:<version>")
+       // optional: implementation("dev.ua.theroer:magicutils-config-yaml:<version>")
+       // optional: implementation("dev.ua.theroer:magicutils-config-toml:<version>")
+       // shaded runtime: implementation("dev.ua.theroer:magicutils-bukkit-all:<version>")
    }
    ```
-   Version is set in `gradle.properties` (`version=1.5.4` by default).
+   **Fabric (Loom):**
+   ```kts
+   repositories { mavenLocal() }
+
+   dependencies {
+       modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:<version>"))
+       modCompileOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
+       modRuntimeOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
+   }
+   ```
+   Version is set in `gradle.properties` (`version=1.9.1` by default).
 3. **Refresh after every change** by repeating `publishToMavenLocal` so
-   dependent plugins pick up the new artefact.
+   dependent plugins/mods pick up the new artefact.
 
 > **Prerequisites:** Java 21 toolchain across all modules.
 
 > **Modules:** `platform-api` (abstractions), `core` (platform-agnostic code),
-> `platform-bukkit` (Paper/Bukkit implementation), `platform-neoforge`
-> (minimal NeoForge adapter: config dir, logger, console audience).
+> `platform-bukkit` (Paper/Bukkit implementation), `platform-fabric` (Fabric),
+> `platform-neoforge` (minimal NeoForge adapter: config dir, logger, console).
+> Format add-ons: `config-yaml`, `config-toml`. Fabric bundle: `fabric-bundle`.
 
 > **Annotation processor (optional):** `processor` now generates logging overloads
 > for `Logger`/`PrefixedLogger` (`@LogMethods`) and claims config/command annotations
@@ -61,11 +82,18 @@ local Maven; use the thin jars or `-all` shaded variants.
 
 ## Module Reference
 
+### `core` — shared foundation
+
+**Highlights**
+- Aggregates `config`, `lang`, `commands`, `logger`, and `placeholders` on top of `platform-api`.
+- Use when you are building a custom platform adapter or want the full core stack without platform bindings.
+
 ### `config` — annotation-driven configuration
 
 **Highlights**
-- Map YAML/JSON/JSONC/TOML directly to POJOs using `@ConfigFile`, `@ConfigSection`, `@ConfigValue`,
-  `@Comment`, `@ConfigReloadable`, and friends.
+- Map JSON/JSONC directly to POJOs using `@ConfigFile`, `@ConfigSection`, `@ConfigValue`,
+  `@Comment`, `@ConfigReloadable`, and friends. YAML/TOML support is provided by
+  `magicutils-config-yaml` / `magicutils-config-toml`.
 - Diff-aware saving: only modified values are written back, keeping user edits intact.
 - Built-in filesystem watcher can reload files changed on disk and notify listeners.
 - Placeholders in file paths (`lang/{lang}.yml`) supported out of the box.
@@ -88,6 +116,18 @@ local Maven; use the thin jars or `-all` shaded variants.
 - Always call `configManager.shutdown()` in your plugin’s `onDisable` to release watcher resources.
 - Combine with `lang` by storing language codes in config and feeding them into `LanguageManager` at runtime.
 - Example: `examples/config/ConfigExample.java`.
+
+### `config-yaml` — YAML format support
+
+**Highlights**
+- Adds Jackson YAML support for `ConfigManager` (YAML/`yml` files).
+- Install alongside `magicutils-config` when you want YAML configs.
+
+### `config-toml` — TOML format support
+
+**Highlights**
+- Adds Jackson TOML support for `ConfigManager` (TOML files).
+- Install alongside `magicutils-config` when you want TOML configs.
 
 ### `lang` — localisation & messaging
 
@@ -122,7 +162,8 @@ local Maven; use the thin jars or `-all` shaded variants.
 - `CommandRegistry` & `CommandManager` can dynamically register/unregister commands at runtime (useful for reloading or feature flags).
 - Rich parsers for core Bukkit types (players, worlds, offline players) plus domain-specific ones (language keys). Custom parsers plug in via `TypeParserRegistry`.
 - `CommandResult` model bubbles up messages and success state; direct integration with `LanguageManager` for consistent feedback.
-- `BukkitCommandWrapper` bridges registered commands with Bukkit’s dispatcher and handles permission denial automatically.
+- `CommandRegistry` integrates MagicUtils commands on Bukkit and Fabric (via `commands-fabric`);
+  `BukkitCommandWrapper` remains for legacy Bukkit dispatcher bridging.
 
 **Usage notes**
 - Group subcommands by adding multiple `@SubCommand` methods on the same class. Built-in suggestion providers ensure tab completion stays relevant.
@@ -147,6 +188,7 @@ local Maven; use the thin jars or `-all` shaded variants.
 - Level methods (`trace`, `debug`, `info`, `warn`, `error`, `success`) are generated by `@LogMethods`; no manual overloads needed on `Logger` or `PrefixedLogger`.
 - Sub-logger support (`PrefixedLogger`) for namespaced output (e.g. `database`, `api`, `scheduler`) with the same generated API.
 - Optional localisation — route everything through `LanguageManager` by flipping a single flag.
+- `logger-fabric` provides Fabric adapters; `platform-bukkit` provides Bukkit/Paper adapters.
 - Smart parsing: `Logger.parseSmart()` recognises hybrid strings that mix MiniMessage with legacy codes, making transition painless.
 - Placeholder pipeline: custom placeholders are expanded first, then PlaceholderAPI is applied if present (fallbacks gracefully when absent).
 
@@ -169,13 +211,14 @@ local Maven; use the thin jars or `-all` shaded variants.
 - Register custom placeholders via `PlaceholderProcessor.registerGlobalPlaceholder` / `registerLocalPlaceholder`; see `examples/logger/PlaceholderDemo.java`.
 - Example: `examples/logger/LoggerExample.java`.
 
-### `gui` — inventory UI helpers
+### `gui` — Bukkit inventory UI helpers
 
 **Highlights**
 - `MagicGui` turns raw Bukkit inventories into structured UIs with titles, pagination, redraw callbacks, and close handlers.
 - `MagicItem` couples `ItemStack` metadata with click behaviour (left/right shift clicks, cancel/propagate policies, etc.).
 - `MagicGuiListener` captures inventory events and routes them to the owning GUI; register once during plugin startup.
 - `SlotPolicy` describes how each slot behaves (STATIC, FILLER, INTERACTIVE, BLOCKED) for easy layout definition.
+- Bukkit-only (`platform-bukkit`).
 
 **Usage notes**
 - Wire GUIs to config and localisation: fetch button definitions from `ConfigManager`, text from `Messages`, and compose at runtime.
@@ -183,12 +226,13 @@ local Maven; use the thin jars or `-all` shaded variants.
 - Handle pagination by updating the GUI’s page state and calling `gui.redraw(player)`.
 - Example: `examples/gui/GuiExample.java`.
 
-### `utils` — scheduling helpers
+### `utils` — Bukkit scheduling helpers
 
 **Highlights**
 - `ScheduleUtils.repeat(count, periodTicks, action, onComplete, plugin)` wraps a `BukkitRunnable` into a concise helper with automatic cancellation and error trapping.
 - `ScheduleUtils.countdown(seconds, onTick, onComplete)` starts a second-based countdown and returns a cancellable handle (`CountdownTask`).
 - Errors inside scheduled actions are caught and logged to prevent silent thread death.
+- Bukkit-only (`platform-bukkit`).
 
 **Usage notes**
 - Provide an explicit plugin instance for `repeat`. For `countdown`, MagicUtils grabs the first loaded plugin; if you need determinism, consider overloading or forking the utility.
@@ -205,11 +249,12 @@ local Maven; use the thin jars or `-all` shaded variants.
 
 **Highlights**
 - `Platform`, `PlatformLogger`, and `Audience` interfaces decouple core code from Bukkit-specific APIs.
-- `platform-bukkit` supplies a full provider; `platform-neoforge` adds a minimal adapter (config dir, console audience, logging, main-thread execution).
+- `platform-bukkit` supplies a full provider; `platform-fabric` bridges Fabric; `platform-neoforge` adds a minimal adapter
+  (config dir, console audience, logging, main-thread execution).
 - `ConfigManager` and `LanguageManager` accept either a `Platform` or a legacy plugin instance (auto-resolves to a Bukkit provider when possible).
 
 **Usage notes**
-- Use `new BukkitPlatformProvider(plugin)` (or your own `Platform` implementation) when wiring MagicUtils in non-Bukkit contexts.
+- Use `new BukkitPlatformProvider(plugin)` or `new FabricPlatformProvider(serverSupplier, logger)` when wiring MagicUtils.
 - For other platforms, implement the `Platform`/`Audience`/`PlatformLogger` trio and pass it into managers.
 - Typical setup in a Bukkit plugin:
   ```java
@@ -227,6 +272,21 @@ local Maven; use the thin jars or `-all` shaded variants.
   }
   ```
 
+### `fabric-adapters` — Brigadier & logging
+
+**Highlights**
+- `commands-fabric` wires the command engine into Brigadier and provides Fabric permission bridging.
+- `logger-fabric` adds Fabric audiences plus console/chat adapters for `Logger`.
+- `placeholders-fabric` plugs Fabric placeholder providers into the shared pipeline.
+- Use these for a modular Fabric setup, or prefer `magicutils-fabric-bundle` for a single JIJ mod.
+
+### `fabric-bundle` — jar-in-jar distribution
+
+**Highlights**
+- `magicutils-fabric-bundle` ships all Fabric-compatible modules as one jar-in-jar mod.
+- Recommended for production servers or modpacks; Fabric Loader shows nested modules under the bundle.
+- Works best with `include(...)` in Loom (see Quick Start).
+
 ### `placeholders` — custom & PAPI integration
 
 **Highlights**
@@ -234,6 +294,7 @@ local Maven; use the thin jars or `-all` shaded variants.
 - PlaceholderAPI integration is lazy: if PAPI is present, `PapiEngine` is used; otherwise a `NoopEngine` fallback keeps messages intact.
 - Logger messages automatically run through custom placeholders first, then PAPI, ensuring consistent rendering across console/chat.
 - `IntegrationManager`/`Integration` helpers wrap third-party checks (e.g., PlaceholderAPI) and report availability safely.
+- Fabric placeholder wiring lives in `placeholders-fabric`.
 
 **Usage notes**
 - Register resolvers: `registerGlobalPlaceholder("server-online", () -> String.valueOf(Bukkit.getOnlinePlayers().size()))`.
@@ -252,6 +313,13 @@ local Maven; use the thin jars or `-all` shaded variants.
 - Treat annotations as declarative metadata—keep business logic in your classes while MagicUtils handles glue code and reflective wiring.
 - Combine `@ParsePriority` with custom parsers to influence resolution order when multiple parsers fit the same type.
 - Examples: see `examples/commands/ExampleCommand.java` and `examples/config/ConfigExample.java` for practical annotation usage.
+
+### `processor` — annotation helper
+
+**Highlights**
+- Generates `Logger`/`PrefixedLogger` level overloads via `@LogMethods`.
+- Claims MagicUtils annotations to silence javac warnings in consuming projects.
+- Added automatically as `annotationProcessor` in this repo; include it if you build from source.
 
 ---
 
@@ -310,6 +378,8 @@ gui.open(player);
 
 - **Watcher warnings on shutdown** – confirm `configManager.shutdown()` runs in
   your plugin’s `onDisable`.
+- **YAML/TOML support missing** – add `magicutils-config-yaml` or `magicutils-config-toml`
+  if you want to read those formats (JSON/JSONC work with `magicutils-config` alone).
 - **Missing translations** – inspect `lang/<code>.yml`. MagicUtils seeds
   defaults from `LanguageDefaults`; override keys under `messages` to customise.
 - **Logger output not localised** – enable `autoLocalization` in `logger.yml` or
