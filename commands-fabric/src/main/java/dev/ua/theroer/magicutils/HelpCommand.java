@@ -23,4 +23,15 @@ public class HelpCommand extends HelpCommandBase {
     public HelpCommand(Logger logger) {
         super(logger != null ? logger.getCore() : null, CommandRegistry::getCommandManager);
     }
+
+    /**
+     * Creates the help command bound to a specific registry instance.
+     *
+     * @param logger platform logger
+     * @param registry command registry instance
+     */
+    public HelpCommand(Logger logger, CommandRegistry registry) {
+        super(logger != null ? logger.getCore() : null,
+                registry != null ? registry::commandManager : CommandRegistry::getCommandManager);
+    }
 }
