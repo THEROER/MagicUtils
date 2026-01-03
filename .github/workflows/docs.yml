@@ -33,12 +33,54 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
       - name: Install docs dependencies
-        run: pip install mkdocs-material mike
+        run: pip install mkdocs-material mkdocs-macros-plugin mike
+
+      - name: Resolve docs version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            VERSION="dev"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="dev"
+          fi
+          echo "DOC_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build Javadoc
+        run: |
+          chmod +x ./gradlew
+          ./gradlew javadoc
+          OUT="$RUNNER_TEMP/javadoc"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          for dir in */build/docs/javadoc; do
+            [ -d "$dir" ] || continue
+            module="$(echo "$dir" | cut -d/ -f1)"
+            cp -R "$dir" "$OUT/$module"
+          done
+          {
+            echo '<!doctype html>'
+            echo '<html><head><meta charset="utf-8"><title>MagicUtils Javadoc</title></head><body>'
+            echo "<h1>MagicUtils Javadoc ${DOC_VERSION}</h1>"
+            echo '<ul>'
+            for module in $(ls "$OUT"); do
+              [ "$module" = "index.html" ] && continue
+              echo "<li><a href=\"${module}/\">${module}</a></li>"
+            done
+            echo '</ul></body></html>'
+          } > "$OUT/index.html"
 
       - name: Configure git
         env:
@@ -52,13 +94,13 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          mike deploy --push --update-aliases "$VERSION" stable
+          MIKE_VERSION="$VERSION" mike deploy --push --update-aliases "$VERSION" stable
           mike set-default --push stable
 
       - name: Deploy docs (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          mike deploy --push --update-aliases dev latest
+          MIKE_VERSION="dev" mike deploy --push --update-aliases dev latest
           mike set-default --push latest
 
       - name: Deploy docs (manual)
@@ -66,10 +108,26 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           if [ -n "${{ inputs.alias }}" ]; then
-            mike deploy --push --update-aliases "$VERSION" "${{ inputs.alias }}"
+            MIKE_VERSION="$VERSION" mike deploy --push --update-aliases "$VERSION" "${{ inputs.alias }}"
           else
-            mike deploy --push "$VERSION"
+            MIKE_VERSION="$VERSION" mike deploy --push "$VERSION"
           fi
           if [ "${{ inputs.set_default }}" = "true" ]; then
             mike set-default --push "$VERSION"
           fi
+
+      - name: Publish Javadoc
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+          DEST="javadoc/${DOC_VERSION}"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp -R "$RUNNER_TEMP/javadoc/"* "$DEST/"
+          git add "$DEST"
+          if git diff --cached --quiet; then
+            echo "No Javadoc changes to publish."
+            exit 0
+          fi
+          git commit -m "docs: publish javadoc ${DOC_VERSION}"
+          git push origin gh-pages

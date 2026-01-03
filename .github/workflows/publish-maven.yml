@@ -28,7 +28,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
 
       - name: Publish to local gh-pages folder
-        run: ./gradlew publish -Ppublish_repo=$GITHUB_WORKSPACE/maven
+        run: |
+          chmod +x ./gradlew
+          ./gradlew publish -Ppublish_repo=$GITHUB_WORKSPACE/maven
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4

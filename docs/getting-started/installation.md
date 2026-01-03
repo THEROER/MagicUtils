@@ -19,10 +19,10 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.ua.theroer:magicutils-bukkit:<version>")
+    implementation("dev.ua.theroer:magicutils-bukkit:{{ magicutils_version }}")
     // Optional format helpers
-    implementation("dev.ua.theroer:magicutils-config-yaml:<version>")
-    implementation("dev.ua.theroer:magicutils-config-toml:<version>")
+    implementation("dev.ua.theroer:magicutils-config-yaml:{{ magicutils_version }}")
+    implementation("dev.ua.theroer:magicutils-config-toml:{{ magicutils_version }}")
 }
 ```
 
@@ -42,9 +42,9 @@ repositories {
 }
 
 dependencies {
-    modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:<version>"))
-    modCompileOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
-    modRuntimeOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
+    modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}"))
+    modCompileOnly("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev")
+    modRuntimeOnly("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev")
 }
 ```
 
@@ -57,7 +57,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
+    modImplementation("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev")
 }
 ```
 
@@ -73,7 +73,7 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.ua.theroer:magicutils-neoforge:<version>")
+    implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
 }
 ```
 

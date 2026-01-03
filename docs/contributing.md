@@ -3,7 +3,7 @@
 ## Build the docs locally
 
 ```bash
-python -m pip install mkdocs-material mike
+python -m pip install mkdocs-material mkdocs-macros-plugin mike
 mkdocs serve
 ```
 
