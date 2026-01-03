@@ -112,6 +112,9 @@ paper.yml
 generated-sources/
 generated-test-sources/
 
+# MkDocs
+site/
+
 # Maven (if used alongside Gradle)
 target/
 pom.xml.tag

@@ -63,7 +63,7 @@ bundle (`magicutils-fabric-bundle`).
        modRuntimeOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
    }
    ```
-   Version is set in `gradle.properties` (`version=1.9.1` by default).
+   Version is set in `gradle.properties` (`version=1.10.0` by default).
 3. **Refresh after every change** by repeating `publishToMavenLocal` so
    dependent plugins/mods pick up the new artefact.
 
@@ -77,6 +77,13 @@ bundle (`magicutils-fabric-bundle`).
 > **Annotation processor (optional):** `processor` now generates logging overloads
 > for `Logger`/`PrefixedLogger` (`@LogMethods`) and claims config/command annotations
 > to silence javac warnings; it is added automatically as `annotationProcessor`.
+
+---
+
+## Documentation
+
+- Docs live in `docs/` and are built with MkDocs Material.
+- Versioned docs are deployed via `mike` to GitHub Pages.
 
 ---
 

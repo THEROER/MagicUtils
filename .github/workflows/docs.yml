@@ -1,0 +1,71 @@
+name: docs
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy (e.g. 1.10.0 or dev)"
+        required: true
+        default: "dev"
+      alias:
+        description: "Alias to update (optional)"
+        required: false
+      set_default:
+        description: "Set version as default (true/false)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install docs dependencies
+        run: pip install mkdocs-material mike
+
+      - name: Configure git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+
+      - name: Deploy docs (tag)
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mike deploy --push --update-aliases "$VERSION" stable
+          mike set-default --push stable
+
+      - name: Deploy docs (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mike deploy --push --update-aliases dev latest
+          mike set-default --push latest
+
+      - name: Deploy docs (manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -n "${{ inputs.alias }}" ]; then
+            mike deploy --push --update-aliases "$VERSION" "${{ inputs.alias }}"
+          else
+            mike deploy --push "$VERSION"
+          fi
+          if [ "${{ inputs.set_default }}" = "true" ]; then
+            mike set-default --push "$VERSION"
+          fi

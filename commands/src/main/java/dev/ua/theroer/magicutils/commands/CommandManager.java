@@ -1898,11 +1898,6 @@ public class CommandManager<S> {
     }
 
     private List<String> getAvailableSubCommandsList(List<CommandAction<S>> subCommands,
-            S sender, String commandName) {
-        return getAvailableSubCommandsList(subCommands, sender, commandName, List.of());
-    }
-
-    private List<String> getAvailableSubCommandsList(List<CommandAction<S>> subCommands,
             S sender, String commandName, List<String> pathSegments) {
         SubCommandNode<S> root = buildSubCommandTree(subCommands);
         SubCommandNode<S> node = resolveNode(root, pathSegments);
