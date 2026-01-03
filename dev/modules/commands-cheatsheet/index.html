@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/config/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/commands-cheatsheet/">
       
       
-        <link rel="prev" href="../commands-cheatsheet/">
+        <link rel="prev" href="../permissions/">
       
       
-        <link rel="next" href="../config-advanced/">
+        <link rel="next" href="../config/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Config - MagicUtils</title>
+        <title>Commands Cheat Sheet - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config" class="md-skip">
+        <a href="#commands-cheat-sheet" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config
+              Commands Cheat Sheet
             
           </span>
         </div>
@@ -794,34 +794,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../commands-cheatsheet/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Commands Cheat Sheet
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -841,7 +813,7 @@
   <span class="md-ellipsis">
     
   
-    Config
+    Commands Cheat Sheet
   
 
     
@@ -859,7 +831,7 @@
   <span class="md-ellipsis">
     
   
-    Config
+    Commands Cheat Sheet
   
 
     
@@ -885,10 +857,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#define-a-config" class="md-nav__link">
+  <a href="#minimal-annotated-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Define a config
+        Minimal annotated command
       
     </span>
   </a>
@@ -896,10 +868,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#formats-and-selection" class="md-nav__link">
+  <a href="#subcommands-and-nested-paths" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Formats and selection
+        Subcommands and nested paths
       
     </span>
   </a>
@@ -907,10 +879,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reloading-and-hot-watch" class="md-nav__link">
+  <a href="#options-flags" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reloading and hot watch
+        Options / flags
       
     </span>
   </a>
@@ -918,10 +890,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migrations" class="md-nav__link">
+  <a href="#optional-default-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migrations
+        Optional + default values
       
     </span>
   </a>
@@ -929,10 +901,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-value-adapters" class="md-nav__link">
+  <a href="#greedy-text" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom value adapters
+        Greedy text
       
     </span>
   </a>
@@ -940,10 +912,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shutdown" class="md-nav__link">
+  <a href="#suggestions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shutdown
+        Suggestions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sender-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sender injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#builder-api-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder API snippet
       
     </span>
   </a>
@@ -954,6 +948,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1356,10 +1378,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#define-a-config" class="md-nav__link">
+  <a href="#minimal-annotated-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Define a config
+        Minimal annotated command
       
     </span>
   </a>
@@ -1367,10 +1389,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#formats-and-selection" class="md-nav__link">
+  <a href="#subcommands-and-nested-paths" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Formats and selection
+        Subcommands and nested paths
       
     </span>
   </a>
@@ -1378,10 +1400,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reloading-and-hot-watch" class="md-nav__link">
+  <a href="#options-flags" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reloading and hot watch
+        Options / flags
       
     </span>
   </a>
@@ -1389,10 +1411,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migrations" class="md-nav__link">
+  <a href="#optional-default-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migrations
+        Optional + default values
       
     </span>
   </a>
@@ -1400,10 +1422,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-value-adapters" class="md-nav__link">
+  <a href="#greedy-text" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom value adapters
+        Greedy text
       
     </span>
   </a>
@@ -1411,10 +1433,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shutdown" class="md-nav__link">
+  <a href="#suggestions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shutdown
+        Suggestions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sender-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sender injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#builder-api-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder API snippet
       
     </span>
   </a>
@@ -1441,77 +1485,71 @@
   
 
 
-<h1 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h1>
-<p>MagicUtils config maps files to POJOs using annotations while preserving user
-comments and unknown keys when saving.</p>
-<h2 id="define-a-config">Define a config<a class="headerlink" href="#define-a-config" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@ConfigFile</span><span class="p">(</span><span class="s">&quot;example.{ext}&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nd">@Comment</span><span class="p">(</span><span class="s">&quot;Example configuration&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nd">@ConfigReloadable</span><span class="p">(</span><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;messages&quot;</span><span class="p">})</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ExampleConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;enabled&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nd">@ConfigSection</span><span class="p">(</span><span class="s">&quot;messages&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Messages</span><span class="w"> </span><span class="n">messages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Messages</span><span class="p">();</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Messages</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;greeting&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="nd">@Comment</span><span class="p">(</span><span class="s">&quot;Greeting shown to players&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">greeting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span><span class="p">;</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">}</span>
+<h1 id="commands-cheat-sheet">Commands cheat sheet<a class="headerlink" href="#commands-cheat-sheet" title="Permanent link">&para;</a></h1>
+<p>Quick reference for the MagicUtils command system.</p>
+<h2 id="minimal-annotated-command">Minimal annotated command<a class="headerlink" href="#minimal-annotated-command" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@CommandInfo</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Main command&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DonateCommand</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MagicCommand</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">manager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ExampleConfig</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">manager</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<h2 id="subcommands-and-nested-paths">Subcommands and nested paths<a class="headerlink" href="#subcommands-and-nested-paths" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;give&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">give</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;npc&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;commands&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;add&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">addNpcCommand</span><span class="p">(...)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<h2 id="formats-and-selection">Formats and selection<a class="headerlink" href="#formats-and-selection" title="Permanent link">&para;</a></h2>
+<h2 id="options-flags">Options / flags<a class="headerlink" href="#options-flags" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">give</span><span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="nd">@Option</span><span class="p">(</span><span class="n">shortNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;a&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">longNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;amount&quot;</span><span class="p">})</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">amount</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="nd">@Option</span><span class="p">(</span><span class="n">shortNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;s&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">longNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;silent&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">silent</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p>Accepted forms:</p>
 <ul>
-<li>JSON/JSONC are available out of the box.</li>
-<li>YAML requires <code>magicutils-config-yaml</code>.</li>
-<li>TOML requires <code>magicutils-config-toml</code>.</li>
+<li><code>--amount 5</code></li>
+<li><code>-a 5</code></li>
+<li><code>--silent</code> / <code>-s</code></li>
 </ul>
-<p>MagicUtils can choose a format based on file extension. If you use <code>{ext}</code> in
-<code>@ConfigFile</code>, it will follow the preferred format:</p>
+<h2 id="optional-default-values">Optional + default values<a class="headerlink" href="#optional-default-values" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="nd">@DefaultValue</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">lang</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="nd">@OptionalArgument</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h2 id="greedy-text">Greedy text<a class="headerlink" href="#greedy-text" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">say</span><span class="p">(</span><span class="nd">@Greedy</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h2 id="suggestions">Suggestions<a class="headerlink" href="#suggestions" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@Suggest</span><span class="p">(</span><span class="s">&quot;@players&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nd">@Suggest</span><span class="p">(</span><span class="s">&quot;{easy,hard}&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">mode</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nd">@Suggest</span><span class="p">(</span><span class="s">&quot;getItems&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">item</span>
+</code></pre></div>
+<p>Suggestion methods can be:</p>
 <ul>
-<li><code>example.format</code> next to the config (contents: <code>json</code>, <code>jsonc</code>, <code>yml</code>, <code>toml</code>).</li>
-<li><code>magicutils.format</code> in the root config directory (global default).</li>
-<li><code>-Dmagicutils.config.format=jsonc</code> or the <code>MAGICUTILS_CONFIG_FORMAT</code> env var.</li>
+<li><code>List&lt;String&gt; getItems()</code></li>
+<li><code>List&lt;String&gt; getItems(Player player)</code></li>
+<li><code>List&lt;String&gt; getItems(ServerCommandSource sender)</code></li>
 </ul>
-<p>Fabric defaults to JSONC when YAML is not available.</p>
-<p>For advanced format selection and migrations, see
-<a href="../config-advanced/">Config Advanced</a>.</p>
-<h2 id="reloading-and-hot-watch">Reloading and hot watch<a class="headerlink" href="#reloading-and-hot-watch" title="Permanent link">&para;</a></h2>
-<p>Register change listeners:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">onChange</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="w"> </span><span class="n">sections</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="c1">// apply live updates</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">});</span>
+<h2 id="sender-injection">Sender injection<a class="headerlink" href="#sender-injection" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<p><code>@ConfigReloadable</code> restricts which sections may reload at runtime.</p>
-<h2 id="migrations">Migrations<a class="headerlink" href="#migrations" title="Permanent link">&para;</a></h2>
-<p>Config migrations are declared with <code>ConfigMigration</code> and tracked by the
-<code>config-version</code> key inside the file.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">registerMigrations</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigMigration</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">fromVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;0&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">toVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">migrate</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">root</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">                </span><span class="n">root</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">);</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">);</span>
+<p>Allowed senders:</p>
+<p><code>ANY</code>, <code>PLAYER</code>, <code>CONSOLE</code>, <code>BLOCK</code>, <code>MINECART</code>, <code>PROXIED</code>, <code>REMOTE</code>.</p>
+<h2 id="builder-api-snippet">Builder API snippet<a class="headerlink" href="#builder-api-snippet" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">CommandSpec</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="w"> </span><span class="n">spec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;donate&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">        </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Main command&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="p">.</span><span class="na">aliases</span><span class="p">(</span><span class="s">&quot;d&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="p">.</span><span class="na">subCommand</span><span class="p">(</span><span class="n">SubCommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;give&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">                </span><span class="p">.</span><span class="na">argument</span><span class="p">(</span><span class="n">CommandArgument</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Player</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">                </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">                </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
-<h2 id="custom-value-adapters">Custom value adapters<a class="headerlink" href="#custom-value-adapters" title="Permanent link">&para;</a></h2>
-<p>Register custom serializers via <code>ConfigAdapters.register(...)</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">ConfigAdapters</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigValueAdapter</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Duration</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="n">Duration</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">});</span>
-</code></pre></div>
-<h2 id="shutdown">Shutdown<a class="headerlink" href="#shutdown" title="Permanent link">&para;</a></h2>
-<p>On Bukkit and Fabric, MagicUtils automatically stops the watcher when the
-server shuts down. For custom platforms, call <code>ConfigManager.shutdown()</code> during
-plugin shutdown.</p>
 
 
 

@@ -16,7 +16,7 @@
         <link rel="prev" href="../overview/">
       
       
-        <link rel="next" href="../commands/">
+        <link rel="next" href="../logger-config/">
       
       
         
@@ -334,6 +334,25 @@
     
   
   API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
 
       </a>
     </li>
@@ -770,6 +789,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#prefix-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefix modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#logger-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -795,6 +825,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logger-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -835,6 +893,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands-cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands Cheat Sheet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../config/" class="md-nav__link">
         
   
@@ -843,6 +957,34 @@
     
   
     Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Advanced
   
 
     
@@ -899,6 +1041,34 @@
     
   
     Placeholders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../placeholders-advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Placeholders Advanced
   
 
     
@@ -1123,6 +1293,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../contributing/" class="md-nav__link">
         
   
@@ -1214,6 +1411,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#prefix-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefix modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#logger-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1289,9 +1497,18 @@ for enable/disable.</p>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;yellow&gt;Reloaded&lt;/yellow&gt;&quot;</span><span class="p">);</span>
 </code></pre></div>
 <p>Use <code>target(LogTarget.CHAT/CONSOLE/BOTH)</code> and <code>to(audience)</code> for fine control.</p>
+<h2 id="prefix-modes">Prefix modes<a class="headerlink" href="#prefix-modes" title="Permanent link">&para;</a></h2>
+<p>Prefix rendering can be controlled via <code>PrefixMode</code>:</p>
+<ul>
+<li><code>FULL</code> -&gt; full plugin/mod name</li>
+<li><code>SHORT</code> -&gt; short name from config</li>
+<li><code>CUSTOM</code> -&gt; <code>LoggerCore.setCustomPrefix(...)</code></li>
+<li><code>NONE</code> -&gt; no prefix</li>
+</ul>
 <h2 id="logger-configuration">Logger configuration<a class="headerlink" href="#logger-configuration" title="Permanent link">&para;</a></h2>
 <p><code>LoggerConfig</code> is stored as <code>logger.{ext}</code>. On Fabric it is placed under
 <code>config/&lt;modid&gt;/</code> by default (via <code>ConfigNamespaceProvider</code>).</p>
+<p>See <a href="../logger-config/">Logger Config</a> for a full key reference and examples.</p>
 <p>Key sections:</p>
 <ul>
 <li><code>prefix</code>: format and prefix mode.</li>
@@ -1304,8 +1521,18 @@ for enable/disable.</p>
 <p>Attach a <code>LanguageManager</code> to enable auto-localisation:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
 </code></pre></div>
-<p>On Bukkit, the logger automatically bridges MagicPlaceholders to PlaceholderAPI
-when it is installed.</p>
+<p>When <code>auto-localization</code> is enabled (default), any message that starts with
+<code>@</code> is treated as a language key:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;@myplugin.ready&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>The key is resolved via <code>LanguageManager</code> and then rendered as MiniMessage.
+You can toggle this in <code>logger.yml</code> (<code>auto-localization</code>).</p>
+<p>On Bukkit, the logger automatically bridges MagicPlaceholders to
+<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> when it is
+installed. On Fabric, MagicPlaceholders are bridged to
+<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
+<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> when those mods
+are present.</p>
 
 
 

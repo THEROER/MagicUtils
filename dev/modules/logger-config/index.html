@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/config/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/logger-config/">
       
       
-        <link rel="prev" href="../commands-cheatsheet/">
+        <link rel="prev" href="../logger/">
       
       
-        <link rel="next" href="../config-advanced/">
+        <link rel="next" href="../commands/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Config - MagicUtils</title>
+        <title>Logger Config - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config" class="md-skip">
+        <a href="#logger-config-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config
+              Logger Config
             
           </span>
         </div>
@@ -710,10 +710,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../logger-config/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger Config
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -729,6 +756,131 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key sections
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key sections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plugin-name-short-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plugin-name / short-name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-localization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        auto-localization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prefix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        defaults
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chat-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        chat / console
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        help
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-loggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sub-loggers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -822,37 +974,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Config
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
         
   
   
@@ -868,92 +993,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#define-a-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Define a config
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#formats-and-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Formats and selection
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reloading-and-hot-watch" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reloading and hot watch
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#migrations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Migrations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-value-adapters" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom value adapters
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#shutdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Shutdown
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1356,10 +1395,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#define-a-config" class="md-nav__link">
+  <a href="#minimal-example" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Define a config
+        Minimal example
       
     </span>
   </a>
@@ -1367,57 +1406,96 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#formats-and-selection" class="md-nav__link">
+  <a href="#key-sections" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Formats and selection
+        Key sections
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key sections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plugin-name-short-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plugin-name / short-name
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#reloading-and-hot-watch" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#auto-localization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reloading and hot watch
+        auto-localization
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#migrations" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#prefix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migrations
+        prefix
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-value-adapters" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#defaults" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom value adapters
+        defaults
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#shutdown" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#chat-console" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shutdown
+        chat / console
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        help
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-loggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sub-loggers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1441,77 +1519,94 @@
   
 
 
-<h1 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h1>
-<p>MagicUtils config maps files to POJOs using annotations while preserving user
-comments and unknown keys when saving.</p>
-<h2 id="define-a-config">Define a config<a class="headerlink" href="#define-a-config" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@ConfigFile</span><span class="p">(</span><span class="s">&quot;example.{ext}&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nd">@Comment</span><span class="p">(</span><span class="s">&quot;Example configuration&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nd">@ConfigReloadable</span><span class="p">(</span><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;messages&quot;</span><span class="p">})</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ExampleConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;enabled&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nd">@ConfigSection</span><span class="p">(</span><span class="s">&quot;messages&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Messages</span><span class="w"> </span><span class="n">messages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Messages</span><span class="p">();</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Messages</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;greeting&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="nd">@Comment</span><span class="p">(</span><span class="s">&quot;Greeting shown to players&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">greeting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span><span class="p">;</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">}</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">manager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ExampleConfig</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">manager</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-</code></pre></div>
-<h2 id="formats-and-selection">Formats and selection<a class="headerlink" href="#formats-and-selection" title="Permanent link">&para;</a></h2>
+<h1 id="logger-config-reference">Logger config reference<a class="headerlink" href="#logger-config-reference" title="Permanent link">&para;</a></h1>
+<p><code>logger.{ext}</code> stores logger settings. On Bukkit it lives in the plugin config
+folder. On Fabric it is namespaced under <code>config/&lt;modid&gt;/</code> by default.</p>
+<p>Formats:</p>
 <ul>
-<li>JSON/JSONC are available out of the box.</li>
-<li>YAML requires <code>magicutils-config-yaml</code>.</li>
-<li>TOML requires <code>magicutils-config-toml</code>.</li>
+<li>JSON/JSONC by default</li>
+<li>YAML/TOML when the format helpers are available</li>
 </ul>
-<p>MagicUtils can choose a format based on file extension. If you use <code>{ext}</code> in
-<code>@ConfigFile</code>, it will follow the preferred format:</p>
+<h2 id="minimal-example">Minimal example<a class="headerlink" href="#minimal-example" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">plugin-name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DonateMenu</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">short-name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DM</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">auto-localization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">debug-placeholders</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">prefix</span><span class="p">:</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">chat-mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FULL</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">console-mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SHORT</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">custom</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;[DM]&quot;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="nt">use-gradient-chat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="nt">use-gradient-console</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="nt">defaults</span><span class="p">:</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BOTH</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="nt">text-max-length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">262144</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">placeholder-engine-order</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">MINI_PLACEHOLDERS</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">PB4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">PAPI</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nt">miniplaceholders-mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">COMPONENT</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span><span class="nt">pb4-mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">COMPONENT</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="nt">chat</span><span class="p">:</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="nt">auto-generate-colors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nt">gradient</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#7c3aed&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#ec4899&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nt">colors</span><span class="p">:</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="nt">error</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#ff4444&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#cc0000&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nt">warn</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#ffbb33&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#ff8800&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="nt">debug</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#33b5e5&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#0099cc&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">    </span><span class="nt">success</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#00c851&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#007e33&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="nt">console</span><span class="p">:</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">  </span><span class="nt">auto-generate-colors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">  </span><span class="nt">gradient</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#ffcc00&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#ff6600&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">  </span><span class="nt">strip-formatting</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">  </span><span class="nt">colors</span><span class="p">:</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">    </span><span class="nt">error</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#ff4444&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#cc0000&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">    </span><span class="nt">warn</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#ffbb33&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#ff8800&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">    </span><span class="nt">debug</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#33b5e5&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#0099cc&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">    </span><span class="nt">success</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;#00c851&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;#007e33&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="nt">help</span><span class="p">:</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="w">  </span><span class="nt">use-logger-colors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="w">  </span><span class="nt">primary-color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#ff55ff&quot;</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="w">  </span><span class="nt">muted-color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gray&quot;</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="w">  </span><span class="nt">text-color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;white&quot;</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="w">  </span><span class="nt">line</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-----------------------------&quot;</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="w">  </span><span class="nt">page-size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="w">  </span><span class="nt">max-enum-values</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="nt">sub-loggers</span><span class="p">:</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="w">  </span><span class="nt">Commands</span><span class="p">:</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<h2 id="key-sections">Key sections<a class="headerlink" href="#key-sections" title="Permanent link">&para;</a></h2>
+<h3 id="plugin-name-short-name">plugin-name / short-name<a class="headerlink" href="#plugin-name-short-name" title="Permanent link">&para;</a></h3>
+<p>Auto-filled on first run and used in prefix rendering. <code>short-name</code> is used by
+<code>PrefixMode.SHORT</code>.</p>
+<h3 id="auto-localization">auto-localization<a class="headerlink" href="#auto-localization" title="Permanent link">&para;</a></h3>
+<p>When enabled, any message that starts with <code>@</code> is treated as a language key and
+resolved via <code>LanguageManager</code>.</p>
+<h3 id="prefix">prefix<a class="headerlink" href="#prefix" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>example.format</code> next to the config (contents: <code>json</code>, <code>jsonc</code>, <code>yml</code>, <code>toml</code>).</li>
-<li><code>magicutils.format</code> in the root config directory (global default).</li>
-<li><code>-Dmagicutils.config.format=jsonc</code> or the <code>MAGICUTILS_CONFIG_FORMAT</code> env var.</li>
+<li><code>chat-mode</code> / <code>console-mode</code>: <code>NONE</code>, <code>SHORT</code>, <code>FULL</code>, <code>CUSTOM</code></li>
+<li><code>custom</code>: custom prefix string for <code>CUSTOM</code></li>
+<li><code>use-gradient-chat</code> / <code>use-gradient-console</code>: apply gradient to prefix</li>
 </ul>
-<p>Fabric defaults to JSONC when YAML is not available.</p>
-<p>For advanced format selection and migrations, see
-<a href="../config-advanced/">Config Advanced</a>.</p>
-<h2 id="reloading-and-hot-watch">Reloading and hot watch<a class="headerlink" href="#reloading-and-hot-watch" title="Permanent link">&para;</a></h2>
-<p>Register change listeners:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">onChange</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="w"> </span><span class="n">sections</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="c1">// apply live updates</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">});</span>
-</code></pre></div>
-<p><code>@ConfigReloadable</code> restricts which sections may reload at runtime.</p>
-<h2 id="migrations">Migrations<a class="headerlink" href="#migrations" title="Permanent link">&para;</a></h2>
-<p>Config migrations are declared with <code>ConfigMigration</code> and tracked by the
-<code>config-version</code> key inside the file.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">registerMigrations</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigMigration</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">fromVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;0&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">toVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">migrate</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">root</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">                </span><span class="n">root</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">);</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">);</span>
-</code></pre></div>
-<h2 id="custom-value-adapters">Custom value adapters<a class="headerlink" href="#custom-value-adapters" title="Permanent link">&para;</a></h2>
-<p>Register custom serializers via <code>ConfigAdapters.register(...)</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">ConfigAdapters</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigValueAdapter</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Duration</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="n">Duration</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">});</span>
-</code></pre></div>
-<h2 id="shutdown">Shutdown<a class="headerlink" href="#shutdown" title="Permanent link">&para;</a></h2>
-<p>On Bukkit and Fabric, MagicUtils automatically stops the watcher when the
-server shuts down. For custom platforms, call <code>ConfigManager.shutdown()</code> during
-plugin shutdown.</p>
+<h3 id="defaults">defaults<a class="headerlink" href="#defaults" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>target</code>: <code>CHAT</code>, <code>CONSOLE</code>, <code>BOTH</code></li>
+<li><code>text-max-length</code>: max JSON length (Fabric only)</li>
+<li><code>placeholder-engine-order</code>: preferred external placeholder order</li>
+<li><code>miniplaceholders-mode</code>: <code>COMPONENT</code> or <code>TAG</code></li>
+<li><code>pb4-mode</code>: <code>COMPONENT</code> or <code>RAW</code></li>
+</ul>
+<h3 id="chat-console">chat / console<a class="headerlink" href="#chat-console" title="Permanent link">&para;</a></h3>
+<p>Color palettes and gradients. Set <code>auto-generate-colors</code> to <code>false</code> to force
+custom palettes.</p>
+<h3 id="help">help<a class="headerlink" href="#help" title="Permanent link">&para;</a></h3>
+<p>Controls the built-in help renderer formatting and pagination.</p>
+<h3 id="sub-loggers">sub-loggers<a class="headerlink" href="#sub-loggers" title="Permanent link">&para;</a></h3>
+<p>Per-prefix enable flags for <code>logger.withPrefix(...)</code> instances.</p>
 
 
 
