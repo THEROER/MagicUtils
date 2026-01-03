@@ -1,0 +1,145 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-http-client",
+    "version": "1.10.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.10.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-http-client-1.10.0.jar",
+          "url": "magicutils-http-client-1.10.0.jar",
+          "size": 30051,
+          "sha512": "dd0c5a273f0af81add6471d63ba8ece7a4a7739fd1f35597bcfddcde978cdf1aea0d59411190a94727bad16d2ea029134cc3dff43c5412ca8bb2f955bfc6184d",
+          "sha256": "3b7d147fb3580fac05712e133da90ce49a8d096a761f4b51e01c256263221029",
+          "sha1": "531d40c67d69a324bf539efbe5f8207e1edc8b42",
+          "md5": "5cb3b53256278f6d55ac759dfaca0ac3"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.fasterxml.jackson.core",
+          "module": "jackson-databind",
+          "version": {
+            "requires": "2.17.1"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.10.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-http-client-1.10.0.jar",
+          "url": "magicutils-http-client-1.10.0.jar",
+          "size": 30051,
+          "sha512": "dd0c5a273f0af81add6471d63ba8ece7a4a7739fd1f35597bcfddcde978cdf1aea0d59411190a94727bad16d2ea029134cc3dff43c5412ca8bb2f955bfc6184d",
+          "sha256": "3b7d147fb3580fac05712e133da90ce49a8d096a761f4b51e01c256263221029",
+          "sha1": "531d40c67d69a324bf539efbe5f8207e1edc8b42",
+          "md5": "5cb3b53256278f6d55ac759dfaca0ac3"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-http-client-1.10.0-all.jar",
+          "url": "magicutils-http-client-1.10.0-all.jar",
+          "size": 2896949,
+          "sha512": "a46ae08954660f2bc9ad3db8aea3a48ed51b5f0ff6f80f9748be61ee799956bdac5534fce7ee67c39d2ab20693b11665fe474f74274e31bb7600974f061386db",
+          "sha256": "5b7c5eb495be93200884eeafbaccacfbee3bbf3d89c4711da6b729833b937057",
+          "sha1": "cb455862f6104ca42f8e4b7ca4089633a0248635",
+          "md5": "795e85c9c953fdadcbc82421de0de5af"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-http-client-1.10.0-sources.jar",
+          "url": "magicutils-http-client-1.10.0-sources.jar",
+          "size": 8892,
+          "sha512": "28c8f20435ef0868f792c796cf2cee3be18e86da1a9b203191c3dff6dd0cde0e95409f0922d4046f59fb64b13f9e8e13f1121be77947452db4b0ca33daa8a2b2",
+          "sha256": "52a91aa049bbcc110187198f00f147ed8b7bd92f4360a61825aa694e778a57e5",
+          "sha1": "b5e58326d97b6501a3e7be4b8f3aa52b96b787d2",
+          "md5": "d7617b25181bac93abaf00260f10b1cd"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-http-client-1.10.0-javadoc.jar",
+          "url": "magicutils-http-client-1.10.0-javadoc.jar",
+          "size": 119379,
+          "sha512": "ae4e4cf7cec3cd40286a1543dc5298bf1856971012daff7da53ef11319554b525e1e27f4c94d91026b450305c403e9c0bac9570b6f9ded0d772dc5c4c3f8de78",
+          "sha256": "9ab72db823b99e812517162b1c6072b7d29815b43dc5f4e17ce8f9a4cd713466",
+          "sha1": "7140c5bdb2a475f588ebb1db52278d1de222dd64",
+          "md5": "d410763a3aaaf3fcdd53dc213a672222"
+        }
+      ]
+    }
+  ]
+}

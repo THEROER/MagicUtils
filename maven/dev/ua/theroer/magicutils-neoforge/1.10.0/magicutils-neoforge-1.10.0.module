@@ -37,10 +37,10 @@
           "name": "magicutils-neoforge-1.10.0.jar",
           "url": "magicutils-neoforge-1.10.0.jar",
           "size": 3676,
-          "sha512": "dd6a805dc969af403cee66d4796e1e5fccc24fb443917bf24074e868b71c62a3cbabd89957b2d1d2f6afff063b849d9b60521a5db9df15ad9c04c1c4ecfebad0",
-          "sha256": "5ff6ef03f3567acfc547f504d545b5e6b0e8d751029ca2cd6b0e7ec26c797eb8",
-          "sha1": "7fbe25e73795e6ef90f633a690d708b333d24335",
-          "md5": "67f8d1ad945dffb830fc4f029652ba7a"
+          "sha512": "aefe6e473857ca37a681017cb9b4c8401822189fadcec0d8536e9faf19e431176a6ae8433d082e09fe6f4aafb377785f3af0e5aa9137bfa705f2ddfa2d43d777",
+          "sha256": "903c3ac0ac411e56dfed324ff6299b9b03ca130e4c976497f80d872769adf6cc",
+          "sha1": "e6104316fdfb6d16fbd5e28f0219ff98a4fb5892",
+          "md5": "d8dc007b2acd987fcd6142d933211cc8"
         }
       ]
     },
@@ -67,10 +67,10 @@
           "name": "magicutils-neoforge-1.10.0.jar",
           "url": "magicutils-neoforge-1.10.0.jar",
           "size": 3676,
-          "sha512": "dd6a805dc969af403cee66d4796e1e5fccc24fb443917bf24074e868b71c62a3cbabd89957b2d1d2f6afff063b849d9b60521a5db9df15ad9c04c1c4ecfebad0",
-          "sha256": "5ff6ef03f3567acfc547f504d545b5e6b0e8d751029ca2cd6b0e7ec26c797eb8",
-          "sha1": "7fbe25e73795e6ef90f633a690d708b333d24335",
-          "md5": "67f8d1ad945dffb830fc4f029652ba7a"
+          "sha512": "aefe6e473857ca37a681017cb9b4c8401822189fadcec0d8536e9faf19e431176a6ae8433d082e09fe6f4aafb377785f3af0e5aa9137bfa705f2ddfa2d43d777",
+          "sha256": "903c3ac0ac411e56dfed324ff6299b9b03ca130e4c976497f80d872769adf6cc",
+          "sha1": "e6104316fdfb6d16fbd5e28f0219ff98a4fb5892",
+          "md5": "d8dc007b2acd987fcd6142d933211cc8"
         }
       ]
     },
@@ -86,11 +86,11 @@
         {
           "name": "magicutils-neoforge-1.10.0-all.jar",
           "url": "magicutils-neoforge-1.10.0-all.jar",
-          "size": 3329090,
-          "sha512": "5621991a122b4d7bac304f650ab48e11f97dfcbf0cf52da73df8a313e1cb3bc88752a8fa758d7e628831fec1a4aea21caf1a68474625d49017936256f0fa9373",
-          "sha256": "d507d631446ced6d26061fc8472ef09005a3d8ecc70e394f071240730ce855d1",
-          "sha1": "4dec121625e8ee57e752f668dd14000a5900642b",
-          "md5": "12d84daba4cdb8f8717552834dedfb8b"
+          "size": 3329088,
+          "sha512": "d61d655bdb24fc58c4f4774389069e3d00bf8823de30032494dd315884ef25a48573713755183c1a8e93b3bf01634975bdda7ed14eb3cc4e87b12a3555aa4ac1",
+          "sha256": "214880b23e2a325a0171e09bb2010243f517dbdd7dc300d654a66b0e8e0288e1",
+          "sha1": "db1937a08d1b5c4c8c8c3b130b51c4578b127d71",
+          "md5": "c98a532036c8afd02044208b7824c6c5"
         }
       ]
     },
@@ -107,10 +107,10 @@
           "name": "magicutils-neoforge-1.10.0-sources.jar",
           "url": "magicutils-neoforge-1.10.0-sources.jar",
           "size": 2875,
-          "sha512": "1683a51cf163c59a12ad06d2d05014d7f52f693d350168b61863a7825530ff6d68e0474641aabcdf7c0d0e2259d0cbe5e25932d02a850ebd0977d0ba7d911a00",
-          "sha256": "b066643775eaef5517446b7439e686734e4d2b3801d82c6fa89a1e10c749127c",
-          "sha1": "101d6748d9b51190ebf58dbdb1815affc3aa38dd",
-          "md5": "489752e4da885c5c3f08ff114c22f3cb"
+          "sha512": "040001aec2904a7a8b4f661200ef9ef1d5fca67a73d88cc2136f7e654538f0bc55a94e7de95786b8e14db57e6816dff05f02f62d0ef6139d01ba3105b7f9bcb3",
+          "sha256": "88265b8b40924ce07e6c385fe7069d83190facbe62073d68797f75ed22ecb930",
+          "sha1": "f3981ce244f36a6d4ff59d4954055470ba4d5f78",
+          "md5": "f9567ffe19bb2f1e4f481c6c64f73a4a"
         }
       ]
     },
@@ -127,10 +127,10 @@
           "name": "magicutils-neoforge-1.10.0-javadoc.jar",
           "url": "magicutils-neoforge-1.10.0-javadoc.jar",
           "size": 99429,
-          "sha512": "769672ba8a40e5b86853d4ac67ef4d8529b0bfe49372b3373aed6001fff737a962b312148aa652cf326ec4f428441c20aab64a1eb60f89239e65f60d3651cf85",
-          "sha256": "84b6812847821e2e03244b265063bc20f22f6532a3e033d9adffebfdc37e35ee",
-          "sha1": "8512bb91345ad626269cc5d0bb12f868f029bddd",
-          "md5": "7bbb56b61faa1e84695c718e0d9ddf5a"
+          "sha512": "2376d8ca6a0eb8e65acc4cb3eb49ab76a93117b9b5bf58c0f847fff634a9a577d30b2a9b3344f557858f973e9ba12cfe638cee3edcfd1c03124f4c4c94cf8317",
+          "sha256": "fea4ec2687a745b4bca987eeefa3dac0bdd4075708b0f4c0d46968060826da2b",
+          "sha1": "3514faab11dc242c699fcdb626780ddbe9577e3a",
+          "md5": "8fdc793c068f64c3a2b8e75acd81f118"
         }
       ]
     }

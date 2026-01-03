@@ -72,10 +72,10 @@
           "name": "magicutils-core-1.10.0.jar",
           "url": "magicutils-core-1.10.0.jar",
           "size": 1219,
-          "sha512": "0f96ab23c7e08c956942c90ef1a8e511612aeaf36058c4de6d5d779bb951c98162c9f600bf3c000b36922b3c1f1be3eab664f30da0f5feec1518430ab6061d3d",
-          "sha256": "c90fe4049b3ea9251d7670dd055d6335df42cac119403617c8d2bfa04cb7a730",
-          "sha1": "f421e53d5c84c85f56154dede1a8200114930525",
-          "md5": "f2188ca33316d860b430a7bdac326640"
+          "sha512": "d3e7b7f05f36a3ab8c4277a5af673c6ad8a386408a5a2f0298fe8fbe9e8542b3006884ebb1510a8a63c1c3a00974fdca1c63c39dc9393373557b80b085b1e72f",
+          "sha256": "900c1769bde78124c091663b7e7b2e58bb67f207fbf22eefff8edb75be31b2c0",
+          "sha1": "f843719bc070db22c5968bbd92e2e3a37d19a646",
+          "md5": "0cfe1ae85a870b62c09ab7667fa5b197"
         }
       ]
     },
@@ -137,10 +137,10 @@
           "name": "magicutils-core-1.10.0.jar",
           "url": "magicutils-core-1.10.0.jar",
           "size": 1219,
-          "sha512": "0f96ab23c7e08c956942c90ef1a8e511612aeaf36058c4de6d5d779bb951c98162c9f600bf3c000b36922b3c1f1be3eab664f30da0f5feec1518430ab6061d3d",
-          "sha256": "c90fe4049b3ea9251d7670dd055d6335df42cac119403617c8d2bfa04cb7a730",
-          "sha1": "f421e53d5c84c85f56154dede1a8200114930525",
-          "md5": "f2188ca33316d860b430a7bdac326640"
+          "sha512": "d3e7b7f05f36a3ab8c4277a5af673c6ad8a386408a5a2f0298fe8fbe9e8542b3006884ebb1510a8a63c1c3a00974fdca1c63c39dc9393373557b80b085b1e72f",
+          "sha256": "900c1769bde78124c091663b7e7b2e58bb67f207fbf22eefff8edb75be31b2c0",
+          "sha1": "f843719bc070db22c5968bbd92e2e3a37d19a646",
+          "md5": "0cfe1ae85a870b62c09ab7667fa5b197"
         }
       ]
     },
@@ -156,11 +156,11 @@
         {
           "name": "magicutils-core-1.10.0-all.jar",
           "url": "magicutils-core-1.10.0-all.jar",
-          "size": 3326159,
-          "sha512": "55775895e7603225f66fdbb46824d14b299bb7835c66c132d5e1306ac71ead97c0b7035b062e4a74fce3955bea8e8b8f4c8f99895898bcdebb7a5e118df4f2cd",
-          "sha256": "8261cf0a211543babade33b8e93305159c9f1e27733ce8b4c50656fc09346b97",
-          "sha1": "7cc9582e98b5c0d753578250d0e5fe252bf10cc3",
-          "md5": "407a1065858f04cc3921a63bb395cc5c"
+          "size": 3326157,
+          "sha512": "1bf13a8233580f3be8f2b762d8c0b45e9dae14536b56d5e0a394448b5c70206745f189b772692b2c640c3c93834a232abed565ef43a92c093e7bddef6754b496",
+          "sha256": "e7f4b93c3126deba99f6773520ae3a3c178ea1dade6ec8d2dfdd0f259d12d4e7",
+          "sha1": "eb13883a9af754d4e4f8600aa1dc4fe326b944a5",
+          "md5": "5535a7a2b08ba3ea347b19b7114ca852"
         }
       ]
     },
@@ -177,10 +177,10 @@
           "name": "magicutils-core-1.10.0-sources.jar",
           "url": "magicutils-core-1.10.0-sources.jar",
           "size": 1086,
-          "sha512": "39eba0cb2f2a3a8dc6ad7238e886c21bfa4cc36882e261254cda7a9d9802de606f163f703615b7b794a553ca5f2ace820dbbdbae517051cabe87a9dc6ee59c38",
-          "sha256": "41db7b826cb388626de5b3da0f76c1ccead0dca362144d81bec8d7bfe7119258",
-          "sha1": "3a40905e53090721cc86cd5f42d8d6bd2c15704d",
-          "md5": "14699296f97bf53ce82378fbfbad4ed1"
+          "sha512": "035df46a625c30b3b7da6cc029f7b960f2e49da0f39309ba99cb4c131baf33c2e319eca2561514267dad20bf94e4cf95efd76d9653aeda4a0a73a9f1d0cf1603",
+          "sha256": "26c660f3b16909a36e98011830009f0f0990e2319d530d8a1c7091ed44145059",
+          "sha1": "dcb31cdd42560a1696190a96aeb986b1677a9299",
+          "md5": "adb98b6b69bf37b8993322b883d061ca"
         }
       ]
     },
@@ -197,10 +197,10 @@
           "name": "magicutils-core-1.10.0-javadoc.jar",
           "url": "magicutils-core-1.10.0-javadoc.jar",
           "size": 91527,
-          "sha512": "96ca95277ed60038731323e1399f9a8847e83632dffb9419474818294a04c79da3026d02df0fc81bc6131599e49d423c86ea3e6140f532f658e1c92a3cd84a7d",
-          "sha256": "d41993a494e392e279987022fb7519ecc370b7062fc4e568b56071c560881e5b",
-          "sha1": "598db692c0fdaef048afeace7f90b1843992dfe5",
-          "md5": "80f0f60a9836d7db5ed36ef7883421c6"
+          "sha512": "aa75f36064659895b677313c11e5537736e0e31cb02f38c7bf42b54bb55cd1a6513c97adc46fb48be77fa1a66d3426a7e58d9799119fa4649d99d734bca8bc7a",
+          "sha256": "54dc20fd9cdf24b0a980d34c4cfb006eecd73020eeac573927a493bd10a10b90",
+          "sha1": "81d92faed6516f3c374be5f102f3b2550101cd79",
+          "md5": "7b5f3dba31ac5ce88a2c461db9aced96"
         }
       ]
     }
