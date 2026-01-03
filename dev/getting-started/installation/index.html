@@ -1303,10 +1303,10 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-bukkit:&lt;version&gt;&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-bukkit:{{ magicutils_version }}&quot;</span><span class="p">)</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="c1">// Optional format helpers</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-yaml:&lt;version&gt;&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-toml:&lt;version&gt;&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-yaml:{{ magicutils_version }}&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-toml:{{ magicutils_version }}&quot;</span><span class="p">)</span>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>If you prefer a shaded runtime, use the <code>-all</code> artifact (example:
@@ -1320,9 +1320,9 @@
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="n">include</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:&lt;version&gt;&quot;</span><span class="p">))</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="n">modCompileOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:&lt;version&gt;:dev&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="n">modRuntimeOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:&lt;version&gt;:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="n">include</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}&quot;</span><span class="p">))</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="n">modCompileOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="n">modRuntimeOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev&quot;</span><span class="p">)</span>
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="depend-on-a-shared-bundle-mod">Depend on a shared bundle mod<a class="headerlink" href="#depend-on-a-shared-bundle-mod" title="Permanent link">&para;</a></h3>
@@ -1332,7 +1332,7 @@
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:&lt;version&gt;:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev&quot;</span><span class="p">)</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
 </code></pre></div>
 <p>If you pick the shared bundle, add the <code>magicutils-fabric-bundle</code> mod to the
@@ -1344,7 +1344,7 @@ server and do not embed it inside other mods.</p>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">}</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-neoforge:&lt;version&gt;&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}&quot;</span><span class="p">)</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="optional-format-helpers">Optional format helpers<a class="headerlink" href="#optional-format-helpers" title="Permanent link">&para;</a></h2>
