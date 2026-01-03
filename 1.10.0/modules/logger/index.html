@@ -1304,8 +1304,18 @@ for enable/disable.</p>
 <p>Attach a <code>LanguageManager</code> to enable auto-localisation:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
 </code></pre></div>
-<p>On Bukkit, the logger automatically bridges MagicPlaceholders to PlaceholderAPI
-when it is installed.</p>
+<p>When <code>auto-localization</code> is enabled (default), any message that starts with
+<code>@</code> is treated as a language key:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;@myplugin.ready&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>The key is resolved via <code>LanguageManager</code> and then rendered as MiniMessage.
+You can toggle this in <code>logger.yml</code> (<code>auto-localization</code>).</p>
+<p>On Bukkit, the logger automatically bridges MagicPlaceholders to
+<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> when it is
+installed. On Fabric, MagicPlaceholders are bridged to
+<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
+<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> when those mods
+are present.</p>
 
 
 

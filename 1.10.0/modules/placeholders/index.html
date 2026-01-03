@@ -1213,7 +1213,9 @@
 
 <h1 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h1>
 <p>The placeholder module offers a shared registry and platform bridges to
-PlaceholderAPI (Bukkit) and PB4/MiniPlaceholders (Fabric).</p>
+<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> (Bukkit) and
+<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> /
+<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> (Fabric).</p>
 <h2 id="register-placeholders">Register placeholders<a class="headerlink" href="#register-placeholders" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">registerNamespace</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyPlugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;1.0.0&quot;</span><span class="p">);</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
@@ -1228,14 +1230,23 @@ PlaceholderAPI (Bukkit) and PB4/MiniPlaceholders (Fabric).</p>
 <p>Resolvers receive:</p>
 <ul>
 <li><code>Audience</code> when available (player context).</li>
-<li><code>arg</code> from <code>placeholder:key:arg</code> syntax (PAPI/PB4/MiniPlaceholders).</li>
+<li><code>arg</code> from <code>placeholder:key:arg</code> syntax (used by
+  <a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a>,
+  <a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a>,
+  <a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a>).</li>
 </ul>
 <h2 id="platform-bridges">Platform bridges<a class="headerlink" href="#platform-bridges" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Bukkit: placeholders are exposed to PlaceholderAPI automatically when the
+<li>Bukkit: placeholders are exposed to <a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> automatically when the
   logger adapter is created.</li>
-<li>Fabric: placeholders are bridged to PB4 Placeholders and MiniPlaceholders
-  when their mods are present.</li>
+<li>Fabric: placeholders are bridged to <a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
+  <a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a>
+  when those mods are present (optional integration).</li>
+</ul>
+<p>Supported Fabric mods:</p>
+<ul>
+<li><a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a></li>
+<li><a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a></li>
 </ul>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>

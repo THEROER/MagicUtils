@@ -838,6 +838,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#default-permission-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default permission values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#commandresult" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1321,6 +1332,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#default-permission-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default permission values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#commandresult" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1465,6 +1487,36 @@ players, command blocks, etc.</p>
 <li><code>@SubCommand.permission</code> for subcommands.</li>
 <li><code>@Permission</code> on parameters for argument-level checks.</li>
 </ul>
+<p>Permission nodes are generated when annotations do not provide explicit values:</p>
+<ul>
+<li>Command: <code>commands.&lt;command&gt;</code></li>
+<li>Subcommand: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;</code></li>
+<li>Argument: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;.argument.&lt;name&gt;</code></li>
+</ul>
+<p>These are then prefixed by the permission prefix passed to
+<code>CommandRegistry.initialize(...)</code>.</p>
+<p>Example with prefix <code>donatemenu</code>:</p>
+<ul>
+<li><code>donatemenu.commands.donate</code></li>
+<li><code>donatemenu.commands.donate.subcommand.give</code></li>
+<li><code>donatemenu.commands.donate.subcommand.give.argument.player</code></li>
+</ul>
+<h3 id="default-permission-values">Default permission values<a class="headerlink" href="#default-permission-values" title="Permanent link">&para;</a></h3>
+<p>Use <code>MagicPermissionDefault</code> to control who can execute by default:</p>
+<ul>
+<li><code>TRUE</code> -&gt; everyone</li>
+<li><code>OP</code> -&gt; operators (default)</li>
+<li><code>NOT_OP</code> -&gt; non-operators</li>
+<li><code>FALSE</code> -&gt; nobody (explicit permission required)</li>
+</ul>
+<p>On Bukkit, MagicUtils automatically registers these permissions with the
+chosen defaults and also creates wildcard nodes:</p>
+<ul>
+<li><code>...commands.&lt;command&gt;.*</code></li>
+<li><code>...commands.&lt;command&gt;.subcommand.*</code></li>
+</ul>
+<p>On Fabric, it uses <code>fabric-permissions-api</code> when available, otherwise falls
+back to op-level checks (configurable in <code>CommandRegistry.initialize</code>).</p>
 <p>Example with conditional permission:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">grant</span><span class="p">(</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span>
