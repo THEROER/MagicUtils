@@ -159,6 +159,7 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         private static final java.lang.reflect.Method CHECK_BOOLEAN;
         private static final java.lang.reflect.Method CHECK_INT;
         private static final java.lang.reflect.Method CHECK_SIMPLE;
+        private static final java.lang.reflect.Method HAS_PERMISSION_LEVEL;
 
         static {
             java.lang.reflect.Method checkBoolean = null;
@@ -173,6 +174,7 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             CHECK_BOOLEAN = checkBoolean;
             CHECK_INT = checkInt;
             CHECK_SIMPLE = checkSimple;
+            HAS_PERMISSION_LEVEL = resolvePermissionLevelMethod();
         }
 
         private FabricPermissionBridge() {
@@ -189,7 +191,7 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             if (result != null) {
                 return result;
             }
-            return sender.hasPermissionLevel(opLevel);
+            return hasPermissionLevel(sender, opLevel);
         }
 
         static boolean check(ServerCommandSource sender, String permission, MagicPermissionDefault defaultValue,
@@ -240,8 +242,8 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             return switch (effective) {
                 case TRUE -> true;
                 case FALSE -> false;
-                case NOT_OP -> !sender.hasPermissionLevel(opLevel);
-                case OP -> sender.hasPermissionLevel(opLevel);
+                case NOT_OP -> !hasPermissionLevel(sender, opLevel);
+                case OP -> hasPermissionLevel(sender, opLevel);
             };
         }
 
@@ -253,6 +255,20 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
                 case NOT_OP -> 0;
                 case OP -> opLevel;
             };
+        }
+
+        private static boolean hasPermissionLevel(ServerCommandSource sender, int opLevel) {
+            if (sender == null) {
+                return false;
+            }
+            if (HAS_PERMISSION_LEVEL != null) {
+                try {
+                    Object res = HAS_PERMISSION_LEVEL.invoke(sender, opLevel);
+                    return res instanceof Boolean && (Boolean) res;
+                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                }
+            }
+            return false;
         }
 
         private static java.lang.reflect.Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
@@ -274,6 +290,33 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
                 }
             }
             return null;
+        }
+
+        private static java.lang.reflect.Method resolvePermissionLevelMethod() {
+            try {
+                java.lang.reflect.Method direct = ServerCommandSource.class.getMethod("hasPermissionLevel", int.class);
+                direct.setAccessible(true);
+                return direct;
+            } catch (ReflectiveOperationException ignored) {
+                // continue
+            }
+            java.lang.reflect.Method candidate = null;
+            for (java.lang.reflect.Method method : ServerCommandSource.class.getMethods()) {
+                if (method.getParameterCount() != 1 || method.getParameterTypes()[0] != int.class) {
+                    continue;
+                }
+                if (method.getReturnType() != boolean.class) {
+                    continue;
+                }
+                if (candidate != null) {
+                    return null;
+                }
+                candidate = method;
+            }
+            if (candidate != null) {
+                candidate.setAccessible(true);
+            }
+            return candidate;
         }
 
         private static Class<?> tryLoad(String name) {
