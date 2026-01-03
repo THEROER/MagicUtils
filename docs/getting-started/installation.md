@@ -161,6 +161,14 @@ dependencies {
 
 Without them, MagicUtils uses JSON or JSONC (Fabric default).
 
+## Optional HTTP client
+
+```kotlin
+dependencies {
+    implementation("dev.ua.theroer:magicutils-http-client:{{ magicutils_version }}")
+}
+```
+
 ## Notes on shaded artifacts
 
 Local builds produce `*-all` artifacts (shaded). The GitHub Pages repository
