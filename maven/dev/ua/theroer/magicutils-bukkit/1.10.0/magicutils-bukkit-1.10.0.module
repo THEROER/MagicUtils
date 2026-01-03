@@ -37,10 +37,10 @@
           "name": "magicutils-bukkit-1.10.0.jar",
           "url": "magicutils-bukkit-1.10.0.jar",
           "size": 105823,
-          "sha512": "47af84d1c46e8ebe717db0270ab7ce6abef59f229909e21e915000d935a4f967c6ffba09ca97f36c77fb9cabac25e8b7f6a116df54e3f404aa94c458b54f7902",
-          "sha256": "59a43305b4475d1091808597e91dba12e6ca30004fb57be9a4d5b1f2eecf338f",
-          "sha1": "245184d479b56618bccf6505d1030721a0cd5696",
-          "md5": "b87c93c5e08743d1d43316e1944390ff"
+          "sha512": "ee10dde18153f116aa82fd1b1357e60205849c71405abc8dc872fc2f62ef19740261fb309248f69eaa0c1a3b586acd0d0bb7386f398f2712c4719d815e0d6984",
+          "sha256": "b83e43cd7d89cb4c44aa3fe9a28e3705b5d5cbe53b54cb87323d6ba4b76a533b",
+          "sha1": "ad1194637894a3740d547f54d74fd0cf9d991490",
+          "md5": "e93ffd1cfb1bd9501b8222ee25fe7ae8"
         }
       ]
     },
@@ -67,10 +67,10 @@
           "name": "magicutils-bukkit-1.10.0.jar",
           "url": "magicutils-bukkit-1.10.0.jar",
           "size": 105823,
-          "sha512": "47af84d1c46e8ebe717db0270ab7ce6abef59f229909e21e915000d935a4f967c6ffba09ca97f36c77fb9cabac25e8b7f6a116df54e3f404aa94c458b54f7902",
-          "sha256": "59a43305b4475d1091808597e91dba12e6ca30004fb57be9a4d5b1f2eecf338f",
-          "sha1": "245184d479b56618bccf6505d1030721a0cd5696",
-          "md5": "b87c93c5e08743d1d43316e1944390ff"
+          "sha512": "ee10dde18153f116aa82fd1b1357e60205849c71405abc8dc872fc2f62ef19740261fb309248f69eaa0c1a3b586acd0d0bb7386f398f2712c4719d815e0d6984",
+          "sha256": "b83e43cd7d89cb4c44aa3fe9a28e3705b5d5cbe53b54cb87323d6ba4b76a533b",
+          "sha1": "ad1194637894a3740d547f54d74fd0cf9d991490",
+          "md5": "e93ffd1cfb1bd9501b8222ee25fe7ae8"
         }
       ]
     },
@@ -107,10 +107,10 @@
           "name": "magicutils-bukkit-1.10.0-sources.jar",
           "url": "magicutils-bukkit-1.10.0-sources.jar",
           "size": 48576,
-          "sha512": "8ba5186180eef5414c60cf5f3b200d6d6ea92657bcf040f9e0ec026c2715b88e5c9a51e5118a5a5158e3e0e26371e69765a9bfa3044c3ae00ac13ed427b6c01d",
-          "sha256": "ffc1a61050233fd3f3f2c233be8fa7e5a00244468e9272771432f0f1352d5079",
-          "sha1": "5a2cf1a57d48e68730eab643a29d7fec33a97002",
-          "md5": "bbabf032fc29e14b2b1c228432b94d80"
+          "sha512": "13628083f056d9210ee86695daa9baf5a2204e6404a5d3ec9e92fa89a5dda26679407d46d67c81b4c87347ee2db19a57c8c50abb412af9c265de705153342ec3",
+          "sha256": "d2a654610ca218e6a23d1b5724e6a213e99ce315b669d706eb2caefb65f827e0",
+          "sha1": "302b04a9d2e8894c71dd7e2a1c409d2ee2721f05",
+          "md5": "6a918fe8164ad66862a3ba2000220411"
         }
       ]
     },
@@ -127,10 +127,10 @@
           "name": "magicutils-bukkit-1.10.0-javadoc.jar",
           "url": "magicutils-bukkit-1.10.0-javadoc.jar",
           "size": 242210,
-          "sha512": "3695b8d9becf3d395be0a7d002e542ec25b587c2c41be5513ac97d170e4430e3ddb3d17a34ba22323cdcd835005c0a4d3dfa02435d889e1344dadc8468bc6faa",
-          "sha256": "1040889936f370461a8a73e454fcb9532d38509710b6661d81a820e8cd4e620a",
-          "sha1": "b1bbf1d509fb6803635fa8a706921a51ff83ef65",
-          "md5": "9c1804dd571c67466fc43cf5417236c6"
+          "sha512": "ce646f6ddf93b019a2964462fa42944c286896b48ab61aa56514b2d22461c990b901ea6ce64e96093b7fd0def4d342a079a693c3175ed5c771ea5e2dcb3494bf",
+          "sha256": "5f7dfd5626706d95bf5d9765a9efa817d98afb912768288f4eb160e34c5bc4de",
+          "sha1": "d3fa5846740d6f3c7132a621e387a650993bc1f2",
+          "md5": "36e10ec6e121ed09679eef2c0f1739ae"
         }
       ]
     }
