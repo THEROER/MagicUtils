@@ -16,22 +16,23 @@ theme:
     - content.tabs.link
     - toc.follow
   palette:
-    - scheme: default
-      primary: deep purple
-      accent: purple
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
     - scheme: slate
       primary: deep purple
       accent: purple
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
 
 plugins:
   - search
-  - macros
+  - macros:
+      module_name: macros
 
 markdown_extensions:
   - admonition
