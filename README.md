@@ -2,9 +2,9 @@
 
 Modular toolkit for Bukkit/Paper, Fabric, and NeoForge that consolidates
 configuration, localisation, commands, logging, placeholders, GUI helpers,
-and scheduling. Published to local Maven; use thin jars (or `-all` shaded
-variants for non-Fabric). Fabric distributions are provided as a jar-in-jar
-bundle (`magicutils-fabric-bundle`).
+and scheduling. Published to the GitHub Pages Maven repository (thin jars;
+`-all` shaded variants are local-only). Fabric distributions are provided as a
+jar-in-jar bundle (`magicutils-fabric-bundle`).
 
 ---
 
@@ -35,37 +35,28 @@ bundle (`magicutils-fabric-bundle`).
 
 ## Quick Start
 
-1. **Publish to Maven Local** (choose target)
-   ```bash
-   ./gradlew :platform-bukkit:publishToMavenLocal    # Paper/Bukkit
-   ./gradlew :fabric-bundle:publishToMavenLocal      # Fabric (jar-in-jar)
-   ./gradlew :platform-neoforge:publishToMavenLocal  # NeoForge
+1. **Add the Maven repository**
+   ```kts
+   repositories { maven("https://theroer.github.io/MagicUtils/maven/") }
    ```
 2. **Declare the dependency** in your build script.
    **Bukkit/Paper:**
    ```kts
-   repositories { mavenLocal() }
-
    dependencies {
        implementation("dev.ua.theroer:magicutils-bukkit:<version>")
        // optional: implementation("dev.ua.theroer:magicutils-config-yaml:<version>")
        // optional: implementation("dev.ua.theroer:magicutils-config-toml:<version>")
-       // shaded runtime: implementation("dev.ua.theroer:magicutils-bukkit-all:<version>")
    }
    ```
    **Fabric (Loom):**
    ```kts
-   repositories { mavenLocal() }
-
    dependencies {
        modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:<version>"))
        modCompileOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
        modRuntimeOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
    }
    ```
-   Version is set in `gradle.properties` (`version=1.10.0` by default).
-3. **Refresh after every change** by repeating `publishToMavenLocal` so
-   dependent plugins/mods pick up the new artefact.
+   Replace `<version>` with the latest release.
 
 > **Prerequisites:** Java 21 toolchain across all modules.
 
@@ -123,7 +114,7 @@ bundle (`magicutils-fabric-bundle`).
 - On Bukkit/Fabric, MagicUtils auto-closes the watcher on shutdown. For custom platforms, call
   `configManager.shutdown()` in your plugin’s `onDisable` to release watcher resources.
 - Combine with `lang` by storing language codes in config and feeding them into `LanguageManager` at runtime.
-- Example: `examples/config/ConfigExample.java`.
+- See the config docs for examples and patterns.
 
 ### `config-yaml` — YAML format support
 
@@ -161,7 +152,7 @@ bundle (`magicutils-fabric-bundle`).
 - Use `Messages.getRaw(sender, key, placeholders…)` for MiniMessage strings that mix localisation with runtime data.
 - To expose translation keys in commands, leverage `LanguageKeyTypeParser` so tab completion is always up-to-date.
 - Extend localisation by adding new sections under `messages` — no code changes required.
-- Example: `examples/lang/LanguageExample.java`.
+- See the lang docs for examples and patterns.
 
 ### `commands` — declarative command framework
 
@@ -178,7 +169,7 @@ bundle (`magicutils-fabric-bundle`).
 - Combine with the `lang` module: return `CommandResult.failure(InternalMessages.SETTINGS_LANG_NOT_FOUND.get(sender, "language", arg))` for translated errors.
 - Commands can be reloaded by clearing the registry and re-registering classes; useful during development or when configs change.
 - Permissions support structured conditions via `@Permission`: `condition` (ALWAYS/SELF/OTHER/NOT_NULL/DISTINCT/ALL_DISTINCT), `conditionArgs` (argument names to inspect), `compare` (AUTO/UUID/NAME/EQUALS), `defaultValue` (PermissionDefault.OP/NOT_OP/TRUE/FALSE). See examples below.
-- Example: `examples/commands/ExampleCommand.java`.
+- See the commands docs for examples and patterns.
 - Built-in `/magicutils reload` and `/magicutils settings` commands exist but are still in progress; expect breaking changes.
 - Import the right annotations: for commands use `dev.ua.theroer.magicutils.annotations.*`; for configs use `dev.ua.theroer.magicutils.config.annotations.*`.
 
@@ -216,8 +207,8 @@ bundle (`magicutils-fabric-bundle`).
   ```
 - Combine with the command framework for translated feedback: `Logger.warn(sender, InternalMessages.CMD_NO_PERMISSION.get(sender));`
 - Flip localisation at runtime via `Logger.setAutoLocalization(true)` to respect per-player languages when broadcasting to chat.
-- Register custom placeholders via `PlaceholderProcessor.registerGlobalPlaceholder` / `registerLocalPlaceholder`; see `examples/logger/PlaceholderDemo.java`.
-- Example: `examples/logger/LoggerExample.java`.
+- Register custom placeholders via `PlaceholderProcessor.registerGlobalPlaceholder` / `registerLocalPlaceholder`.
+- See the logger docs for examples and patterns.
 
 ### `gui` — Bukkit inventory UI helpers
 
@@ -232,7 +223,7 @@ bundle (`magicutils-fabric-bundle`).
 - Wire GUIs to config and localisation: fetch button definitions from `ConfigManager`, text from `Messages`, and compose at runtime.
 - Register all GUIs through a central factory so they can be reloaded or refreshed when config/lang changes.
 - Handle pagination by updating the GUI’s page state and calling `gui.redraw(player)`.
-- Example: `examples/gui/GuiExample.java`.
+- Keep GUI layout definitions close to your config and language sources.
 
 ### `utils` — Bukkit scheduling helpers
 
@@ -251,7 +242,7 @@ bundle (`magicutils-fabric-bundle`).
           seconds -> player.sendMessage(Messages.get(player, "match.starting", "seconds", String.valueOf(seconds))),
           () -> player.sendMessage(Messages.get(player, "match.begin")));
   ```
-- Example: `examples/utils/ScheduleExample.java`.
+- Prefer small, isolated tasks and cancel them on shutdown.
 
 ### `platform` — platform abstractions
 
@@ -306,7 +297,7 @@ bundle (`magicutils-fabric-bundle`).
 
 **Usage notes**
 - Register resolvers: `registerGlobalPlaceholder("server-online", () -> String.valueOf(Bukkit.getOnlinePlayers().size()))`.
-- Pair with your own PAPI expansions (`examples/logger/PapiExpansionExample.java`) or purely custom placeholders (`examples/logger/PlaceholderDemo.java`).
+- Pair with your own PAPI expansions or purely custom placeholders.
 
 
 ### `annotations` — shared metadata
@@ -320,7 +311,7 @@ bundle (`magicutils-fabric-bundle`).
 **Usage notes**
 - Treat annotations as declarative metadata—keep business logic in your classes while MagicUtils handles glue code and reflective wiring.
 - Combine `@ParsePriority` with custom parsers to influence resolution order when multiple parsers fit the same type.
-- Examples: see `examples/commands/ExampleCommand.java` and `examples/config/ConfigExample.java` for practical annotation usage.
+- See the commands and config docs for practical annotation usage.
 
 ### `processor` — annotation helper
 
@@ -400,12 +391,9 @@ gui.open(player);
 MagicUtils is maintained internally. Please:
 
 1. Keep documentation (including this README) in sync with code changes.
-2. Run `./gradlew publishToMavenLocal` after modifications so dependent
-   plugins update automatically.
-3. Prefer adding tests or usage examples when introducing new features.
+2. Run `./gradlew build` after modifications to validate the workspace.
+3. Prefer adding tests or usage examples in docs when introducing new features.
 
 Questions or suggestions? Reach out to the maintainers or open an internal
 ticket.
 
-> Explore the `examples/` directory for standalone snippets covering each
-> module (`config`, `lang`, `commands`, `logger`, `gui`, `utils`).
