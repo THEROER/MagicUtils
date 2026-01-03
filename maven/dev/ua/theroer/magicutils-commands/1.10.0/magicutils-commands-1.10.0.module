@@ -37,10 +37,10 @@
           "name": "magicutils-commands-1.10.0.jar",
           "url": "magicutils-commands-1.10.0.jar",
           "size": 137583,
-          "sha512": "87b794a375c72bf8f3a00909170f372c2386c9bb77617a81fbd26eeb31deea499fad2550a10ad323c4d39152d152423de626be6bd7e23be41567d48a40a81eb2",
-          "sha256": "53410f0dd4638a1a1cee02247146ed4768945da16a0a0c98a54a6e9605e13042",
-          "sha1": "1c1f01504d7d8270959cd992a9af4b9cdd68dfae",
-          "md5": "988a7053fb745e33b2003824ef9e8bbc"
+          "sha512": "6927e3704ccf32da3092136741ee239a033ba36b7ad9493fae22be65b37c0b9556bb38e13d95a6df8700ec3ca1bfde680a0c168ff27b4091c71297c318e89a5a",
+          "sha256": "67c82ef208afa222d5908115b31bdc489174bce1536c9636c9cc8cb40c583143",
+          "sha1": "072f3058cd5ba3f43fe33e67a809c696fd2d8326",
+          "md5": "28faf2e638e9fae5078b2e0d082fb99d"
         }
       ]
     },
@@ -67,10 +67,10 @@
           "name": "magicutils-commands-1.10.0.jar",
           "url": "magicutils-commands-1.10.0.jar",
           "size": 137583,
-          "sha512": "87b794a375c72bf8f3a00909170f372c2386c9bb77617a81fbd26eeb31deea499fad2550a10ad323c4d39152d152423de626be6bd7e23be41567d48a40a81eb2",
-          "sha256": "53410f0dd4638a1a1cee02247146ed4768945da16a0a0c98a54a6e9605e13042",
-          "sha1": "1c1f01504d7d8270959cd992a9af4b9cdd68dfae",
-          "md5": "988a7053fb745e33b2003824ef9e8bbc"
+          "sha512": "6927e3704ccf32da3092136741ee239a033ba36b7ad9493fae22be65b37c0b9556bb38e13d95a6df8700ec3ca1bfde680a0c168ff27b4091c71297c318e89a5a",
+          "sha256": "67c82ef208afa222d5908115b31bdc489174bce1536c9636c9cc8cb40c583143",
+          "sha1": "072f3058cd5ba3f43fe33e67a809c696fd2d8326",
+          "md5": "28faf2e638e9fae5078b2e0d082fb99d"
         }
       ]
     },
@@ -107,10 +107,10 @@
           "name": "magicutils-commands-1.10.0-sources.jar",
           "url": "magicutils-commands-1.10.0-sources.jar",
           "size": 61718,
-          "sha512": "eb0468a5626c83eb931cbb41f7b31cee8e06321a2b5eae7a373c4283a346eb19737ef491aa83cc8e57a85148a55d9c683627cd2e4d211a871e2329bd28b597c3",
-          "sha256": "1673881a0d736d64a01b19e6056c4a68690b8dec60054b3308f6f574088d0891",
-          "sha1": "52040e0e2f07db2eedb06c7c6ac670b3337c2a4a",
-          "md5": "cc9126f1db5bce5458555a4280e9bdbf"
+          "sha512": "8a9e2d0cdb28a62ebe494068914c6a8111126dfd408c4baa0829c8a402d48595c0dd9070ac0a2c158fa667ed3de79e1b915f409460858528be3c1482e643a504",
+          "sha256": "9bd7beb462a2a0f765ad4c6a162af03af0556596b48906b07a6f28170b5f6e4b",
+          "sha1": "7a2be3cc6bd7bc40bba17cb70281c3e752df5256",
+          "md5": "2039d6ce64c367dab4b23f5c6076db9b"
         }
       ]
     },
@@ -127,10 +127,10 @@
           "name": "magicutils-commands-1.10.0-javadoc.jar",
           "url": "magicutils-commands-1.10.0-javadoc.jar",
           "size": 259112,
-          "sha512": "004e97c9b7a12dd66d344b44af4e48b4dbd95b58bd30acadf1310e8f830f3ab455b8cdf59fe288dab3926e191f79b172be39dec15e04109cea50c2905412acc4",
-          "sha256": "7c5aa9426ed302ea9749ca7a043fdb801a6dd093855d429f6d3cffe537409420",
-          "sha1": "5532da6b3570fd080bde7ca747d0073bdaa6fbd4",
-          "md5": "5fe1901ef874e1ef07fd3b72df5d4995"
+          "sha512": "cd442255afc0e067b2c6e512cd2e543691a1e6aab5c2584364e9faf6fdf0406a84fae469b30dfe8a6c83529a4c4021a5f53f2fc417cd05ef3f0be15cd9498483",
+          "sha256": "d48ac07aca959a2bda36d698a8a0117ef2bafc14a4acd143b306498b7a6a136b",
+          "sha1": "4a95d135cb532236f24ec8c218dd5dff61777431",
+          "md5": "c7bfc60e981ba8afe77de716ac1ac441"
         }
       ]
     }

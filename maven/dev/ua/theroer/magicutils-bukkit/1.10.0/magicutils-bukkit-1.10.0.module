@@ -36,11 +36,11 @@
         {
           "name": "magicutils-bukkit-1.10.0.jar",
           "url": "magicutils-bukkit-1.10.0.jar",
-          "size": 105823,
-          "sha512": "677b0692d07b5cdba9e3a569b531ac41febc3ab9bae38934acc5c6f6cd62c8b4e5d246a707fb5abb3fe477ed43db4fa81a12d054c2fdb760f96e6e24a272acf9",
-          "sha256": "c6fbcd98f664ebda2ef8ee39c72ed456fc76abefbf56f6a55d039ad09ed72b0a",
-          "sha1": "4c55ecd7d0a947cec4a74494a316e96dbc5f5d11",
-          "md5": "a593557fb8fe3cf778c36c31c60ea25c"
+          "size": 101536,
+          "sha512": "f08b1dde7f3a70e0e61d2c695c46b6d862b8fafd4d495c5b76e1fbe0a826d6955a409601695b3b33c8d464a0eb5a0464c0f1aa5a9e59b53d1dc8d0d8bb721839",
+          "sha256": "e26b487577d437d840f6ddc64ab2960746d376331998f11db6abc61f024d3738",
+          "sha1": "c9ae2fb0575569bc40176d0a0c6ad3642ab5d5e9",
+          "md5": "1f70f0b30c4cb110c5789233822f7df9"
         }
       ]
     },
@@ -66,11 +66,11 @@
         {
           "name": "magicutils-bukkit-1.10.0.jar",
           "url": "magicutils-bukkit-1.10.0.jar",
-          "size": 105823,
-          "sha512": "677b0692d07b5cdba9e3a569b531ac41febc3ab9bae38934acc5c6f6cd62c8b4e5d246a707fb5abb3fe477ed43db4fa81a12d054c2fdb760f96e6e24a272acf9",
-          "sha256": "c6fbcd98f664ebda2ef8ee39c72ed456fc76abefbf56f6a55d039ad09ed72b0a",
-          "sha1": "4c55ecd7d0a947cec4a74494a316e96dbc5f5d11",
-          "md5": "a593557fb8fe3cf778c36c31c60ea25c"
+          "size": 101536,
+          "sha512": "f08b1dde7f3a70e0e61d2c695c46b6d862b8fafd4d495c5b76e1fbe0a826d6955a409601695b3b33c8d464a0eb5a0464c0f1aa5a9e59b53d1dc8d0d8bb721839",
+          "sha256": "e26b487577d437d840f6ddc64ab2960746d376331998f11db6abc61f024d3738",
+          "sha1": "c9ae2fb0575569bc40176d0a0c6ad3642ab5d5e9",
+          "md5": "1f70f0b30c4cb110c5789233822f7df9"
         }
       ]
     },
@@ -86,11 +86,11 @@
         {
           "name": "magicutils-bukkit-1.10.0-all.jar",
           "url": "magicutils-bukkit-1.10.0-all.jar",
-          "size": 3431333,
-          "sha512": "9796319070a995f5158bb53c2d2eaa6b5a9ffa723c9c7c957ece18121d959d51661577bf15f0da82366f8bd61cde6c86e004ecf0166f1ca4f4163cb7f3f03df3",
-          "sha256": "0789be9a4187dc539c91d3c5cfac1f3502bfa467d9e25f999c43cb2825af403e",
-          "sha1": "20fec3ef053f641a272c450ef2c1cdb8cb2d458c",
-          "md5": "c37d8df03d5f783004295ee0476d2ed3"
+          "size": 3427006,
+          "sha512": "1bd45c124c720ef1a66e0bba7666e24b5d6e401049eca5c4d473de97806d784523c62c98a01714eb382fc4bb97c5bd9a1b53d0c1107a6986669a3abddd6b4cd6",
+          "sha256": "646516a357cecc2294e9d320ceb014b18dbf1fba6274e845d9ad30fe85c43e98",
+          "sha1": "9a308ba284fa34991613e848016dcbd3ecdc68c0",
+          "md5": "3600426928951c4021e6b8615c89a46e"
         }
       ]
     },
@@ -106,11 +106,11 @@
         {
           "name": "magicutils-bukkit-1.10.0-sources.jar",
           "url": "magicutils-bukkit-1.10.0-sources.jar",
-          "size": 48576,
-          "sha512": "710458734d136a57d807b796b9f475df8c5724849a74bc9ee7aff273a77546bae80ab70e4b875cc8c65654aff2a61aec7eeacbbdd69e8e5741cd969cc565cf10",
-          "sha256": "4f308cbba040801506978e47603b41276123064802cf0a400afd955177998ae9",
-          "sha1": "0415b91fb7df0faabb19a2a846c9c887c551b897",
-          "md5": "ac2b3cd9a9f4b4bfe608792335a24b0a"
+          "size": 46221,
+          "sha512": "1ca089511970839aa158e54b582f2a9adda4a80fe43f322ca693a50d36c357b01a2cb8a4393b8bdd7bc50b0ab4baef1d50e0a9529a8d1325703887042f9a28aa",
+          "sha256": "e0111239d48aa2aee3ec300d864cdd311f2f8b45425c44f4c2a8e161081fdf2f",
+          "sha1": "918f79856b0cc64744856df61b212a17ae75b191",
+          "md5": "17830928304f46d76bae35ec3a2ebf5b"
         }
       ]
     },
@@ -126,11 +126,11 @@
         {
           "name": "magicutils-bukkit-1.10.0-javadoc.jar",
           "url": "magicutils-bukkit-1.10.0-javadoc.jar",
-          "size": 242210,
-          "sha512": "ceb359f6ad614ea2414d5b7a01329cb1c9addcf7d8f3143cf2859deff548289d73f64f661aac01d3abdadca9e64b6e79b80480c509a57b6665e57ba2a9d763fe",
-          "sha256": "3603cea32cf69287a27079a578c58e603c77dcf15529be389d28a3742d3a13fb",
-          "sha1": "cbda9d854ead50dafb78f38feb2d27573b03ab4b",
-          "md5": "5e74ff1b6733357e12cf833aaf74f2ab"
+          "size": 238409,
+          "sha512": "ef34eb5e99187fddd3ead20f13aaecc2748d4231edaa5e8fec14d41556c69cc5947d6224f8faa1b250c531218e859231cf6498bbefe7698373d8f8812789172e",
+          "sha256": "93720e0af8c34ce468228da3a573d3c599d84d65b6ffa2af615a4c09f1b9229a",
+          "sha1": "51f8c3d8a2c5c1236516c876c2789df9f2cbd864",
+          "md5": "299ad0b4d625e36c8ff42a0fd4c332d3"
         }
       ]
     }
