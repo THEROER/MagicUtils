@@ -63,14 +63,20 @@ nav:
   - Modules:
       - Overview: modules/overview.md
       - Logger: modules/logger.md
+      - Logger Config: modules/logger-config.md
       - Commands: modules/commands.md
+      - Permissions: modules/permissions.md
+      - Commands Cheat Sheet: modules/commands-cheatsheet.md
       - Config: modules/config.md
+      - Config Advanced: modules/config-advanced.md
       - Lang: modules/lang.md
       - Placeholders: modules/placeholders.md
+      - Placeholders Advanced: modules/placeholders-advanced.md
   - Platforms:
       - Bukkit/Paper: platforms/bukkit.md
       - Fabric: platforms/fabric.md
       - NeoForge: platforms/neoforge.md
   - Recipes: recipes/index.md
   - API: api.md
+  - FAQ: faq.md
   - Contributing: contributing.md

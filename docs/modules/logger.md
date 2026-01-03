@@ -68,6 +68,8 @@ Prefix rendering can be controlled via `PrefixMode`:
 `LoggerConfig` is stored as `logger.{ext}`. On Fabric it is placed under
 `config/<modid>/` by default (via `ConfigNamespaceProvider`).
 
+See [Logger Config](logger-config.md) for a full key reference and examples.
+
 Key sections:
 
 - `prefix`: format and prefix mode.

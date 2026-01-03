@@ -44,6 +44,9 @@ MagicUtils can choose a format based on file extension. If you use `{ext}` in
 
 Fabric defaults to JSONC when YAML is not available.
 
+For advanced format selection and migrations, see
+[Config Advanced](config-advanced.md).
+
 ## Reloading and hot watch
 
 Register change listeners:

@@ -43,6 +43,9 @@ Supported Fabric mods:
 - [Text Placeholder API](https://modrinth.com/mod/placeholder-api)
 - [MiniPlaceholders](https://modrinth.com/mod/miniplaceholders)
 
+See [Placeholders Advanced](placeholders-advanced.md) for metadata and listener
+details.
+
 ## Notes
 
 - `MagicPlaceholders.namespaces()` and `entries()` provide registry snapshots.
