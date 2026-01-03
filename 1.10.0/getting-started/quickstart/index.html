@@ -605,6 +605,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#neoforge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeoForge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1159,6 +1170,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#neoforge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeoForge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1191,7 +1213,7 @@
 
 <h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
 <p>This page shows minimal wiring for the core modules. Each module can be used
-independently.</p>
+independently, but the order below keeps config + logger + lang consistent.</p>
 <h2 id="bukkitpaper">Bukkit/Paper<a class="headerlink" href="#bukkitpaper" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyPlugin</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">JavaPlugin</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="p">;</span>
@@ -1202,16 +1224,20 @@ independently.</p>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onEnable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="n">languageManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">LanguageManager</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="n">languageManager</span><span class="p">.</span><span class="na">init</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">);</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="n">languageManager</span><span class="p">.</span><span class="na">addMagicUtilsMessages</span><span class="p">();</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">(</span><span class="n">languageManager</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">));</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="p">}</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="n">Messages</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">));</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">());</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="fabric">Fabric<a class="headerlink" href="#fabric" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyMod</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ModInitializer</span><span class="w"> </span><span class="p">{</span>
@@ -1220,13 +1246,29 @@ independently.</p>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="n">ServerLifecycleEvents</span><span class="p">.</span><span class="na">SERVER_STARTED</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">server</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">            </span><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FabricPlatformProvider</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">            </span><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">());</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p">});</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">}</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">            </span><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">));</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">            </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">());</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p">});</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="neoforge">NeoForge<a class="headerlink" href="#neoforge" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyMod</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="p">;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">LoggerCore</span><span class="w"> </span><span class="n">logger</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onServerStarting</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NeoForgePlatformProvider</span><span class="p">();</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">LoggerCore</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">().</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>

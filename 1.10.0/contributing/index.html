@@ -1063,6 +1063,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#build-the-docs-locally" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1074,10 +1085,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy-versioned-docs" class="md-nav__link">
+  <a href="#deploy-versioned-docs-maintainers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deploy versioned docs
+        Deploy versioned docs (maintainers)
       
     </span>
   </a>
@@ -1119,6 +1130,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#build-the-docs-locally" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1130,10 +1152,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy-versioned-docs" class="md-nav__link">
+  <a href="#deploy-versioned-docs-maintainers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deploy versioned docs
+        Deploy versioned docs (maintainers)
       
     </span>
   </a>
@@ -1161,17 +1183,20 @@
 
 
 <h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
-<h2 id="build-the-docs-locally">Build the docs locally<a class="headerlink" href="#build-the-docs-locally" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>mkdocs-material<span class="w"> </span>mkdocs-macros-plugin<span class="w"> </span>mike
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mkdocs<span class="w"> </span>serve
+<h2 id="build">Build<a class="headerlink" href="#build" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./gradlew<span class="w"> </span>build
 </code></pre></div>
-<h2 id="deploy-versioned-docs">Deploy versioned docs<a class="headerlink" href="#deploy-versioned-docs" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span><span class="m">1</span>.10.0<span class="w"> </span>stable
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>stable
+<h2 id="build-the-docs-locally">Build the docs locally<a class="headerlink" href="#build-the-docs-locally" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>mkdocs-material<span class="w"> </span>mkdocs-macros-plugin<span class="w"> </span>mike
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mkdocs<span class="w"> </span>serve
+</code></pre></div>
+<h2 id="deploy-versioned-docs-maintainers">Deploy versioned docs (maintainers)<a class="headerlink" href="#deploy-versioned-docs-maintainers" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span><span class="m">1</span>.10.0<span class="w"> </span>stable
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>stable
 </code></pre></div>
 <p>For dev docs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span>dev<span class="w"> </span>latest
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>latest
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span>dev<span class="w"> </span>latest
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>latest
 </code></pre></div>
 
 

@@ -555,10 +555,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#publish-to-maven-local-development" class="md-nav__link">
+  <a href="#choose-a-version" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Publish to Maven Local (development)
+        Choose a version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repositories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repositories
       
     </span>
   </a>
@@ -589,10 +600,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#embed-the-bundle-inside-your-mod" class="md-nav__link">
+  <a href="#embed-the-bundle-inside-your-mod-jar-in-jar" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Embed the bundle inside your mod
+        Embed the bundle inside your mod (Jar-in-Jar)
       
     </span>
   </a>
@@ -604,6 +615,17 @@
     <span class="md-ellipsis">
       
         Depend on a shared bundle mod
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modular-fabric-dependencies-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modular Fabric dependencies (advanced)
       
     </span>
   </a>
@@ -631,6 +653,17 @@
     <span class="md-ellipsis">
       
         Optional format helpers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-on-shaded-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes on shaded artifacts
       
     </span>
   </a>
@@ -1187,10 +1220,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#publish-to-maven-local-development" class="md-nav__link">
+  <a href="#choose-a-version" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Publish to Maven Local (development)
+        Choose a version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repositories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repositories
       
     </span>
   </a>
@@ -1221,10 +1265,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#embed-the-bundle-inside-your-mod" class="md-nav__link">
+  <a href="#embed-the-bundle-inside-your-mod-jar-in-jar" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Embed the bundle inside your mod
+        Embed the bundle inside your mod (Jar-in-Jar)
       
     </span>
   </a>
@@ -1236,6 +1280,17 @@
     <span class="md-ellipsis">
       
         Depend on a shared bundle mod
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modular-fabric-dependencies-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modular Fabric dependencies (advanced)
       
     </span>
   </a>
@@ -1269,6 +1324,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#notes-on-shaded-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes on shaded artifacts
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1290,62 +1356,100 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<p>MagicUtils is published as multiple artifacts. Pick only what you need.</p>
-<h2 id="publish-to-maven-local-development">Publish to Maven Local (development)<a class="headerlink" href="#publish-to-maven-local-development" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./gradlew<span class="w"> </span>:platform-bukkit:publishToMavenLocal
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./gradlew<span class="w"> </span>:fabric-bundle:publishToMavenLocal
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./gradlew<span class="w"> </span>:platform-neoforge:publishToMavenLocal
+<p>MagicUtils is split into modules. For most projects you only need a single
+platform entry point (<code>magicutils-bukkit</code>, <code>magicutils-fabric-bundle</code>,
+<code>magicutils-neoforge</code>) plus optional format helpers.</p>
+<h2 id="choose-a-version">Choose a version<a class="headerlink" href="#choose-a-version" title="Permanent link">&para;</a></h2>
+<p>This documentation is versioned. The examples below use
+<code>1.10.0</code> which matches the current docs version.</p>
+<p>If you want to hardcode it in your build, replace it with the exact number
+(for example <code>1.10.0</code>).</p>
+<h2 id="repositories">Repositories<a class="headerlink" href="#repositories" title="Permanent link">&para;</a></h2>
+<p>Add the GitHub Pages Maven repository.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://theroer.github.io/MagicUtils/maven/&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="bukkitpaper">Bukkit/Paper<a class="headerlink" href="#bukkitpaper" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">mavenLocal</span><span class="p">()</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://theroer.github.io/MagicUtils/maven/&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-bukkit:1.10.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="c1">// Optional format helpers</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-yaml:1.10.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-toml:1.10.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span>
+<p>The Bukkit/Paper adapter bundles the core modules (config, logger, commands,
+lang, placeholders). Add optional format helpers only when you need them.</p>
+<p>Kotlin DSL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-bukkit:1.10.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1">// Optional format helpers</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-yaml:1.10.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config-toml:1.10.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
 </code></pre></div>
-<p>If you prefer a shaded runtime, use the <code>-all</code> artifact (example:
-<code>magicutils-bukkit-all</code>).</p>
+<p>Groovy DSL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;dev.ua.theroer:magicutils-bukkit:1.10.0&#39;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="c1">// Optional format helpers</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;dev.ua.theroer:magicutils-config-yaml:1.10.0&#39;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;dev.ua.theroer:magicutils-config-toml:1.10.0&#39;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="o">}</span>
+</code></pre></div>
 <h2 id="fabric">Fabric<a class="headerlink" href="#fabric" title="Permanent link">&para;</a></h2>
 <p>You have two options:</p>
-<h3 id="embed-the-bundle-inside-your-mod">Embed the bundle inside your mod<a class="headerlink" href="#embed-the-bundle-inside-your-mod" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">mavenLocal</span><span class="p">()</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://theroer.github.io/MagicUtils/maven/&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="n">include</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0&quot;</span><span class="p">))</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="n">modCompileOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="n">modRuntimeOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
+<h3 id="embed-the-bundle-inside-your-mod-jar-in-jar">Embed the bundle inside your mod (Jar-in-Jar)<a class="headerlink" href="#embed-the-bundle-inside-your-mod-jar-in-jar" title="Permanent link">&para;</a></h3>
+<p>This is the recommended approach for single-mod setups and avoids requiring
+server owners to install MagicUtils separately.</p>
+<p>Kotlin DSL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="n">include</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0&quot;</span><span class="p">))</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="c1">// Optional: dev mappings for local run configs</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">modCompileOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="n">modRuntimeOnly</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>Groovy DSL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">modImplementation</span><span class="o">(</span><span class="n">include</span><span class="o">(</span><span class="s1">&#39;dev.ua.theroer:magicutils-fabric-bundle:1.10.0&#39;</span><span class="o">))</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="c1">// Optional: dev mappings for local run configs</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">modCompileOnly</span><span class="w"> </span><span class="s1">&#39;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&#39;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="n">modRuntimeOnly</span><span class="w"> </span><span class="s1">&#39;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&#39;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="o">}</span>
 </code></pre></div>
 <h3 id="depend-on-a-shared-bundle-mod">Depend on a shared bundle mod<a class="headerlink" href="#depend-on-a-shared-bundle-mod" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">mavenLocal</span><span class="p">()</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://theroer.github.io/MagicUtils/maven/&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
+<p>If you want one shared MagicUtils install for multiple mods, use a standard
+dependency and install the bundle mod on the server.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric-bundle:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
 </code></pre></div>
 <p>If you pick the shared bundle, add the <code>magicutils-fabric-bundle</code> mod to the
-server and do not embed it inside other mods.</p>
+server <code>mods</code> folder and do not embed it inside other mods.</p>
+<p>You can also add a dependency in your <code>fabric.mod.json</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;depends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">&quot;magicutils-fabric-bundle&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&gt;=1.10.0&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="modular-fabric-dependencies-advanced">Modular Fabric dependencies (advanced)<a class="headerlink" href="#modular-fabric-dependencies-advanced" title="Permanent link">&para;</a></h3>
+<p>If you want to wire only specific modules, use the platform adapter plus the
+feature modules you need:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-fabric:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-logger-fabric:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-commands-fabric:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-placeholders-fabric:1.10.0:dev&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-config:1.10.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="n">modImplementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-lang:1.10.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">}</span>
+</code></pre></div>
 <h2 id="neoforge">NeoForge<a class="headerlink" href="#neoforge" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">mavenLocal</span><span class="p">()</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">maven</span><span class="p">(</span><span class="s">&quot;https://theroer.github.io/MagicUtils/maven/&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">}</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-neoforge:1.10.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+<p>NeoForge currently exposes platform, config, and logger integrations. Commands
+and placeholders are not wired on NeoForge yet.</p>
+<p>Kotlin DSL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;dev.ua.theroer:magicutils-neoforge:1.10.0&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>Groovy DSL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;dev.ua.theroer:magicutils-neoforge:1.10.0&#39;</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="o">}</span>
 </code></pre></div>
 <h2 id="optional-format-helpers">Optional format helpers<a class="headerlink" href="#optional-format-helpers" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1353,6 +1457,9 @@ server and do not embed it inside other mods.</p>
 <li><code>magicutils-config-toml</code> enables TOML support.</li>
 </ul>
 <p>Without them, MagicUtils uses JSON or JSONC (Fabric default).</p>
+<h2 id="notes-on-shaded-artifacts">Notes on shaded artifacts<a class="headerlink" href="#notes-on-shaded-artifacts" title="Permanent link">&para;</a></h2>
+<p>Local builds produce <code>*-all</code> artifacts (shaded). The GitHub Pages repository
+does not include these files due to the 100 MB limit, so do not depend on them.</p>
 
 
 

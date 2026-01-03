@@ -726,10 +726,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#key-classes" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key classes
+        Setup
       
     </span>
   </a>
@@ -737,10 +737,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example
+        Basic usage
       
     </span>
   </a>
@@ -748,10 +748,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tips" class="md-nav__link">
+  <a href="#prefixed-loggers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tips
+        Prefixed loggers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logger-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logger configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#localisation-and-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Localisation and placeholders
       
     </span>
   </a>
@@ -1137,10 +1170,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#key-classes" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key classes
+        Setup
       
     </span>
   </a>
@@ -1148,10 +1181,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example
+        Basic usage
       
     </span>
   </a>
@@ -1159,10 +1192,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tips" class="md-nav__link">
+  <a href="#prefixed-loggers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tips
+        Prefixed loggers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logger-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logger configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#localisation-and-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Localisation and placeholders
       
     </span>
   </a>
@@ -1190,29 +1256,56 @@
 
 
 <h1 id="logger">Logger<a class="headerlink" href="#logger" title="Permanent link">&para;</a></h1>
-<p>The logger module wraps Adventure components and provides a clean API for
-console and chat output, with optional localisation.</p>
-<h2 id="key-classes">Key classes<a class="headerlink" href="#key-classes" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>Logger</code> (platform adapter)</li>
-<li><code>PrefixedLogger</code> (sub-logger with its own prefix)</li>
-<li><code>LoggerConfig</code> (<code>logger.yml</code>)</li>
-</ul>
-<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<p>MagicUtils logger builds on Adventure components and provides a consistent
+API for console and chat output, with optional localisation and placeholders.</p>
+<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<p>Use the platform adapter where available:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="n">plugin</span><span class="p">);</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">PrefixedLogger</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">withPrefix</span><span class="p">(</span><span class="s">&quot;database&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[DB]&quot;</span><span class="p">);</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">db</span><span class="p">.</span><span class="na">warn</span><span class="p">(</span><span class="s">&quot;Slow query detected&quot;</span><span class="p">);</span>
 </code></pre></div>
-<h2 id="tips">Tips<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h2>
+<p>Fabric uses the same <code>Logger</code> class from <code>magicutils-logger-fabric</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FabricPlatformProvider</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>For custom platforms (or NeoForge), use <code>LoggerCore</code> directly.</p>
+<h2 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">warn</span><span class="p">(</span><span class="s">&quot;Slow query detected&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">logger</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="s">&quot;Database unavailable&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>The logger accepts MiniMessage markup and can route to console, chat, or both.</p>
+<h2 id="prefixed-loggers">Prefixed loggers<a class="headerlink" href="#prefixed-loggers" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">PrefixedLogger</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">withPrefix</span><span class="p">(</span><span class="s">&quot;database&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[DB]&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">db</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Connected&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>Each prefixed logger has its own entry under <code>sub-loggers</code> in <code>logger.yml</code>
+for enable/disable.</p>
+<h2 id="log-builder">Log builder<a class="headerlink" href="#log-builder" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">()</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="p">.</span><span class="na">toConsole</span><span class="p">()</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="p">.</span><span class="na">noPrefix</span><span class="p">()</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;yellow&gt;Reloaded&lt;/yellow&gt;&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>Use <code>target(LogTarget.CHAT/CONSOLE/BOTH)</code> and <code>to(audience)</code> for fine control.</p>
+<h2 id="logger-configuration">Logger configuration<a class="headerlink" href="#logger-configuration" title="Permanent link">&para;</a></h2>
+<p><code>LoggerConfig</code> is stored as <code>logger.{ext}</code>. On Fabric it is placed under
+<code>config/&lt;modid&gt;/</code> by default (via <code>ConfigNamespaceProvider</code>).</p>
+<p>Key sections:</p>
 <ul>
-<li>Use <code>logger.withPrefix("name")</code> to create per-feature loggers.</li>
-<li>For Fabric, pass the mod name into the logger constructor so the console
-  prefix shows your mod name instead of the default.</li>
+<li><code>prefix</code>: format and prefix mode.</li>
+<li><code>defaults</code>: max length, console/chat defaults.</li>
+<li><code>chat</code> / <code>console</code>: colors, gradients, separators.</li>
+<li><code>help</code>: help command styling.</li>
+<li><code>sub-loggers</code>: per-prefix toggles.</li>
 </ul>
+<h2 id="localisation-and-placeholders">Localisation and placeholders<a class="headerlink" href="#localisation-and-placeholders" title="Permanent link">&para;</a></h2>
+<p>Attach a <code>LanguageManager</code> to enable auto-localisation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+</code></pre></div>
+<p>On Bukkit, the logger automatically bridges MagicPlaceholders to PlaceholderAPI
+when it is installed.</p>
 
 
 

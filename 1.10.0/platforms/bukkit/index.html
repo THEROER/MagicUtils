@@ -874,6 +874,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bukkit/Paper
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -890,6 +908,69 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Placeholders
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1060,6 +1141,58 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Placeholders
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1079,13 +1212,26 @@
 
 
 <h1 id="bukkitpaper">Bukkit/Paper<a class="headerlink" href="#bukkitpaper" title="Permanent link">&para;</a></h1>
-<p>Use <code>BukkitPlatformProvider</code> to wire MagicUtils to Bukkit/Paper.</p>
+<p>Use <code>magicutils-bukkit</code> to wire MagicUtils to Bukkit/Paper.</p>
+<h2 id="bootstrap">Bootstrap<a class="headerlink" href="#bootstrap" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="n">plugin</span><span class="p">);</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
 </code></pre></div>
-<p><code>CommandRegistry</code> and <code>Logger</code> live in the Bukkit adapter, so add
-<code>magicutils-bukkit</code> as a dependency.</p>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">));</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">());</span>
+</code></pre></div>
+<p><code>CommandRegistry</code> registers commands directly with the Bukkit CommandMap, so
+you do not need to declare them in <code>plugin.yml</code>. Avoid duplicating command
+entries to prevent conflicts.</p>
+<h2 id="permissions">Permissions<a class="headerlink" href="#permissions" title="Permanent link">&para;</a></h2>
+<p>Permission nodes are resolved using the prefix passed to <code>initialize(...)</code>.
+You can still declare explicit permissions via <code>@Permission</code> annotations.</p>
+<h2 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h2>
+<p>When PlaceholderAPI is installed, MagicUtils placeholders are exposed
+automatically via the Bukkit logger adapter.</p>
 
 
 

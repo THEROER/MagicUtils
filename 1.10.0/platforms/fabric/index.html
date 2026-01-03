@@ -902,6 +902,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fabric
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -918,6 +936,80 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundle-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bundle strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1060,6 +1152,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundle-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bundle strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1080,16 +1235,29 @@
 
 <h1 id="fabric">Fabric<a class="headerlink" href="#fabric" title="Permanent link">&para;</a></h1>
 <p>Fabric uses <code>FabricPlatformProvider</code> and the jar-in-jar bundle.</p>
+<h2 id="bootstrap">Bootstrap<a class="headerlink" href="#bootstrap" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FabricPlatformProvider</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>Notes:</p>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">));</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">());</span>
+</code></pre></div>
+<p>You can pass a custom op level via <code>CommandRegistry.initialize(..., opLevel)</code>.</p>
+<h2 id="permissions">Permissions<a class="headerlink" href="#permissions" title="Permanent link">&para;</a></h2>
+<p>Fabric permissions integrate with <code>fabric-permissions-api-v0</code> when installed.
+If no permission provider exists, MagicUtils falls back to op-level checks.</p>
+<h2 id="config-format">Config format<a class="headerlink" href="#config-format" title="Permanent link">&para;</a></h2>
+<p>Default config format on Fabric is JSONC. You can override it via
+<code>&lt;config&gt;.format</code> or <code>magicutils.format</code> (see Config module docs).</p>
+<h2 id="bundle-strategy">Bundle strategy<a class="headerlink" href="#bundle-strategy" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Default config format is JSONC.</li>
-<li>Use the bundle as either a shared server mod or embed it inside your mod.</li>
-<li>Do not use both approaches at the same time.</li>
+<li>Embed <code>magicutils-fabric-bundle</code> in your mod (recommended).</li>
+<li>Or ship one shared bundle mod on the server and depend on it.</li>
 </ul>
+<p>Do not use both approaches at the same time.</p>
 
 
 

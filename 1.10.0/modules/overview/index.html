@@ -647,6 +647,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -663,6 +681,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core modules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform adapters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fabric-integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fabric integrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1060,6 +1130,47 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core modules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform adapters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fabric-integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fabric integrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1079,8 +1190,10 @@
 
 
 <h1 id="module-overview">Module overview<a class="headerlink" href="#module-overview" title="Permanent link">&para;</a></h1>
-<p>MagicUtils is split into focused artifacts. You can depend on only what you
-need, or use <code>core</code> for the full stack.</p>
+<p>MagicUtils is split into focused artifacts so you can depend on only what you
+need. The platform adapters wire the core modules to Bukkit/Paper, Fabric, or
+NeoForge.</p>
+<h2 id="core-modules">Core modules<a class="headerlink" href="#core-modules" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1093,7 +1206,7 @@ need, or use <code>core</code> for the full stack.</p>
 <tr>
 <td>Platform API</td>
 <td><code>magicutils-api</code></td>
-<td>Abstractions used by all modules.</td>
+<td><code>Platform</code>, <code>Audience</code>, and shared interfaces.</td>
 </tr>
 <tr>
 <td>Core</td>
@@ -1103,7 +1216,7 @@ need, or use <code>core</code> for the full stack.</p>
 <tr>
 <td>Config</td>
 <td><code>magicutils-config</code></td>
-<td>JSON/JSONC config engine.</td>
+<td>JSON/JSONC config engine, migrations, comments.</td>
 </tr>
 <tr>
 <td>Config YAML</td>
@@ -1123,41 +1236,85 @@ need, or use <code>core</code> for the full stack.</p>
 <tr>
 <td>Commands</td>
 <td><code>magicutils-commands</code></td>
-<td>Annotation-based command framework.</td>
+<td>Annotation/builder command framework.</td>
 </tr>
 <tr>
 <td>Logger</td>
 <td><code>magicutils-logger</code></td>
-<td>Adventure-based logging core.</td>
+<td>Adventure-based logger core.</td>
 </tr>
 <tr>
 <td>Placeholders</td>
 <td><code>magicutils-placeholders</code></td>
-<td>Placeholder registry (PAPI on Bukkit).</td>
+<td>Placeholder registry.</td>
 </tr>
 <tr>
-<td>Bukkit</td>
+<td>Processor</td>
+<td><code>magicutils-processor</code></td>
+<td>Annotation processor (internal tooling).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="platform-adapters">Platform adapters<a class="headerlink" href="#platform-adapters" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Artifact</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bukkit/Paper</td>
 <td><code>magicutils-bukkit</code></td>
-<td>Bukkit/Paper adapter.</td>
+<td>Includes core modules + Bukkit integrations.</td>
 </tr>
 <tr>
 <td>Fabric</td>
 <td><code>magicutils-fabric</code></td>
-<td>Fabric adapter.</td>
+<td>Platform API adapter for Fabric.</td>
 </tr>
 <tr>
 <td>NeoForge</td>
 <td><code>magicutils-neoforge</code></td>
-<td>NeoForge adapter.</td>
+<td>Platform API adapter for NeoForge.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fabric-integrations">Fabric integrations<a class="headerlink" href="#fabric-integrations" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Artifact</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Logger (Fabric)</td>
+<td><code>magicutils-logger-fabric</code></td>
+<td>Fabric logger adapter.</td>
+</tr>
+<tr>
+<td>Commands (Fabric)</td>
+<td><code>magicutils-commands-fabric</code></td>
+<td>Brigadier integration.</td>
+</tr>
+<tr>
+<td>Placeholders (Fabric)</td>
+<td><code>magicutils-placeholders-fabric</code></td>
+<td>Fabric placeholder bridge.</td>
 </tr>
 <tr>
 <td>Fabric bundle</td>
 <td><code>magicutils-fabric-bundle</code></td>
-<td>Jar-in-jar distribution.</td>
+<td>Jar-in-jar distribution for servers.</td>
 </tr>
 </tbody>
 </table>
-<p>Use the per-module pages for examples and API notes.</p>
+<p>Use the per-module pages for API details and examples.</p>
 
 
 

@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation-versioning" class="md-skip">
+        <a href="#versioning" class="md-skip">
           Skip to content
         </a>
       
@@ -611,10 +611,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tag-releases" class="md-nav__link">
+  <a href="#documentation-versions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tag releases
+        Documentation versions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tag-releases-for-maintainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tag releases (for maintainers)
       
     </span>
   </a>
@@ -1126,10 +1137,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tag-releases" class="md-nav__link">
+  <a href="#documentation-versions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tag releases
+        Documentation versions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tag-releases-for-maintainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tag releases (for maintainers)
       
     </span>
   </a>
@@ -1167,11 +1189,20 @@
   
 
 
-<h1 id="documentation-versioning">Documentation versioning<a class="headerlink" href="#documentation-versioning" title="Permanent link">&para;</a></h1>
-<p>This site is versioned with <code>mike</code> and published to GitHub Pages.</p>
-<h2 id="tag-releases">Tag releases<a class="headerlink" href="#tag-releases" title="Permanent link">&para;</a></h2>
+<h1 id="versioning">Versioning<a class="headerlink" href="#versioning" title="Permanent link">&para;</a></h1>
+<p>This site is versioned with <code>mike</code> and published to GitHub Pages. Each
+documentation version matches a MagicUtils release tag.</p>
+<h2 id="documentation-versions">Documentation versions<a class="headerlink" href="#documentation-versions" title="Permanent link">&para;</a></h2>
+<p>The version selector in the header switches between:</p>
+<ul>
+<li><code>stable</code>: the latest tagged release.</li>
+<li><code>dev</code>: the current development branch.</li>
+</ul>
+<p>Examples in the docs use <code>1.10.0</code> which is automatically
+set to the active docs version.</p>
+<h2 id="tag-releases-for-maintainers">Tag releases (for maintainers)<a class="headerlink" href="#tag-releases-for-maintainers" title="Permanent link">&para;</a></h2>
 <p>When you tag a release (for example <code>v1.10.0</code>), the workflow deploys a new
-version and updates the <code>stable</code> alias.</p>
+docs version and updates the <code>stable</code> alias.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># Local
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mike deploy --update-aliases 1.10.0 stable
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>mike set-default stable
