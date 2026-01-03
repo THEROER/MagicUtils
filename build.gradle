@@ -26,6 +26,7 @@ subprojects {
             'logger'             : 'magicutils-logger',
             'commands'           : 'magicutils-commands',
             'placeholders'       : 'magicutils-placeholders',
+            'http-client'        : 'magicutils-http-client',
             'commands-fabric'    : 'magicutils-commands-fabric',
             'logger-fabric'      : 'magicutils-logger-fabric',
             'placeholders-fabric': 'magicutils-placeholders-fabric',

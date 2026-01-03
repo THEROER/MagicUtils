@@ -10,6 +10,7 @@ logging, placeholders, and platform adapters.
 - Annotation-first command framework with type parsers, options, and tab completion.
 - Adventure-based logger with rich formatting, sub-loggers, and help styling.
 - Language manager with MiniMessage, custom messages, and per-player overrides.
+- HttpClient wrapper with JSON mapping, retries, and multipart support.
 - Placeholder registry with Bukkit [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) bridge.
 
 ## Modules at a glance
@@ -18,7 +19,7 @@ logging, placeholders, and platform adapters.
 | --- | --- | --- |
 | Platform API | `magicutils-api` | `Platform`, `Audience`, and shared interfaces. |
 | Core stack | `magicutils-core` | Logger + commands + config + lang + placeholders. |
-| Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders` | Mix and match. |
+| Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders`, `magicutils-http-client` | Mix and match. |
 | Format helpers | `magicutils-config-yaml`, `magicutils-config-toml` | Enable extra config formats. |
 | Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge` | Wire MagicUtils to a runtime. |
 | Fabric extras | `magicutils-commands-fabric`, `magicutils-logger-fabric`, `magicutils-placeholders-fabric`, `magicutils-fabric-bundle` | Brigadier integration and jar-in-jar bundle. |

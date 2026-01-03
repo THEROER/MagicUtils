@@ -62,6 +62,7 @@ dependencies {
 ## Modules (quick map)
 
 - Core: `magicutils-api`, `magicutils-core`
+- HTTP client: `magicutils-http-client`
 - Config: `magicutils-config`, `magicutils-config-yaml`, `magicutils-config-toml`
 - Lang: `magicutils-lang`
 - Commands: `magicutils-commands`

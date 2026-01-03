@@ -10,6 +10,7 @@ NeoForge.
 | --- | --- | --- |
 | Platform API | `magicutils-api` | `Platform`, `Audience`, and shared interfaces. |
 | Core | `magicutils-core` | Config + lang + commands + logger + placeholders. |
+| HTTP client | `magicutils-http-client` | HttpClient wrapper with JSON + retries. |
 | Config | `magicutils-config` | JSON/JSONC config engine, migrations, comments. |
 | Config YAML | `magicutils-config-yaml` | Adds YAML support via Jackson. |
 | Config TOML | `magicutils-config-toml` | Adds TOML support via Jackson. |
