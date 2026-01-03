@@ -35,6 +35,7 @@ afterEvaluate {
                 artifactId = 'magicutils-placeholders-fabric'
                 from components.java
                 artifacts.removeAll { it.classifier == null && it.extension == 'jar' }
+                artifacts.removeAll { it.classifier == 'all' }
                 artifact(tasks.named('remapJar')) {
                     builtBy tasks.named('remapJar')
                 }
