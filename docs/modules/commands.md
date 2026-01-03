@@ -95,6 +95,39 @@ You can lock permissions at three levels:
 - `@SubCommand.permission` for subcommands.
 - `@Permission` on parameters for argument-level checks.
 
+Permission nodes are generated when annotations do not provide explicit values:
+
+- Command: `commands.<command>`
+- Subcommand: `commands.<command>.subcommand.<path>`
+- Argument: `commands.<command>.subcommand.<path>.argument.<name>`
+
+These are then prefixed by the permission prefix passed to
+`CommandRegistry.initialize(...)`.
+
+Example with prefix `donatemenu`:
+
+- `donatemenu.commands.donate`
+- `donatemenu.commands.donate.subcommand.give`
+- `donatemenu.commands.donate.subcommand.give.argument.player`
+
+### Default permission values
+
+Use `MagicPermissionDefault` to control who can execute by default:
+
+- `TRUE` -> everyone
+- `OP` -> operators (default)
+- `NOT_OP` -> non-operators
+- `FALSE` -> nobody (explicit permission required)
+
+On Bukkit, MagicUtils automatically registers these permissions with the
+chosen defaults and also creates wildcard nodes:
+
+- `...commands.<command>.*`
+- `...commands.<command>.subcommand.*`
+
+On Fabric, it uses `fabric-permissions-api` when available, otherwise falls
+back to op-level checks (configurable in `CommandRegistry.initialize`).
+
 Example with conditional permission:
 
 ```java

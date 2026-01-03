@@ -29,5 +29,5 @@ You can still declare explicit permissions via `@Permission` annotations.
 
 ## Placeholders
 
-When PlaceholderAPI is installed, MagicUtils placeholders are exposed
-automatically via the Bukkit logger adapter.
+When [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) is installed,
+MagicUtils placeholders are exposed automatically via the Bukkit logger adapter.

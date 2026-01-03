@@ -1,7 +1,9 @@
 # Placeholders
 
 The placeholder module offers a shared registry and platform bridges to
-PlaceholderAPI (Bukkit) and PB4/MiniPlaceholders (Fabric).
+[PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) (Bukkit) and
+[Text Placeholder API](https://modrinth.com/mod/placeholder-api) /
+[MiniPlaceholders](https://modrinth.com/mod/miniplaceholders) (Fabric).
 
 ## Register placeholders
 
@@ -23,14 +25,23 @@ String value = MagicPlaceholders.resolve("myplugin", "online", audience, null);
 Resolvers receive:
 
 - `Audience` when available (player context).
-- `arg` from `placeholder:key:arg` syntax (PAPI/PB4/MiniPlaceholders).
+- `arg` from `placeholder:key:arg` syntax (used by
+  [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi),
+  [Text Placeholder API](https://modrinth.com/mod/placeholder-api),
+  [MiniPlaceholders](https://modrinth.com/mod/miniplaceholders)).
 
 ## Platform bridges
 
-- Bukkit: placeholders are exposed to PlaceholderAPI automatically when the
+- Bukkit: placeholders are exposed to [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) automatically when the
   logger adapter is created.
-- Fabric: placeholders are bridged to PB4 Placeholders and MiniPlaceholders
-  when their mods are present.
+- Fabric: placeholders are bridged to [Text Placeholder API](https://modrinth.com/mod/placeholder-api) and
+  [MiniPlaceholders](https://modrinth.com/mod/miniplaceholders)
+  when those mods are present (optional integration).
+
+Supported Fabric mods:
+
+- [Text Placeholder API](https://modrinth.com/mod/placeholder-api)
+- [MiniPlaceholders](https://modrinth.com/mod/miniplaceholders)
 
 ## Notes
 

@@ -10,7 +10,7 @@ logging, placeholders, and platform adapters.
 - Annotation-first command framework with type parsers, options, and tab completion.
 - Adventure-based logger with rich formatting, sub-loggers, and help styling.
 - Language manager with MiniMessage, custom messages, and per-player overrides.
-- Placeholder registry with Bukkit PlaceholderAPI bridge.
+- Placeholder registry with Bukkit [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) bridge.
 
 ## Modules at a glance
 
