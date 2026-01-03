@@ -71,4 +71,3 @@ public final class MyMod {
 ## Next steps
 
 - Pick the modules you need from the Modules section.
-- Review the examples under `examples/` in the repository.
