@@ -686,7 +686,7 @@ public class LanguageManager {
 
     private static JsonFactory buildYamlFactory() {
         try {
-            Class<?> factoryClass = Class.forName("com.fasterxml.jackson.dataformat.yaml.YAMLFactory");
+            Class<?> factoryClass = Class.forName(resolveJacksonClass("com.fasterxml.jackson.dataformat.yaml.YAMLFactory"));
             Object builder = invokeStatic(factoryClass, "builder");
             if (builder != null) {
                 disableYamlDocStart(builder);
@@ -727,10 +727,30 @@ public class LanguageManager {
             return;
         }
         try {
-            Class<?> featureClass = Class.forName("com.fasterxml.jackson.dataformat.yaml.YAMLGenerator$Feature");
+            Class<?> featureClass = Class.forName(resolveJacksonClass("com.fasterxml.jackson.dataformat.yaml.YAMLGenerator$Feature"));
             Object feature = Enum.valueOf((Class<Enum>) featureClass, "WRITE_DOC_START_MARKER");
             builder.getClass().getMethod("disable", featureClass).invoke(builder, feature);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
+        }
+    }
+
+    private static String resolveJacksonClass(String className) {
+        if (className == null) {
+            return null;
+        }
+        String relocated = className.replace("com.fasterxml.jackson.", "dev.ua.theroer.magicutils.libs.jackson.");
+        if (!relocated.equals(className) && isClassPresent(relocated)) {
+            return relocated;
+        }
+        return className;
+    }
+
+    private static boolean isClassPresent(String name) {
+        try {
+            Class.forName(name, false, LanguageManager.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
         }
     }
 

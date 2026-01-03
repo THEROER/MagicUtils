@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -97,7 +99,7 @@ public class CommandManager<S> {
         CommandAction<S> directAction = getDirectAction(command, info);
 
         logger.debug("Command " + name + " has " + subCommands.size() + " subcommands: " +
-                subCommands.stream().map(CommandAction::name).collect(Collectors.toList()));
+                subCommands.stream().map(CommandAction::fullPath).collect(Collectors.toList()));
         logger.debug("Command " + name + " has direct execute handler: " + (directAction != null));
     }
 
@@ -169,7 +171,8 @@ public class CommandManager<S> {
             return;
         }
         List<String> keys = replacement.allKeysLower();
-        actions.removeIf(existing -> hasAnyKey(existing, keys));
+        List<String> replacementPath = normalizePath(replacement.path());
+        actions.removeIf(existing -> pathEquals(existing.path(), replacementPath) && hasAnyKey(existing, keys));
     }
 
     private boolean hasAnyKey(CommandAction<S> action, List<String> keys) {
@@ -185,6 +188,20 @@ public class CommandManager<S> {
             }
         }
         return false;
+    }
+
+    private boolean pathEquals(List<String> left, List<String> right) {
+        List<String> leftNorm = normalizePath(left);
+        List<String> rightNorm = normalizePath(right);
+        if (leftNorm.size() != rightNorm.size()) {
+            return false;
+        }
+        for (int i = 0; i < leftNorm.size(); i++) {
+            if (!leftNorm.get(i).equalsIgnoreCase(rightNorm.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -256,43 +273,54 @@ public class CommandManager<S> {
                     .failure(InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", availableSubCommands));
         }
 
-        // Handle subcommand execution
-        String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
-        logger.debug("Looking for subcommand: " + subCommandName);
+        SubCommandNode<S> root = buildSubCommandTree(subCommands);
+        SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
 
-        CommandAction<S> targetSubCommand = null;
-
-        for (CommandAction<S> subInfo : subCommands) {
-            if (matchesSubCommand(subInfo, subCommandName)) {
-                targetSubCommand = subInfo;
-                break;
-            }
-        }
-
-        if (targetSubCommand == null) {
+        if (traversal.consumed() == 0) {
+            String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
             logger.debug("Subcommand not found: " + subCommandName + ". Available: " +
                     getAvailableSubCommands(subCommands, sender, normalizedCommandName));
             return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", subCommandName));
         }
 
+        if (traversal.lastActionNode() == null) {
+            if (traversal.consumed() >= args.size()) {
+                List<String> path = args.subList(0, traversal.consumed());
+                String available = String.join(", ",
+                        getAvailableSubCommandsList(subCommands, sender, normalizedCommandName, path));
+                logger.debug("No subcommand at path, available: " + available);
+                return CommandResult.failure(
+                        InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", available));
+            }
+            String unknown = args.get(traversal.consumed());
+            List<String> path = args.subList(0, traversal.consumed());
+            String available = String.join(", ",
+                    getAvailableSubCommandsList(subCommands, sender, normalizedCommandName, path));
+            logger.debug("Subcommand not found: " + unknown + ". Available: " + available);
+            return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", unknown));
+        }
+
+        CommandAction<S> targetSubCommand = traversal.lastActionNode().action();
+        int consumed = traversal.lastActionIndex();
+        String subCommandName = targetSubCommand.fullPath();
         logger.debug("Found subcommand: " + subCommandName + ", checking permissions...");
 
         String subPermission = resolvePermission(targetSubCommand.permission(),
-                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.name());
+                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.permissionSegment());
         platform.ensurePermissionRegistered(subPermission, targetSubCommand.permissionDefault(),
                 targetSubCommand.description());
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, targetSubCommand.permissionDefault())
-                && !hasArgumentPermissionOverride(normalizedCommandName, targetSubCommand.name(), sender)) {
+                && !hasArgumentPermissionOverride(normalizedCommandName, subCommandName, sender)) {
             logger.debug("Permission denied for subcommand " + subCommandName + " on permission: " + subPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
-        List<String> subArgs = args.size() > 1 ? args.subList(1, args.size()) : new ArrayList<>();
+        List<String> subArgs = args.size() > consumed ? args.subList(consumed, args.size()) : new ArrayList<>();
         logger.debug("Executing subcommand: " + subCommandName + " with args: " + subArgs);
 
         return executeAction(command, info, targetSubCommand, sender, subArgs, normalizedCommandName,
-                targetSubCommand.name());
+                subCommandName);
     }
 
     private CommandResult executeAction(MagicCommand command, CommandInfo info, CommandAction<S> action,
@@ -363,6 +391,14 @@ public class CommandManager<S> {
             S sender, String normalizedCommandName, @Nullable String subCommandName) {
         Object[] result = new Object[arguments.size()];
         boolean[] filled = new boolean[arguments.size()];
+        OptionIndex optionIndex = buildOptionIndex(arguments);
+        ParsedOptions parsedOptions = optionIndex.hasOptions()
+                ? parseOptions(args, optionIndex, false)
+                : new ParsedOptions(args != null ? new ArrayList<>(args) : new ArrayList<>(),
+                        new HashMap<>(), new HashSet<>(), null, false);
+        if (parsedOptions == null) {
+            return null;
+        }
 
         // First pass: auto-fill sender arguments
         for (int i = 0; i < arguments.size(); i++) {
@@ -381,14 +417,50 @@ public class CommandManager<S> {
             }
         }
 
+        // Option arguments (including flags)
+        if (optionIndex.hasOptions()) {
+            for (int i = 0; i < arguments.size(); i++) {
+                if (filled[i]) {
+                    continue;
+                }
+                CommandArgument argument = arguments.get(i);
+                if (isSenderArgument(argument) || !argument.isOption()) {
+                    continue;
+                }
+                if (argument.isFlag() && !parsedOptions.values().containsKey(argument)) {
+                    String defaultValue = argument.getDefaultValue();
+                    if (defaultValue == null) {
+                        defaultValue = "false";
+                    }
+                    result[i] = convertArgument(defaultValue, argument.getType(), sender);
+                    filled[i] = true;
+                    continue;
+                }
+                String optionValue = parsedOptions.values().get(argument);
+                if (optionValue == null) {
+                    continue;
+                }
+                result[i] = convertArgument(optionValue, argument.getType(), sender);
+                filled[i] = true;
+                if (result[i] == null && !argument.isOptional()) {
+                    logger.debug("Failed to convert option value for argument " + argument.getName()
+                            + " from value: " + optionValue);
+                    return null;
+                }
+            }
+        }
+
         // Second pass: try to match user arguments intelligently
-        List<String> remainingArgs = new ArrayList<>(args);
+        List<String> remainingArgs = new ArrayList<>(parsedOptions.positionals());
 
         for (int i = 0; i < arguments.size(); i++) {
             if (filled[i])
                 continue; // Skip already filled arguments
 
             CommandArgument argument = arguments.get(i);
+            if (argument.isFlag()) {
+                continue;
+            }
 
             if (lacksArgumentPermission(normalizedCommandName, subCommandName, argument, sender)) {
                 logger.debug("Skipping argument " + argument.getName() + " due to missing permission, setting to default/null");
@@ -398,7 +470,7 @@ public class CommandManager<S> {
                     result[i] = null;
                 }
                 filled[i] = true;
-                if (!remainingArgs.isEmpty() && !isSenderArgument(argument)) {
+                if (!remainingArgs.isEmpty() && !isSenderArgument(argument) && !argument.isOption()) {
                     remainingArgs.remove(0);
                 }
                 continue;
@@ -440,6 +512,16 @@ public class CommandManager<S> {
             CommandArgument argument = arguments.get(i);
             String value;
             boolean providedByUser = false;
+
+            if (argument.isFlag()) {
+                String defaultValue = argument.getDefaultValue();
+                if (defaultValue == null) {
+                    defaultValue = "false";
+                }
+                result[i] = convertArgument(defaultValue, argument.getType(), sender);
+                filled[i] = true;
+                continue;
+            }
 
             if (argument.isGreedy()) {
                 // Consume all remaining args joined by space
@@ -772,8 +854,9 @@ public class CommandManager<S> {
 
     String buildArgumentPermission(String normalizedCommandName, @Nullable String subCommandName, CommandArgument argument) {
         StringBuilder sb = new StringBuilder("commands.").append(normalizedCommandName);
-        if (subCommandName != null && !subCommandName.isEmpty()) {
-            sb.append(".subcommand.").append(subCommandName);
+        String normalizedSub = normalizeSubCommandSegment(subCommandName);
+        if (!normalizedSub.isEmpty()) {
+            sb.append(".subcommand.").append(normalizedSub);
         }
         String node = argument.getPermissionNode();
         if (node == null || node.isEmpty()) {
@@ -786,6 +869,17 @@ public class CommandManager<S> {
         }
         sb.append(node);
         return sb.toString();
+    }
+
+    private String normalizeSubCommandSegment(@Nullable String subCommandName) {
+        if (subCommandName == null) {
+            return "";
+        }
+        String trimmed = subCommandName.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        return trimmed.replaceAll("\\s+", ".");
     }
 
     private record ArgValue(CommandArgument meta, Object value) {
@@ -855,80 +949,98 @@ public class CommandManager<S> {
             return Arrays.asList("");
         }
 
-        // If no args and we have subcommands, show subcommands
+        SubCommandNode<S> root = buildSubCommandTree(subCommands);
+
+        // If no args and we have subcommands, show top-level subcommands
         if (args.isEmpty() && !subCommands.isEmpty()) {
             logger.debug("No args, showing subcommands");
-            return getAvailableSubCommandsList(subCommands, sender, normalizedCommandName);
-        }
-
-        // If we have both execute handler and subcommands, and first arg doesn't match
-        // any subcommand
-        if (directAction != null && !subCommands.isEmpty() && args.size() == 1) {
-            String currentInput = args.get(0);
-            List<String> availableSubCommands = getAvailableSubCommandsList(subCommands, sender, normalizedCommandName);
-
-            // Check if current input matches any subcommand
-            boolean matchesSubCommand = availableSubCommands.stream()
-                    .anyMatch(sub -> sub.toLowerCase().equals(currentInput.toLowerCase()));
-
-            if (!matchesSubCommand) {
-                // Try to provide suggestions for direct execute handler
-                List<CommandArgument> arguments = directAction.arguments();
-                List<String> directSuggestions = generateDirectMethodSuggestions(command, arguments, sender, args,
-                        normalizedCommandName, null);
-
-                // Also include subcommands that start with current input
-                List<String> filteredSubCommands = availableSubCommands.stream()
-                        .filter(sub -> sub.toLowerCase().startsWith(currentInput.toLowerCase()))
-                        .collect(Collectors.toList());
-
-                // Combine both suggestion lists
-                List<String> combined = new ArrayList<>(directSuggestions);
-                combined.addAll(filteredSubCommands);
-                return combined;
-            }
+            return getAvailableChildNames(root, sender, normalizedCommandName);
         }
 
         String currentInput = args.isEmpty() ? "" : args.get(args.size() - 1);
+        List<String> fixedTokens = args.size() > 1 ? args.subList(0, args.size() - 1) : List.of();
 
-        if (args.size() == 1) {
-            List<String> availableSubCommands = getAvailableSubCommandsList(subCommands, sender, normalizedCommandName);
-            return availableSubCommands.stream()
-                    .filter(sub -> sub.toLowerCase().startsWith(currentInput.toLowerCase()))
-                    .collect(Collectors.toList());
+        SubCommandTraversal<S> traversal = traverseSubCommands(root, fixedTokens);
+        if (traversal.consumed() < fixedTokens.size() && traversal.lastActionNode() == null) {
+            return Arrays.asList("");
         }
 
-        String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
-        CommandAction<S> targetSubCommand = null;
+        SubCommandNode<S> node = traversal.node();
+        CommandAction<S> matchedAction = traversal.lastActionNode() != null ? traversal.lastActionNode().action() : null;
+        int actionIndex = traversal.lastActionIndex();
 
-        for (CommandAction<S> subInfo : subCommands) {
-            if (matchesSubCommand(subInfo, subCommandName)) {
-                targetSubCommand = subInfo;
-                break;
+        if (matchedAction != null && actionIndex < fixedTokens.size()) {
+            String subPermission = resolvePermission(matchedAction.permission(),
+                    "commands." + normalizedCommandName + ".subcommand." + matchedAction.permissionSegment());
+            platform.ensurePermissionRegistered(subPermission, matchedAction.permissionDefault(),
+                    matchedAction.description());
+            if (!subPermission.isEmpty()
+                    && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
+                return Arrays.asList("");
             }
+            List<String> subArgs = args.subList(actionIndex, args.size());
+            return generateArgumentSuggestions(command, matchedAction, sender, subArgs, currentInput,
+                    normalizedCommandName);
         }
 
-        if (targetSubCommand == null) {
-            return Arrays.asList("");
+        List<String> availableChildren = getAvailableChildNames(node, sender, normalizedCommandName);
+        List<String> filteredChildren = availableChildren.stream()
+                .filter(sub -> sub.toLowerCase(Locale.ROOT).startsWith(currentInput.toLowerCase(Locale.ROOT)))
+                .collect(Collectors.toList());
+
+        boolean matchesChild = availableChildren.stream()
+                .anyMatch(sub -> sub.equalsIgnoreCase(currentInput));
+
+        if (matchedAction == null) {
+            if (directAction != null && fixedTokens.isEmpty() && !matchesChild) {
+                List<CommandArgument> arguments = directAction.arguments();
+                List<String> directSuggestions = generateDirectMethodSuggestions(command, arguments, sender, args,
+                        normalizedCommandName, null);
+                List<String> combined = new ArrayList<>(directSuggestions);
+                combined.addAll(filteredChildren);
+                return combined;
+            }
+            return filteredChildren;
         }
 
-        String subPermission = resolvePermission(targetSubCommand.permission(),
-                "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.name());
-        platform.ensurePermissionRegistered(subPermission, targetSubCommand.permissionDefault(),
-                targetSubCommand.description());
+        String subPermission = resolvePermission(matchedAction.permission(),
+                "commands." + normalizedCommandName + ".subcommand." + matchedAction.permissionSegment());
+        platform.ensurePermissionRegistered(subPermission, matchedAction.permissionDefault(),
+                matchedAction.description());
         if (!subPermission.isEmpty()
-                && !platform.hasPermission(sender, subPermission, targetSubCommand.permissionDefault())) {
-            return Arrays.asList("");
+                && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
+            return filteredChildren.isEmpty() ? Arrays.asList("") : filteredChildren;
         }
 
-        List<String> subArgs = args.subList(1, args.size());
-        return generateArgumentSuggestions(command, targetSubCommand, sender, subArgs, currentInput,
-                normalizedCommandName);
+        List<String> subArgs = args.subList(actionIndex, args.size());
+        List<String> argumentSuggestions = generateArgumentSuggestions(command, matchedAction, sender, subArgs,
+                currentInput, normalizedCommandName);
+
+        if (!filteredChildren.isEmpty()) {
+            if (!matchesChild) {
+                List<String> combined = new ArrayList<>(argumentSuggestions);
+                combined.addAll(filteredChildren);
+                return combined;
+            }
+            return filteredChildren;
+        }
+
+        return argumentSuggestions;
     }
 
     private List<String> generateDirectMethodSuggestions(MagicCommand command, List<CommandArgument> arguments,
             S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
-        logger.debug("generateDirectMethodSuggestions called with " + arguments.size()
+        OptionIndex optionIndex = buildOptionIndex(arguments);
+        if (optionIndex.hasOptions()) {
+            return generateSuggestionsWithOptions(command, arguments, optionIndex, sender, args,
+                    normalizedCommandName, subCommandName);
+        }
+        return generatePositionalSuggestions(command, arguments, sender, args, normalizedCommandName, subCommandName);
+    }
+
+    private List<String> generatePositionalSuggestions(MagicCommand command, List<CommandArgument> arguments,
+            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
+        logger.debug("generatePositionalSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
         logger.debug("Raw args: " + args);
 
@@ -952,6 +1064,8 @@ public class CommandManager<S> {
             // Skip explicit sender parameters
             if (isSenderArgument(arg)) {
                 logger.debug("  -> Skipped (sender)");
+            } else if (arg.isFlag()) {
+                logger.debug("  -> Skipped (flag)");
             } else {
                 userInputArguments.add(new ArgumentInfo(i, arg));
                 logger.debug("  -> Added as user input argument");
@@ -1050,6 +1164,45 @@ public class CommandManager<S> {
         return suggestions.stream().distinct().collect(Collectors.toList());
     }
 
+    private List<String> generateSuggestionsWithOptions(MagicCommand command, List<CommandArgument> arguments,
+            OptionIndex optionIndex, S sender, List<String> args,
+            String normalizedCommandName, @Nullable String subCommandName) {
+        if (arguments.isEmpty()) {
+            return Arrays.asList("");
+        }
+        String currentInput = args.isEmpty() ? "" : args.get(args.size() - 1);
+        List<String> priorTokens = args.size() > 1 ? args.subList(0, args.size() - 1) : List.of();
+        ParsedOptions parsed = parseOptions(priorTokens, optionIndex, true);
+        if (parsed == null) {
+            return Arrays.asList("");
+        }
+        CommandArgument pending = parsed.pendingValue();
+        if (pending != null) {
+            if (!canSuggestArgument(normalizedCommandName, subCommandName, pending, sender)) {
+                return Arrays.asList("");
+            }
+            return generateSuggestionsForArgument(command, pending, sender, currentInput);
+        }
+
+        boolean optionsTerminated = parsed.optionsTerminated();
+        boolean currentIsOption = !optionsTerminated && isOptionPrefix(currentInput);
+        List<String> suggestions = new ArrayList<>();
+
+        if (!currentIsOption) {
+            List<String> positional = new ArrayList<>(parsed.positionals());
+            positional.add(currentInput);
+            suggestions.addAll(generatePositionalSuggestions(command, arguments, sender, positional,
+                    normalizedCommandName, subCommandName));
+        }
+
+        if (!optionsTerminated && (currentInput.isEmpty() || currentIsOption)) {
+            suggestions.addAll(buildOptionSuggestions(optionIndex, parsed.usedOptions(), currentInput,
+                    normalizedCommandName, subCommandName, sender));
+        }
+
+        return suggestions.stream().distinct().collect(Collectors.toList());
+    }
+
     // Helper class to track argument info with original indices
     private static class ArgumentInfo {
         final int originalIndex;
@@ -1061,40 +1214,267 @@ public class CommandManager<S> {
         }
     }
 
-    private List<String> generateArgumentSuggestions(MagicCommand command, CommandAction<S> subInfo,
-            S sender, List<String> args, String currentInput, String normalizedCommandName) {
-        List<CommandArgument> arguments = subInfo != null ? subInfo.arguments() : List.of();
+    private static final class OptionIndex {
+        private final Map<String, CommandArgument> shortOptions;
+        private final Map<String, CommandArgument> longOptions;
+        private final List<CommandArgument> optionArguments;
 
-        if (arguments.isEmpty()) {
-            return Arrays.asList("");
+        private OptionIndex(Map<String, CommandArgument> shortOptions,
+                            Map<String, CommandArgument> longOptions,
+                            List<CommandArgument> optionArguments) {
+            this.shortOptions = shortOptions;
+            this.longOptions = longOptions;
+            this.optionArguments = optionArguments;
         }
 
-        // Build a list of arguments that need user input (skip sender-bound params)
-        List<ArgumentInfo> userInputArguments = new ArrayList<>();
-        for (int i = 0; i < arguments.size(); i++) {
-            CommandArgument arg = arguments.get(i);
-            if (!isSenderArgument(arg)) {
-                userInputArguments.add(new ArgumentInfo(i, arg));
+        boolean hasOptions() {
+            return !optionArguments.isEmpty();
+        }
+
+        List<CommandArgument> optionArguments() {
+            return optionArguments;
+        }
+
+        CommandArgument resolve(OptionToken token) {
+            if (token == null) {
+                return null;
+            }
+            String key = token.keyLower();
+            if (token.longForm()) {
+                return longOptions.get(key);
+            }
+            return shortOptions.get(key);
+        }
+    }
+
+    private record OptionToken(String key, boolean longForm, String value, boolean hasInlineValue) {
+        String keyLower() {
+            return key != null ? key.toLowerCase(Locale.ROOT) : "";
+        }
+    }
+
+    private static final class ParsedOptions {
+        private final List<String> positionals;
+        private final Map<CommandArgument, String> values;
+        private final Set<CommandArgument> usedOptions;
+        private final CommandArgument pendingValue;
+        private final boolean optionsTerminated;
+
+        private ParsedOptions(List<String> positionals,
+                              Map<CommandArgument, String> values,
+                              Set<CommandArgument> usedOptions,
+                              CommandArgument pendingValue,
+                              boolean optionsTerminated) {
+            this.positionals = positionals;
+            this.values = values;
+            this.usedOptions = usedOptions;
+            this.pendingValue = pendingValue;
+            this.optionsTerminated = optionsTerminated;
+        }
+
+        List<String> positionals() {
+            return positionals;
+        }
+
+        Map<CommandArgument, String> values() {
+            return values;
+        }
+
+        Set<CommandArgument> usedOptions() {
+            return usedOptions;
+        }
+
+        CommandArgument pendingValue() {
+            return pendingValue;
+        }
+
+        boolean optionsTerminated() {
+            return optionsTerminated;
+        }
+    }
+
+    private OptionIndex buildOptionIndex(List<CommandArgument> arguments) {
+        if (arguments == null || arguments.isEmpty()) {
+            return new OptionIndex(new HashMap<>(), new HashMap<>(), List.of());
+        }
+        Map<String, CommandArgument> shortOptions = new HashMap<>();
+        Map<String, CommandArgument> longOptions = new HashMap<>();
+        List<CommandArgument> optionArgs = new ArrayList<>();
+
+        for (CommandArgument argument : arguments) {
+            if (argument == null || isSenderArgument(argument) || !argument.isOption()) {
+                continue;
+            }
+            optionArgs.add(argument);
+            for (String name : argument.getShortOptionNames()) {
+                String normalized = normalizeOptionName(name);
+                if (!normalized.isEmpty()) {
+                    shortOptions.put(normalized.toLowerCase(Locale.ROOT), argument);
+                }
+            }
+            for (String name : argument.getLongOptionNames()) {
+                String normalized = normalizeOptionName(name);
+                if (!normalized.isEmpty()) {
+                    longOptions.put(normalized.toLowerCase(Locale.ROOT), argument);
+                }
             }
         }
 
-        if (userInputArguments.isEmpty()) {
-            return Arrays.asList("");
+        return new OptionIndex(shortOptions, longOptions, optionArgs);
+    }
+
+    private ParsedOptions parseOptions(List<String> args, OptionIndex index, boolean allowPending) {
+        List<String> positionals = new ArrayList<>();
+        Map<CommandArgument, String> values = new HashMap<>();
+        Set<CommandArgument> used = new HashSet<>();
+        CommandArgument pending = null;
+        if (args == null || args.isEmpty() || index == null || !index.hasOptions()) {
+            return new ParsedOptions(args != null ? new ArrayList<>(args) : new ArrayList<>(), values, used, pending,
+                    false);
+        }
+        boolean endOptions = false;
+        for (int i = 0; i < args.size(); i++) {
+            String token = args.get(i);
+            if (pending != null) {
+                values.put(pending, token);
+                used.add(pending);
+                pending = null;
+                continue;
+            }
+            if (!endOptions && "--".equals(token)) {
+                endOptions = true;
+                continue;
+            }
+            if (!endOptions) {
+                OptionToken optionToken = parseOptionToken(token);
+                if (optionToken != null) {
+                    CommandArgument argument = index.resolve(optionToken);
+                    if (argument != null) {
+                        used.add(argument);
+                        if (optionToken.hasInlineValue()) {
+                            values.put(argument, optionToken.value());
+                        } else if (argument.isFlag()) {
+                            values.put(argument, "true");
+                        } else if (i + 1 < args.size()) {
+                            values.put(argument, args.get(++i));
+                        } else if (allowPending) {
+                            pending = argument;
+                        } else {
+                            return null;
+                        }
+                        continue;
+                    }
+                }
+            }
+            positionals.add(token);
+        }
+        if (!allowPending && pending != null) {
+            return null;
+        }
+        return new ParsedOptions(positionals, values, used, pending, endOptions);
+    }
+
+    private static OptionToken parseOptionToken(String token) {
+        if (token == null || token.length() < 2 || !token.startsWith("-") || "-".equals(token)) {
+            return null;
+        }
+        if (token.startsWith("--")) {
+            String keyValue = token.substring(2);
+            if (keyValue.isEmpty() || isNumericOptionToken(keyValue)) {
+                return null;
+            }
+            int eq = keyValue.indexOf('=');
+            String key = eq >= 0 ? keyValue.substring(0, eq) : keyValue;
+            if (key.isEmpty()) {
+                return null;
+            }
+            String value = eq >= 0 ? keyValue.substring(eq + 1) : null;
+            return new OptionToken(key, true, value, eq >= 0);
         }
 
-        int argIndex = Math.max(0, args.size() - 1);
-        if (argIndex >= userInputArguments.size()) {
-            return Arrays.asList("");
+        String keyValue = token.substring(1);
+        if (keyValue.isEmpty() || isNumericOptionToken(keyValue)) {
+            return null;
+        }
+        int eq = keyValue.indexOf('=');
+        String key = eq >= 0 ? keyValue.substring(0, eq) : keyValue;
+        if (key.isEmpty()) {
+            return null;
+        }
+        String value = eq >= 0 ? keyValue.substring(eq + 1) : null;
+        return new OptionToken(key, false, value, eq >= 0);
+    }
+
+    private static boolean isOptionPrefix(String token) {
+        if (token == null || token.isEmpty() || !token.startsWith("-")) {
+            return false;
+        }
+        if ("-".equals(token) || "--".equals(token)) {
+            return true;
+        }
+        String raw = token.startsWith("--") ? token.substring(2) : token.substring(1);
+        if (raw.isEmpty()) {
+            return true;
+        }
+        return !isNumericOptionToken(raw);
+    }
+
+    private static boolean isNumericOptionToken(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        char first = value.charAt(0);
+        return Character.isDigit(first) || first == '.';
+    }
+
+    private static String normalizeOptionName(String name) {
+        String trimmed = name != null ? name.trim() : "";
+        while (trimmed.startsWith("-")) {
+            trimmed = trimmed.substring(1);
+        }
+        return trimmed;
+    }
+
+    private List<String> buildOptionSuggestions(OptionIndex optionIndex, Set<CommandArgument> usedOptions,
+            String currentInput, String normalizedCommandName, @Nullable String subCommandName, S sender) {
+        if (optionIndex == null || !optionIndex.hasOptions()) {
+            return List.of();
+        }
+        String lowered = currentInput != null ? currentInput.toLowerCase(Locale.ROOT) : "";
+        List<String> suggestions = new ArrayList<>();
+
+        for (CommandArgument argument : optionIndex.optionArguments()) {
+            if (argument == null) {
+                continue;
+            }
+            if (usedOptions != null && usedOptions.contains(argument)) {
+                continue;
+            }
+            if (!canSuggestArgument(normalizedCommandName, subCommandName, argument, sender)) {
+                continue;
+            }
+            for (String longName : argument.getLongOptionNames()) {
+                String token = "--" + longName;
+                if (lowered.isEmpty() || token.toLowerCase(Locale.ROOT).startsWith(lowered)) {
+                    suggestions.add(token);
+                }
+            }
+            for (String shortName : argument.getShortOptionNames()) {
+                String token = "-" + shortName;
+                if (lowered.isEmpty() || token.toLowerCase(Locale.ROOT).startsWith(lowered)) {
+                    suggestions.add(token);
+                }
+            }
         }
 
-        ArgumentInfo argumentInfo = userInputArguments.get(argIndex);
-        CommandArgument argument = argumentInfo.argument;
+        return suggestions;
+    }
 
-        if (subInfo == null || !canSuggestArgument(normalizedCommandName, subInfo.name(), argument, sender)) {
-            return Arrays.asList("");
-        }
-
-        return generateSuggestionsForArgument(command, argument, sender, currentInput);
+    private List<String> generateArgumentSuggestions(MagicCommand command, CommandAction<S> subInfo,
+            S sender, List<String> args, String currentInput, String normalizedCommandName) {
+        List<CommandArgument> arguments = subInfo != null ? subInfo.arguments() : List.of();
+        return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName,
+                subInfo != null ? subInfo.fullPath() : null);
     }
 
     private List<String> generateSuggestionsForArgument(MagicCommand command, CommandArgument argument,
@@ -1220,27 +1600,38 @@ public class CommandManager<S> {
     private boolean hasSubOrArgPermission(MagicCommand command, CommandInfo info, S sender,
             String baseCommandName, @Nullable String targetSubName) {
         List<CommandAction<S>> subs = getSubCommandActions(command);
-        if (targetSubName != null) {
-            for (CommandAction<S> subInfo : subs) {
-                if (!matchesSubCommand(subInfo, targetSubName)) {
-                    continue;
-                }
-                String subPermission = resolvePermission(subInfo.permission(),
-                        "commands." + baseCommandName + ".subcommand." + subInfo.name());
-                if (subPermission.isEmpty()
-                        || platform.hasPermission(sender, subPermission, subInfo.permissionDefault())
-                        || hasArgumentPermissionOverride(baseCommandName, subInfo.name(), sender)) {
-                    return true;
-                }
+        if (subs.isEmpty()) {
+            return false;
+        }
+        if (targetSubName != null && !targetSubName.isEmpty()) {
+            SubCommandNode<S> root = buildSubCommandTree(subs);
+            SubCommandTraversal<S> traversal = traverseSubCommands(root, List.of(targetSubName));
+            if (traversal.consumed() > 0 && hasPermissionInNode(traversal.node(), sender, baseCommandName)) {
+                return true;
             }
         }
         // Fallback: any subcommand permission granted
         for (CommandAction<S> subInfo : subs) {
-            String subPermission = resolvePermission(subInfo.permission(),
-                    "commands." + baseCommandName + ".subcommand." + subInfo.name());
-            if (subPermission.isEmpty()
-                    || platform.hasPermission(sender, subPermission, subInfo.permissionDefault())
-                    || hasArgumentPermissionOverride(baseCommandName, subInfo.name(), sender)) {
+            if (canAccessAction(subInfo, sender, baseCommandName)
+                    || hasArgumentPermissionOverride(baseCommandName, subInfo.fullPath(), sender)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasPermissionInNode(SubCommandNode<S> node, S sender, String baseCommandName) {
+        if (node == null) {
+            return false;
+        }
+        if (node.action() != null) {
+            if (canAccessAction(node.action(), sender, baseCommandName)
+                    || hasArgumentPermissionOverride(baseCommandName, node.action().fullPath(), sender)) {
+                return true;
+            }
+        }
+        for (SubCommandNode<S> child : node.children().values()) {
+            if (hasPermissionInNode(child, sender, baseCommandName)) {
                 return true;
             }
         }
@@ -1250,8 +1641,9 @@ public class CommandManager<S> {
     private boolean hasArgumentPermissionOverride(String baseCommandName, @Nullable String subCommandName,
             S sender) {
         String prefix = "commands." + baseCommandName;
-        if (subCommandName != null && !subCommandName.isEmpty()) {
-            prefix += ".subcommand." + subCommandName;
+        String normalizedSub = normalizeSubCommandSegment(subCommandName);
+        if (!normalizedSub.isEmpty()) {
+            prefix += ".subcommand." + normalizedSub;
         }
         String argPrefix = resolvePermission(null, prefix + ".argument");
         String argPrefixNoSegment = resolvePermission(null, prefix);
@@ -1279,8 +1671,7 @@ public class CommandManager<S> {
         // If command has only subcommands
         else if (!subCommands.isEmpty() && directAction == null) {
             usage.append(" <");
-            usage.append(subCommands.stream()
-                    .map(CommandAction::name)
+            usage.append(getTopLevelSubCommandNames(subCommands).stream()
                     .collect(Collectors.joining(" | ")));
             usage.append(">");
         }
@@ -1294,8 +1685,7 @@ public class CommandManager<S> {
             }
 
             usage.append(" OR /").append(info.name()).append(" <");
-            usage.append(subCommands.stream()
-                    .map(CommandAction::name)
+            usage.append(getTopLevelSubCommandNames(subCommands).stream()
                     .collect(Collectors.joining(" | ")));
             usage.append(">");
         }
@@ -1316,7 +1706,7 @@ public class CommandManager<S> {
 
         for (CommandAction<S> subInfo : subCommands) {
             StringBuilder usage = new StringBuilder();
-            usage.append("/").append(info.name()).append(" ").append(subInfo.name());
+            usage.append("/").append(info.name()).append(" ").append(subInfo.fullPath());
 
             appendArgumentsToUsage(usage, subInfo.arguments());
 
@@ -1375,12 +1765,21 @@ public class CommandManager<S> {
      *                      optional
      */
     private void appendArgumentsToUsage(StringBuilder usage, List<CommandArgument> arguments, boolean forceOptional) {
+        List<CommandArgument> positional = new ArrayList<>();
+        List<CommandArgument> options = new ArrayList<>();
+
         for (CommandArgument arg : arguments) {
-            // Skip sender arguments in usage
             if (isSenderArgument(arg)) {
                 continue;
             }
+            if (arg.isOption()) {
+                options.add(arg);
+            } else {
+                positional.add(arg);
+            }
+        }
 
+        for (CommandArgument arg : positional) {
             usage.append(" ");
 
             boolean isOptional = forceOptional || arg.isOptional() || arg.getDefaultValue() != null;
@@ -1391,7 +1790,6 @@ public class CommandManager<S> {
                 usage.append("<");
             }
 
-            // Generate argument name based on type and suggestions
             String argName = generateArgumentName(arg);
             usage.append(argName);
 
@@ -1401,6 +1799,21 @@ public class CommandManager<S> {
                 usage.append(">");
             }
         }
+
+        for (CommandArgument arg : options) {
+            usage.append(" ");
+            boolean isOptional = forceOptional || arg.isOptional() || arg.getDefaultValue() != null;
+            String optionToken = buildPrimaryOptionToken(arg);
+            String token = optionToken;
+            if (!arg.isFlag()) {
+                token += " <" + generateArgumentName(arg) + ">";
+            }
+            if (isOptional) {
+                usage.append("[").append(token).append("]");
+            } else {
+                usage.append(token);
+            }
+        }
     }
 
     private String buildUsage(CommandInfo info, @Nullable String subCommandName, List<CommandArgument> arguments) {
@@ -1408,16 +1821,7 @@ public class CommandManager<S> {
         if (subCommandName != null && !subCommandName.isEmpty()) {
             usage.append(" ").append(subCommandName);
         }
-        for (CommandArgument arg : arguments) {
-            if (isSenderArgument(arg)) {
-                continue;
-            }
-            boolean optional = arg.isOptional() || arg.getDefaultValue() != null;
-            usage.append(" ");
-            usage.append(optional ? "[" : "<");
-            usage.append(generateArgumentName(arg));
-            usage.append(optional ? "]" : ">");
-        }
+        appendArgumentsToUsage(usage, arguments, false);
         return usage.toString();
     }
 
@@ -1472,47 +1876,251 @@ public class CommandManager<S> {
         }
     }
 
+    private String buildPrimaryOptionToken(CommandArgument argument) {
+        if (argument == null) {
+            return "";
+        }
+        List<String> longNames = argument.getLongOptionNames();
+        if (!longNames.isEmpty()) {
+            return "--" + longNames.get(0);
+        }
+        List<String> shortNames = argument.getShortOptionNames();
+        if (!shortNames.isEmpty()) {
+            return "-" + shortNames.get(0);
+        }
+        String name = argument.getName();
+        return name != null ? name : "";
+    }
+
     private String getAvailableSubCommands(List<CommandAction<S>> subCommands, S sender,
             String commandName) {
-        return String.join(", ", getAvailableSubCommandsList(subCommands, sender, commandName));
+        return String.join(", ", getAvailableSubCommandsList(subCommands, sender, commandName, List.of()));
     }
 
     private List<String> getAvailableSubCommandsList(List<CommandAction<S>> subCommands,
             S sender, String commandName) {
-        Set<String> available = new LinkedHashSet<>();
+        return getAvailableSubCommandsList(subCommands, sender, commandName, List.of());
+    }
 
-        for (CommandAction<S> subInfo : subCommands) {
-            String subPermission = resolvePermission(subInfo.permission(),
-                    "commands." + commandName + ".subcommand." + subInfo.name());
-            if (subPermission.isEmpty()
-                    || platform.hasPermission(sender, subPermission, subInfo.permissionDefault())) {
-                available.add(subInfo.name());
-                for (String alias : subInfo.aliases()) {
-                    available.add(alias);
+    private List<String> getAvailableSubCommandsList(List<CommandAction<S>> subCommands,
+            S sender, String commandName, List<String> pathSegments) {
+        SubCommandNode<S> root = buildSubCommandTree(subCommands);
+        SubCommandNode<S> node = resolveNode(root, pathSegments);
+        if (node == null) {
+            return new ArrayList<>();
+        }
+        return getAvailableChildNames(node, sender, commandName);
+    }
+
+    private List<String> getAvailableChildNames(SubCommandNode<S> node, S sender, String commandName) {
+        Set<String> available = new LinkedHashSet<>();
+        for (SubCommandNode<S> child : node.children().values()) {
+            if (!hasAccessibleAction(child, sender, commandName)) {
+                continue;
+            }
+            available.add(child.name());
+            if (child.action() != null && canAccessAction(child.action(), sender, commandName)) {
+                for (String alias : child.aliases()) {
+                    if (alias != null && !alias.isBlank()) {
+                        available.add(alias);
+                    }
                 }
             }
         }
-
         return new ArrayList<>(available);
     }
 
-    private boolean matchesSubCommand(CommandAction<S> subInfo, String input) {
-        if (subInfo == null || input == null) {
+    private List<String> getTopLevelSubCommandNames(List<CommandAction<S>> subCommands) {
+        Set<String> names = new LinkedHashSet<>();
+        if (subCommands == null) {
+            return new ArrayList<>();
+        }
+        for (CommandAction<S> sub : subCommands) {
+            if (sub == null) {
+                continue;
+            }
+            List<String> path = sub.path();
+            if (path != null && !path.isEmpty()) {
+                String first = path.get(0);
+                if (first != null && !first.isBlank()) {
+                    names.add(first);
+                    continue;
+                }
+            }
+            String name = sub.name();
+            if (name != null && !name.isBlank()) {
+                names.add(name);
+            }
+        }
+        return new ArrayList<>(names);
+    }
+
+    private boolean canAccessAction(CommandAction<S> action, S sender, String commandName) {
+        if (action == null) {
             return false;
         }
-        if (subInfo.name().equalsIgnoreCase(input)) {
+        String subPermission = resolvePermission(action.permission(),
+                "commands." + commandName + ".subcommand." + action.permissionSegment());
+        if (subPermission.isEmpty()) {
             return true;
         }
-        for (String alias : subInfo.aliases()) {
-            if (alias.equalsIgnoreCase(input)) {
+        return platform.hasPermission(sender, subPermission, action.permissionDefault());
+    }
+
+    private boolean hasAccessibleAction(SubCommandNode<S> node, S sender, String commandName) {
+        if (node == null) {
+            return false;
+        }
+        if (node.action() != null && canAccessAction(node.action(), sender, commandName)) {
+            return true;
+        }
+        for (SubCommandNode<S> child : node.children().values()) {
+            if (hasAccessibleAction(child, sender, commandName)) {
                 return true;
             }
         }
         return false;
     }
 
+    private SubCommandNode<S> buildSubCommandTree(List<CommandAction<S>> subCommands) {
+        SubCommandNode<S> root = new SubCommandNode<>("");
+        if (subCommands == null || subCommands.isEmpty()) {
+            return root;
+        }
+        for (CommandAction<S> action : subCommands) {
+            if (action == null) {
+                continue;
+            }
+            SubCommandNode<S> node = root;
+            for (String segment : action.path()) {
+                node = node.child(segment);
+            }
+            node = node.child(action.name());
+            node.setAction(action);
+        }
+        return root;
+    }
+
+    private SubCommandNode<S> resolveNode(SubCommandNode<S> root, List<String> pathSegments) {
+        if (root == null) {
+            return null;
+        }
+        SubCommandTraversal<S> traversal = traverseSubCommands(root, pathSegments);
+        if (traversal.consumed() < (pathSegments != null ? pathSegments.size() : 0)) {
+            return null;
+        }
+        return traversal.node();
+    }
+
+    private SubCommandTraversal<S> traverseSubCommands(SubCommandNode<S> root, List<String> tokens) {
+        if (root == null) {
+            return new SubCommandTraversal<>(null, 0, null, 0);
+        }
+        SubCommandNode<S> node = root;
+        SubCommandNode<S> lastAction = null;
+        int lastActionIndex = 0;
+        int index = 0;
+        if (tokens != null) {
+            for (String token : tokens) {
+                if (token == null || token.isEmpty()) {
+                    break;
+                }
+                SubCommandNode<S> child = node.findChild(token);
+                if (child == null) {
+                    break;
+                }
+                node = child;
+                index++;
+                if (node.action() != null) {
+                    lastAction = node;
+                    lastActionIndex = index;
+                }
+            }
+        }
+        return new SubCommandTraversal<>(node, index, lastAction, lastActionIndex);
+    }
+
+    private record SubCommandTraversal<S>(SubCommandNode<S> node, int consumed,
+                                          SubCommandNode<S> lastActionNode, int lastActionIndex) {
+    }
+
+    private static final class SubCommandNode<S> {
+        private final String name;
+        private List<String> aliases = List.of();
+        private final Map<String, SubCommandNode<S>> children = new LinkedHashMap<>();
+        private CommandAction<S> action;
+
+        SubCommandNode(String name) {
+            this.name = name != null ? name : "";
+        }
+
+        String name() {
+            return name;
+        }
+
+        List<String> aliases() {
+            return aliases;
+        }
+
+        Map<String, SubCommandNode<S>> children() {
+            return children;
+        }
+
+        CommandAction<S> action() {
+            return action;
+        }
+
+        void setAction(CommandAction<S> action) {
+            this.action = action;
+            if (action != null) {
+                this.aliases = action.aliases();
+            }
+        }
+
+        SubCommandNode<S> child(String name) {
+            String key = name != null ? name.toLowerCase(Locale.ROOT) : "";
+            if (key.isEmpty()) {
+                return this;
+            }
+            return children.computeIfAbsent(key, ignored -> new SubCommandNode<>(name));
+        }
+
+        SubCommandNode<S> findChild(String token) {
+            if (token == null || token.isEmpty()) {
+                return null;
+            }
+            String lowered = token.toLowerCase(Locale.ROOT);
+            SubCommandNode<S> direct = children.get(lowered);
+            if (direct != null) {
+                return direct;
+            }
+            for (SubCommandNode<S> child : children.values()) {
+                if (child.matches(token)) {
+                    return child;
+                }
+            }
+            return null;
+        }
+
+        boolean matches(String input) {
+            if (input == null) {
+                return false;
+            }
+            if (name.equalsIgnoreCase(input)) {
+                return true;
+            }
+            for (String alias : aliases) {
+                if (alias != null && alias.equalsIgnoreCase(input)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
     static final class CommandAction<S> {
         private final String name;
+        private final List<String> path;
         private final String description;
         private final List<String> aliases;
         private final String permission;
@@ -1522,6 +2130,7 @@ public class CommandManager<S> {
         private final CommandExecutor<S> executor;
 
         private CommandAction(String name,
+                              List<String> path,
                               String description,
                               List<String> aliases,
                               String permission,
@@ -1530,6 +2139,7 @@ public class CommandManager<S> {
                               Method method,
                               CommandExecutor<S> executor) {
             this.name = name != null ? name : "";
+            this.path = normalizePath(path);
             this.description = description != null ? description : "";
             this.aliases = aliases != null ? new ArrayList<>(aliases) : new ArrayList<>();
             this.permission = permission != null ? permission : "";
@@ -1543,6 +2153,7 @@ public class CommandManager<S> {
             List<CommandArgument> arguments = MagicCommand.getArguments(subInfo.method);
             return new CommandAction<>(
                     subInfo.annotation.name(),
+                    Arrays.asList(subInfo.annotation.path()),
                     subInfo.annotation.description(),
                     Arrays.asList(subInfo.annotation.aliases()),
                     subInfo.annotation.permission(),
@@ -1556,6 +2167,7 @@ public class CommandManager<S> {
         static <S> CommandAction<S> forDynamicSubCommand(SubCommandSpec<?> spec, CommandExecutor<S> executor) {
             return new CommandAction<>(
                     spec.name(),
+                    spec.path(),
                     spec.description(),
                     spec.aliases(),
                     spec.permission(),
@@ -1574,6 +2186,7 @@ public class CommandManager<S> {
                                               Method method) {
             return new CommandAction<>(
                     name,
+                    List.of(),
                     description,
                     List.of(),
                     permission,
@@ -1592,6 +2205,7 @@ public class CommandManager<S> {
                                                CommandExecutor<S> executor) {
             return new CommandAction<>(
                     name,
+                    List.of(),
                     description,
                     List.of(),
                     permission,
@@ -1604,6 +2218,33 @@ public class CommandManager<S> {
 
         String name() {
             return name;
+        }
+
+        List<String> path() {
+            return Collections.unmodifiableList(path);
+        }
+
+        List<String> fullPathSegments() {
+            List<String> segments = new ArrayList<>(path);
+            if (!name.isEmpty()) {
+                segments.add(name);
+            }
+            return segments;
+        }
+
+        String fullPath() {
+            return String.join(" ", fullPathSegments());
+        }
+
+        String permissionSegment() {
+            List<String> segments = fullPathSegments();
+            if (segments.isEmpty()) {
+                return "";
+            }
+            return segments.stream()
+                    .filter(part -> part != null && !part.isBlank())
+                    .map(part -> part.toLowerCase(Locale.ROOT))
+                    .collect(Collectors.joining("."));
         }
 
         String description() {
@@ -1674,6 +2315,23 @@ public class CommandManager<S> {
             return commandName.substring(commandName.indexOf(":") + 1);
         }
         return commandName;
+    }
+
+    private static List<String> normalizePath(List<String> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        List<String> normalized = new ArrayList<>();
+        for (String part : raw) {
+            if (part == null) {
+                continue;
+            }
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                normalized.add(trimmed);
+            }
+        }
+        return normalized.isEmpty() ? List.of() : normalized;
     }
 
     /**

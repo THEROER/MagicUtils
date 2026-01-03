@@ -1,9 +1,11 @@
 package dev.ua.theroer.magicutils.commands;
 
+import dev.ua.theroer.magicutils.annotations.Greedy;
 import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.Suggest;
 import dev.ua.theroer.magicutils.logger.LogBuilderCore;
 import dev.ua.theroer.magicutils.logger.LogLevel;
+import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.logger.MessageParser;
 import dev.ua.theroer.magicutils.platform.Audience;
@@ -50,7 +52,7 @@ public class HelpCommandBase extends MagicCommand {
      */
     public CommandResult execute(MagicSender sender,
                                  @OptionalArgument @Suggest("getCommandSuggestions") String commandName,
-                                 @OptionalArgument String subCommand) {
+                                 @OptionalArgument @Greedy String subCommand) {
         CommandManager<?> manager = managerSupplier.get();
         HelpCommandSupport.HelpResult result = HelpCommandSupport.build(
                 manager, commandName, subCommand, helpCommand, logger, sender);
@@ -85,7 +87,11 @@ public class HelpCommandBase extends MagicCommand {
         }
         Audience audience = sender.audience();
         if (logger != null) {
-            new LogBuilderCore(logger, LogLevel.INFO).noPrefix().to(audience).send(line);
+            new LogBuilderCore(logger, LogLevel.INFO)
+                    .noPrefix()
+                    .target(LogTarget.CHAT)
+                    .to(audience)
+                    .send(line);
             return;
         }
         if (audience != null) {

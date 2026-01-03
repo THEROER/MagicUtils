@@ -23,6 +23,13 @@ public @interface SubCommand {
     String name();
 
     /**
+     * Optional parent path segments for nested subcommands.
+     *
+     * @return parent path segments
+     */
+    String[] path() default {};
+
+    /**
      * Subcommand description.
      * 
      * @return the description of the subcommand

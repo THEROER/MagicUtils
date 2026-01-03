@@ -94,6 +94,26 @@ subprojects {
         }
     }
 
+    if (project.name in ['config', 'config-yaml', 'config-toml', 'lang']) {
+        tasks.withType(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configureEach {
+            relocate 'com.fasterxml.jackson', 'dev.ua.theroer.magicutils.libs.jackson'
+        }
+
+        configurations {
+            shadedElements {
+                canBeConsumed = true
+                canBeResolved = false
+                attributes {
+                    attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+                }
+            }
+        }
+
+        artifacts {
+            shadedElements tasks.named('shadowJar')
+        }
+    }
+
     tasks.named('build') {
         dependsOn tasks.named('shadowJar')
     }

@@ -54,7 +54,7 @@ public final class CommandExecution<S> {
     /**
      * Returns the subcommand name if present.
      *
-     * @return subcommand name or null
+     * @return subcommand path (space-separated) or null
      */
     public String subCommandName() {
         return subCommandName;

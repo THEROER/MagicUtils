@@ -38,6 +38,11 @@ public class CommandArgument {
     private final boolean senderParameter;
     @Getter(AccessLevel.NONE)
     private final AllowedSender[] allowedSenders;
+    @Getter(AccessLevel.NONE)
+    private final List<String> optionShortNames;
+    @Getter(AccessLevel.NONE)
+    private final List<String> optionLongNames;
+    private final boolean flag;
 
     private CommandArgument(Builder builder) {
         this.name = builder.name;
@@ -61,6 +66,9 @@ public class CommandArgument {
         this.allowedSenders = builder.allowedSenders != null
                 ? builder.allowedSenders.clone()
                 : new AllowedSender[] { AllowedSender.ANY };
+        this.optionShortNames = new ArrayList<>(builder.optionShortNames);
+        this.optionLongNames = new ArrayList<>(builder.optionLongNames);
+        this.flag = builder.flag;
     }
 
     /**
@@ -79,6 +87,42 @@ public class CommandArgument {
      */
     public AllowedSender[] getAllowedSenders() {
         return allowedSenders.clone();
+    }
+
+    /**
+     * Returns true if this argument supports named options.
+     *
+     * @return true when option names are defined
+     */
+    public boolean isOption() {
+        return !optionShortNames.isEmpty() || !optionLongNames.isEmpty();
+    }
+
+    /**
+     * Returns true if this option is a flag (no value required).
+     *
+     * @return true if flag
+     */
+    public boolean isFlag() {
+        return flag;
+    }
+
+    /**
+     * Short option names without "-" prefix.
+     *
+     * @return list of short names
+     */
+    public List<String> getShortOptionNames() {
+        return new ArrayList<>(optionShortNames);
+    }
+
+    /**
+     * Long option names without "--" prefix.
+     *
+     * @return list of long names
+     */
+    public List<String> getLongOptionNames() {
+        return new ArrayList<>(optionLongNames);
     }
 
     /**
@@ -150,6 +194,9 @@ public class CommandArgument {
         private boolean permissionDeclared = false;
         private boolean senderParameter = false;
         private AllowedSender[] allowedSenders = new AllowedSender[] { AllowedSender.ANY };
+        private final List<String> optionShortNames = new ArrayList<>();
+        private final List<String> optionLongNames = new ArrayList<>();
+        private boolean flag = false;
 
         /**
          * Constructs a new Builder for CommandArgument.
@@ -340,6 +387,61 @@ public class CommandArgument {
         }
 
         /**
+         * Defines named options for this argument.
+         *
+         * @param shortNames short option names without "-" prefix
+         * @param longNames long option names without "--" prefix
+         * @return this builder
+         */
+        public Builder option(String[] shortNames, String[] longNames) {
+            return option(shortNames, longNames, false);
+        }
+
+        /**
+         * Defines named options for this argument.
+         *
+         * @param shortNames short option names without "-" prefix
+         * @param longNames long option names without "--" prefix
+         * @param flag whether this option is a flag
+         * @return this builder
+         */
+        public Builder option(String[] shortNames, String[] longNames, boolean flag) {
+            addOptionNames(this.optionShortNames, shortNames);
+            addOptionNames(this.optionLongNames, longNames);
+            this.flag = this.flag || flag;
+            if (flag) {
+                this.optional = true;
+                if (this.defaultValue == null) {
+                    this.defaultValue = "false";
+                }
+            }
+            return this;
+        }
+
+        private static void addOptionNames(List<String> target, String[] names) {
+            if (names == null || names.length == 0) {
+                return;
+            }
+            for (String name : names) {
+                if (name == null) {
+                    continue;
+                }
+                String trimmed = normalizeOptionName(name);
+                if (!trimmed.isEmpty() && !target.contains(trimmed)) {
+                    target.add(trimmed);
+                }
+            }
+        }
+
+        private static String normalizeOptionName(String name) {
+            String trimmed = name != null ? name.trim() : "";
+            while (trimmed.startsWith("-")) {
+                trimmed = trimmed.substring(1);
+            }
+            return trimmed;
+        }
+
+        /**
          * Builds the CommandArgument instance.
          * 
          * @return the CommandArgument
@@ -359,6 +461,8 @@ public class CommandArgument {
                 ", suggestions=" + suggestions +
                 ", permission='" + permission + '\'' +
                 ", permissionCondition='" + permissionCondition + '\'' +
+                ", options=" + optionShortNames + "/" + optionLongNames +
+                ", flag=" + flag +
                 '}';
     }
 }

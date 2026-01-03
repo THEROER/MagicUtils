@@ -9,6 +9,9 @@ import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.PluginIdentifiableCommand;
+
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -127,9 +130,9 @@ public class CommandRegistry {
     }
 
     private static CommandRegistry create(JavaPlugin plugin,
-                                          String permissionPrefix,
-                                          Logger loggerInstance,
-                                          boolean makeDefault) {
+            String permissionPrefix,
+            Logger loggerInstance,
+            boolean makeDefault) {
         CommandRegistry registry = new CommandRegistry(plugin, permissionPrefix, loggerInstance);
         REGISTRIES.put(registryKey(plugin), registry);
         if (makeDefault || defaultRegistry == null) {
@@ -453,7 +456,7 @@ public class CommandRegistry {
 
         for (CommandManager.CommandAction<CommandSender> subInfo : commandManager.getSubCommandActions(command)) {
             String subPermission = resolvePermission(subInfo.permission(),
-                    "commands." + info.name() + ".subcommand." + subInfo.name());
+                    "commands." + info.name() + ".subcommand." + subInfo.permissionSegment());
             if (!subPermission.isEmpty()) {
                 permissions.add(subPermission + " (" + subInfo.permissionDefault() + ")");
                 String description = !subInfo.description().isEmpty() ? subInfo.description() : info.description();
@@ -461,7 +464,7 @@ public class CommandRegistry {
                 incrementCount(counts, subInfo.permissionDefault());
             }
 
-            registerArgumentPermissions(info.name(), subInfo.name(), subInfo.arguments(), permissions, counts);
+            registerArgumentPermissions(info.name(), subInfo.fullPath(), subInfo.arguments(), permissions, counts);
         }
 
         String commandWildcard = resolvePermission(null, "commands." + info.name() + ".*");
@@ -504,8 +507,9 @@ public class CommandRegistry {
     private static String buildArgumentPermission(String normalizedCommandName, String subCommandName,
             CommandArgument argument) {
         StringBuilder sb = new StringBuilder("commands.").append(normalizedCommandName);
-        if (subCommandName != null && !subCommandName.isEmpty()) {
-            sb.append(".subcommand.").append(subCommandName);
+        String normalizedSub = normalizeSubCommandSegment(subCommandName);
+        if (!normalizedSub.isEmpty()) {
+            sb.append(".subcommand.").append(normalizedSub);
         }
         String node = argument.getPermissionNode();
         if (node == null || node.isEmpty()) {
@@ -518,6 +522,17 @@ public class CommandRegistry {
         }
         sb.append(node);
         return sb.toString();
+    }
+
+    private static String normalizeSubCommandSegment(String subCommandName) {
+        if (subCommandName == null) {
+            return "";
+        }
+        String trimmed = subCommandName.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        return trimmed.replaceAll("\\s+", ".");
     }
 
     private static void incrementCount(EnumMap<MagicPermissionDefault, Integer> counts,
@@ -578,8 +593,8 @@ public class CommandRegistry {
         }
     }
 
-    private boolean isOwned(org.bukkit.command.Command cmd) {
-        if (cmd instanceof org.bukkit.command.PluginIdentifiableCommand pic) {
+    private boolean isOwned(Command cmd) {
+        if (cmd instanceof PluginIdentifiableCommand pic) {
             return pic.getPlugin() == plugin;
         }
         return cmd.getClass().getSimpleName().contains("BukkitCommandWrapper");
@@ -587,16 +602,18 @@ public class CommandRegistry {
 
     private boolean tryUnregister(String commandName, boolean silent) {
         try {
-            Field knownCommandsField = commandMap.getClass().getDeclaredField("knownCommands");
-            knownCommandsField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            Map<String, org.bukkit.command.Command> knownCommands = (Map<String, org.bukkit.command.Command>) knownCommandsField
-                    .get(commandMap);
+            Map<String, Command> knownCommands = resolveKnownCommands(commandMap);
+            if (knownCommands == null) {
+                if (!silent) {
+                    logger.warn("Failed to unregister command " + commandName + ": knownCommands not accessible");
+                }
+                return false;
+            }
 
             boolean removed = false;
             removed |= knownCommands.remove(commandName.toLowerCase(Locale.ROOT)) != null;
-            removed |= knownCommands.remove(plugin.getName().toLowerCase(Locale.ROOT) + ":" + commandName.toLowerCase(Locale.ROOT)) != null;
+            removed |= knownCommands.remove(
+                    plugin.getName().toLowerCase(Locale.ROOT) + ":" + commandName.toLowerCase(Locale.ROOT)) != null;
 
             if (removed && !silent) {
                 logger.info(InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
@@ -608,6 +625,26 @@ public class CommandRegistry {
             }
             return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Command> resolveKnownCommands(CommandMap map) {
+        if (map == null) {
+            return null;
+        }
+        Class<?> current = map.getClass();
+        while (current != null && current != Object.class) {
+            try {
+                Field field = current.getDeclaredField("knownCommands");
+                field.setAccessible(true);
+                return (Map<String, Command>) field.get(map);
+            } catch (NoSuchFieldException ignored) {
+                current = current.getSuperclass();
+            } catch (IllegalAccessException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private static void registerMagicSenderAdapter() {

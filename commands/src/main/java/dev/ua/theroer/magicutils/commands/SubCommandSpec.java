@@ -13,6 +13,7 @@ import java.util.List;
 @SuppressWarnings("doclint:missing")
 public final class SubCommandSpec<S> {
     private final String name;
+    private final List<String> path;
     private final String description;
     private final List<String> aliases;
     private final String permission;
@@ -23,6 +24,7 @@ public final class SubCommandSpec<S> {
 
     private SubCommandSpec(Builder<S> builder) {
         this.name = builder.name;
+        this.path = sanitizePath(builder.path);
         this.description = builder.description;
         this.aliases = List.copyOf(builder.aliases);
         this.permission = builder.permission;
@@ -34,6 +36,10 @@ public final class SubCommandSpec<S> {
 
     public String name() {
         return name;
+    }
+
+    public List<String> path() {
+        return Collections.unmodifiableList(path);
     }
 
     public String description() {
@@ -64,6 +70,23 @@ public final class SubCommandSpec<S> {
         return replaceExisting;
     }
 
+    private static List<String> sanitizePath(List<String> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (String part : raw) {
+            if (part == null) {
+                continue;
+            }
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result.isEmpty() ? List.of() : List.copyOf(result);
+    }
+
     public static <S> Builder<S> builder(String name) {
         return new Builder<>(name);
     }
@@ -71,6 +94,7 @@ public final class SubCommandSpec<S> {
     @SuppressWarnings("doclint:missing")
     public static final class Builder<S> {
         private final String name;
+        private final List<String> path = new ArrayList<>();
         private String description = "";
         private final List<String> aliases = new ArrayList<>();
         private String permission = "";
@@ -84,6 +108,21 @@ public final class SubCommandSpec<S> {
                 throw new IllegalArgumentException("Subcommand name is required");
             }
             this.name = name;
+        }
+
+        public Builder<S> path(String... path) {
+            if (path != null) {
+                for (String part : path) {
+                    if (part == null) {
+                        continue;
+                    }
+                    String trimmed = part.trim();
+                    if (!trimmed.isEmpty()) {
+                        this.path.add(trimmed);
+                    }
+                }
+            }
+            return this;
         }
 
         public Builder<S> description(String description) {

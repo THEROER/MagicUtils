@@ -271,6 +271,9 @@ public abstract class MagicCommand {
             boolean hasPermissionAnnotation = false;
             AllowedSender[] allowedSenders = new AllowedSender[] { AllowedSender.ANY };
             boolean isSenderParameter = false;
+            List<String> optionShortNames = new ArrayList<>();
+            List<String> optionLongNames = new ArrayList<>();
+            boolean isFlag = false;
 
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation instanceof DefaultValue) {
@@ -311,6 +314,20 @@ public abstract class MagicCommand {
                     isSenderParameter = true;
                     allowedSenders = senderAnno.value();
                 }
+                if (annotation instanceof Option option) {
+                    optionShortNames.addAll(Arrays.asList(option.shortNames()));
+                    optionLongNames.addAll(Arrays.asList(option.longNames()));
+                    if (option.flag()) {
+                        isFlag = true;
+                    }
+                }
+            }
+
+            if (isFlag) {
+                optional = true;
+                if (defaultValue == null) {
+                    defaultValue = "false";
+                }
             }
 
             CommandArgument.Builder builder = CommandArgument.builder(name, type);
@@ -338,6 +355,11 @@ public abstract class MagicCommand {
                 builder.permissionMessage(permissionMessage);
             if (isSenderParameter) {
                 builder.sender(allowedSenders);
+            }
+            if (!optionShortNames.isEmpty() || !optionLongNames.isEmpty()) {
+                builder.option(optionShortNames.toArray(new String[0]),
+                        optionLongNames.toArray(new String[0]),
+                        isFlag);
             }
 
             args.add(builder.build());
@@ -478,11 +500,23 @@ public abstract class MagicCommand {
         List<SubCommandInfo> subCommands = getSubCommands(clazz);
 
         if (!subCommands.isEmpty()) {
+            Set<String> topLevel = new LinkedHashSet<>();
+            for (SubCommandInfo sub : subCommands) {
+                String[] path = sub.annotation.path();
+                if (path != null && path.length > 0 && path[0] != null && !path[0].trim().isEmpty()) {
+                    topLevel.add(path[0].trim());
+                } else {
+                    topLevel.add(sub.annotation.name());
+                }
+            }
             usage.append(" <");
-            for (int i = 0; i < subCommands.size(); i++) {
-                if (i > 0)
+            int index = 0;
+            for (String name : topLevel) {
+                if (index > 0) {
                     usage.append("|");
-                usage.append(subCommands.get(i).annotation.name());
+                }
+                usage.append(name);
+                index++;
             }
             usage.append(">");
         }

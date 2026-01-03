@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 import lombok.Setter;
@@ -87,13 +88,13 @@ public class BukkitCommandWrapper extends Command {
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
                     if (sender instanceof Player) {
-                        messageLogger.success().to((Player) sender).send(result.getMessage());
+                        messageLogger.success().target(LogTarget.CHAT).to((Player) sender).send(result.getMessage());
                     } else {
                         messageLogger.success(result.getMessage());
                     }
                 } else {
                     if (sender instanceof Player) {
-                        messageLogger.error().to((Player) sender).send(result.getMessage());
+                        messageLogger.error().target(LogTarget.CHAT).to((Player) sender).send(result.getMessage());
                     } else {
                         messageLogger.error(result.getMessage());
                     }

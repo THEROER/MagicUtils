@@ -11,6 +11,7 @@ import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
+import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -366,9 +367,9 @@ public final class CommandRegistry {
             CommandResult result = commandManager.execute(label, source, args);
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
-                    messageLogger.success().to(source).send(result.getMessage());
+                    messageLogger.success().target(LogTarget.CHAT).to(source).send(result.getMessage());
                 } else {
-                    messageLogger.error().toError(source).send(result.getMessage());
+                    messageLogger.error().target(LogTarget.CHAT).toError(source).send(result.getMessage());
                 }
             }
             return result.isSuccess() ? 1 : 0;
@@ -382,14 +383,20 @@ public final class CommandRegistry {
 
     private CompletableFuture<Suggestions> suggest(String label, ServerCommandSource source,
             SuggestionsBuilder builder) {
-        List<String> args = parseArgsForSuggestions(builder.getRemaining());
+        String input = builder.getInput();
+        int start = builder.getStart();
+        String remaining = (input != null && start >= 0 && start <= input.length())
+                ? input.substring(start)
+                : builder.getRemaining();
+        List<String> args = parseArgsForSuggestions(remaining);
+        SuggestionsBuilder offsetBuilder = builder.createOffset(builder.getStart() + findSuggestionOffset(remaining));
         List<String> suggestions = commandManager.getSuggestions(label, source, args);
         for (String suggestion : suggestions) {
             if (suggestion != null && !suggestion.trim().isEmpty()) {
-                builder.suggest(suggestion);
+                offsetBuilder.suggest(suggestion);
             }
         }
-        return builder.buildFuture();
+        return offsetBuilder.buildFuture();
     }
 
     private static List<String> parseArgsForSuggestions(String input) {
@@ -400,6 +407,17 @@ public final class CommandRegistry {
             return new ArrayList<>(List.of(""));
         }
         return new ArrayList<>(Arrays.asList(input.split(" ", -1)));
+    }
+
+    private static int findSuggestionOffset(String remaining) {
+        if (remaining == null || remaining.isEmpty()) {
+            return 0;
+        }
+        int lastSpace = remaining.lastIndexOf(' ');
+        if (lastSpace >= 0) {
+            return lastSpace + 1;
+        }
+        return 0;
     }
 
     private static List<String> parseArgsForExecution(String input) {

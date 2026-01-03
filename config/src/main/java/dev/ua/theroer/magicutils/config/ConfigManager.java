@@ -53,14 +53,18 @@ public class ConfigManager {
     private final Map<Object, ConfigKey> instanceIndex = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> primaryInstances = new ConcurrentHashMap<>();
     private final Map<Class<?>, List<BiConsumer<Object, Set<String>>>> changeListeners = new ConcurrentHashMap<>();
+    private final Map<Class<?>, MigrationChain> migrationChains = new ConcurrentHashMap<>();
 
     private final Map<Path, Set<ConfigKey>> fileIndex = new ConcurrentHashMap<>();
     private final Map<Path, WatchKey> directoryWatchKeys = new ConcurrentHashMap<>();
     private final Map<Path, Integer> directoryRefCounts = new ConcurrentHashMap<>();
     private WatchService watchService;
     private ExecutorService watcherExecutor;
+    private volatile boolean watchServiceUnavailable = false;
+    private volatile boolean watchServiceWarned = false;
     private volatile boolean shuttingDown = false;
     private static final String EXT_TOKEN = "{ext}";
+    private static final String MIGRATION_VERSION_KEY = "config-version";
     private static final String GLOBAL_FORMAT_FILE = "magicutils.format";
     private static final String GLOBAL_FORMAT_PROPERTY = "magicutils.config.format";
     private static final String GLOBAL_FORMAT_ENV = "MAGICUTILS_CONFIG_FORMAT";
@@ -116,19 +120,21 @@ public class ConfigManager {
             }
 
             T instance = configClass.getDeclaredConstructor().newInstance();
+            LoadResult loadResult;
             if (formatDecision.sourcePath() != null) {
                 ConfigMetadata sourceMetadata = new ConfigMetadata(formatDecision.sourcePath(), configFile.autoCreate(),
                         configFile.template(), platform.configDir());
-                loadConfig(instance, sourceMetadata);
-                saveConfigToFile(instance, metadata);
+                loadResult = loadConfig(instance, sourceMetadata);
+                saveConfigToFile(instance, metadata, loadResult.schemaVersion());
                 logger.info("Migrated config " + sourceMetadata.getFilePath()
                         + " -> " + metadata.getFilePath());
             } else {
-                loadConfig(instance, metadata);
+                loadResult = loadConfig(instance, metadata);
             }
 
             ConfigEntry<T> entry = new ConfigEntry<>(key, instance, metadata,
                     platform.configDir().resolve(metadata.getFilePath()).toFile());
+            entry.schemaVersion = loadResult.schemaVersion();
             entry.refreshLastModified();
 
             configs.put(key, entry);
@@ -143,6 +149,36 @@ public class ConfigManager {
             logger.error("Failed to register config: " + configClass.getName(), e);
             throw new RuntimeException("Failed to register config", e);
         }
+    }
+
+    /**
+     * Registers migrations for a config class.
+     *
+     * @param configClass config type to associate with migrations
+     * @param migrations migration steps
+     */
+    public void registerMigrations(Class<?> configClass, ConfigMigration... migrations) {
+        if (configClass == null || migrations == null) {
+            return;
+        }
+        MigrationChain chain = migrationChains.computeIfAbsent(configClass, k -> new MigrationChain());
+        for (ConfigMigration migration : migrations) {
+            chain.register(migration, logger);
+        }
+    }
+
+    /**
+     * Registers a single migration for a config class.
+     *
+     * @param configClass config type to associate with migration
+     * @param migration migration step
+     */
+    public void registerMigration(Class<?> configClass, ConfigMigration migration) {
+        if (configClass == null || migration == null) {
+            return;
+        }
+        MigrationChain chain = migrationChains.computeIfAbsent(configClass, k -> new MigrationChain());
+        chain.register(migration, logger);
     }
 
     /**
@@ -218,15 +254,101 @@ public class ConfigManager {
         }
     }
 
-    private <T> void loadConfig(T instance, ConfigMetadata metadata) throws Exception {
+    private <T> LoadResult loadConfig(T instance, ConfigMetadata metadata) throws Exception {
         File configFile = metadata.resolveFile(platform.configDir());
+        boolean created = false;
 
         if (!configFile.exists() && metadata.isAutoCreate()) {
             createDefaultConfig(instance, configFile, metadata);
+            created = true;
         }
 
         ConfigDocument document = ConfigDocument.load(configFile);
+        MigrationResult migrationResult = applyMigrations(instance.getClass(), document, created);
         processFields(instance, document, instance.getClass());
+        if (migrationResult.shouldSave()) {
+            saveConfigToFile(instance, metadata, migrationResult.schemaVersion());
+        }
+        return new LoadResult(migrationResult.schemaVersion(), migrationResult.migrated());
+    }
+
+    private MigrationResult applyMigrations(Class<?> configClass, ConfigDocument document, boolean createdNew) {
+        MigrationChain chain = migrationChains.get(configClass);
+        if (chain == null || chain.isEmpty()) {
+            return new MigrationResult(null, false, false);
+        }
+        Map<String, Object> data = document.data;
+        String rawVersion = normalizeVersion(data.get(MIGRATION_VERSION_KEY));
+        boolean versionMissing = rawVersion == null;
+        String currentVersion = versionMissing ? "0" : rawVersion;
+        boolean migrated = false;
+        boolean changed = false;
+        Set<String> visited = new HashSet<>();
+
+        while (true) {
+            if (!visited.add(currentVersion)) {
+                logger.warn("Config migration cycle detected for " + configClass.getSimpleName()
+                        + " at version " + currentVersion);
+                break;
+            }
+            ConfigMigration migration = chain.byFrom.get(currentVersion);
+            if (migration == null) {
+                break;
+            }
+            migration.migrate(data);
+            String nextVersion = normalizeVersion(migration.toVersion());
+            if (nextVersion == null) {
+                logger.warn("Migration from " + currentVersion + " returned empty target version for "
+                        + configClass.getSimpleName());
+                break;
+            }
+            currentVersion = nextVersion;
+            migrated = true;
+            changed = true;
+        }
+
+        if (migrated) {
+            data.put(MIGRATION_VERSION_KEY, currentVersion);
+        } else if (versionMissing && createdNew && chain.latestVersion != null) {
+            currentVersion = chain.latestVersion;
+            data.put(MIGRATION_VERSION_KEY, currentVersion);
+            changed = true;
+        } else if (versionMissing && !createdNew && chain.latestVersion != null) {
+            logger.warn("Config " + configClass.getSimpleName() + " is missing " + MIGRATION_VERSION_KEY
+                    + ". Add a migration from version 0 or set the version explicitly.");
+        } else if (rawVersion != null && chain.latestVersion != null && !rawVersion.equals(chain.latestVersion)) {
+            logger.warn("Config " + configClass.getSimpleName() + " is at version " + rawVersion
+                    + " but latest is " + chain.latestVersion + ". Missing migration?");
+        }
+
+        return new MigrationResult(currentVersion, changed, migrated);
+    }
+
+    private void applySchemaVersion(ConfigDocument document, String schemaVersion) {
+        if (document == null) {
+            return;
+        }
+        String normalized = normalizeVersion(schemaVersion);
+        if (normalized == null) {
+            return;
+        }
+        document.set(MIGRATION_VERSION_KEY, normalized, null);
+    }
+
+    private static String normalizeVersion(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof Number number) {
+            long asLong = number.longValue();
+            double asDouble = number.doubleValue();
+            if (asDouble == (double) asLong) {
+                return String.valueOf(asLong);
+            }
+            return String.valueOf(asDouble);
+        }
+        String value = String.valueOf(raw).trim();
+        return value.isEmpty() ? null : value;
     }
 
     private static void ensureParentDirectory(File file) throws IOException {
@@ -1145,9 +1267,10 @@ public class ConfigManager {
         }
     }
 
-    private void saveConfigToFile(Object instance, ConfigMetadata metadata) throws Exception {
+    private void saveConfigToFile(Object instance, ConfigMetadata metadata, String schemaVersion) throws Exception {
         ConfigDocument document = ConfigDocument.empty();
         saveFields(instance, document, instance.getClass(), "");
+        applySchemaVersion(document, schemaVersion);
         File file = metadata.resolveFile(platform.configDir());
         ensureParentDirectory(file);
         document.save(file);
@@ -1312,6 +1435,7 @@ public class ConfigManager {
 
                 ConfigDocument document = ConfigDocument.empty();
                 saveFields(entry.instance, document, entry.instance.getClass(), "");
+                applySchemaVersion(document, entry.schemaVersion);
 
                 ensureParentDirectory(entry.file);
                 document.save(entry.file);
@@ -1327,7 +1451,8 @@ public class ConfigManager {
         synchronized (entry.monitor) {
             try {
                 long beforeReload = entry.file.exists() ? entry.file.lastModified() : -1L;
-                loadConfig(entry.instance, entry.metadata);
+                LoadResult loadResult = loadConfig(entry.instance, entry.metadata);
+                entry.schemaVersion = loadResult.schemaVersion();
 
                 entry.lastModified.set(beforeReload);
                 entry.refreshLastModified();
@@ -1342,6 +1467,9 @@ public class ConfigManager {
     }
 
     private void registerWatcher(ConfigEntry<?> entry) {
+        if (watchServiceUnavailable) {
+            return;
+        }
         File file = entry.file;
         Path filePath = file.toPath().toAbsolutePath();
         Path directory = filePath.getParent();
@@ -1368,7 +1496,12 @@ public class ConfigManager {
             startWatcherThread();
 
         } catch (IOException e) {
-            logger.error("Failed to register config watcher for " + entry.metadata.getFilePath(), e);
+            watchServiceUnavailable = true;
+            if (!watchServiceWarned) {
+                watchServiceWarned = true;
+                logger.warn("Failed to register config watcher (disabling realtime reload): "
+                        + entry.metadata.getFilePath(), e);
+            }
         }
     }
 
@@ -1494,6 +1627,69 @@ public class ConfigManager {
         }
     }
 
+    private record LoadResult(String schemaVersion, boolean migrated) {
+    }
+
+    private record MigrationResult(String schemaVersion, boolean shouldSave, boolean migrated) {
+    }
+
+    private static final class MigrationChain {
+        private final Map<String, ConfigMigration> byFrom = new LinkedHashMap<>();
+        private String latestVersion;
+
+        private boolean isEmpty() {
+            return byFrom.isEmpty();
+        }
+
+        private void register(ConfigMigration migration, PlatformLogger logger) {
+            if (migration == null) {
+                return;
+            }
+            String from = normalizeVersion(migration.fromVersion());
+            String to = normalizeVersion(migration.toVersion());
+            if (from == null || to == null) {
+                if (logger != null) {
+                    logger.warn("Skipping migration with empty version identifiers: " + migration.getClass().getName());
+                }
+                return;
+            }
+            if (byFrom.containsKey(from) && logger != null) {
+                logger.warn("Replacing migration for version " + from + " with " + migration.getClass().getName());
+            }
+            byFrom.put(from, migration);
+            recomputeLatest(logger);
+        }
+
+        private void recomputeLatest(PlatformLogger logger) {
+            if (byFrom.isEmpty()) {
+                latestVersion = null;
+                return;
+            }
+            Set<String> fromVersions = new LinkedHashSet<>(byFrom.keySet());
+            Set<String> toVersions = new LinkedHashSet<>();
+            for (ConfigMigration migration : byFrom.values()) {
+                String to = normalizeVersion(migration.toVersion());
+                if (to != null) {
+                    toVersions.add(to);
+                }
+            }
+            Set<String> endCandidates = new LinkedHashSet<>(toVersions);
+            endCandidates.removeAll(fromVersions);
+            if (endCandidates.size() == 1) {
+                latestVersion = endCandidates.iterator().next();
+                return;
+            }
+            if (!toVersions.isEmpty()) {
+                latestVersion = new ArrayList<>(toVersions).get(toVersions.size() - 1);
+                if (logger != null && endCandidates.size() > 1) {
+                    logger.warn("Multiple migration endpoints detected. Using version " + latestVersion);
+                }
+                return;
+            }
+            latestVersion = null;
+        }
+    }
+
     private static final class ConfigKey {
         private final Class<?> configClass;
         private final String filePath;
@@ -1525,6 +1721,7 @@ public class ConfigManager {
         private final T instance;
         private final ConfigMetadata metadata;
         private final File file;
+        private String schemaVersion;
         private final Object monitor = new Object();
         private final AtomicBoolean reloadScheduled = new AtomicBoolean(false);
         private final AtomicLong lastModified = new AtomicLong(-1L);
@@ -2121,7 +2318,7 @@ public class ConfigManager {
         }
 
         boolean isAvailable() {
-            return requiredClass == null || isClassPresent(requiredClass);
+            return requiredClass == null || isClassPresent(resolveJacksonClass(requiredClass));
         }
 
         String unavailableMessage() {
@@ -2191,6 +2388,17 @@ public class ConfigManager {
             return YAML.isAvailable() ? YAML : JSONC;
         }
 
+        private static String resolveJacksonClass(String className) {
+            if (className == null) {
+                return null;
+            }
+            String relocated = className.replace("com.fasterxml.jackson.", "dev.ua.theroer.magicutils.libs.jackson.");
+            if (!relocated.equals(className) && isClassPresent(relocated)) {
+                return relocated;
+            }
+            return className;
+        }
+
         private static boolean isClassPresent(String name) {
             try {
                 Class.forName(name, false, ConfigManager.class.getClassLoader());
@@ -2231,7 +2439,7 @@ public class ConfigManager {
 
         private static JsonFactory buildYamlFactory() {
             try {
-                Class<?> factoryClass = Class.forName("com.fasterxml.jackson.dataformat.yaml.YAMLFactory");
+                Class<?> factoryClass = Class.forName(resolveJacksonClass("com.fasterxml.jackson.dataformat.yaml.YAMLFactory"));
                 Object builder = invokeStatic(factoryClass, "builder");
                 if (builder != null) {
                     disableYamlDocStart(builder);
@@ -2249,7 +2457,7 @@ public class ConfigManager {
 
         private static JsonFactory buildFactory(String className) {
             try {
-                Class<?> factoryClass = Class.forName(className);
+                Class<?> factoryClass = Class.forName(resolveJacksonClass(className));
                 Object factory = factoryClass.getDeclaredConstructor().newInstance();
                 return (JsonFactory) factory;
             } catch (ReflectiveOperationException e) {
@@ -2282,7 +2490,7 @@ public class ConfigManager {
                 return;
             }
             try {
-                Class<?> featureClass = Class.forName("com.fasterxml.jackson.dataformat.yaml.YAMLGenerator$Feature");
+                Class<?> featureClass = Class.forName(resolveJacksonClass("com.fasterxml.jackson.dataformat.yaml.YAMLGenerator$Feature"));
                 Object feature = Enum.valueOf((Class<Enum>) featureClass, "WRITE_DOC_START_MARKER");
                 builder.getClass().getMethod("disable", featureClass).invoke(builder, feature);
             } catch (ReflectiveOperationException | RuntimeException ignored) {

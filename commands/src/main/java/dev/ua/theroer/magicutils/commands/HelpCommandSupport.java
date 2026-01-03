@@ -5,6 +5,7 @@ import dev.ua.theroer.magicutils.config.logger.HelpSettings;
 import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.logger.LogBuilderCore;
 import dev.ua.theroer.magicutils.logger.LogLevel;
+import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.logger.MessageParser;
 import dev.ua.theroer.magicutils.platform.Audience;
@@ -82,6 +83,7 @@ public final class HelpCommandSupport {
                         .build())
                 .argument(CommandArgument.builder("subcommand", String.class)
                         .optional()
+                        .greedy()
                         .build())
                 .execute(execution -> {
                     MagicSender sender = execution.arg("sender", MagicSender.class);
@@ -97,10 +99,14 @@ public final class HelpCommandSupport {
                     String rootCommand = info != null ? info.name() : execution.commandName();
                     String helpCommand = rootCommand + " " + helpNameFinal;
 
-                    if (commandName != null && subCommand == null && manager != null
-                            && findSubCommand(manager, execution.command(), commandName) != null) {
-                        subCommand = commandName;
-                        commandName = rootCommand;
+                    if (commandName != null && manager != null) {
+                        String candidate = subCommand != null && !subCommand.isBlank()
+                                ? commandName + " " + subCommand
+                                : commandName;
+                        if (findSubCommand(manager, execution.command(), candidate) != null) {
+                            subCommand = candidate;
+                            commandName = rootCommand;
+                        }
                     }
 
                     HelpResult result = build(manager, commandName, subCommand, helpCommand, logger, sender);
@@ -262,14 +268,10 @@ public final class HelpCommandSupport {
         if (manager == null || command == null || name == null || name.isEmpty()) {
             return null;
         }
+        List<String> segments = splitSubCommandPath(name);
         for (CommandManager.CommandAction<?> sub : getSubCommandActions(manager, command)) {
-            if (sub.name().equalsIgnoreCase(name)) {
+            if (matchesSubCommandPath(sub, segments)) {
                 return sub;
-            }
-            for (String alias : sub.aliases()) {
-                if (alias.equalsIgnoreCase(name)) {
-                    return sub;
-                }
             }
         }
         return null;
@@ -336,12 +338,13 @@ public final class HelpCommandSupport {
             lines.add(color(style.mutedTag(), "Subcommands:"));
             for (int i = 0; i < allowedSubs.size(); i++) {
                 CommandManager.CommandAction<?> sub = allowedSubs.get(i);
+                String subPath = sub.fullPath();
                 List<CommandArgument> subArgs = filterVisibleArguments(manager, sender, baseCommandName,
-                        sub.name(), sub.arguments());
-                String subUsage = styleUsage(buildUsage(manager, info, sub.name(), subArgs), style);
+                        subPath, sub.arguments());
+                String subUsage = styleUsage(buildUsage(manager, info, subPath, subArgs), style);
                 String prefix = i == allowedSubs.size() - 1 ? "`-" : "|-";
                 String hover = hoverText(sub.description());
-                String click = buildHelpCommand(context, info.name(), sub.name());
+                String click = buildHelpCommand(context, info.name(), subPath);
                 String line = color(style.mutedTag(), prefix + " ")
                         + clickable(subUsage, hover, click, style);
                 lines.add(line);
@@ -356,9 +359,10 @@ public final class HelpCommandSupport {
                                                        MagicSender sender, String baseCommandName) {
         List<String> lines = new ArrayList<>();
         List<CommandArgument> args = subInfo != null ? subInfo.arguments() : List.of();
+        String subPath = subInfo != null ? subInfo.fullPath() : null;
         List<CommandArgument> visibleArgs = filterVisibleArguments(manager, sender, baseCommandName,
-                subInfo != null ? subInfo.name() : null, args);
-        String usage = buildUsage(manager, info, subInfo != null ? subInfo.name() : null, visibleArgs);
+                subPath, args);
+        String usage = buildUsage(manager, info, subPath, visibleArgs);
         lines.add(color(style.mutedTag(), "Command: ") + color(style.textTag(), styleUsage(usage, style)));
         lines.add(color(style.mutedTag(), "Description: ") + color(style.textTag(),
                 safeDescription(subInfo != null ? subInfo.description() : "")));
@@ -366,7 +370,7 @@ public final class HelpCommandSupport {
         if (!aliases.isEmpty()) {
             lines.add(color(style.mutedTag(), "Aliases: ") + color(style.textTag(), joinValues(aliases)));
         }
-        appendArguments(lines, args, manager, style, sender, baseCommandName, subInfo != null ? subInfo.name() : null);
+        appendArguments(lines, args, manager, style, sender, baseCommandName, subPath);
         return lines;
     }
 
@@ -431,10 +435,11 @@ public final class HelpCommandSupport {
                 if (!canViewSubCommand(manager, sender, baseCommandName, sub)) {
                     continue;
                 }
+                String subPath = sub.fullPath();
                 List<CommandArgument> subArgs = filterVisibleArguments(manager, sender, baseCommandName,
-                        sub.name(), sub.arguments());
-                String usage = buildUsage(manager, info, sub.name(), subArgs);
-                entries.add(new HelpEntry(usage, sub.description(), info.name(), sub.name(),
+                        subPath, sub.arguments());
+                String usage = buildUsage(manager, info, subPath, subArgs);
+                entries.add(new HelpEntry(usage, sub.description(), info.name(), subPath,
                         normalizeAliases(sub.aliases())));
             }
         }
@@ -616,9 +621,9 @@ public final class HelpCommandSupport {
             return true;
         }
         String permission = manager.resolvePermission(subInfo.permission(),
-                "commands." + baseCommandName + ".subcommand." + subInfo.name());
+                "commands." + baseCommandName + ".subcommand." + subInfo.permissionSegment());
         return manager.hasPermissionForHelp(sender, permission, subInfo.permissionDefault(), subInfo.description())
-                || hasArgumentPermissionOverride(manager, sender, baseCommandName, subInfo.name());
+                || hasArgumentPermissionOverride(manager, sender, baseCommandName, subInfo.fullPath());
     }
 
     private static List<CommandManager.CommandAction<?>> filterSubCommands(CommandManager<?> manager,
@@ -693,12 +698,49 @@ public final class HelpCommandSupport {
             return false;
         }
         String prefix = "commands." + baseCommandName;
-        if (subCommandName != null && !subCommandName.isEmpty()) {
-            prefix += ".subcommand." + subCommandName;
+        String normalized = normalizeSubCommandSegment(subCommandName);
+        if (!normalized.isEmpty()) {
+            prefix += ".subcommand." + normalized;
         }
         String argPrefix = manager.resolvePermission(null, prefix + ".argument");
         String argPrefixNoSegment = manager.resolvePermission(null, prefix);
         return manager.hasPermissionByPrefixForHelp(sender, argPrefix, argPrefixNoSegment);
+    }
+
+    private static String normalizeSubCommandSegment(String subCommandName) {
+        if (subCommandName == null) {
+            return "";
+        }
+        String trimmed = subCommandName.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        return trimmed.replaceAll("\\s+", ".");
+    }
+
+    private static List<String> topLevelSubNames(List<CommandManager.CommandAction<?>> subs) {
+        if (subs == null || subs.isEmpty()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (CommandManager.CommandAction<?> sub : subs) {
+            if (sub == null) {
+                continue;
+            }
+            List<String> path = sub.path();
+            if (path != null && !path.isEmpty()) {
+                String first = path.get(0);
+                if (first != null && !first.isBlank() && !result.contains(first)) {
+                    result.add(first);
+                    continue;
+                }
+            }
+            String name = sub.name();
+            if (name != null && !name.isBlank() && !result.contains(name)) {
+                result.add(name);
+            }
+        }
+        return result;
     }
 
     private static String buildCommandUsage(CommandManager<?> manager, CommandInfo info,
@@ -712,8 +754,7 @@ public final class HelpCommandSupport {
         }
         String subsUsage = null;
         if (allowedSubs != null && !allowedSubs.isEmpty()) {
-            String joined = allowedSubs.stream()
-                    .map(CommandManager.CommandAction::name)
+            String joined = topLevelSubNames(allowedSubs).stream()
                     .collect(java.util.stream.Collectors.joining(" | "));
             subsUsage = base + " <" + joined + ">";
         }
@@ -761,11 +802,41 @@ public final class HelpCommandSupport {
     }
 
     private static String argumentLabel(CommandArgument argument) {
+        if (argument == null) {
+            return "";
+        }
+        String valueLabel = argumentValueLabel(argument);
+        if (argument.isOption()) {
+            String optionNames = optionNamesLabel(argument);
+            if (argument.isFlag()) {
+                return optionNames;
+            }
+            return optionNames + " <" + valueLabel + ">";
+        }
+        return valueLabel;
+    }
+
+    private static String argumentValueLabel(CommandArgument argument) {
         String name = argument.getName();
         if (name != null && !name.isEmpty()) {
             return name;
         }
         return argument.getType().getSimpleName().toLowerCase(Locale.ROOT);
+    }
+
+    private static String optionNamesLabel(CommandArgument argument) {
+        List<String> tokens = new ArrayList<>();
+        for (String longName : argument.getLongOptionNames()) {
+            tokens.add("--" + longName);
+        }
+        for (String shortName : argument.getShortOptionNames()) {
+            tokens.add("-" + shortName);
+        }
+        if (tokens.isEmpty()) {
+            String name = argument.getName();
+            return name != null ? name : "";
+        }
+        return String.join(", ", tokens);
     }
 
     private static List<String> normalizeAliases(String[] aliases) {
@@ -901,7 +972,11 @@ public final class HelpCommandSupport {
         Audience audience = sender.audience();
         for (String line : lines) {
             if (logger != null) {
-                new LogBuilderCore(logger, LogLevel.INFO).noPrefix().to(audience).send(line);
+                new LogBuilderCore(logger, LogLevel.INFO)
+                        .noPrefix()
+                        .target(LogTarget.CHAT)
+                        .to(audience)
+                        .send(line);
             } else if (audience != null) {
                 audience.send(MessageParser.parseSmart(line));
             }
@@ -953,6 +1028,61 @@ public final class HelpCommandSupport {
         escaped = escaped.replace("\"", "\\\"");
         escaped = escaped.replace("<", "\\<").replace(">", "\\>");
         return escaped;
+    }
+
+    private static List<String> splitSubCommandPath(String raw) {
+        if (raw == null) {
+            return List.of();
+        }
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return List.of();
+        }
+        String[] parts = trimmed.split("\\s+");
+        List<String> result = new ArrayList<>();
+        for (String part : parts) {
+            if (part == null || part.isBlank()) {
+                continue;
+            }
+            result.add(part.trim());
+        }
+        return result;
+    }
+
+    private static boolean matchesSubCommandPath(CommandManager.CommandAction<?> sub, List<String> segments) {
+        if (sub == null || segments == null || segments.isEmpty()) {
+            return false;
+        }
+        List<String> full = sub.fullPathSegments();
+        if (full.size() != segments.size()) {
+            return false;
+        }
+        int lastIndex = full.size() - 1;
+        for (int i = 0; i < full.size(); i++) {
+            String expected = full.get(i);
+            String actual = segments.get(i);
+            if (expected == null || actual == null) {
+                return false;
+            }
+            if (i == lastIndex) {
+                if (expected.equalsIgnoreCase(actual)) {
+                    continue;
+                }
+                boolean aliasMatch = false;
+                for (String alias : sub.aliases()) {
+                    if (alias != null && alias.equalsIgnoreCase(actual)) {
+                        aliasMatch = true;
+                        break;
+                    }
+                }
+                if (!aliasMatch) {
+                    return false;
+                }
+            } else if (!expected.equalsIgnoreCase(actual)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String normalizeTag(String tag, String fallback) {
