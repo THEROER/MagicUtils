@@ -131,7 +131,7 @@ subprojects {
                         from components.java
                     }
                 }
-                if (project.name != 'processor') {
+                if (project.name != 'processor' && !project.hasProperty('skip_shadow_publish')) {
                     register('mavenShadow', MavenPublication) {
                         artifactId = "${moduleName}-all"
                         artifact tasks.named('shadowJar')
