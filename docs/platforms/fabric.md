@@ -25,6 +25,14 @@ You can pass a custom op level via `CommandRegistry.initialize(..., opLevel)`.
 Fabric permissions integrate with `fabric-permissions-api-v0` when installed.
 If no permission provider exists, MagicUtils falls back to op-level checks.
 
+## Placeholders
+
+Fabric placeholder support is optional and activates automatically when
+placeholder mods are present:
+
+- [Text Placeholder API](https://modrinth.com/mod/placeholder-api)
+- [MiniPlaceholders](https://modrinth.com/mod/miniplaceholders)
+
 ## Config format
 
 Default config format on Fabric is JSONC. You can override it via

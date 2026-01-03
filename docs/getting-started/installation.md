@@ -94,6 +94,9 @@ dependencies {
 If you pick the shared bundle, add the `magicutils-fabric-bundle` mod to the
 server `mods` folder and do not embed it inside other mods.
 
+You can download the bundle from the Maven repository:
+[`magicutils-fabric-bundle-{{ magicutils_version }}.jar`](https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/magicutils-fabric-bundle/{{ magicutils_version }}/magicutils-fabric-bundle-{{ magicutils_version }}.jar)
+
 You can also add a dependency in your `fabric.mod.json`:
 
 ```json

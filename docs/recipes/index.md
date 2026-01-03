@@ -9,6 +9,9 @@ installing the standalone bundle on the server.
 
 Install `magicutils-fabric-bundle` in `mods/` and use `modImplementation` only.
 
+Download link:
+[`magicutils-fabric-bundle-{{ magicutils_version }}.jar`](https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/magicutils-fabric-bundle/{{ magicutils_version }}/magicutils-fabric-bundle-{{ magicutils_version }}.jar)
+
 ## Add help as a subcommand
 
 ```java

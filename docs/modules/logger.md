@@ -75,5 +75,19 @@ Attach a `LanguageManager` to enable auto-localisation:
 logger.setLanguageManager(languageManager);
 ```
 
-On Bukkit, the logger automatically bridges MagicPlaceholders to PlaceholderAPI
-when it is installed.
+When `auto-localization` is enabled (default), any message that starts with
+`@` is treated as a language key:
+
+```java
+logger.info("@myplugin.ready");
+```
+
+The key is resolved via `LanguageManager` and then rendered as MiniMessage.
+You can toggle this in `logger.yml` (`auto-localization`).
+
+On Bukkit, the logger automatically bridges MagicPlaceholders to
+[PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) when it is
+installed. On Fabric, MagicPlaceholders are bridged to
+[Text Placeholder API](https://modrinth.com/mod/placeholder-api) and
+[MiniPlaceholders](https://modrinth.com/mod/miniplaceholders) when those mods
+are present.
