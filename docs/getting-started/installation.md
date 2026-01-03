@@ -13,7 +13,10 @@ MagicUtils is published as multiple artifacts. Pick only what you need.
 ## Bukkit/Paper
 
 ```kotlin
-repositories { mavenLocal() }
+repositories {
+    mavenLocal()
+    maven("https://theroer.github.io/MagicUtils/maven/")
+}
 
 dependencies {
     implementation("dev.ua.theroer:magicutils-bukkit:<version>")
@@ -33,6 +36,11 @@ You have two options:
 ### Embed the bundle inside your mod
 
 ```kotlin
+repositories {
+    mavenLocal()
+    maven("https://theroer.github.io/MagicUtils/maven/")
+}
+
 dependencies {
     modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:<version>"))
     modCompileOnly("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
@@ -43,6 +51,11 @@ dependencies {
 ### Depend on a shared bundle mod
 
 ```kotlin
+repositories {
+    mavenLocal()
+    maven("https://theroer.github.io/MagicUtils/maven/")
+}
+
 dependencies {
     modImplementation("dev.ua.theroer:magicutils-fabric-bundle:<version>:dev")
 }
@@ -54,7 +67,10 @@ server and do not embed it inside other mods.
 ## NeoForge
 
 ```kotlin
-repositories { mavenLocal() }
+repositories {
+    mavenLocal()
+    maven("https://theroer.github.io/MagicUtils/maven/")
+}
 
 dependencies {
     implementation("dev.ua.theroer:magicutils-neoforge:<version>")

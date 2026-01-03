@@ -141,6 +141,17 @@ subprojects {
         }
     }
 
+    publishing {
+        repositories {
+            if (project.hasProperty('publish_repo')) {
+                maven {
+                    name = 'ghPages'
+                    url = uri(project.property('publish_repo'))
+                }
+            }
+        }
+    }
+
     tasks.withType(PublishToMavenLocal).configureEach {
         dependsOn tasks.named('shadowJar')
     }
