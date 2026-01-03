@@ -1,6 +1,6 @@
 # MagicUtils
 
-MagicUtils is a modular toolkit for Bukkit/Paper, Fabric, and NeoForge. It
+MagicUtils is a modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge. It
 provides shared building blocks for configuration, localisation, commands,
 logging, placeholders, and platform adapters.
 
@@ -20,7 +20,7 @@ logging, placeholders, and platform adapters.
 | Core stack | `magicutils-core` | Logger + commands + config + lang + placeholders. |
 | Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders` | Mix and match. |
 | Format helpers | `magicutils-config-yaml`, `magicutils-config-toml` | Enable extra config formats. |
-| Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-neoforge` | Wire MagicUtils to a runtime. |
+| Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge` | Wire MagicUtils to a runtime. |
 | Fabric extras | `magicutils-commands-fabric`, `magicutils-logger-fabric`, `magicutils-placeholders-fabric`, `magicutils-fabric-bundle` | Brigadier integration and jar-in-jar bundle. |
 
 ## Quick start
@@ -58,6 +58,13 @@ repositories {
     ```kotlin
     dependencies {
         implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
+    }
+    ```
+
+=== "Velocity"
+    ```kotlin
+    dependencies {
+        implementation("dev.ua.theroer:magicutils-velocity:{{ magicutils_version }}")
     }
     ```
 

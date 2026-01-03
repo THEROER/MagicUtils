@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':core')
+    compileOnly 'com.velocitypowered:velocity-api:3.3.0'
+    compileOnly 'org.slf4j:slf4j-api:2.0.13'
+    compileOnly 'org.jetbrains:annotations:24.0.1'
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+}

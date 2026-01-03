@@ -68,6 +68,7 @@ dependencies {
 - Logger: `magicutils-logger`
 - Placeholders: `magicutils-placeholders`
 - Platform adapters: `magicutils-bukkit`, `magicutils-fabric`, `magicutils-neoforge`
+- Velocity adapter: `magicutils-velocity`
 - Fabric bundle: `magicutils-fabric-bundle`
 
 ## Quickstart

@@ -144,6 +144,16 @@ dependencies {
 }
 ```
 
+## Velocity
+
+The Velocity adapter provides config + logger + lang support.
+
+```kotlin
+dependencies {
+    implementation("dev.ua.theroer:magicutils-velocity:{{ magicutils_version }}")
+}
+```
+
 ## Optional format helpers
 
 - `magicutils-config-yaml` enables YAML support.

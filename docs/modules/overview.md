@@ -25,6 +25,7 @@ NeoForge.
 | --- | --- | --- |
 | Bukkit/Paper | `magicutils-bukkit` | Includes core modules + Bukkit integrations. |
 | Fabric | `magicutils-fabric` | Platform API adapter for Fabric. |
+| Velocity | `magicutils-velocity` | Minimal platform adapter for Velocity. |
 | NeoForge | `magicutils-neoforge` | Platform API adapter for NeoForge. |
 
 ## Fabric integrations
