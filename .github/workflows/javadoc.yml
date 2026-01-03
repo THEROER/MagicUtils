@@ -46,8 +46,7 @@ jobs:
 
       - name: Build Javadoc
         run: |
-          chmod +x ./gradlew
-          ./gradlew javadoc
+          bash ./gradlew javadoc
           OUT="$RUNNER_TEMP/javadoc"
           rm -rf "$OUT"
           mkdir -p "$OUT"
