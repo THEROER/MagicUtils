@@ -29,8 +29,8 @@ jobs:
             echo "Unable to determine version." >&2
             exit 1
           fi
-          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-            echo "Tag v${VERSION} already exists." >&2
+          if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q "refs/tags/v${VERSION}"; then
+            echo "Tag v${VERSION} already exists on origin." >&2
             exit 1
           fi
           git tag "v${VERSION}"
