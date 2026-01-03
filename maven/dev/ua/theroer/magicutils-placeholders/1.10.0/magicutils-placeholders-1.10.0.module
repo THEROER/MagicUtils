@@ -37,10 +37,10 @@
           "name": "magicutils-placeholders-1.10.0.jar",
           "url": "magicutils-placeholders-1.10.0.jar",
           "size": 8537,
-          "sha512": "19e627749a9ddc9e0d7e963fccda2050211f7824fd5dba505e9b28fa4c6117fd7dc1f41ce3160e96bd9e0243f0a135a2a33fba583c4103bb7a371ea6a3f7a66d",
-          "sha256": "d3ec330751df518f8ec2498b6f1fe7a819e04faf575356ece90868f74daf4b79",
-          "sha1": "57cdf32a0510e14f0d404e25a370e0c52a5640c6",
-          "md5": "6e509a5e2e74fa342da2c1468fa97620"
+          "sha512": "8cd969c4c317008dd982889d58c461282f44b2b37f400f5d2796f680aaf062876fc80173bb5a4c4718603ae3d1a89c11e514ad9222a8e4322bab601c4e35df90",
+          "sha256": "7d8b1bd42eb4a70f80c574461841d52c868b4a3069e908b03cd34786e4f74cda",
+          "sha1": "59dc2a6693284ce2b60d0409ab4593cf3f265aea",
+          "md5": "55ff5d790efb1df689f2c0a758ef51fd"
         }
       ]
     },
@@ -67,10 +67,10 @@
           "name": "magicutils-placeholders-1.10.0.jar",
           "url": "magicutils-placeholders-1.10.0.jar",
           "size": 8537,
-          "sha512": "19e627749a9ddc9e0d7e963fccda2050211f7824fd5dba505e9b28fa4c6117fd7dc1f41ce3160e96bd9e0243f0a135a2a33fba583c4103bb7a371ea6a3f7a66d",
-          "sha256": "d3ec330751df518f8ec2498b6f1fe7a819e04faf575356ece90868f74daf4b79",
-          "sha1": "57cdf32a0510e14f0d404e25a370e0c52a5640c6",
-          "md5": "6e509a5e2e74fa342da2c1468fa97620"
+          "sha512": "8cd969c4c317008dd982889d58c461282f44b2b37f400f5d2796f680aaf062876fc80173bb5a4c4718603ae3d1a89c11e514ad9222a8e4322bab601c4e35df90",
+          "sha256": "7d8b1bd42eb4a70f80c574461841d52c868b4a3069e908b03cd34786e4f74cda",
+          "sha1": "59dc2a6693284ce2b60d0409ab4593cf3f265aea",
+          "md5": "55ff5d790efb1df689f2c0a758ef51fd"
         }
       ]
     },
@@ -87,10 +87,10 @@
           "name": "magicutils-placeholders-1.10.0-all.jar",
           "url": "magicutils-placeholders-1.10.0-all.jar",
           "size": 500740,
-          "sha512": "a4041a7c4c745856ab0ce1eeae52fa3cdc1dc8622a6fe5858bfc6deb864192e5f21f40fcfd648ff521682d793b93109e0b0a947ee62f51fe5ec80f38976ca769",
-          "sha256": "9ef3938bbd505d4b3dc8fc1735abeffbafb70ea5da16ab63d1c646c39b7017aa",
-          "sha1": "7974ca8d88618fdc0d5bacb0ccd91d38b548486f",
-          "md5": "875484a4f4bf080015030c5ffa7814a7"
+          "sha512": "32a108e5a4ca012a598921e9bb4e1b26824892b864ac4f7878f82a69b27a73f5542de36a1ea71b66a9476349cefadd9e801608b6641c08349047d5d117b77c6a",
+          "sha256": "08a18e4fc04ee739dd76f657a487d422de27f663f898a531790f788c763be115",
+          "sha1": "1366301b4e2033894fb28ebf44fa50586db42116",
+          "md5": "ecc42701f601b73975b2d07bec5ca562"
         }
       ]
     },
@@ -107,10 +107,10 @@
           "name": "magicutils-placeholders-1.10.0-sources.jar",
           "url": "magicutils-placeholders-1.10.0-sources.jar",
           "size": 3448,
-          "sha512": "ed95b9cdb86ff137e28d6c92246590c92c234ddf3b66d670e0116958472370afa2ec30ef68570e54ca6c733ea8c30b59c535960d30feeb08a58567e731a4e9a2",
-          "sha256": "27adbf1257181f6312c3e888ff337c9698643235b4d83d39adc4d1630cafcc5e",
-          "sha1": "16a0d086d76fc28205ad62393ebb48f31fa0e9a7",
-          "md5": "1bc5504964b92ffc4114a1d90d20b728"
+          "sha512": "4afbd6ab2c5d45936ee3fddf13d5edbc8668589d00fa9f6c45dfede2bd9848334e677dc4a06b81d3e2e1cb867f29b1bc9caaafc037310a16e3dbaa8c6d02e8c0",
+          "sha256": "955fcb75ed7f5294b46421ebdce7cae8b292b20f15bc228ad25a9f673602da92",
+          "sha1": "1b4a69d9dc0de27b80642b846a0f6d313bcea0f0",
+          "md5": "6cb240af19158f6117d23a4ded00dab1"
         }
       ]
     },
@@ -127,10 +127,10 @@
           "name": "magicutils-placeholders-1.10.0-javadoc.jar",
           "url": "magicutils-placeholders-1.10.0-javadoc.jar",
           "size": 106655,
-          "sha512": "fb9bb0ac1222a2e91d092da3ebaa2993043d8fd5ecaeed4b2dabae6cd15ed8ac954b874dd8724d4fa073ecaff21d3f61aab3ed7cb36c32423e463a612f82e491",
-          "sha256": "e4738dd4e30cbfe62fc1cab617bc4576f54f0f6b9c31b0d2cfe51b843a8ceeda",
-          "sha1": "a847802dc695de9fe81770c7c21fa106e762407e",
-          "md5": "7224af83caf7fd73cbe20c6ef1cfdc26"
+          "sha512": "a371997e5d8a4059e9e2c73fa94591f8a98995c9272ae55ed5bf4d139cdd9bb9c68820c48b893603e1b6227049fdab9857682b779358ef5566dd510c12fddb6a",
+          "sha256": "b2fc644ddf01cc6bf7844fc389b0c114878128e2645c532100b1bdcba3e6730d",
+          "sha1": "af3263fb75a010d94824801ae9e14afac1c4b1d8",
+          "md5": "f19231b003197c04c2cbd81bcf50cb23"
         }
       ]
     }
