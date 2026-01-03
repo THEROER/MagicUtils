@@ -23,7 +23,7 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            VERSION="$(grep -E '^version=' gradle.properties | head -n 1 | cut -d= -f2-)"
+            VERSION="$(grep -E '^version=' gradle.properties | head -n 1 | cut -d= -f2- | tr -d '[:space:]')"
           fi
           if [ -z "$VERSION" ]; then
             echo "Unable to determine version." >&2
