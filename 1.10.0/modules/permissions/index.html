@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/1.10.0/modules/logger/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/1.10.0/modules/permissions/">
       
       
-        <link rel="prev" href="../overview/">
+        <link rel="prev" href="../commands/">
       
       
-        <link rel="next" href="../logger-config/">
+        <link rel="next" href="../commands-cheatsheet/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Logger - MagicUtils</title>
+        <title>Permissions - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#logger" class="md-skip">
+        <a href="#permissions" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Logger
+              Permissions
             
           </span>
         </div>
@@ -682,37 +682,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logger
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../logger/" class="md-nav__link">
         
   
   
@@ -728,103 +701,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Setup
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prefixed-loggers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prefixed loggers
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#log-builder" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Log builder
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prefix-modes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prefix modes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#logger-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logger configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#localisation-and-placeholders" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Localisation and placeholders
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -890,10 +766,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../permissions/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -909,6 +812,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#permission-prefix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permission prefix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generated-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generated nodes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wildcards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wildcards
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default access
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#argument-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Argument permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conditional-permission-keywords" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional permission keywords
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1367,10 +1367,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#permission-prefix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        Permission prefix
       
     </span>
   </a>
@@ -1378,10 +1378,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#generated-nodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic usage
+        Generated nodes
       
     </span>
   </a>
@@ -1389,10 +1389,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#prefixed-loggers" class="md-nav__link">
+  <a href="#wildcards" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prefixed loggers
+        Wildcards
       
     </span>
   </a>
@@ -1400,10 +1400,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#log-builder" class="md-nav__link">
+  <a href="#default-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Log builder
+        Default access
       
     </span>
   </a>
@@ -1411,10 +1411,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#prefix-modes" class="md-nav__link">
+  <a href="#argument-permissions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prefix modes
+        Argument permissions
       
     </span>
   </a>
@@ -1422,10 +1422,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#logger-configuration" class="md-nav__link">
+  <a href="#conditional-permission-keywords" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Logger configuration
+        Conditional permission keywords
       
     </span>
   </a>
@@ -1433,10 +1433,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#localisation-and-placeholders" class="md-nav__link">
+  <a href="#manual-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Localisation and placeholders
+        Manual checks
       
     </span>
   </a>
@@ -1463,76 +1463,75 @@
   
 
 
-<h1 id="logger">Logger<a class="headerlink" href="#logger" title="Permanent link">&para;</a></h1>
-<p>MagicUtils logger builds on Adventure components and provides a consistent
-API for console and chat output, with optional localisation and placeholders.</p>
-<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
-<p>Use the platform adapter where available:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="n">plugin</span><span class="p">);</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
+<h1 id="permissions">Permissions<a class="headerlink" href="#permissions" title="Permanent link">&para;</a></h1>
+<p>MagicUtils commands generate and check permission nodes automatically. You can
+override any node, control default access, and apply conditional checks for
+arguments.</p>
+<h2 id="permission-prefix">Permission prefix<a class="headerlink" href="#permission-prefix" title="Permanent link">&para;</a></h2>
+<p>Every <code>CommandRegistry.initialize(...)</code> call includes a permission prefix.
+MagicUtils prepends it to all generated nodes.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
 </code></pre></div>
-<p>Fabric uses the same <code>Logger</code> class from <code>magicutils-logger-fabric</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FabricPlatformProvider</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
-</code></pre></div>
-<p>For custom platforms (or NeoForge), use <code>LoggerCore</code> directly.</p>
-<h2 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">warn</span><span class="p">(</span><span class="s">&quot;Slow query detected&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">logger</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="s">&quot;Database unavailable&quot;</span><span class="p">);</span>
-</code></pre></div>
-<p>The logger accepts MiniMessage markup and can route to console, chat, or both.</p>
-<h2 id="prefixed-loggers">Prefixed loggers<a class="headerlink" href="#prefixed-loggers" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">PrefixedLogger</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">withPrefix</span><span class="p">(</span><span class="s">&quot;database&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[DB]&quot;</span><span class="p">);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">db</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Connected&quot;</span><span class="p">);</span>
-</code></pre></div>
-<p>Each prefixed logger has its own entry under <code>sub-loggers</code> in <code>logger.yml</code>
-for enable/disable.</p>
-<h2 id="log-builder">Log builder<a class="headerlink" href="#log-builder" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">()</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="p">.</span><span class="na">toConsole</span><span class="p">()</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="p">.</span><span class="na">noPrefix</span><span class="p">()</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;yellow&gt;Reloaded&lt;/yellow&gt;&quot;</span><span class="p">);</span>
-</code></pre></div>
-<p>Use <code>target(LogTarget.CHAT/CONSOLE/BOTH)</code> and <code>to(audience)</code> for fine control.</p>
-<h2 id="prefix-modes">Prefix modes<a class="headerlink" href="#prefix-modes" title="Permanent link">&para;</a></h2>
-<p>Prefix rendering can be controlled via <code>PrefixMode</code>:</p>
+<h2 id="generated-nodes">Generated nodes<a class="headerlink" href="#generated-nodes" title="Permanent link">&para;</a></h2>
+<p>When annotations omit explicit permission strings, MagicUtils builds defaults:</p>
 <ul>
-<li><code>FULL</code> -&gt; full plugin/mod name</li>
-<li><code>SHORT</code> -&gt; short name from config</li>
-<li><code>CUSTOM</code> -&gt; <code>LoggerCore.setCustomPrefix(...)</code></li>
-<li><code>NONE</code> -&gt; no prefix</li>
+<li>Command: <code>commands.&lt;command&gt;</code></li>
+<li>Subcommand: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;</code></li>
+<li>Argument: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;.argument.&lt;name&gt;</code></li>
 </ul>
-<h2 id="logger-configuration">Logger configuration<a class="headerlink" href="#logger-configuration" title="Permanent link">&para;</a></h2>
-<p><code>LoggerConfig</code> is stored as <code>logger.{ext}</code>. On Fabric it is placed under
-<code>config/&lt;modid&gt;/</code> by default (via <code>ConfigNamespaceProvider</code>).</p>
-<p>See <a href="../logger-config/">Logger Config</a> for a full key reference and examples.</p>
-<p>Key sections:</p>
+<p>With prefix <code>donatemenu</code>:</p>
 <ul>
-<li><code>prefix</code>: format and prefix mode.</li>
-<li><code>defaults</code>: max length, console/chat defaults.</li>
-<li><code>chat</code> / <code>console</code>: colors, gradients, separators.</li>
-<li><code>help</code>: help command styling.</li>
-<li><code>sub-loggers</code>: per-prefix toggles.</li>
+<li><code>donatemenu.commands.donate</code></li>
+<li><code>donatemenu.commands.donate.subcommand.give</code></li>
+<li><code>donatemenu.commands.donate.subcommand.give.argument.player</code></li>
 </ul>
-<h2 id="localisation-and-placeholders">Localisation and placeholders<a class="headerlink" href="#localisation-and-placeholders" title="Permanent link">&para;</a></h2>
-<p>Attach a <code>LanguageManager</code> to enable auto-localisation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<h2 id="wildcards">Wildcards<a class="headerlink" href="#wildcards" title="Permanent link">&para;</a></h2>
+<p>On Bukkit, MagicUtils registers wildcard nodes for convenience:</p>
+<ul>
+<li><code>...commands.&lt;command&gt;.*</code></li>
+<li><code>...commands.&lt;command&gt;.subcommand.*</code></li>
+</ul>
+<p>These are registered alongside concrete nodes.</p>
+<h2 id="default-access">Default access<a class="headerlink" href="#default-access" title="Permanent link">&para;</a></h2>
+<p><code>MagicPermissionDefault</code> controls who can execute when no explicit permission
+is granted:</p>
+<ul>
+<li><code>TRUE</code> -&gt; everyone</li>
+<li><code>OP</code> -&gt; operators (default)</li>
+<li><code>NOT_OP</code> -&gt; non-operators</li>
+<li><code>FALSE</code> -&gt; nobody (explicit permission required)</li>
+</ul>
+<p>On Bukkit, MagicUtils registers the permission nodes with these defaults. On
+Fabric, MagicUtils checks <code>fabric-permissions-api</code> when available and falls
+back to op-level checks otherwise.</p>
+<h2 id="argument-permissions">Argument permissions<a class="headerlink" href="#argument-permissions" title="Permanent link">&para;</a></h2>
+<p>Use <code>@Permission</code> on parameters to gate argument usage:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">grant</span><span class="p">(</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nd">@Permission</span><span class="p">(</span><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;other(player)&quot;</span><span class="p">)</span><span class="w"> </span><span class="nd">@ParamName</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
 </code></pre></div>
-<p>When <code>auto-localization</code> is enabled (default), any message that starts with
-<code>@</code> is treated as a language key:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;@myplugin.ready&quot;</span><span class="p">);</span>
+<p>You can override the permission node segment and whether <code>.argument.</code> is
+included:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@Permission</span><span class="p">(</span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">includeArgumentSegment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
 </code></pre></div>
-<p>The key is resolved via <code>LanguageManager</code> and then rendered as MiniMessage.
-You can toggle this in <code>logger.yml</code> (<code>auto-localization</code>).</p>
-<p>On Bukkit, the logger automatically bridges MagicPlaceholders to
-<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> when it is
-installed. On Fabric, MagicPlaceholders are bridged to
-<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
-<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> when those mods
-are present.</p>
+<h2 id="conditional-permission-keywords">Conditional permission keywords<a class="headerlink" href="#conditional-permission-keywords" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>self(arg)</code> / <code>other(arg)</code> / <code>anyother(arg)</code></li>
+<li><code>not_null(arg)</code> / <code>exists(arg)</code></li>
+<li><code>distinct(a,b)</code> / <code>all_distinct(a,b)</code></li>
+<li><code>equals(a,b)</code> / <code>not_equals(a,b)</code></li>
+</ul>
+<p>Use <code>compare = CompareMode.UUID/NAME/EQUALS/AUTO</code> to control comparison rules.</p>
+<h2 id="manual-checks">Manual checks<a class="headerlink" href="#manual-checks" title="Permanent link">&para;</a></h2>
+<p><code>MagicSender</code> can be used to check permissions directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicSender</span><span class="p">.</span><span class="na">wrap</span><span class="p">(</span><span class="n">rawSender</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">MagicSender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="n">rawSender</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu.commands.donate&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="c1">// ...</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+</code></pre></div>
 
 
 

@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/1.10.0/modules/logger/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/1.10.0/modules/commands-cheatsheet/">
       
       
-        <link rel="prev" href="../overview/">
+        <link rel="prev" href="../permissions/">
       
       
-        <link rel="next" href="../logger-config/">
+        <link rel="next" href="../config/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Logger - MagicUtils</title>
+        <title>Commands Cheat Sheet - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#logger" class="md-skip">
+        <a href="#commands-cheat-sheet" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Logger
+              Commands Cheat Sheet
             
           </span>
         </div>
@@ -682,37 +682,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Logger
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../logger/" class="md-nav__link">
         
   
   
@@ -728,103 +701,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Setup
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prefixed-loggers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prefixed loggers
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#log-builder" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Log builder
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prefix-modes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prefix modes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#logger-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logger configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#localisation-and-placeholders" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Localisation and placeholders
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -918,10 +794,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../commands-cheatsheet/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands Cheat Sheet
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -937,6 +840,114 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-annotated-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal annotated command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subcommands-and-nested-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subcommands and nested paths
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options / flags
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional + default values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#greedy-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greedy text
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggestions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggestions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sender-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sender injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#builder-api-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder API snippet
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1367,10 +1378,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#minimal-annotated-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        Minimal annotated command
       
     </span>
   </a>
@@ -1378,10 +1389,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#subcommands-and-nested-paths" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic usage
+        Subcommands and nested paths
       
     </span>
   </a>
@@ -1389,10 +1400,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#prefixed-loggers" class="md-nav__link">
+  <a href="#options-flags" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prefixed loggers
+        Options / flags
       
     </span>
   </a>
@@ -1400,10 +1411,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#log-builder" class="md-nav__link">
+  <a href="#optional-default-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Log builder
+        Optional + default values
       
     </span>
   </a>
@@ -1411,10 +1422,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#prefix-modes" class="md-nav__link">
+  <a href="#greedy-text" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prefix modes
+        Greedy text
       
     </span>
   </a>
@@ -1422,10 +1433,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#logger-configuration" class="md-nav__link">
+  <a href="#suggestions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Logger configuration
+        Suggestions
       
     </span>
   </a>
@@ -1433,10 +1444,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#localisation-and-placeholders" class="md-nav__link">
+  <a href="#sender-injection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Localisation and placeholders
+        Sender injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#builder-api-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder API snippet
       
     </span>
   </a>
@@ -1463,76 +1485,71 @@
   
 
 
-<h1 id="logger">Logger<a class="headerlink" href="#logger" title="Permanent link">&para;</a></h1>
-<p>MagicUtils logger builds on Adventure components and provides a consistent
-API for console and chat output, with optional localisation and placeholders.</p>
-<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
-<p>Use the platform adapter where available:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="n">plugin</span><span class="p">);</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
+<h1 id="commands-cheat-sheet">Commands cheat sheet<a class="headerlink" href="#commands-cheat-sheet" title="Permanent link">&para;</a></h1>
+<p>Quick reference for the MagicUtils command system.</p>
+<h2 id="minimal-annotated-command">Minimal annotated command<a class="headerlink" href="#minimal-annotated-command" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@CommandInfo</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Main command&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DonateCommand</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MagicCommand</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
 </code></pre></div>
-<p>Fabric uses the same <code>Logger</code> class from <code>magicutils-logger-fabric</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FabricPlatformProvider</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
+<h2 id="subcommands-and-nested-paths">Subcommands and nested paths<a class="headerlink" href="#subcommands-and-nested-paths" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;give&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">give</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;npc&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;commands&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;add&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">addNpcCommand</span><span class="p">(...)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<p>For custom platforms (or NeoForge), use <code>LoggerCore</code> directly.</p>
-<h2 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">warn</span><span class="p">(</span><span class="s">&quot;Slow query detected&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">logger</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="s">&quot;Database unavailable&quot;</span><span class="p">);</span>
+<h2 id="options-flags">Options / flags<a class="headerlink" href="#options-flags" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">give</span><span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="nd">@Option</span><span class="p">(</span><span class="n">shortNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;a&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">longNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;amount&quot;</span><span class="p">})</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">amount</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="nd">@Option</span><span class="p">(</span><span class="n">shortNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;s&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">longNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;silent&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">silent</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<p>The logger accepts MiniMessage markup and can route to console, chat, or both.</p>
-<h2 id="prefixed-loggers">Prefixed loggers<a class="headerlink" href="#prefixed-loggers" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">PrefixedLogger</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">withPrefix</span><span class="p">(</span><span class="s">&quot;database&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[DB]&quot;</span><span class="p">);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">db</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Connected&quot;</span><span class="p">);</span>
-</code></pre></div>
-<p>Each prefixed logger has its own entry under <code>sub-loggers</code> in <code>logger.yml</code>
-for enable/disable.</p>
-<h2 id="log-builder">Log builder<a class="headerlink" href="#log-builder" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">()</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="p">.</span><span class="na">toConsole</span><span class="p">()</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="p">.</span><span class="na">noPrefix</span><span class="p">()</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;yellow&gt;Reloaded&lt;/yellow&gt;&quot;</span><span class="p">);</span>
-</code></pre></div>
-<p>Use <code>target(LogTarget.CHAT/CONSOLE/BOTH)</code> and <code>to(audience)</code> for fine control.</p>
-<h2 id="prefix-modes">Prefix modes<a class="headerlink" href="#prefix-modes" title="Permanent link">&para;</a></h2>
-<p>Prefix rendering can be controlled via <code>PrefixMode</code>:</p>
+<p>Accepted forms:</p>
 <ul>
-<li><code>FULL</code> -&gt; full plugin/mod name</li>
-<li><code>SHORT</code> -&gt; short name from config</li>
-<li><code>CUSTOM</code> -&gt; <code>LoggerCore.setCustomPrefix(...)</code></li>
-<li><code>NONE</code> -&gt; no prefix</li>
+<li><code>--amount 5</code></li>
+<li><code>-a 5</code></li>
+<li><code>--silent</code> / <code>-s</code></li>
 </ul>
-<h2 id="logger-configuration">Logger configuration<a class="headerlink" href="#logger-configuration" title="Permanent link">&para;</a></h2>
-<p><code>LoggerConfig</code> is stored as <code>logger.{ext}</code>. On Fabric it is placed under
-<code>config/&lt;modid&gt;/</code> by default (via <code>ConfigNamespaceProvider</code>).</p>
-<p>See <a href="../logger-config/">Logger Config</a> for a full key reference and examples.</p>
-<p>Key sections:</p>
+<h2 id="optional-default-values">Optional + default values<a class="headerlink" href="#optional-default-values" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="nd">@DefaultValue</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">lang</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="nd">@OptionalArgument</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h2 id="greedy-text">Greedy text<a class="headerlink" href="#greedy-text" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">say</span><span class="p">(</span><span class="nd">@Greedy</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h2 id="suggestions">Suggestions<a class="headerlink" href="#suggestions" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@Suggest</span><span class="p">(</span><span class="s">&quot;@players&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nd">@Suggest</span><span class="p">(</span><span class="s">&quot;{easy,hard}&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">mode</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nd">@Suggest</span><span class="p">(</span><span class="s">&quot;getItems&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">item</span>
+</code></pre></div>
+<p>Suggestion methods can be:</p>
 <ul>
-<li><code>prefix</code>: format and prefix mode.</li>
-<li><code>defaults</code>: max length, console/chat defaults.</li>
-<li><code>chat</code> / <code>console</code>: colors, gradients, separators.</li>
-<li><code>help</code>: help command styling.</li>
-<li><code>sub-loggers</code>: per-prefix toggles.</li>
+<li><code>List&lt;String&gt; getItems()</code></li>
+<li><code>List&lt;String&gt; getItems(Player player)</code></li>
+<li><code>List&lt;String&gt; getItems(ServerCommandSource sender)</code></li>
 </ul>
-<h2 id="localisation-and-placeholders">Localisation and placeholders<a class="headerlink" href="#localisation-and-placeholders" title="Permanent link">&para;</a></h2>
-<p>Attach a <code>LanguageManager</code> to enable auto-localisation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<h2 id="sender-injection">Sender injection<a class="headerlink" href="#sender-injection" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<p>When <code>auto-localization</code> is enabled (default), any message that starts with
-<code>@</code> is treated as a language key:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;@myplugin.ready&quot;</span><span class="p">);</span>
+<p>Allowed senders:</p>
+<p><code>ANY</code>, <code>PLAYER</code>, <code>CONSOLE</code>, <code>BLOCK</code>, <code>MINECART</code>, <code>PROXIED</code>, <code>REMOTE</code>.</p>
+<h2 id="builder-api-snippet">Builder API snippet<a class="headerlink" href="#builder-api-snippet" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">CommandSpec</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="w"> </span><span class="n">spec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;donate&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">        </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Main command&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="p">.</span><span class="na">aliases</span><span class="p">(</span><span class="s">&quot;d&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="p">.</span><span class="na">subCommand</span><span class="p">(</span><span class="n">SubCommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;give&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">                </span><span class="p">.</span><span class="na">argument</span><span class="p">(</span><span class="n">CommandArgument</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Player</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">                </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">                </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
-<p>The key is resolved via <code>LanguageManager</code> and then rendered as MiniMessage.
-You can toggle this in <code>logger.yml</code> (<code>auto-localization</code>).</p>
-<p>On Bukkit, the logger automatically bridges MagicPlaceholders to
-<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> when it is
-installed. On Fabric, MagicPlaceholders are bridged to
-<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
-<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> when those mods
-are present.</p>
 
 
 

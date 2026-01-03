@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://THEROER.github.io/MagicUtils/1.10.0/modules/config/">
       
       
-        <link rel="prev" href="../commands/">
+        <link rel="prev" href="../commands-cheatsheet/">
       
       
-        <link rel="next" href="../lang/">
+        <link rel="next" href="../config-advanced/">
       
       
         
@@ -334,6 +334,25 @@
     
   
   API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
 
       </a>
     </li>
@@ -694,6 +713,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../logger-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../commands/" class="md-nav__link">
         
   
@@ -702,6 +749,62 @@
     
   
     Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands-cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands Cheat Sheet
   
 
     
@@ -863,6 +966,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../config-advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Advanced
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../lang/" class="md-nav__link">
         
   
@@ -899,6 +1030,34 @@
     
   
     Placeholders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../placeholders-advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Placeholders Advanced
   
 
     
@@ -1123,6 +1282,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../contributing/" class="md-nav__link">
         
   
@@ -1293,6 +1479,8 @@ comments and unknown keys when saving.</p>
 <li><code>-Dmagicutils.config.format=jsonc</code> or the <code>MAGICUTILS_CONFIG_FORMAT</code> env var.</li>
 </ul>
 <p>Fabric defaults to JSONC when YAML is not available.</p>
+<p>For advanced format selection and migrations, see
+<a href="../config-advanced/">Config Advanced</a>.</p>
 <h2 id="reloading-and-hot-watch">Reloading and hot watch<a class="headerlink" href="#reloading-and-hot-watch" title="Permanent link">&para;</a></h2>
 <p>Register change listeners:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">onChange</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="w"> </span><span class="n">sections</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
