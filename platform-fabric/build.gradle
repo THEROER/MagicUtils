@@ -38,9 +38,11 @@ afterEvaluate {
                     builtBy tasks.named('remapJar')
                 }
             }
-            register('mavenShadow', MavenPublication) {
-                artifactId = 'magicutils-fabric-all'
-                artifact tasks.named('shadowJar')
+            if (!project.hasProperty('skip_shadow_publish')) {
+                register('mavenShadow', MavenPublication) {
+                    artifactId = 'magicutils-fabric-all'
+                    artifact tasks.named('shadowJar')
+                }
             }
         }
     }
