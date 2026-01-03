@@ -24,6 +24,9 @@ repositories {
 
 ## Bukkit/Paper
 
+The Bukkit/Paper adapter bundles the core modules (config, logger, commands,
+lang, placeholders). Add optional format helpers only when you need them.
+
 Kotlin DSL:
 
 ```kotlin
@@ -46,14 +49,14 @@ dependencies {
 }
 ```
 
-The `magicutils-bukkit` artifact already includes core modules (config, logger,
-commands, lang, placeholders).
-
 ## Fabric
 
 You have two options:
 
 ### Embed the bundle inside your mod (Jar-in-Jar)
+
+This is the recommended approach for single-mod setups and avoids requiring
+server owners to install MagicUtils separately.
 
 Kotlin DSL:
 
@@ -79,6 +82,9 @@ dependencies {
 
 ### Depend on a shared bundle mod
 
+If you want one shared MagicUtils install for multiple mods, use a standard
+dependency and install the bundle mod on the server.
+
 ```kotlin
 dependencies {
     modImplementation("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev")
@@ -98,7 +104,26 @@ You can also add a dependency in your `fabric.mod.json`:
 }
 ```
 
+### Modular Fabric dependencies (advanced)
+
+If you want to wire only specific modules, use the platform adapter plus the
+feature modules you need:
+
+```kotlin
+dependencies {
+    modImplementation("dev.ua.theroer:magicutils-fabric:{{ magicutils_version }}:dev")
+    modImplementation("dev.ua.theroer:magicutils-logger-fabric:{{ magicutils_version }}:dev")
+    modImplementation("dev.ua.theroer:magicutils-commands-fabric:{{ magicutils_version }}:dev")
+    modImplementation("dev.ua.theroer:magicutils-placeholders-fabric:{{ magicutils_version }}:dev")
+    modImplementation("dev.ua.theroer:magicutils-config:{{ magicutils_version }}")
+    modImplementation("dev.ua.theroer:magicutils-lang:{{ magicutils_version }}")
+}
+```
+
 ## NeoForge
+
+NeoForge currently exposes platform, config, and logger integrations. Commands
+and placeholders are not wired on NeoForge yet.
 
 Kotlin DSL:
 

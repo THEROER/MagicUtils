@@ -6,11 +6,22 @@ logging, placeholders, and platform adapters.
 
 ## Highlights
 
-- Config manager with JSON/JSONC, YAML, and TOML support.
-- Annotation-first command framework with type parsers and tab completion.
-- Adventure-based logger with rich formatting and per-module prefixes.
-- Language manager with MiniMessage and per-player overrides.
-- Optional placeholder registry (including PAPI integration on Bukkit).
+- Config manager with JSON/JSONC, YAML, and TOML support plus migrations.
+- Annotation-first command framework with type parsers, options, and tab completion.
+- Adventure-based logger with rich formatting, sub-loggers, and help styling.
+- Language manager with MiniMessage, custom messages, and per-player overrides.
+- Placeholder registry with Bukkit PlaceholderAPI bridge.
+
+## Modules at a glance
+
+| Layer | Artifacts | Notes |
+| --- | --- | --- |
+| Platform API | `magicutils-api` | `Platform`, `Audience`, and shared interfaces. |
+| Core stack | `magicutils-core` | Logger + commands + config + lang + placeholders. |
+| Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders` | Mix and match. |
+| Format helpers | `magicutils-config-yaml`, `magicutils-config-toml` | Enable extra config formats. |
+| Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-neoforge` | Wire MagicUtils to a runtime. |
+| Fabric extras | `magicutils-commands-fabric`, `magicutils-logger-fabric`, `magicutils-placeholders-fabric`, `magicutils-fabric-bundle` | Brigadier integration and jar-in-jar bundle. |
 
 ## Quick start
 
@@ -52,6 +63,6 @@ repositories {
 
 ## Where to go next
 
-- Read the installation guide for platform-specific details.
-- Jump into the module pages for API examples.
+- Read the installation guide for platform-specific details and bundle options.
+- Jump into the module pages for deeper API examples and configs.
 - Use the version selector in the header to switch between releases.
