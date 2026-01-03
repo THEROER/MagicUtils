@@ -54,6 +54,15 @@ logger.info()
 
 Use `target(LogTarget.CHAT/CONSOLE/BOTH)` and `to(audience)` for fine control.
 
+## Prefix modes
+
+Prefix rendering can be controlled via `PrefixMode`:
+
+- `FULL` -> full plugin/mod name
+- `SHORT` -> short name from config
+- `CUSTOM` -> `LoggerCore.setCustomPrefix(...)`
+- `NONE` -> no prefix
+
 ## Logger configuration
 
 `LoggerConfig` is stored as `logger.{ext}`. On Fabric it is placed under

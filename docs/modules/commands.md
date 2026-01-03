@@ -12,6 +12,12 @@ CommandRegistry.initialize(plugin, "myplugin", logger);
 CommandRegistry.register(new DonateCommand());
 ```
 
+Register multiple commands at once:
+
+```java
+CommandRegistry.registerAll(new DonateCommand(), new AdminCommand());
+```
+
 ### Fabric
 
 ```java
@@ -71,6 +77,11 @@ public CommandResult addNpcCommand(...) { ... }
 `@Sender` supports sender filtering via `AllowedSender` to restrict console,
 players, command blocks, etc.
 
+Allowed sender kinds:
+
+- `ANY`, `PLAYER`, `CONSOLE`
+- `BLOCK`, `MINECART`, `PROXIED`, `REMOTE`
+
 ### Suggestions
 
 Suggestions can come from:
@@ -86,6 +97,13 @@ Suggestion methods can be:
 - `getItems(Player player)` or `getItems(ServerCommandSource sender)` depending on platform.
 
 Note: `@offlineplayers` and `@language_keys` exist on Bukkit only.
+
+Built-in suggestion sources:
+
+- `@players`, `@player`, `@allplayers`, `@offlineplayers`
+- `@worlds`, `@world`
+- `@commands` (all registered command names + aliases)
+- `{a,b,c}` inline list syntax
 
 ### Permissions
 
@@ -140,6 +158,15 @@ public CommandResult grant(
 }
 ```
 
+Supported permission condition keywords:
+
+- `self(arg)` / `other(arg)` / `anyother(arg)`
+- `not_null(arg)` / `exists(arg)`
+- `distinct(a,b)` / `all_distinct(a,b)`
+- `equals(a,b)` / `not_equals(a,b)`
+
+Use `compare = CompareMode.UUID/NAME/EQUALS/AUTO` to control comparison rules.
+
 The permission prefix passed to `CommandRegistry.initialize(...)` is prepended
 automatically.
 
@@ -148,6 +175,12 @@ automatically.
 `CommandResult.success()` and `CommandResult.failure()` control whether a
 message is sent back to the sender. Use `success()` to avoid output, or pass a
 message for automatic reply.
+
+## Help output
+
+The help renderer respects permissions and hides commands or arguments the
+sender cannot access. You can embed help into your command tree via
+`HelpCommandSupport` (see Recipes).
 
 ## MagicSender
 
