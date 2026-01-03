@@ -1,7 +1,7 @@
 # Quickstart
 
 This page shows minimal wiring for the core modules. Each module can be used
-independently.
+independently, but the order below keeps config + logger + lang consistent.
 
 ## Bukkit/Paper
 
@@ -15,14 +15,18 @@ public final class MyPlugin extends JavaPlugin {
     public void onEnable() {
         Platform platform = new BukkitPlatformProvider(this);
         configManager = new ConfigManager(platform);
-        logger = new Logger(platform, this, configManager);
 
+        logger = new Logger(platform, this, configManager);
         languageManager = new LanguageManager(this, configManager);
         languageManager.init("en");
         languageManager.addMagicUtilsMessages();
 
+        logger.setLanguageManager(languageManager);
+        Messages.setLanguageManager(languageManager);
+
         CommandRegistry.initialize(this, "myplugin", logger);
-        CommandRegistry.register(new ExampleCommand(languageManager, this));
+        CommandRegistry.register(new HelpCommand(logger));
+        CommandRegistry.register(new ExampleCommand());
     }
 }
 ```
@@ -36,11 +40,30 @@ public final class MyMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             Platform platform = new FabricPlatformProvider(server);
             ConfigManager configManager = new ConfigManager(platform);
+
             Logger logger = new Logger(platform, configManager, "MyMod");
 
             CommandRegistry.initialize("mymod", "mymod", logger);
+            CommandRegistry.register(new HelpCommand(logger));
             CommandRegistry.register(new ExampleCommand());
         });
+    }
+}
+```
+
+## NeoForge
+
+```java
+public final class MyMod {
+    private ConfigManager configManager;
+    private LoggerCore logger;
+
+    public void onServerStarting() {
+        Platform platform = new NeoForgePlatformProvider();
+        configManager = new ConfigManager(platform);
+
+        logger = new LoggerCore(platform, configManager, this, "MyMod");
+        logger.info().send("<green>Ready.</green>");
     }
 }
 ```

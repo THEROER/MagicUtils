@@ -1,11 +1,22 @@
-# Documentation versioning
+# Versioning
 
-This site is versioned with `mike` and published to GitHub Pages.
+This site is versioned with `mike` and published to GitHub Pages. Each
+documentation version matches a MagicUtils release tag.
 
-## Tag releases
+## Documentation versions
+
+The version selector in the header switches between:
+
+- `stable`: the latest tagged release.
+- `dev`: the current development branch.
+
+Examples in the docs use `{{ magicutils_version }}` which is automatically
+set to the active docs version.
+
+## Tag releases (for maintainers)
 
 When you tag a release (for example `v1.10.0`), the workflow deploys a new
-version and updates the `stable` alias.
+docs version and updates the `stable` alias.
 
 ```
 # Local
