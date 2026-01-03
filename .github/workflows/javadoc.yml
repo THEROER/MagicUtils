@@ -1,9 +1,6 @@
 name: javadoc
 
 on:
-  push:
-    branches: ["main"]
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
