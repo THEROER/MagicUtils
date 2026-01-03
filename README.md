@@ -120,7 +120,8 @@ bundle (`magicutils-fabric-bundle`).
 **Usage notes**
 - Initialise defaults inline (`private int cooldown = 5;`). Reach for `@DefaultValue` only when you need computed defaults or complex providers.
 - Prefer immutable collections for complex defaults; the serializer clones values on load, preventing shared state issues.
-- Always call `configManager.shutdown()` in your plugin’s `onDisable` to release watcher resources.
+- On Bukkit/Fabric, MagicUtils auto-closes the watcher on shutdown. For custom platforms, call
+  `configManager.shutdown()` in your plugin’s `onDisable` to release watcher resources.
 - Combine with `lang` by storing language codes in config and feeding them into `LanguageManager` at runtime.
 - Example: `examples/config/ConfigExample.java`.
 

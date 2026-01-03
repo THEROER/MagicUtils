@@ -6,6 +6,7 @@ import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import lombok.Getter;
 
 import java.io.File;
@@ -76,9 +77,13 @@ public class ConfigManager {
      *
      * @param platform platform abstraction
      */
+    @SuppressWarnings("this-escape")
     public ConfigManager(Platform platform) {
         this.platform = platform;
         this.logger = platform.logger();
+        if (platform instanceof ShutdownHookRegistrar registrar) {
+            registrar.registerShutdownHook(this::shutdown);
+        }
     }
 
     /**

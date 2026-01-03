@@ -5,15 +5,22 @@ import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.function.Supplier;
 
@@ -21,7 +28,12 @@ import java.util.function.Supplier;
  * Platform provider for Fabric runtime.
  */
 @SuppressWarnings("doclint:missing")
-public final class FabricPlatformProvider implements Platform, ConfigNamespaceProvider, ConfigFormatProvider {
+public final class FabricPlatformProvider implements Platform, ConfigNamespaceProvider, ConfigFormatProvider, ShutdownHookRegistrar {
+    private static final Set<Runnable> SHUTDOWN_HOOKS = ConcurrentHashMap.newKeySet();
+    private static final AtomicBoolean SHUTDOWN_REGISTERED = new AtomicBoolean(false);
+    private static final AtomicBoolean SHUTDOWN_RAN = new AtomicBoolean(false);
+    private static volatile PlatformLogger shutdownLogger;
+
     private final Supplier<MinecraftServer> serverSupplier;
     private final PlatformLogger logger;
     private final Audience consoleAudience;
@@ -117,6 +129,22 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         return server == null || server.isOnThread();
     }
 
+    @Override
+    public void registerShutdownHook(Runnable hook) {
+        if (hook == null) {
+            return;
+        }
+        SHUTDOWN_HOOKS.add(hook);
+        if (shutdownLogger == null) {
+            shutdownLogger = logger;
+        }
+        if (SHUTDOWN_REGISTERED.compareAndSet(false, true)) {
+            registerFabricShutdownEvent();
+            Runtime.getRuntime().addShutdownHook(new Thread(FabricPlatformProvider::runShutdownHooks,
+                    "magicutils-config-shutdown"));
+        }
+    }
+
     private Audience wrap(ServerPlayerEntity player) {
         return new FabricAudience(player);
     }
@@ -141,6 +169,42 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
             return left.equals(right);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private static void runShutdownHooks() {
+        if (!SHUTDOWN_RAN.compareAndSet(false, true)) {
+            return;
+        }
+        for (Runnable hook : SHUTDOWN_HOOKS) {
+            try {
+                hook.run();
+            } catch (RuntimeException e) {
+                if (shutdownLogger != null) {
+                    shutdownLogger.warn("Failed to run shutdown hook", e);
+                }
+            }
+        }
+        SHUTDOWN_HOOKS.clear();
+    }
+
+    private static void registerFabricShutdownEvent() {
+        try {
+            Class<?> eventsClass = Class.forName("net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents");
+            Object stoppingEvent = eventsClass.getField("SERVER_STOPPING").get(null);
+            Class<?> listenerType = Class.forName(
+                    "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents$ServerStopping");
+            Method register = stoppingEvent.getClass().getMethod("register", listenerType);
+            Object listener = Proxy.newProxyInstance(eventsClass.getClassLoader(), new Class<?>[] { listenerType },
+                    new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) {
+                            runShutdownHooks();
+                            return null;
+                        }
+                    });
+            register.invoke(stoppingEvent, listener);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
         }
     }
 }

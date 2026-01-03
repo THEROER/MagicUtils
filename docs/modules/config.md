@@ -33,3 +33,9 @@ ExampleConfig cfg = manager.register(ExampleConfig.class);
 - TOML requires `magicutils-config-toml`.
 
 Fabric defaults to JSONC when YAML is unavailable.
+
+## Shutdown
+
+On Bukkit and Fabric, MagicUtils automatically stops the watcher when the
+server shuts down. If you run a custom platform adapter, call
+`ConfigManager.shutdown()` during your plugin shutdown.
