@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"dev.ua.theroer.magicutils","c":"MagicUtils","l":"MagicUtils()","u":"%3Cinit%3E()"},{"p":"dev.ua.theroer.magicutils","c":"MagicUtils","l":"main(String[])","u":"main(java.lang.String[])"}];updateSearchResults();

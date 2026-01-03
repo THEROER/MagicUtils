@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"dev.ua.theroer.magicutils.lang"},{"l":"dev.ua.theroer.magicutils.lang.messages"}];updateSearchResults();

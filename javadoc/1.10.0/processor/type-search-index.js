@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"dev.ua.theroer.magicutils.processor","l":"LogMethodsProcessor"},{"p":"dev.ua.theroer.magicutils.processor","l":"NoOpProcessor"}];updateSearchResults();

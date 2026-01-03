@@ -1,0 +1,9 @@
+dev.ua.theroer.magicutils
+dev.ua.theroer.magicutils.commands
+dev.ua.theroer.magicutils.commands.parsers
+dev.ua.theroer.magicutils.config.adapters
+dev.ua.theroer.magicutils.gui
+dev.ua.theroer.magicutils.integrations
+dev.ua.theroer.magicutils.logger
+dev.ua.theroer.magicutils.platform.bukkit
+dev.ua.theroer.magicutils.utils

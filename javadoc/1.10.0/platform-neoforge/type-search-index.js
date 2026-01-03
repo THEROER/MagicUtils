@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"dev.ua.theroer.magicutils.platform.neoforge","l":"NeoForgeAudience"},{"p":"dev.ua.theroer.magicutils.platform.neoforge","l":"NeoForgePlatformLogger"},{"p":"dev.ua.theroer.magicutils.platform.neoforge","l":"NeoForgePlatformProvider"}];updateSearchResults();
