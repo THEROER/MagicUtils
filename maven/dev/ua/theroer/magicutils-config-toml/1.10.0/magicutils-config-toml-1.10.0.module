@@ -37,10 +37,10 @@
           "name": "magicutils-config-toml-1.10.0.jar",
           "url": "magicutils-config-toml-1.10.0.jar",
           "size": 1715,
-          "sha512": "6a4a0da5dc8fdd874e9faa69373a6ecfad198e878978d9ec52aeed88a891961dbbfe751cf84f7d2208461b1d16efd1a23bbc0675cb435420dcd8338c0afdaaed",
-          "sha256": "9fb38a5215d4f78d27c7aff00e6d8bb2d468f8365b47a1872ba7232e4c0725b7",
-          "sha1": "d5fc097928af2ba65a16d3800fd3eb80f292648e",
-          "md5": "1ae9deecb6495f630154550ef5b72f7c"
+          "sha512": "393df1febb649d5b0df27a368e5a8109c2c1909c210d70821062b1d537db2197287b14d8abffb86d1b52bb7cee658001e77055f05f834bd02e37e324f06546a4",
+          "sha256": "e0f7e1c0564ef0680074198b0a7e57e7ca1dce164dff190df8f8211e1e3bcde0",
+          "sha1": "302fd7a2b864f53972188948659700a2f3c448ec",
+          "md5": "2ca00eb6134680a41d02b4d79e979b8d"
         }
       ]
     },
@@ -74,10 +74,10 @@
           "name": "magicutils-config-toml-1.10.0.jar",
           "url": "magicutils-config-toml-1.10.0.jar",
           "size": 1715,
-          "sha512": "6a4a0da5dc8fdd874e9faa69373a6ecfad198e878978d9ec52aeed88a891961dbbfe751cf84f7d2208461b1d16efd1a23bbc0675cb435420dcd8338c0afdaaed",
-          "sha256": "9fb38a5215d4f78d27c7aff00e6d8bb2d468f8365b47a1872ba7232e4c0725b7",
-          "sha1": "d5fc097928af2ba65a16d3800fd3eb80f292648e",
-          "md5": "1ae9deecb6495f630154550ef5b72f7c"
+          "sha512": "393df1febb649d5b0df27a368e5a8109c2c1909c210d70821062b1d537db2197287b14d8abffb86d1b52bb7cee658001e77055f05f834bd02e37e324f06546a4",
+          "sha256": "e0f7e1c0564ef0680074198b0a7e57e7ca1dce164dff190df8f8211e1e3bcde0",
+          "sha1": "302fd7a2b864f53972188948659700a2f3c448ec",
+          "md5": "2ca00eb6134680a41d02b4d79e979b8d"
         }
       ]
     },
@@ -114,10 +114,10 @@
           "name": "magicutils-config-toml-1.10.0-sources.jar",
           "url": "magicutils-config-toml-1.10.0-sources.jar",
           "size": 1611,
-          "sha512": "6e1cac64e0bc27f4db48d0a6a858f842752fe256a005cbfaf8d1d88a64985884d35bdc3327b285c3b9763e918e88c5481bd572e3443f70aaa8d02a29c8d303cd",
-          "sha256": "03b6615c165f7ef58880c2a993ebf39d3c1cf8dff19c80da235e2e0aa7307737",
-          "sha1": "64c170456c1226f4a00970d0f3170ff846f8cba6",
-          "md5": "fecfdd29eb76b7f999c3bc84a0e9c6aa"
+          "sha512": "326873806e9c53bf1aa3e2fd089286d2ac51efadf8f8ec8c0a18bb09758e80cbce87b3bb72eaef441e5974bf6f63721ae96e162b73c23e863e6eda82d539efde",
+          "sha256": "9ee1ed15098fecded59f5f54c355f8e2ba215e7637d049e04a8dedca7f6e51b4",
+          "sha1": "a3de0fd89b2f3325bbfb315a9bff56afe29dd044",
+          "md5": "67c0bedfefb322eadbbe9bdef44fddcc"
         }
       ]
     },
@@ -134,10 +134,10 @@
           "name": "magicutils-config-toml-1.10.0-javadoc.jar",
           "url": "magicutils-config-toml-1.10.0-javadoc.jar",
           "size": 91110,
-          "sha512": "2698c1b487b45b6b56ec3e049451092fe264d27a4904a4b2eb8a1d89e4f8ac5a168915cbc849e461b6f8c01ee84736ce32886e2d167956a3fb3df2b70a027f09",
-          "sha256": "83881b02ac155ff7787ae1563db720bad6d975333b2643e3ecbe70bcbb4e9e3a",
-          "sha1": "ed229919d2b06a450602386e3b855b0e8a4d3697",
-          "md5": "a27998ee950f3f56b9b876f6403b8b8f"
+          "sha512": "95b2291b434609a7e9d345a220f1d780d24d209c5033d9ef3d11108a561a4243f1d71a2e38d6156ef67da8b5b5160cc86e3fd27807f4dbbbbda216a46429e5a8",
+          "sha256": "8172748737d274588530e3969005926047ad0a36f63333de60a3a39c6af7972f",
+          "sha1": "668f91fb9ab9781c2ed3ec17160ce7775ccaac43",
+          "md5": "faca4572cad84d7ecc674946ce72a0df"
         }
       ]
     }
