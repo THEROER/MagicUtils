@@ -51,10 +51,10 @@
           "name": "magicutils-logger-1.10.0.jar",
           "url": "magicutils-logger-1.10.0.jar",
           "size": 77454,
-          "sha512": "47c17cce25e8dbcc72bdb514c6c0e731358c618cd82fd5128b2aaacd6da6588db75792db5b47e61a5a8198c803364dd908b649397354a2e99aced85d96974bc7",
-          "sha256": "581deacb795902feb0986fdabebc8ac4770f7e9aa73beb3d5eb01731ee061106",
-          "sha1": "68108acd07f581a790f1cb62cf52a518cf90fd73",
-          "md5": "dc718377d6ac053093be896b49a76e0e"
+          "sha512": "d9be0615aa9b02064190e8ad493efe80c374c50e29f0786ec4b6b42a388b5757633ab2697fba8569b956f7b8c8ee5f486f9407d667cd7441418d6270b8cf6fe7",
+          "sha256": "ec3d44b8126af43a7bac8c7154ebafe264f523004f94f4724cce5351d7d12aaf",
+          "sha1": "77f99d5c98078f0020ccb34a696f6d73692b9830",
+          "md5": "91b7a8404326bae45802df3334c385b2"
         }
       ]
     },
@@ -102,10 +102,10 @@
           "name": "magicutils-logger-1.10.0.jar",
           "url": "magicutils-logger-1.10.0.jar",
           "size": 77454,
-          "sha512": "47c17cce25e8dbcc72bdb514c6c0e731358c618cd82fd5128b2aaacd6da6588db75792db5b47e61a5a8198c803364dd908b649397354a2e99aced85d96974bc7",
-          "sha256": "581deacb795902feb0986fdabebc8ac4770f7e9aa73beb3d5eb01731ee061106",
-          "sha1": "68108acd07f581a790f1cb62cf52a518cf90fd73",
-          "md5": "dc718377d6ac053093be896b49a76e0e"
+          "sha512": "d9be0615aa9b02064190e8ad493efe80c374c50e29f0786ec4b6b42a388b5757633ab2697fba8569b956f7b8c8ee5f486f9407d667cd7441418d6270b8cf6fe7",
+          "sha256": "ec3d44b8126af43a7bac8c7154ebafe264f523004f94f4724cce5351d7d12aaf",
+          "sha1": "77f99d5c98078f0020ccb34a696f6d73692b9830",
+          "md5": "91b7a8404326bae45802df3334c385b2"
         }
       ]
     },
@@ -142,10 +142,10 @@
           "name": "magicutils-logger-1.10.0-sources.jar",
           "url": "magicutils-logger-1.10.0-sources.jar",
           "size": 34680,
-          "sha512": "c21ebd1712073cf32bf673ba3381fe93eee4cba6e88d8aae9c987719b1d93754d405fc9927da32920ea39c04795a2278f125ceee9bb7edf59c6986704e8e47de",
-          "sha256": "026b78d35e62196da84ceb19e173ca993b2bef2647970ac0eefa9cfe06b4b2e3",
-          "sha1": "a1fd02763499e50217a9d321d6b7dfe6b2b50dc6",
-          "md5": "71aa7a4c772f9627f3afca9176e179f5"
+          "sha512": "47fc54d261ab515a68197d9d70bad29e8910539528d32c076c7d016745d0f013be4e0aad9587d3c79a7b4d652ace15b4581bad66cdd2aff77596726e479ab5bb",
+          "sha256": "e6c251f57da0839aa7a90bcd0f161d819d8533ccc2ff3b1268314b76e4e3b5d7",
+          "sha1": "c8faf08ecc92618ecb0afa185196b4752cebbf7c",
+          "md5": "cd11ab67e4a42b62912d33eb4397889f"
         }
       ]
     },
@@ -162,10 +162,10 @@
           "name": "magicutils-logger-1.10.0-javadoc.jar",
           "url": "magicutils-logger-1.10.0-javadoc.jar",
           "size": 206972,
-          "sha512": "85be9959d9c5204e8549cf01b6f7aeed9f65dc7554668b9a25a9e38e6c4e76a54d003f479454ecfcdb322c1afb66584da588ccfb223d50150b45698d19ef2b7c",
-          "sha256": "1534c1f33c8345b043ec388e2f19329329a89f889c16e64d048d1562eafc99a2",
-          "sha1": "72dfa53d3263d779cab31a0bb499b06a5bde1218",
-          "md5": "e8440d6b2a3268dbdc4a53063b33bd39"
+          "sha512": "3b1f9c6ad7d25afa8a50addd779f2f9f8bc31766a86b0de84fb3d366f6283b9137931811467d34213bd53468020bd3067a3fa63201758ba54e6ebe03ae47c0e4",
+          "sha256": "fab68dd50ce31194b31f2160bd9ff19cb6c6eed8520087265d84e6aa0f5c69f9",
+          "sha1": "f22eb77cbf1c0d32f56a572027c0706d47fc56b7",
+          "md5": "5e253c4c13f92d09851660f1d301a7e9"
         }
       ]
     }
