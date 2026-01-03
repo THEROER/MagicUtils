@@ -3,6 +3,9 @@
 MagicUtils commands are annotation-first but can be combined with a builder
 API. Commands are registered per platform via `CommandRegistry`.
 
+See [Commands Cheat Sheet](commands-cheatsheet.md) for a quick reference and
+[Permissions](permissions.md) for permission node details.
+
 ## Registration
 
 ### Bukkit/Paper
