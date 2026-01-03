@@ -37,10 +37,10 @@
           "name": "magicutils-neoforge-1.10.0.jar",
           "url": "magicutils-neoforge-1.10.0.jar",
           "size": 3676,
-          "sha512": "782445d4be583fb6dc1c81f7fa14cdcde6ea0f225754779ddaf258b69ececb433a5726c761521cfdf979c6061720170b3756ef89ed63075f6a95762881781db6",
-          "sha256": "1b4d87501f2a92be21b7855fa2c630a6c6ba71b9c7033e9905d6afec12ecfe04",
-          "sha1": "2537fef67c52f1f28c2719fc61bfc974b7bc5404",
-          "md5": "31f97c198d98a488c5fb274cda137888"
+          "sha512": "861e628544883ef4c54577ecfda53e4f0cdd0432e1a78acf84a4d6696df0f9b7e7f2f1e22d564ee4cbd3707483ce553d1d21e3193358e3d66112202a8f4f49d1",
+          "sha256": "346dba08343ef872cd1d05d5c61087f55d20be9f8160f791f185a7b753800f31",
+          "sha1": "49bf8acb629fd03bdc53fce4c39bd9b7efc4dba3",
+          "md5": "5b821270c4e57f1c988f93b960c0ffc8"
         }
       ]
     },
@@ -67,10 +67,10 @@
           "name": "magicutils-neoforge-1.10.0.jar",
           "url": "magicutils-neoforge-1.10.0.jar",
           "size": 3676,
-          "sha512": "782445d4be583fb6dc1c81f7fa14cdcde6ea0f225754779ddaf258b69ececb433a5726c761521cfdf979c6061720170b3756ef89ed63075f6a95762881781db6",
-          "sha256": "1b4d87501f2a92be21b7855fa2c630a6c6ba71b9c7033e9905d6afec12ecfe04",
-          "sha1": "2537fef67c52f1f28c2719fc61bfc974b7bc5404",
-          "md5": "31f97c198d98a488c5fb274cda137888"
+          "sha512": "861e628544883ef4c54577ecfda53e4f0cdd0432e1a78acf84a4d6696df0f9b7e7f2f1e22d564ee4cbd3707483ce553d1d21e3193358e3d66112202a8f4f49d1",
+          "sha256": "346dba08343ef872cd1d05d5c61087f55d20be9f8160f791f185a7b753800f31",
+          "sha1": "49bf8acb629fd03bdc53fce4c39bd9b7efc4dba3",
+          "md5": "5b821270c4e57f1c988f93b960c0ffc8"
         }
       ]
     },
@@ -107,10 +107,10 @@
           "name": "magicutils-neoforge-1.10.0-sources.jar",
           "url": "magicutils-neoforge-1.10.0-sources.jar",
           "size": 2875,
-          "sha512": "b00a9bfd54330d3355e2ba8d23bdfbac72e287f9ebc7ef0c36caa867feb2c6d8d559c5b68859badbf934dde3f2ebfb6f0ec6e9cf9114452dbe49f86972ae4076",
-          "sha256": "9749529f4057d43fdd50e82c2ae5fc1ded95c0074004b0ae02adbfe31402959e",
-          "sha1": "d10ddde104224614f077b16194c630b3b2ef50a4",
-          "md5": "d7145137b1ced7fed7132efa0d6f12bb"
+          "sha512": "5a6bec10505592117f022f558341bf5d33a9a8ef091ec98bcb2551307650cf8d1f396ea7267817124e305776e372a7231f8e1f518991ccb688df284dab3a9a39",
+          "sha256": "72af0ef163c2e832f5f921b98140af5f75a5166f78789dd2c3240f95be147d24",
+          "sha1": "a5c2eb6d5e4bb7c432ef22309a0bde9ce8c6497a",
+          "md5": "1f7f86c204278284fa2626fb882e4a5d"
         }
       ]
     },
@@ -127,10 +127,10 @@
           "name": "magicutils-neoforge-1.10.0-javadoc.jar",
           "url": "magicutils-neoforge-1.10.0-javadoc.jar",
           "size": 99429,
-          "sha512": "22163bebe5fbe2bcda421780bcbb4fe6ee676f556c29488be5f32bad58c932ee4d15205f7e79807925fdfbc66ec5084a1ce3ee667fce1b36a12af987eb17e988",
-          "sha256": "25d4fda697f6661d9ffe606760abe24b465113d7bbd5c8f0117da4239c094800",
-          "sha1": "bbedbaa701170548240267436cab1c93ad45ed80",
-          "md5": "0bed164a018671cd9262ff17751f602c"
+          "sha512": "3a4b83823d6cbec9210277edb338076a893f8b3e47356fe7ea7435305bc0b7b7783bb9ea7fce83a881bd5f800d704b63f8d81ea58cb6faa9e6b058844dfb4e61",
+          "sha256": "ac0dfc3e711f5219900daf50f4ada6e7dccdf113f3dec5a6f62c75a2324caea3",
+          "sha1": "df4af80fe0dde60efa778a4e79afc76f02803ef2",
+          "md5": "501d45cf33b98cac1c3697bd2cc6f67e"
         }
       ]
     }
