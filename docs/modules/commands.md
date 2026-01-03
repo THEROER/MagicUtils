@@ -182,6 +182,39 @@ The help renderer respects permissions and hides commands or arguments the
 sender cannot access. You can embed help into your command tree via
 `HelpCommandSupport` (see Recipes).
 
+## Help command
+
+### Standalone command
+
+Register the built-in help command to expose `/mhelp` (alias `/help`):
+
+```java
+CommandRegistry.register(new HelpCommand(logger));
+```
+
+You can rename or add aliases using runtime overrides:
+
+```java
+CommandRegistry.register(new HelpCommand(logger)
+        .withName("donatehelp")
+        .addAlias("dhelp"));
+```
+
+### Subcommand
+
+Attach help as a subcommand to an existing command:
+
+```java
+CommandRegistry.register(new DonateCommand()
+        .addSubCommand(HelpCommandSupport.createHelpSubCommand(
+                "help",
+                logger.getCore(),
+                CommandRegistry::getCommandManager
+        )));
+```
+
+Help formatting is controlled by `logger.yml` under the `help` section.
+
 ## MagicSender
 
 `MagicSender` is a platform-agnostic sender wrapper. You can use it directly
