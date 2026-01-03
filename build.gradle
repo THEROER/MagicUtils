@@ -36,7 +36,18 @@ subprojects {
     def moduleName = moduleNameMap.getOrDefault(project.name, project.name)
 
     repositories {
-        mavenCentral()
+        maven {
+            name = 'mavenCentralMirror'
+            url = uri('https://repo1.maven.org/maven2/')
+            content {
+                includeGroup 'team.unnamed'
+            }
+        }
+        mavenCentral {
+            content {
+                excludeGroup 'team.unnamed'
+            }
+        }
         maven { url = 'https://oss.sonatype.org/content/groups/public/' }
         maven { url = 'https://repo.papermc.io/repository/maven-public/' }
         maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
