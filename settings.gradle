@@ -6,4 +6,4 @@ pluginManagement {
 }
 
 rootProject.name = 'MagicUtils'
-include 'platform-api', 'core', 'config', 'lang', 'logger', 'commands', 'placeholders', 'config-yaml', 'config-toml', 'platform-bukkit', 'platform-neoforge', 'platform-fabric', 'commands-fabric', 'logger-fabric', 'placeholders-fabric', 'fabric-bundle', 'processor'
+include 'platform-api', 'core', 'config', 'lang', 'logger', 'commands', 'placeholders', 'config-yaml', 'config-toml', 'platform-bukkit', 'platform-neoforge', 'platform-velocity', 'platform-fabric', 'commands-fabric', 'logger-fabric', 'placeholders-fabric', 'fabric-bundle', 'processor'

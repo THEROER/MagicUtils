@@ -18,6 +18,7 @@ subprojects {
             'platform-api'       : 'magicutils-api',
             'platform-neoforge'  : 'magicutils-neoforge',
             'platform-bukkit'    : 'magicutils-bukkit',
+            'platform-velocity'  : 'magicutils-velocity',
             'platform-fabric'    : 'magicutils-fabric',
             'core'               : 'magicutils-core',
             'config'             : 'magicutils-config',
@@ -53,6 +54,7 @@ subprojects {
         maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
         maven { url = 'https://maven.nucleoid.xyz' }
         maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://repo.velocitypowered.com/releases/' }
     }
 
     java {

@@ -75,6 +75,7 @@ nav:
   - Platforms:
       - Bukkit/Paper: platforms/bukkit.md
       - Fabric: platforms/fabric.md
+      - Velocity: platforms/velocity.md
       - NeoForge: platforms/neoforge.md
   - Recipes: recipes/index.md
   - API: api.md
