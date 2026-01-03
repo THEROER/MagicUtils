@@ -14,15 +14,17 @@ logging, placeholders, and platform adapters.
 
 ## Quick start
 
-1. Publish to Maven Local while developing.
+1. Add the GitHub Pages Maven repository.
 2. Add the dependency for your platform.
 3. Initialise the modules you need.
 
-=== "Bukkit/Paper"
-    ```bash
-    ./gradlew :platform-bukkit:publishToMavenLocal
-    ```
+```kotlin
+repositories {
+    maven("https://theroer.github.io/MagicUtils/maven/")
+}
+```
 
+=== "Bukkit/Paper"
     ```kotlin
     dependencies {
         implementation("dev.ua.theroer:magicutils-bukkit:{{ magicutils_version }}")
@@ -33,10 +35,6 @@ logging, placeholders, and platform adapters.
     ```
 
 === "Fabric"
-    ```bash
-    ./gradlew :fabric-bundle:publishToMavenLocal
-    ```
-
     ```kotlin
     dependencies {
         modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}"))
@@ -46,10 +44,6 @@ logging, placeholders, and platform adapters.
     ```
 
 === "NeoForge"
-    ```bash
-    ./gradlew :platform-neoforge:publishToMavenLocal
-    ```
-
     ```kotlin
     dependencies {
         implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
