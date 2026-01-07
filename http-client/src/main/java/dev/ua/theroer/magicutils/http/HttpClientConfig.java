@@ -142,6 +142,10 @@ public class HttpClientConfig {
         @ConfigValue("log-retries")
         @Comment("Log retry attempts")
         private boolean logRetries = true;
+
+        @ConfigValue("sensitive-headers")
+        @Comment("List of headers that should be redacted from logs (e.g., Authorization, Cookie)")
+        private List<String> sensitiveHeaders = new ArrayList<>(List.of("Authorization", "Cookie"));
     }
 
     /**

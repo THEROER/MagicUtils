@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -43,9 +44,11 @@ public final class MagicHttpClient implements AutoCloseable {
     private final String baseUrl;
     private final Duration requestTimeout;
     private final Map<String, String> defaultHeaders;
+    private final Platform platform;
 
     private MagicHttpClient(Builder builder) {
         this.config = builder.config != null ? builder.config : new HttpClientConfig();
+        this.platform = builder.platform;
         this.logger = builder.logger;
         this.mapper = builder.mapper != null ? builder.mapper : defaultMapper();
         this.logging = builder.logging != null ? builder.logging : config.getLogging();
@@ -54,6 +57,15 @@ public final class MagicHttpClient implements AutoCloseable {
         this.requestTimeout = builder.requestTimeout != null ? builder.requestTimeout : toDuration(config.getTimeouts().getRequestSeconds());
         this.defaultHeaders = buildDefaultHeaders(builder);
         this.client = builder.client != null ? builder.client : buildHttpClient(builder);
+    }
+
+    private void checkNotMainThread(String method) {
+        if (platform != null && platform.isMainThread()) {
+            throw new IllegalStateException(
+                    "Synchronous HTTP call '" + method + "' is not allowed on the main thread. " +
+                    "Use the ...Async() variant instead to avoid server/client freezes."
+            );
+        }
     }
 
     /**
@@ -124,6 +136,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public HttpResponse<String> get(String path) throws IOException, InterruptedException {
+        checkNotMainThread("get");
         return sendWithRetries(() -> request(path).GET().build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
@@ -148,6 +161,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public <T> T getJson(String path, Class<T> type) throws IOException, InterruptedException {
+        checkNotMainThread("getJson");
         HttpResponse<String> response = get(path);
         return readJson(response.body(), type);
     }
@@ -174,6 +188,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public HttpResponse<String> post(String path, String body) throws IOException, InterruptedException {
+        checkNotMainThread("post");
         HttpRequest request = request(path)
                 .header(HEADER_CONTENT_TYPE, "text/plain; charset=utf-8")
                 .POST(HttpRequest.BodyPublishers.ofString(body != null ? body : "", StandardCharsets.UTF_8))
@@ -208,6 +223,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public HttpResponse<String> postJson(String path, Object body) throws IOException, InterruptedException {
+        checkNotMainThread("postJson");
         String payload = writeJson(body);
         HttpRequest request = request(path)
                 .header(HEADER_CONTENT_TYPE, JSON_CONTENT_TYPE)
@@ -230,6 +246,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public <T> T postJson(String path, Object body, Class<T> type) throws IOException, InterruptedException {
+        checkNotMainThread("postJson");
         HttpResponse<String> response = postJson(path, body);
         return readJson(response.body(), type);
     }
@@ -275,6 +292,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public HttpResponse<String> postMultipart(String path, MultipartBody multipart) throws IOException, InterruptedException {
+        checkNotMainThread("postMultipart");
         Objects.requireNonNull(multipart, "multipart");
         HttpRequest request = request(path)
                 .header(HEADER_CONTENT_TYPE, multipart.contentType())
@@ -311,6 +329,7 @@ public final class MagicHttpClient implements AutoCloseable {
      * @throws InterruptedException if the thread is interrupted
      */
     public HttpResponse<Path> downloadToFile(String path, Path target) throws IOException, InterruptedException {
+        checkNotMainThread("downloadToFile");
         HttpRequest request = request(path).GET().build();
         logRequest(request, null);
         return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofFile(target));
@@ -341,6 +360,7 @@ public final class MagicHttpClient implements AutoCloseable {
      */
     public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> handler)
             throws IOException, InterruptedException {
+        checkNotMainThread("send");
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(handler, "handler");
         logRequest(request, null);
@@ -559,7 +579,7 @@ public final class MagicHttpClient implements AutoCloseable {
         }
         logger.info("[HTTP] " + request.method() + " " + request.uri());
         if (logging.isLogHeaders()) {
-            logger.debug("[HTTP] Headers: " + request.headers().map());
+            logger.debug("[HTTP] Headers: " + redactHeaders(request.headers().map()));
         }
         if (logging.isLogBody() && body != null) {
             logger.debug("[HTTP] Body: " + truncate(body));
@@ -572,7 +592,7 @@ public final class MagicHttpClient implements AutoCloseable {
         }
         logger.info("[HTTP] Response " + response.statusCode() + " " + response.uri());
         if (logging.isLogHeaders()) {
-            logger.debug("[HTTP] Headers: " + response.headers().map());
+            logger.debug("[HTTP] Headers: " + redactHeaders(response.headers().map()));
         }
         if (logging.isLogBody() && response.body() instanceof String body) {
             logger.debug("[HTTP] Body: " + truncate(body));
@@ -592,6 +612,24 @@ public final class MagicHttpClient implements AutoCloseable {
             return body;
         }
         return body.substring(0, limit) + "...";
+    }
+
+    private Map<String, List<String>> redactHeaders(Map<String, List<String>> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return headers;
+        }
+        Map<String, List<String>> redactedHeaders = new LinkedHashMap<>();
+        List<String> sensitiveHeaders = logging.getSensitiveHeaders();
+
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            String headerName = entry.getKey();
+            if (sensitiveHeaders.stream().anyMatch(h -> h.equalsIgnoreCase(headerName))) {
+                redactedHeaders.put(headerName, List.of("[REDACTED]"));
+            } else {
+                redactedHeaders.put(headerName, entry.getValue());
+            }
+        }
+        return redactedHeaders;
     }
 
     private Throwable unwrap(Throwable error) {

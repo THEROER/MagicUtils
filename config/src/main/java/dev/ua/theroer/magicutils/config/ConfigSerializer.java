@@ -152,8 +152,18 @@ public class ConfigSerializer {
                         Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
                         field.set(instance, deserializeList((List<?>) value, elementType));
                     } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
-                        ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-                        Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
+                        Class<?> valueType = null;
+                        Type genericType = field.getGenericType();
+                        if (genericType instanceof ParameterizedType) {
+                            ParameterizedType mapType = (ParameterizedType) genericType;
+                            Type[] typeArgs = mapType.getActualTypeArguments();
+                            if (typeArgs.length > 1 && typeArgs[1] instanceof Class) {
+                                valueType = (Class<?>) typeArgs[1];
+                            }
+                        }
+
+                        // If valueType is found, deserialize map with typed values
+                        // Otherwise, for raw maps or maps with complex generics, deserialize with raw values
                         field.set(instance, deserializeMap((Map<?, ?>) value, valueType));
                     } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                         // Recursive deserialization - security check is already in deserialize method
@@ -340,7 +350,7 @@ public class ConfigSerializer {
             if (adapter != null) {
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                 result.put(key, typed.deserialize(raw));
-            } else if (valueType.isAnnotationPresent(ConfigSerializable.class) && raw instanceof Map) {
+            } else if (valueType != null && valueType.isAnnotationPresent(ConfigSerializable.class) && raw instanceof Map) {
                 result.put(key, deserialize((Map<String, Object>) raw, valueType));
             } else {
                 result.put(key, raw);
