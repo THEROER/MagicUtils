@@ -40,6 +40,12 @@ public final class RetryPolicy {
         this.retryOnTimeout = retryOnTimeout;
     }
 
+    /**
+     * Creates a retry policy from configuration settings.
+     *
+     * @param settings retry settings or null
+     * @return retry policy instance
+     */
     public static RetryPolicy fromConfig(HttpClientConfig.RetrySettings settings) {
         if (settings == null) {
             return disabled();
@@ -57,22 +63,49 @@ public final class RetryPolicy {
         );
     }
 
+    /**
+     * Returns a disabled retry policy.
+     *
+     * @return disabled retry policy
+     */
     public static RetryPolicy disabled() {
         return new RetryPolicy(false, 1, 0, 0, 1.0, 0.0, Set.of(), false, false);
     }
 
+    /**
+     * Checks whether retries are enabled.
+     *
+     * @return true when retries are enabled and max attempts > 1
+     */
     public boolean isEnabled() {
         return enabled && maxAttempts > 1;
     }
 
+    /**
+     * Returns max attempts per request.
+     *
+     * @return max attempts (including the first try)
+     */
     public int maxAttempts() {
         return maxAttempts;
     }
 
+    /**
+     * Checks whether a status code should be retried.
+     *
+     * @param status HTTP status code
+     * @return true if retry should be attempted
+     */
     public boolean shouldRetryStatus(int status) {
         return isEnabled() && retryStatus.contains(status);
     }
 
+    /**
+     * Checks whether a throwable should be retried.
+     *
+     * @param throwable error to evaluate
+     * @return true if retry should be attempted
+     */
     public boolean shouldRetryThrowable(Throwable throwable) {
         if (!isEnabled() || throwable == null) {
             return false;
@@ -83,6 +116,12 @@ public final class RetryPolicy {
         return retryOnIo && throwable instanceof java.io.IOException;
     }
 
+    /**
+     * Calculates the next retry delay in milliseconds.
+     *
+     * @param attempt current attempt (1-based)
+     * @return delay in milliseconds
+     */
     public long nextDelayMs(int attempt) {
         if (attempt <= 0) {
             return 0;

@@ -35,6 +35,14 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     private final AtomicBoolean shutdownRegistered = new AtomicBoolean(false);
     private final AtomicBoolean shutdownRan = new AtomicBoolean(false);
 
+    /**
+     * Creates a Velocity platform provider with explicit logger and data directory.
+     *
+     * @param proxy Velocity proxy server
+     * @param slf4j backing SLF4J logger
+     * @param dataDirectory config/data directory
+     * @param plugin plugin instance used for event registration
+     */
     public VelocityPlatformProvider(ProxyServer proxy, Logger slf4j, Path dataDirectory, Object plugin) {
         this.proxy = proxy;
         Logger effective = slf4j != null ? slf4j : LoggerFactory.getLogger("MagicUtils-Velocity");
@@ -45,14 +53,32 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         this.plugin = plugin;
     }
 
+    /**
+     * Creates a Velocity platform provider with explicit logger and data directory.
+     *
+     * @param proxy Velocity proxy server
+     * @param slf4j backing SLF4J logger
+     * @param dataDirectory config/data directory
+     */
     public VelocityPlatformProvider(ProxyServer proxy, Logger slf4j, Path dataDirectory) {
         this(proxy, slf4j, dataDirectory, null);
     }
 
+    /**
+     * Creates a Velocity platform provider with default logger.
+     *
+     * @param proxy Velocity proxy server
+     * @param dataDirectory config/data directory
+     */
     public VelocityPlatformProvider(ProxyServer proxy, Path dataDirectory) {
         this(proxy, LoggerFactory.getLogger("MagicUtils-Velocity"), dataDirectory, null);
     }
 
+    /**
+     * Creates a Velocity platform provider with default logger and config directory.
+     *
+     * @param proxy Velocity proxy server
+     */
     public VelocityPlatformProvider(ProxyServer proxy) {
         this(proxy, LoggerFactory.getLogger("MagicUtils-Velocity"), DEFAULT_CONFIG_DIR, null);
     }
@@ -125,6 +151,11 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         proxy.getEventManager().register(plugin, this);
     }
 
+    /**
+     * Handles Velocity shutdown event and runs registered hooks.
+     *
+     * @param event shutdown event
+     */
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
         runShutdownHooks();

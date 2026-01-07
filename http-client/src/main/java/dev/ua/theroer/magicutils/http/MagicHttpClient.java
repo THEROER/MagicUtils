@@ -56,22 +56,51 @@ public final class MagicHttpClient implements AutoCloseable {
         this.client = builder.client != null ? builder.client : buildHttpClient(builder);
     }
 
+    /**
+     * Creates a builder that loads configuration from the provided manager.
+     *
+     * @param platform platform used for logging
+     * @param configManager configuration manager used to register {@link HttpClientConfig}
+     * @return a new builder instance
+     */
     public static Builder builder(Platform platform, ConfigManager configManager) {
         return new Builder(platform, configManager);
     }
 
+    /**
+     * Creates a builder without auto-loading configuration.
+     *
+     * @param platform platform used for logging
+     * @return a new builder instance
+     */
     public static Builder builder(Platform platform) {
         return new Builder(platform, null);
     }
 
+    /**
+     * Returns the resolved configuration instance.
+     *
+     * @return configuration used by the client
+     */
     public HttpClientConfig config() {
         return config;
     }
 
+    /**
+     * Returns the configured Jackson mapper.
+     *
+     * @return JSON object mapper
+     */
     public ObjectMapper mapper() {
         return mapper;
     }
 
+    /**
+     * Creates a request builder with defaults (base URL, headers, timeouts).
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @return request builder
+     */
     public HttpRequest.Builder request(String path) {
         URI uri = resolveUri(path);
         HttpRequest.Builder builder = HttpRequest.newBuilder(uri);
@@ -86,23 +115,64 @@ public final class MagicHttpClient implements AutoCloseable {
         return builder;
     }
 
+    /**
+     * Sends a GET request and returns the response body as string.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @return HTTP response with string body
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public HttpResponse<String> get(String path) throws IOException, InterruptedException {
         return sendWithRetries(() -> request(path).GET().build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a GET request asynchronously.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @return future with response
+     */
     public CompletableFuture<HttpResponse<String>> getAsync(String path) {
         return sendWithRetriesAsync(() -> request(path).GET().build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a GET request and deserializes the JSON response into a type.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param type target type
+     * @param <T> type of result
+     * @return deserialized response
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public <T> T getJson(String path, Class<T> type) throws IOException, InterruptedException {
         HttpResponse<String> response = get(path);
         return readJson(response.body(), type);
     }
 
+    /**
+     * Sends a GET request asynchronously and deserializes JSON response.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param type target type
+     * @param <T> type of result
+     * @return future with deserialized response
+     */
     public <T> CompletableFuture<T> getJsonAsync(String path, Class<T> type) {
         return getAsync(path).thenApply(response -> readJson(response.body(), type));
     }
 
+    /**
+     * Sends a plain-text POST request.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body
+     * @return HTTP response with string body
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public HttpResponse<String> post(String path, String body) throws IOException, InterruptedException {
         HttpRequest request = request(path)
                 .header(HEADER_CONTENT_TYPE, "text/plain; charset=utf-8")
@@ -112,6 +182,13 @@ public final class MagicHttpClient implements AutoCloseable {
         return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a plain-text POST request asynchronously.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body
+     * @return future with response
+     */
     public CompletableFuture<HttpResponse<String>> postAsync(String path, String body) {
         HttpRequest request = request(path)
                 .header(HEADER_CONTENT_TYPE, "text/plain; charset=utf-8")
@@ -121,6 +198,15 @@ public final class MagicHttpClient implements AutoCloseable {
         return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a JSON POST request.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body object
+     * @return HTTP response with string body
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public HttpResponse<String> postJson(String path, Object body) throws IOException, InterruptedException {
         String payload = writeJson(body);
         HttpRequest request = request(path)
@@ -132,11 +218,29 @@ public final class MagicHttpClient implements AutoCloseable {
         return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a JSON POST request and deserializes the response.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body object
+     * @param type target type
+     * @param <T> type of result
+     * @return deserialized response
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public <T> T postJson(String path, Object body, Class<T> type) throws IOException, InterruptedException {
         HttpResponse<String> response = postJson(path, body);
         return readJson(response.body(), type);
     }
 
+    /**
+     * Sends a JSON POST request asynchronously.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body object
+     * @return future with response
+     */
     public CompletableFuture<HttpResponse<String>> postJsonAsync(String path, Object body) {
         String payload = writeJson(body);
         HttpRequest request = request(path)
@@ -148,10 +252,28 @@ public final class MagicHttpClient implements AutoCloseable {
         return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a JSON POST request asynchronously and deserializes the response.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body object
+     * @param type target type
+     * @param <T> type of result
+     * @return future with deserialized response
+     */
     public <T> CompletableFuture<T> postJsonAsync(String path, Object body, Class<T> type) {
         return postJsonAsync(path, body).thenApply(response -> readJson(response.body(), type));
     }
 
+    /**
+     * Sends a multipart/form-data POST request.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param multipart multipart body builder
+     * @return HTTP response with string body
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public HttpResponse<String> postMultipart(String path, MultipartBody multipart) throws IOException, InterruptedException {
         Objects.requireNonNull(multipart, "multipart");
         HttpRequest request = request(path)
@@ -162,6 +284,13 @@ public final class MagicHttpClient implements AutoCloseable {
         return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a multipart/form-data POST request asynchronously.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param multipart multipart body builder
+     * @return future with response
+     */
     public CompletableFuture<HttpResponse<String>> postMultipartAsync(String path, MultipartBody multipart) {
         Objects.requireNonNull(multipart, "multipart");
         HttpRequest request = request(path)
@@ -172,18 +301,44 @@ public final class MagicHttpClient implements AutoCloseable {
         return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Downloads content into a file.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param target target file path
+     * @return HTTP response with file body
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public HttpResponse<Path> downloadToFile(String path, Path target) throws IOException, InterruptedException {
         HttpRequest request = request(path).GET().build();
         logRequest(request, null);
         return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofFile(target));
     }
 
+    /**
+     * Downloads content into a file asynchronously.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param target target file path
+     * @return future with file response
+     */
     public CompletableFuture<HttpResponse<Path>> downloadToFileAsync(String path, Path target) {
         HttpRequest request = request(path).GET().build();
         logRequest(request, null);
         return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofFile(target));
     }
 
+    /**
+     * Sends a request using the underlying client without automatic retries.
+     *
+     * @param request request to send
+     * @param handler body handler
+     * @param <T> body type
+     * @return HTTP response
+     * @throws IOException if request fails
+     * @throws InterruptedException if the thread is interrupted
+     */
     public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> handler)
             throws IOException, InterruptedException {
         Objects.requireNonNull(request, "request");
@@ -194,6 +349,14 @@ public final class MagicHttpClient implements AutoCloseable {
         return response;
     }
 
+    /**
+     * Sends a request asynchronously using the underlying client without automatic retries.
+     *
+     * @param request request to send
+     * @param handler body handler
+     * @param <T> body type
+     * @return future with response
+     */
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(handler, "handler");
@@ -438,6 +601,9 @@ public final class MagicHttpClient implements AutoCloseable {
         return error;
     }
 
+    /**
+     * Builder for {@link MagicHttpClient}.
+     */
     public static final class Builder {
         private final Platform platform;
         private final ConfigManager configManager;
@@ -465,41 +631,90 @@ public final class MagicHttpClient implements AutoCloseable {
             }
         }
 
+        /**
+         * Overrides logger used for request logging.
+         *
+         * @param logger platform logger
+         * @return this builder
+         */
         public Builder logger(PlatformLogger logger) {
             this.logger = logger;
             return this;
         }
 
+        /**
+         * Overrides the configuration instance.
+         *
+         * @param config configuration to use
+         * @return this builder
+         */
         public Builder config(HttpClientConfig config) {
             this.config = config;
             return this;
         }
 
+        /**
+         * Overrides logging settings.
+         *
+         * @param logging logging settings
+         * @return this builder
+         */
         public Builder logging(HttpClientConfig.LoggingSettings logging) {
             this.logging = logging;
             return this;
         }
 
+        /**
+         * Overrides retry policy.
+         *
+         * @param retryPolicy retry policy
+         * @return this builder
+         */
         public Builder retryPolicy(RetryPolicy retryPolicy) {
             this.retryPolicy = retryPolicy;
             return this;
         }
 
+        /**
+         * Overrides JSON mapper.
+         *
+         * @param mapper object mapper
+         * @return this builder
+         */
         public Builder mapper(ObjectMapper mapper) {
             this.mapper = mapper;
             return this;
         }
 
+        /**
+         * Sets a base URL used for relative paths.
+         *
+         * @param baseUrl base URL
+         * @return this builder
+         */
         public Builder baseUrl(String baseUrl) {
             this.baseUrl = baseUrl;
             return this;
         }
 
+        /**
+         * Sets default User-Agent header value.
+         *
+         * @param userAgent user agent value
+         * @return this builder
+         */
         public Builder userAgent(String userAgent) {
             this.userAgent = userAgent;
             return this;
         }
 
+        /**
+         * Adds a default header.
+         *
+         * @param name header name
+         * @param value header value
+         * @return this builder
+         */
         public Builder header(String name, String value) {
             if (defaultHeaders == null) {
                 defaultHeaders = new LinkedHashMap<>();
@@ -508,6 +723,12 @@ public final class MagicHttpClient implements AutoCloseable {
             return this;
         }
 
+        /**
+         * Adds default headers.
+         *
+         * @param headers header map
+         * @return this builder
+         */
         public Builder headers(Map<String, String> headers) {
             if (headers == null || headers.isEmpty()) {
                 return this;
@@ -519,36 +740,77 @@ public final class MagicHttpClient implements AutoCloseable {
             return this;
         }
 
+        /**
+         * Overrides connect timeout.
+         *
+         * @param connectTimeout connect timeout
+         * @return this builder
+         */
         public Builder connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
             return this;
         }
 
+        /**
+         * Overrides per-request timeout.
+         *
+         * @param requestTimeout request timeout
+         * @return this builder
+         */
         public Builder requestTimeout(Duration requestTimeout) {
             this.requestTimeout = requestTimeout;
             return this;
         }
 
+        /**
+         * Overrides redirect behavior.
+         *
+         * @param followRedirects whether to follow redirects
+         * @return this builder
+         */
         public Builder followRedirects(boolean followRedirects) {
             this.followRedirects = followRedirects;
             return this;
         }
 
+        /**
+         * Overrides HTTP protocol version.
+         *
+         * @param version HTTP version
+         * @return this builder
+         */
         public Builder version(HttpClient.Version version) {
             this.version = version;
             return this;
         }
 
+        /**
+         * Overrides the underlying HTTP client.
+         *
+         * @param client HTTP client
+         * @return this builder
+         */
         public Builder client(HttpClient client) {
             this.client = client;
             return this;
         }
 
+        /**
+         * Overrides the HTTP client builder used to create the client.
+         *
+         * @param httpBuilder HTTP client builder
+         * @return this builder
+         */
         public Builder httpBuilder(HttpClient.Builder httpBuilder) {
             this.httpBuilder = httpBuilder;
             return this;
         }
 
+        /**
+         * Builds the client instance.
+         *
+         * @return HTTP client
+         */
         public MagicHttpClient build() {
             return new MagicHttpClient(this);
         }
