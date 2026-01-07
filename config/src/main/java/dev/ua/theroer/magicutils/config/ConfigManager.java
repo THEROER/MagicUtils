@@ -509,7 +509,7 @@ public class ConfigManager {
                     List<Object> deserializedList = new ArrayList<>();
                     for (Object item : list) {
                         if (item instanceof Map) {
-                            deserializedList.add(ConfigSerializer.deserialize((Map<String, Object>) item, elementType));
+                            deserializedList.add(ConfigSerializer.deserialize(logger, (Map<String, Object>) item, elementType));
                         } else {
                             deserializedList.add(item);
                         }
@@ -549,7 +549,7 @@ public class ConfigManager {
                         Object entryValue = entry.getValue();
                         if (entryValue instanceof Map) {
                             deserializedMap.put(entry.getKey(),
-                                    ConfigSerializer.deserialize((Map<String, Object>) entryValue, valueType));
+                                    ConfigSerializer.deserialize(logger, (Map<String, Object>) entryValue, valueType));
                         } else {
                             deserializedMap.put(entry.getKey(), entryValue);
                         }
@@ -574,7 +574,7 @@ public class ConfigManager {
                     }
                 }
         } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
-                value = ConfigSerializer.deserialize((Map<String, Object>) value, fieldType);
+                value = ConfigSerializer.deserialize(logger, (Map<String, Object>) value, fieldType);
         } else {
             ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
             if (adapter != null) {
