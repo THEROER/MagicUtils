@@ -43,6 +43,7 @@ public class CommandArgument {
     @Getter(AccessLevel.NONE)
     private final List<String> optionLongNames;
     private final boolean flag;
+    private final List<String> contextArgs;
 
     private CommandArgument(Builder builder) {
         this.name = builder.name;
@@ -69,6 +70,7 @@ public class CommandArgument {
         this.optionShortNames = new ArrayList<>(builder.optionShortNames);
         this.optionLongNames = new ArrayList<>(builder.optionLongNames);
         this.flag = builder.flag;
+        this.contextArgs = new ArrayList<>(builder.contextArgs);
     }
 
     /**
@@ -123,6 +125,15 @@ public class CommandArgument {
      */
     public List<String> getLongOptionNames() {
         return new ArrayList<>(optionLongNames);
+    }
+
+    /**
+     * Returns the names of arguments whose parsed values should be available when generating suggestions.
+     *
+     * @return copy of the list of context argument names
+     */
+    public List<String> getContextArgs() {
+        return new ArrayList<>(contextArgs);
     }
 
     /**
@@ -197,6 +208,7 @@ public class CommandArgument {
         private final List<String> optionShortNames = new ArrayList<>();
         private final List<String> optionLongNames = new ArrayList<>();
         private boolean flag = false;
+        private final List<String> contextArgs = new ArrayList<>();
 
         /**
          * Constructs a new Builder for CommandArgument.
@@ -442,6 +454,19 @@ public class CommandArgument {
         }
 
         /**
+         * Adds names of arguments whose parsed values should be available as context for suggestions.
+         *
+         * @param contextArgs the names of context arguments
+         * @return this builder
+         */
+        public Builder contextArgs(String... contextArgs) {
+            if (contextArgs != null) {
+                this.contextArgs.addAll(Arrays.asList(contextArgs));
+            }
+            return this;
+        }
+
+        /**
          * Builds the CommandArgument instance.
          * 
          * @return the CommandArgument
@@ -463,6 +488,7 @@ public class CommandArgument {
                 ", permissionCondition='" + permissionCondition + '\'' +
                 ", options=" + optionShortNames + "/" + optionLongNames +
                 ", flag=" + flag +
+                ", contextArgs=" + contextArgs +
                 '}';
     }
 }

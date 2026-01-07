@@ -102,6 +102,7 @@ paper.yml
 *.dev
 *.test
 *.local
+*.patch
 
 # Backup files
 *.bak
@@ -141,3 +142,6 @@ yarn-error.log*
 .env.production.local
 .aider*
 .claude*
+
+.gemini/
+gha-creds-*.json

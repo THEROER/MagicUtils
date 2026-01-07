@@ -644,7 +644,6 @@ public final class MagicHttpClient implements AutoCloseable {
      */
     public static final class Builder {
         private final Platform platform;
-        private final ConfigManager configManager;
         private PlatformLogger logger;
         private HttpClientConfig config;
         private HttpClientConfig.LoggingSettings logging;
@@ -662,7 +661,6 @@ public final class MagicHttpClient implements AutoCloseable {
 
         private Builder(Platform platform, ConfigManager configManager) {
             this.platform = platform;
-            this.configManager = configManager;
             this.logger = platform != null ? platform.logger() : null;
             if (configManager != null) {
                 this.config = configManager.register(HttpClientConfig.class);

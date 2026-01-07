@@ -4,6 +4,8 @@ import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
+
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
@@ -904,7 +906,7 @@ public class CommandManager<S> {
 
         if (command == null || info == null) {
             logger.debug("Command not found for suggestions: " + name);
-            return Arrays.asList("");
+            return Collections.emptyList();
         }
 
         String commandPermission = resolvePermission(info.permission(),
@@ -915,7 +917,7 @@ public class CommandManager<S> {
                 && !platform.hasPermission(sender, commandPermission, info.permissionDefault())
                 && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
             logger.debug("No permission for suggestions: " + commandPermission);
-            return Arrays.asList("");
+            return Collections.emptyList();
         }
 
         try {
@@ -923,8 +925,8 @@ public class CommandManager<S> {
             logger.debug("Generated suggestions: " + suggestions);
             return suggestions;
         } catch (Exception e) {
-            logger.debug("Error generating suggestions: " + e.getMessage());
-            return Arrays.asList("");
+            logger.debug("Error generating suggestions: " + e);
+            return Collections.emptyList();
         }
     }
 
@@ -940,13 +942,13 @@ public class CommandManager<S> {
         if (directAction != null && subCommands.isEmpty()) {
             List<CommandArgument> arguments = directAction.arguments();
             logger.debug("Using direct method suggestions with " + arguments.size() + " arguments");
-            return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName, null);
+            return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName, null, Collections.emptyMap());
         }
 
         // If there are no subcommands and no execute handler
         if (subCommands.isEmpty() && directAction == null) {
             logger.debug("No subcommands and no execute handler");
-            return Arrays.asList("");
+            return Collections.emptyList();
         }
 
         SubCommandNode<S> root = buildSubCommandTree(subCommands);
@@ -962,7 +964,7 @@ public class CommandManager<S> {
 
         SubCommandTraversal<S> traversal = traverseSubCommands(root, fixedTokens);
         if (traversal.consumed() < fixedTokens.size() && traversal.lastActionNode() == null) {
-            return Arrays.asList("");
+            return Collections.emptyList();
         }
 
         SubCommandNode<S> node = traversal.node();
@@ -976,11 +978,11 @@ public class CommandManager<S> {
                     matchedAction.description());
             if (!subPermission.isEmpty()
                     && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
-                return Arrays.asList("");
+                return Collections.emptyList();
             }
             List<String> subArgs = args.subList(actionIndex, args.size());
             return generateArgumentSuggestions(command, matchedAction, sender, subArgs, currentInput,
-                    normalizedCommandName);
+                    normalizedCommandName, Collections.emptyMap()); // Initial call, no previous parsed args yet
         }
 
         List<String> availableChildren = getAvailableChildNames(node, sender, normalizedCommandName);
@@ -995,7 +997,7 @@ public class CommandManager<S> {
             if (directAction != null && fixedTokens.isEmpty() && !matchesChild) {
                 List<CommandArgument> arguments = directAction.arguments();
                 List<String> directSuggestions = generateDirectMethodSuggestions(command, arguments, sender, args,
-                        normalizedCommandName, null);
+                        normalizedCommandName, null, new HashMap<>()); // Pass empty map here
                 List<String> combined = new ArrayList<>(directSuggestions);
                 combined.addAll(filteredChildren);
                 return combined;
@@ -1009,12 +1011,12 @@ public class CommandManager<S> {
                 matchedAction.description());
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
-            return filteredChildren.isEmpty() ? Arrays.asList("") : filteredChildren;
+            return filteredChildren.isEmpty() ? Collections.emptyList() : filteredChildren;
         }
 
         List<String> subArgs = args.subList(actionIndex, args.size());
         List<String> argumentSuggestions = generateArgumentSuggestions(command, matchedAction, sender, subArgs,
-                currentInput, normalizedCommandName);
+                currentInput, normalizedCommandName, Collections.emptyMap()); // Initial call, no previous parsed args yet
 
         if (!filteredChildren.isEmpty()) {
             if (!matchesChild) {
@@ -1029,134 +1031,103 @@ public class CommandManager<S> {
     }
 
     private List<String> generateDirectMethodSuggestions(MagicCommand command, List<CommandArgument> arguments,
-            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
+            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
+            @NotNull Map<String, Object> previousParsedArguments) {
         OptionIndex optionIndex = buildOptionIndex(arguments);
         if (optionIndex.hasOptions()) {
             return generateSuggestionsWithOptions(command, arguments, optionIndex, sender, args,
-                    normalizedCommandName, subCommandName);
+                    normalizedCommandName, subCommandName, previousParsedArguments);
         }
-        return generatePositionalSuggestions(command, arguments, sender, args, normalizedCommandName, subCommandName);
+        return generatePositionalSuggestions(command, arguments, sender, args, normalizedCommandName, subCommandName,
+                previousParsedArguments);
     }
 
     private List<String> generatePositionalSuggestions(MagicCommand command, List<CommandArgument> arguments,
-            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
+            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
+            @NotNull Map<String, Object> allParsedArguments) {
         logger.debug("generatePositionalSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
         logger.debug("Raw args: " + args);
 
         if (arguments.isEmpty()) {
             logger.debug("No arguments defined for direct method");
-            return Arrays.asList("");
-        }
-
-        // Log all arguments first
-        for (int i = 0; i < arguments.size(); i++) {
-            CommandArgument arg = arguments.get(i);
-            logger.debug("Raw argument " + i + ": " + arg.getName() + " (type: "
-                    + arg.getType().getSimpleName() + ", suggestions: " + arg.getSuggestions() + ")");
+            return Collections.emptyList();
         }
 
         // Build a list of arguments that need user input (skip sender-bound parameters)
+        allParsedArguments = new HashMap<>(allParsedArguments);
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
-            logger.debug("Checking argument " + i + ": " + arg.getName() + " (type: " + arg.getType().getSimpleName() + ")");
-            // Skip explicit sender parameters
+            // Skip explicit sender parameters, they are handled by platform.resolveSenderArgument and not user input
             if (isSenderArgument(arg)) {
-                logger.debug("  -> Skipped (sender)");
+                try {
+                    allParsedArguments.put(arg.getName(), platform.resolveSenderArgument(sender, arg));
+                } catch (SenderMismatchException ex) {
+                    // Ignore, this should not prevent suggestions and will be caught during execution
+                }
             } else if (arg.isFlag()) {
-                logger.debug("  -> Skipped (flag)");
+                // Flags are options, not positional arguments, handled elsewhere
+                continue;
             } else {
                 userInputArguments.add(new ArgumentInfo(i, arg));
-                logger.debug("  -> Added as user input argument");
             }
         }
 
-        logger.debug("User input arguments: " + userInputArguments.size());
-        for (int i = 0; i < userInputArguments.size(); i++) {
-            ArgumentInfo info = userInputArguments.get(i);
-            logger.debug("  - User arg " + i + " (orig index " + info.originalIndex + "): "
-                    + info.argument.getName() + " (type: " + info.argument.getType().getSimpleName() + ", optional: "
-                    + info.argument.isOptional() + ", hasDefault: " + (info.argument.getDefaultValue() != null) + ")");
+        int currentArgPosition = 0;
+        for (int i = 0; i < args.size() - 1; i++) {
+            if (currentArgPosition >= userInputArguments.size()) {
+                break;
+            }
+
+            ArgumentInfo argInfo = userInputArguments.get(currentArgPosition);
+            String token = args.get(i);
+            Object parsedValue = convertArgument(token, argInfo.argument.getType(), sender);
+
+            if (parsedValue != null) {
+                allParsedArguments.put(argInfo.argument.getName(), parsedValue);
+                currentArgPosition++;
+            } else if (argInfo.argument.isOptional()) {
+                allParsedArguments.put(argInfo.argument.getName(), null);
+                currentArgPosition++;
+                i--; 
+            } else {
+                break;
+            }
         }
 
-        if (userInputArguments.isEmpty()) {
-            logger.debug("No arguments require user input");
-            return Arrays.asList("");
-        }
+        List<String> suggestions = new ArrayList<>();
 
-        // If no args provided, suggest for all possible first arguments (including
-        // optional ones)
         if (args.isEmpty()) {
-            logger.debug("No user args provided, generating suggestions for first argument(s)");
-            List<String> suggestions = new ArrayList<>();
-
-            // Always include suggestions for the first user argument
-            ArgumentInfo firstArg = userInputArguments.get(0);
-            logger.debug("Generating suggestions for first argument: " + firstArg.argument.getName());
-
-            if (canSuggestArgument(normalizedCommandName, subCommandName, firstArg.argument, sender)) {
-                List<String> firstArgSuggestions = generateSuggestionsForArgument(command, firstArg.argument, sender,
-                        "");
-                suggestions.addAll(firstArgSuggestions);
-                logger.debug("First argument suggestions: " + firstArgSuggestions);
-            }
-
-            // If first argument is optional, also include suggestions for the second
-            // argument
-            if ((firstArg.argument.isOptional() || firstArg.argument.getDefaultValue() != null)
-                    && userInputArguments.size() > 1) {
-                ArgumentInfo secondArg = userInputArguments.get(1);
-                logger.debug("First argument is optional, also generating suggestions for second argument: "
-                                + secondArg.argument.getName());
-
-                if (canSuggestArgument(normalizedCommandName, subCommandName, secondArg.argument, sender)) {
-                    List<String> secondArgSuggestions = generateSuggestionsForArgument(command, secondArg.argument,
-                            sender, "");
-                    suggestions.addAll(secondArgSuggestions);
-                    logger.debug("Second argument suggestions: " + secondArgSuggestions);
+            if (!userInputArguments.isEmpty()) {
+                ArgumentInfo firstArg = userInputArguments.get(0);
+                if (canSuggestArgument(normalizedCommandName, subCommandName, firstArg.argument, sender)) {
+                    suggestions.addAll(generateSuggestionsForArgument(command, firstArg.argument, sender, "",
+                            allParsedArguments));
                 }
             }
-
-            logger.debug("Combined suggestions for empty args: " + suggestions);
             return suggestions.stream().distinct().collect(Collectors.toList());
         }
 
-        // Determine which argument we're currently suggesting for
-        int currentArgIndex = args.size() - 1;
-        logger.debug("Current argument index: " + currentArgIndex + " (based on args.size() = " + args.size() + ")");
+        String currentInput = args.get(args.size() - 1);
+        int targetArgumentIndex = currentArgPosition;
 
-        // Handle the case where we might be suggesting for an argument beyond the
-        // current input
-        // This happens when optional arguments are skipped
-        List<String> suggestions = new ArrayList<>();
-
-        // Current argument suggestions
-        if (currentArgIndex < userInputArguments.size()) {
-            ArgumentInfo currentArg = userInputArguments.get(currentArgIndex);
-            String currentInput = args.get(args.size() - 1);
-
-            logger.debug("Generating suggestions for current argument " + currentArgIndex + ": "
-                    + currentArg.argument.getName() + " with input: '" + currentInput + "'");
-
-            if (canSuggestArgument(normalizedCommandName, subCommandName, currentArg.argument, sender)) {
-                suggestions.addAll(generateSuggestionsForArgument(command, currentArg.argument, sender, currentInput));
+        if (targetArgumentIndex < userInputArguments.size()) {
+            ArgumentInfo targetArg = userInputArguments.get(targetArgumentIndex);
+            if (canSuggestArgument(normalizedCommandName, subCommandName, targetArg.argument, sender)) {
+                suggestions.addAll(generateSuggestionsForArgument(command, targetArg.argument, sender, currentInput,
+                        allParsedArguments));
             }
         }
 
-        // If current argument is optional and we're not at the end, also suggest for
-        // next argument
-        if (currentArgIndex < userInputArguments.size()) {
-            ArgumentInfo currentArg = userInputArguments.get(currentArgIndex);
-            if ((currentArg.argument.isOptional() || currentArg.argument.getDefaultValue() != null)
-                    && currentArgIndex + 1 < userInputArguments.size()) {
-
-                ArgumentInfo nextArg = userInputArguments.get(currentArgIndex + 1);
-                logger.debug("Current argument is optional, also suggesting for next argument: "
-                        + nextArg.argument.getName());
-
+        if (targetArgumentIndex < userInputArguments.size()) {
+            ArgumentInfo targetArg = userInputArguments.get(targetArgumentIndex);
+            if ((targetArg.argument.isOptional() || targetArg.argument.getDefaultValue() != null)
+                    && targetArgumentIndex + 1 < userInputArguments.size()) {
+                ArgumentInfo nextArg = userInputArguments.get(targetArgumentIndex + 1);
                 if (canSuggestArgument(normalizedCommandName, subCommandName, nextArg.argument, sender)) {
-                    suggestions.addAll(generateSuggestionsForArgument(command, nextArg.argument, sender, ""));
+                    suggestions.addAll(generateSuggestionsForArgument(command, nextArg.argument, sender, "",
+                            allParsedArguments));
                 }
             }
         }
@@ -1166,22 +1137,33 @@ public class CommandManager<S> {
 
     private List<String> generateSuggestionsWithOptions(MagicCommand command, List<CommandArgument> arguments,
             OptionIndex optionIndex, S sender, List<String> args,
-            String normalizedCommandName, @Nullable String subCommandName) {
+            String normalizedCommandName, @Nullable String subCommandName,
+            @NotNull Map<String, Object> allParsedArguments) {
         if (arguments.isEmpty()) {
-            return Arrays.asList("");
+            return Collections.emptyList();
         }
         String currentInput = args.isEmpty() ? "" : args.get(args.size() - 1);
         List<String> priorTokens = args.size() > 1 ? args.subList(0, args.size() - 1) : List.of();
         ParsedOptions parsed = parseOptions(priorTokens, optionIndex, true);
         if (parsed == null) {
-            return Arrays.asList("");
+            return Collections.emptyList();
         }
+
+        for (Map.Entry<CommandArgument, String> entry : parsed.values().entrySet()) {
+            CommandArgument arg = entry.getKey();
+            String value = entry.getValue();
+            Object converted = convertArgument(value, arg.getType(), sender);
+            if (converted != null) {
+                allParsedArguments.put(arg.getName(), converted);
+            }
+        }
+        
         CommandArgument pending = parsed.pendingValue();
         if (pending != null) {
             if (!canSuggestArgument(normalizedCommandName, subCommandName, pending, sender)) {
-                return Arrays.asList("");
+                return Collections.emptyList();
             }
-            return generateSuggestionsForArgument(command, pending, sender, currentInput);
+            return generateSuggestionsForArgument(command, pending, sender, currentInput, allParsedArguments);
         }
 
         boolean optionsTerminated = parsed.optionsTerminated();
@@ -1192,16 +1174,17 @@ public class CommandManager<S> {
             List<String> positional = new ArrayList<>(parsed.positionals());
             positional.add(currentInput);
             suggestions.addAll(generatePositionalSuggestions(command, arguments, sender, positional,
-                    normalizedCommandName, subCommandName));
+                    normalizedCommandName, subCommandName, allParsedArguments));
         }
 
         if (!optionsTerminated && (currentInput.isEmpty() || currentIsOption)) {
             suggestions.addAll(buildOptionSuggestions(optionIndex, parsed.usedOptions(), currentInput,
-                    normalizedCommandName, subCommandName, sender));
+                    normalizedCommandName, subCommandName, sender, allParsedArguments));
         }
 
         return suggestions.stream().distinct().collect(Collectors.toList());
     }
+
 
     // Helper class to track argument info with original indices
     private static class ArgumentInfo {
@@ -1436,7 +1419,8 @@ public class CommandManager<S> {
     }
 
     private List<String> buildOptionSuggestions(OptionIndex optionIndex, Set<CommandArgument> usedOptions,
-            String currentInput, String normalizedCommandName, @Nullable String subCommandName, S sender) {
+            String currentInput, String normalizedCommandName, @Nullable String subCommandName, S sender,
+            @NotNull Map<String, Object> allParsedArguments) {
         if (optionIndex == null || !optionIndex.hasOptions()) {
             return List.of();
         }
@@ -1471,14 +1455,15 @@ public class CommandManager<S> {
     }
 
     private List<String> generateArgumentSuggestions(MagicCommand command, CommandAction<S> subInfo,
-            S sender, List<String> args, String currentInput, String normalizedCommandName) {
+            S sender, List<String> args, String currentInput, String normalizedCommandName,
+            Map<String, Object> previousParsedArguments) {
         List<CommandArgument> arguments = subInfo != null ? subInfo.arguments() : List.of();
         return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName,
-                subInfo != null ? subInfo.fullPath() : null);
+                subInfo != null ? subInfo.fullPath() : null, previousParsedArguments);
     }
 
     private List<String> generateSuggestionsForArgument(MagicCommand command, CommandArgument argument,
-            S sender, String currentInput) {
+            S sender, String currentInput, Map<String, Object> previousParsedArguments) {
         logger.debug("generateSuggestionsForArgument called for argument: " + argument.getName()
                 + " with input: '" + currentInput + "'");
         logger.debug("Argument suggestions: " + argument.getSuggestions());
@@ -1490,7 +1475,7 @@ public class CommandManager<S> {
         if (argument.getSuggestions().isEmpty()) {
             logger.debug("No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
             List<String> typeSuggestions = typeParserRegistry.getSuggestionsForArgumentFiltered(argument,
-                    currentInput, sender);
+                    currentInput, sender, previousParsedArguments);
             if (!typeSuggestions.isEmpty()) {
                 logger.debug("Got " + typeSuggestions.size() + " suggestions from type parser");
                 return typeSuggestions;
@@ -1505,13 +1490,13 @@ public class CommandManager<S> {
                 String[] sources = suggestionSource.split("\\|");
                 for (String source : sources) {
                     List<String> sourceSuggestions = processSuggestionSource(command, source.trim(), sender,
-                            currentInput);
+                            currentInput, argument, previousParsedArguments);
                     logger.debug("Source '" + source.trim() + "' generated: " + sourceSuggestions);
                     suggestions.addAll(sourceSuggestions);
                 }
             } else {
                 List<String> sourceSuggestions = processSuggestionSource(command, suggestionSource, sender,
-                        currentInput);
+                        currentInput, argument, previousParsedArguments);
                 logger.debug("Source '" + suggestionSource + "' generated: " + sourceSuggestions);
                 suggestions.addAll(sourceSuggestions);
             }
@@ -1528,12 +1513,13 @@ public class CommandManager<S> {
 
     @SuppressWarnings("unchecked")
     private List<String> processSuggestionSource(MagicCommand command, String source, S sender,
-            String currentInput) {
+            String currentInput, CommandArgument currentArgument, Map<String, Object> previousParsedArguments) {
         logger.debug("Processing suggestion source: " + source);
 
         if ("@commands".equalsIgnoreCase(source)) {
             return Arrays.asList(HelpCommandSupport.getCommandSuggestions(this));
         }
+
 
         if (typeParserRegistry.isSpecialSuggestion(source)) {
             return typeParserRegistry.parseSuggestionFiltered(source, currentInput, sender);
@@ -1544,57 +1530,116 @@ public class CommandManager<S> {
             return Arrays.asList(content.split(",\\s*"));
         }
 
+        List<Object> dynamicArgs = new ArrayList<>();
+        List<Class<?>> dynamicArgTypes = new ArrayList<>();
+
+        Class<?> playerType = platform.playerType();
+        Class<?> senderType = platform.senderType();
+
+        boolean methodTakesSender = false;
+        boolean methodTakesPlayer = false;
+
         try {
             Method method = command.getClass().getMethod(source);
             Object result = method.invoke(command);
-
             if (result instanceof String[]) {
                 return Arrays.asList((String[]) result);
             } else if (result instanceof List) {
                 return (List<String>) result;
             }
         } catch (Exception e) {
-            logger.debug("Failed to call suggestion method " + source + ": " + e.getMessage());
         }
 
-        Class<?> playerType = platform.playerType();
-        if (playerType != null) {
-            try {
-                Method method = command.getClass().getMethod(source, playerType);
+        if (currentArgument.getContextArgs().isEmpty()) {
+            if (playerType != null) {
                 Object player = platform.getPlayerSender(sender);
-                Object result = method.invoke(command, player);
-
-                if (result instanceof String[]) {
-                    return Arrays.asList((String[]) result);
-                } else if (result instanceof List) {
-                    return (List<String>) result;
+                if (player != null) {
+                    dynamicArgs.add(player);
+                    dynamicArgTypes.add(playerType);
+                    methodTakesPlayer = true;
                 }
-            } catch (Exception e) {
-                logger.debug("Failed to call suggestion method " + source + " with player parameter: " + e.getMessage());
+            }
+            if (senderType != null && !methodTakesPlayer) {
+                dynamicArgs.add(sender);
+                dynamicArgTypes.add(senderType);
+                methodTakesSender = true;
             }
         }
 
-        Class<?> senderType = platform.senderType();
-        if (senderType != null) {
-            try {
-                Method method = command.getClass().getMethod(source, senderType);
-                Object result = method.invoke(command, sender);
+        for (String contextArgName : currentArgument.getContextArgs()) {
+            Object argValue = previousParsedArguments.get(contextArgName);
+            if (argValue != null) {
+                dynamicArgs.add(argValue);
+                dynamicArgTypes.add(argValue.getClass());
+            } else {
+                logger.debug("Missing context argument '" + contextArgName + "' for suggestion method " + source);
+                return Collections.emptyList();
+            }
+        }
+        
+        if (currentInput != null && !currentInput.isEmpty()) {
+            dynamicArgs.add(currentInput);
+            dynamicArgTypes.add(String.class);
+        }
 
+        try {
+            Method matchingMethod = findMatchingMethod(command.getClass(), source, dynamicArgTypes);
+            if (matchingMethod != null) {
+                Object result = matchingMethod.invoke(command, dynamicArgs.toArray());
                 if (result instanceof String[]) {
                     return Arrays.asList((String[]) result);
                 } else if (result instanceof List) {
                     return (List<String>) result;
                 }
-            } catch (Exception e) {
-                logger.debug("Failed to call suggestion method " + source + " with sender parameter: " + e.getMessage());
             }
+        } catch (Exception e) {
+            logger.debug("Failed to call suggestion method " + source + " with dynamic parameters: " + e.getMessage());
         }
 
         if ("@sender".equalsIgnoreCase(source)) {
             return Collections.emptyList();
         }
 
-        return Arrays.asList("");
+        return Collections.emptyList();
+    }
+
+    private Method findMatchingMethod(Class<?> clazz, String methodName, List<Class<?>> paramTypes) {
+        for (Method method : clazz.getMethods()) {
+            if (!method.getName().equals(methodName)) {
+                continue;
+            }
+            Class<?>[] methodParamTypes = method.getParameterTypes();
+            if (methodParamTypes.length != paramTypes.size()) {
+                continue;
+            }
+            boolean typesMatch = true;
+            for (int i = 0; i < paramTypes.size(); i++) {
+                Class<?> expected = paramTypes.get(i);
+                Class<?> actual = methodParamTypes[i];
+                if (!actual.isAssignableFrom(expected) && !isPrimitiveWrapperOf(actual, expected)) {
+                    typesMatch = false;
+                    break;
+                }
+            }
+            if (typesMatch) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private boolean isPrimitiveWrapperOf(Class<?> wrapper, Class<?> primitive) {
+        if (!wrapper.isPrimitive() && primitive.isPrimitive()) {
+            if (wrapper == Integer.class && primitive == int.class) return true;
+            if (wrapper == Long.class && primitive == long.class) return true;
+            if (wrapper == Short.class && primitive == short.class) return true;
+            if (wrapper == Byte.class && primitive == byte.class) return true;
+            if (wrapper == Character.class && primitive == char.class) return true;
+            if (wrapper == Float.class && primitive == float.class) return true;
+            if (wrapper == Double.class && primitive == double.class) return true;
+            if (wrapper == Boolean.class && primitive == boolean.class) return true;
+        }
+        return false;
     }
 
     private boolean hasSubOrArgPermission(MagicCommand command, CommandInfo info, S sender,
