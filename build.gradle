@@ -8,6 +8,14 @@ allprojects {
     version = project.properties.get('version') ?: '0.0.0'
 }
 
+ext.minecraftVersion = (findProperty('minecraft_version') ?: '1.21.10').toString()
+
+def javaReleaseProp = findProperty('java_release')
+ext.javaRelease = (javaReleaseProp != null)
+        ? javaReleaseProp.toString().toInteger()
+        : (ext.minecraftVersion.startsWith('1.21') ? 21 : 17)
+
+
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
@@ -38,18 +46,7 @@ subprojects {
     def moduleName = moduleNameMap.getOrDefault(project.name, project.name)
 
     repositories {
-        maven {
-            name = 'mavenCentralMirror'
-            url = uri('https://repo1.maven.org/maven2/')
-            content {
-                includeGroup 'team.unnamed'
-            }
-        }
-        mavenCentral {
-            content {
-                excludeGroup 'team.unnamed'
-            }
-        }
+        mavenCentral()
         maven { url = 'https://oss.sonatype.org/content/groups/public/' }
         maven { url = 'https://repo.papermc.io/repository/maven-public/' }
         maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
@@ -58,15 +55,24 @@ subprojects {
         maven { url = 'https://repo.velocitypowered.com/releases/' }
     }
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-        withSourcesJar()
-        withJavadocJar()
-    }
+    if (project.name != 'processor') {
+        java {
+            
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
 
-    tasks.withType(JavaCompile).configureEach {
-        options.compilerArgs += ['-Xlint:all,-processing', '-parameters']
+            sourceCompatibility = JavaVersion.toVersion(rootProject.ext.javaRelease)
+            targetCompatibility = JavaVersion.toVersion(rootProject.ext.javaRelease)
+
+            withSourcesJar()
+            withJavadocJar()
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.release = rootProject.ext.javaRelease
+            options.compilerArgs += ['-Xlint:all,-processing', '-parameters']
+        }
     }
 
     def projectVersion = project.version
@@ -95,11 +101,18 @@ subprojects {
         archiveBaseName.set(moduleName)
     }
 
+    tasks.named('jar', Jar) {
+        if (project.name != 'processor' && !plugins.hasPlugin('fabric-loom')) {
+            archiveClassifier.set("mc${rootProject.ext.minecraftVersion}")
+        }
+    }
+
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
     }
 
     tasks.withType(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).configureEach {
+        archiveClassifier.set("all-mc${rootProject.ext.minecraftVersion}")
         archiveClassifier.set('all')
         zip64 = true
         mergeServiceFiles()
@@ -169,4 +182,25 @@ subprojects {
     tasks.withType(PublishToMavenLocal).configureEach {
         dependsOn tasks.named('shadowJar')
     }
+}
+
+tasks.register('buildMc1201', GradleBuild) {
+    tasks = ['build']
+    startParameter.projectProperties.put('minecraft_version', '1.20.1')
+    // подставьте свои реальные yarn/loader под 1.20.1:
+    startParameter.projectProperties.put('yarn_mappings', '1.20.1+build.10')
+    startParameter.projectProperties.put('loader_version', '0.15.11')
+    startParameter.projectProperties.put('java_release', '17')
+}
+
+tasks.register('buildMc12110', GradleBuild) {
+    tasks = ['build']
+    startParameter.projectProperties.put('minecraft_version', '1.21.10')
+    startParameter.projectProperties.put('yarn_mappings', '1.21.10+build.3')
+    startParameter.projectProperties.put('loader_version', '0.18.3')
+    startParameter.projectProperties.put('java_release', '21')
+}
+
+tasks.register('buildAllMatrix') {
+    dependsOn 'buildMc1201', 'buildMc12110'
 }

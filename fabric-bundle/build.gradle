@@ -83,6 +83,7 @@ dependencies {
 
 tasks.named('remapJar') {
     zip64 = true
+    archiveClassifier.set("mc${rootProject.ext.minecraftVersion}")
 }
 
 tasks.named('shadowJar') {
