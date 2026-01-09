@@ -2,9 +2,8 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.commands.parsers.BooleanTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.EnumTypeParser;
-import dev.ua.theroer.magicutils.commands.parsers.IntegerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.ListTypeParser;
-import dev.ua.theroer.magicutils.commands.parsers.LongTypeParser;
+import dev.ua.theroer.magicutils.commands.parsers.NumberTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.StringTypeParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,8 +51,7 @@ public class TypeParserRegistry<S> {
      */
     private void registerDefaultParsers() {
         register(new StringTypeParser<>());
-        register(new IntegerTypeParser<>());
-        register(new LongTypeParser<>());
+        register(new NumberTypeParser<>());
         register(new BooleanTypeParser<>());
         register(new EnumTypeParser<>());
         register(new ListTypeParser<>());
@@ -250,7 +248,14 @@ public class TypeParserRegistry<S> {
             if (parser.canParse(targetType)) {
                 logger.debug("Using parser for suggestions: " + parser.getClass().getSimpleName());
                 try {
-                    List<String> suggestions = parser.getSuggestions(sender, argument, previousParsedArguments, currentInput);
+                    List<String> suggestions;
+                    if (overridesSuggestionsWithContext(parser)) {
+                        suggestions = parser.getSuggestions(sender, argument, previousParsedArguments, currentInput);
+                    } else if (overridesSuggestionsLegacy(parser)) {
+                        suggestions = parser.getSuggestions(sender, argument);
+                    } else {
+                        suggestions = parser.getSuggestions(sender, argument, previousParsedArguments, currentInput);
+                    }
                     logger.debug("Got " + suggestions.size() + " suggestions");
                     return suggestions;
                 } catch (Exception e) {
@@ -262,6 +267,24 @@ public class TypeParserRegistry<S> {
 
         logger.debug("No suitable parser found for suggestions");
         return new ArrayList<>();
+    }
+
+    private boolean overridesSuggestionsWithContext(@NotNull TypeParser<S, ?> parser) {
+        return isOverride(parser.getClass(), "getSuggestions",
+                Object.class, CommandArgument.class, Map.class, String.class);
+    }
+
+    private boolean overridesSuggestionsLegacy(@NotNull TypeParser<S, ?> parser) {
+        return isOverride(parser.getClass(), "getSuggestions",
+                Object.class, CommandArgument.class);
+    }
+
+    private boolean isOverride(@NotNull Class<?> type, @NotNull String name, @NotNull Class<?>... parameterTypes) {
+        try {
+            return !type.getMethod(name, parameterTypes).getDeclaringClass().equals(TypeParser.class);
+        } catch (NoSuchMethodException ex) {
+            return false;
+        }
     }
 
     /**

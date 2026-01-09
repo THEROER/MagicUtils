@@ -1,11 +1,14 @@
 plugins {
-    id 'java-library'
+    id 'magicutils.java-library'
+    id 'magicutils.annotation-processing'
+    id 'magicutils.publishing'
+    id 'magicutils.shaded-module'
 }
 
 dependencies {
     api project(':config')
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
-    implementation 'net.kyori:adventure-text-minimessage:4.24.0'
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    implementation libs.jackson.databind
+    implementation libs.kyori.adventure.text.minimessage
+    compileOnly libs.projectlombok.lombok
+    annotationProcessor libs.projectlombok.lombok
 }

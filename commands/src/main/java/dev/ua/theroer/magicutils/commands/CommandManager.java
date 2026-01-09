@@ -1045,6 +1045,13 @@ public class CommandManager<S> {
     private List<String> generatePositionalSuggestions(MagicCommand command, List<CommandArgument> arguments,
             S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
             @NotNull Map<String, Object> allParsedArguments) {
+        return generatePositionalSuggestions(command, arguments, sender, args, normalizedCommandName, subCommandName,
+                allParsedArguments, Collections.emptySet());
+    }
+
+    private List<String> generatePositionalSuggestions(MagicCommand command, List<CommandArgument> arguments,
+            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
+            @NotNull Map<String, Object> allParsedArguments, @NotNull Set<CommandArgument> skipArguments) {
         logger.debug("generatePositionalSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
         logger.debug("Raw args: " + args);
@@ -1059,6 +1066,9 @@ public class CommandManager<S> {
         List<ArgumentInfo> userInputArguments = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             CommandArgument arg = arguments.get(i);
+            if (skipArguments.contains(arg)) {
+                continue;
+            }
             // Skip explicit sender parameters, they are handled by platform.resolveSenderArgument and not user input
             if (isSenderArgument(arg)) {
                 try {
@@ -1169,12 +1179,15 @@ public class CommandManager<S> {
         boolean optionsTerminated = parsed.optionsTerminated();
         boolean currentIsOption = !optionsTerminated && isOptionPrefix(currentInput);
         List<String> suggestions = new ArrayList<>();
+        Set<CommandArgument> providedByOptions = parsed.usedOptions() != null
+                ? new HashSet<>(parsed.usedOptions())
+                : Collections.emptySet();
 
         if (!currentIsOption) {
             List<String> positional = new ArrayList<>(parsed.positionals());
             positional.add(currentInput);
             suggestions.addAll(generatePositionalSuggestions(command, arguments, sender, positional,
-                    normalizedCommandName, subCommandName, allParsedArguments));
+                    normalizedCommandName, subCommandName, allParsedArguments, providedByOptions));
         }
 
         if (!optionsTerminated && (currentInput.isEmpty() || currentIsOption)) {

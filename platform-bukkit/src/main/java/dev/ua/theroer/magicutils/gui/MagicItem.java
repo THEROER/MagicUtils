@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +21,28 @@ import java.util.List;
 public final class MagicItem {
     private final ItemStack stack;
     private final ItemMeta meta;
+
+    public static final Enchantment UNBREAKING = resolveUnbreaking();
+
+    private static Enchantment resolveUnbreaking() {
+        Enchantment e = getStaticEnchantmentField("UNBREAKING");  // 1.21+
+        if (e != null) return e;
+
+        e = getStaticEnchantmentField("DURABILITY");              // 1.20.x
+        if (e != null) return e;
+
+        throw new IllegalStateException("Cannot resolve Unbreaking enchantment (UNBREAKING/DURABILITY not found).");
+    }
+
+    private static Enchantment getStaticEnchantmentField(String fieldName) {
+        try {
+            Field f = Enchantment.class.getField(fieldName);
+            Object v = f.get(null);
+            return (v instanceof Enchantment) ? (Enchantment) v : null;
+        } catch (NoSuchFieldException | IllegalAccessException ignored) {
+            return null;
+        }
+    }
 
     private MagicItem(Material material) {
         this.stack = new ItemStack(material);
@@ -183,7 +206,7 @@ public final class MagicItem {
      * @return this builder
      */
     public MagicItem glow() {
-        meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+        meta.addEnchant(UNBREAKING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         return this;
     }

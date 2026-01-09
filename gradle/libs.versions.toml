@@ -1,0 +1,62 @@
+[versions]
+# Plugins
+shadow = "8.3.5"
+fabricLoom = "1.13.6"
+kotlinJvm = "1.9.22"
+javaGradlePlugin = "8.14.1" 
+
+# Libraries
+annotations = "24.0.1"
+lombok = "1.18.32"
+jackson = "2.17.1"
+kyoriAdventure = "4.24.0"
+kyoriAnsi = "1.1.1"
+kyoriExamination = "1.3.0"
+kyoriOption = "1.1.0"
+placeholderapi = "2.11.6" # clip
+slf4j = "2.0.13"
+velocityApi = "3.1.1"
+junitJupiter = "5.9.2"
+mockito = "5.1.1"
+
+
+[libraries]
+shadow-lib = { module = "com.github.jengelman.gradle.plugins:shadow", version.ref = "shadow" }
+# Annotations
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+projectlombok-lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
+# Jackson
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-dataformat-toml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
+jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+
+# Kyori Adventure
+kyori-adventure-api = { module = "net.kyori:adventure-api", version.ref = "kyoriAdventure" }
+kyori-adventure-key = { module = "net.kyori:adventure-key", version.ref = "kyoriAdventure" }
+kyori-adventure-text-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "kyoriAdventure" }
+kyori-adventure-text-serializer-plain = { module = "net.kyori:adventure-text-serializer-plain", version.ref = "kyoriAdventure" }
+kyori-adventure-text-serializer-gson = { module = "net.kyori:adventure-text-serializer-gson", version.ref = "kyoriAdventure" }
+kyori-adventure-text-serializer-ansi = { module = "net.kyori:adventure-text-serializer-ansi", version.ref = "kyoriAdventure" }
+kyori-adventure-text-serializer-json = { module = "net.kyori:adventure-text-serializer-json", version.ref = "kyoriAdventure" }
+kyori-ansi = { module = "net.kyori:ansi", version.ref = "kyoriAnsi" }
+kyori-examination-api = { module = "net.kyori:examination-api", version.ref = "kyoriExamination" }
+kyori-examination-string = { module = "net.kyori:examination-string", version.ref = "kyoriExamination" }
+kyori-option = { module = "net.kyori:option", version.ref = "kyoriOption" }
+
+# Platform APIs
+clip-placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocityApi" }
+
+# Testing
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junitJupiter" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+
+[bundles]
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+fabric-loom = { id = "fabric-loom", version.ref = "fabricLoom" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlinJvm" }
+java-gradle-plugin = { id = "java-gradle-plugin", version.ref = "javaGradlePlugin" }

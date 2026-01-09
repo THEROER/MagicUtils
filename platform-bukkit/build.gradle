@@ -1,17 +1,21 @@
 plugins {
-    id 'java-library'
-    id 'maven-publish'
+    id 'magicutils.java-library'
+    id 'magicutils.annotation-processing'
+    id 'magicutils.publishing'
+    id 'magicutils.target'
 }
+
+def target = project.extensions.getByType(MagicutilsTargetExtension)
 
 dependencies {
     api project(':core')
-    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'org.jetbrains:annotations:24.0.1'
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    compileOnly 'me.clip:placeholderapi:2.11.6'
+    compileOnly("io.papermc.paper:paper-api:${target.paper.get()}")
+    compileOnly libs.jetbrains.annotations
+    compileOnly libs.projectlombok.lombok
+    compileOnly libs.clip.placeholderapi
 
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor libs.projectlombok.lombok
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
-    testImplementation 'org.mockito:mockito-core:5.1.1'
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.core
 }
