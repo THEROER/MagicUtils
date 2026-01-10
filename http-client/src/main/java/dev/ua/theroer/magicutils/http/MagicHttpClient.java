@@ -137,7 +137,8 @@ public final class MagicHttpClient implements AutoCloseable {
      */
     public HttpResponse<String> get(String path) throws IOException, InterruptedException {
         checkNotMainThread("get");
-        return sendWithRetries(() -> request(path).GET().build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetries(() -> request(path).GET().build(),
+                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), null);
     }
 
     /**
@@ -147,7 +148,8 @@ public final class MagicHttpClient implements AutoCloseable {
      * @return future with response
      */
     public CompletableFuture<HttpResponse<String>> getAsync(String path) {
-        return sendWithRetriesAsync(() -> request(path).GET().build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetriesAsync(() -> request(path).GET().build(),
+                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), null);
     }
 
     /**
@@ -193,8 +195,7 @@ public final class MagicHttpClient implements AutoCloseable {
                 .header(HEADER_CONTENT_TYPE, "text/plain; charset=utf-8")
                 .POST(HttpRequest.BodyPublishers.ofString(body != null ? body : "", StandardCharsets.UTF_8))
                 .build();
-        logRequest(request, body);
-        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), body);
     }
 
     /**
@@ -209,8 +210,7 @@ public final class MagicHttpClient implements AutoCloseable {
                 .header(HEADER_CONTENT_TYPE, "text/plain; charset=utf-8")
                 .POST(HttpRequest.BodyPublishers.ofString(body != null ? body : "", StandardCharsets.UTF_8))
                 .build();
-        logRequest(request, body);
-        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), body);
     }
 
     /**
@@ -230,8 +230,7 @@ public final class MagicHttpClient implements AutoCloseable {
                 .header(HEADER_ACCEPT, "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                 .build();
-        logRequest(request, payload);
-        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), payload);
     }
 
     /**
@@ -265,8 +264,7 @@ public final class MagicHttpClient implements AutoCloseable {
                 .header(HEADER_ACCEPT, "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                 .build();
-        logRequest(request, payload);
-        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), payload);
     }
 
     /**
@@ -298,8 +296,7 @@ public final class MagicHttpClient implements AutoCloseable {
                 .header(HEADER_CONTENT_TYPE, multipart.contentType())
                 .POST(multipart.publisher())
                 .build();
-        logRequest(request, null);
-        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), null);
     }
 
     /**
@@ -315,8 +312,7 @@ public final class MagicHttpClient implements AutoCloseable {
                 .header(HEADER_CONTENT_TYPE, multipart.contentType())
                 .POST(multipart.publisher())
                 .build();
-        logRequest(request, null);
-        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), null);
     }
 
     /**
@@ -331,8 +327,7 @@ public final class MagicHttpClient implements AutoCloseable {
     public HttpResponse<Path> downloadToFile(String path, Path target) throws IOException, InterruptedException {
         checkNotMainThread("downloadToFile");
         HttpRequest request = request(path).GET().build();
-        logRequest(request, null);
-        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofFile(target));
+        return sendWithRetries(() -> request, HttpResponse.BodyHandlers.ofFile(target), null);
     }
 
     /**
@@ -344,8 +339,7 @@ public final class MagicHttpClient implements AutoCloseable {
      */
     public CompletableFuture<HttpResponse<Path>> downloadToFileAsync(String path, Path target) {
         HttpRequest request = request(path).GET().build();
-        logRequest(request, null);
-        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofFile(target));
+        return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofFile(target), null);
     }
 
     /**
@@ -485,13 +479,18 @@ public final class MagicHttpClient implements AutoCloseable {
         }
     }
 
-    private <T> HttpResponse<T> sendWithRetries(Supplier<HttpRequest> supplier, HttpResponse.BodyHandler<T> handler)
+    private <T> HttpResponse<T> sendWithRetries(Supplier<HttpRequest> supplier,
+                                                HttpResponse.BodyHandler<T> handler,
+                                                String body)
             throws IOException, InterruptedException {
         Objects.requireNonNull(supplier, "supplier");
         Objects.requireNonNull(handler, "handler");
         int attempt = 1;
         while (true) {
             HttpRequest request = supplier.get();
+            if (attempt == 1) {
+                logRequest(request, body);
+            }
             try {
                 HttpResponse<T> response = client.send(request, handler);
                 logResponse(response);
@@ -510,22 +509,27 @@ public final class MagicHttpClient implements AutoCloseable {
             if (logRetry(attempt, request)) {
                 // logged
             }
-            sleep(retryPolicy.nextDelayMs(attempt));
+            waitDelay(retryPolicy.nextDelayMs(attempt));
             attempt++;
         }
     }
 
     private <T> CompletableFuture<HttpResponse<T>> sendWithRetriesAsync(Supplier<HttpRequest> supplier,
-                                                                        HttpResponse.BodyHandler<T> handler) {
-        return sendWithRetriesAsync(supplier, handler, 1);
+                                                                        HttpResponse.BodyHandler<T> handler,
+                                                                        String body) {
+        return sendWithRetriesAsync(supplier, handler, 1, body);
     }
 
     private <T> CompletableFuture<HttpResponse<T>> sendWithRetriesAsync(Supplier<HttpRequest> supplier,
                                                                         HttpResponse.BodyHandler<T> handler,
-                                                                        int attempt) {
+                                                                        int attempt,
+                                                                        String body) {
         HttpRequest request = supplier.get();
+        if (attempt == 1) {
+            logRequest(request, body);
+        }
         return client.sendAsync(request, handler)
-                .handle((response, error) -> handleAsyncResult(supplier, handler, attempt, response, error))
+                .handle((response, error) -> handleAsyncResult(supplier, handler, attempt, response, error, request, body))
                 .thenCompose(Function.identity());
     }
 
@@ -533,7 +537,9 @@ public final class MagicHttpClient implements AutoCloseable {
                                                                      HttpResponse.BodyHandler<T> handler,
                                                                      int attempt,
                                                                      HttpResponse<T> response,
-                                                                     Throwable error) {
+                                                                     Throwable error,
+                                                                     HttpRequest request,
+                                                                     String body) {
         if (error == null) {
             logResponse(response);
             if (!retryPolicy.shouldRetryStatus(response.statusCode()) || attempt >= retryPolicy.maxAttempts()) {
@@ -547,12 +553,12 @@ public final class MagicHttpClient implements AutoCloseable {
                 return failed;
             }
         }
-        if (logRetry(attempt, null)) {
+        if (logRetry(attempt, request)) {
             // logged
         }
         long delay = retryPolicy.nextDelayMs(attempt);
         Executor executor = CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS);
-        return CompletableFuture.supplyAsync(() -> sendWithRetriesAsync(supplier, handler, attempt + 1), executor)
+        return CompletableFuture.supplyAsync(() -> sendWithRetriesAsync(supplier, handler, attempt + 1, body), executor)
                 .thenCompose(Function.identity());
     }
 
@@ -566,11 +572,22 @@ public final class MagicHttpClient implements AutoCloseable {
         return true;
     }
 
-    private void sleep(long delayMs) throws InterruptedException {
+    private void waitDelay(long delayMs) throws IOException, InterruptedException {
         if (delayMs <= 0) {
             return;
         }
-        Thread.sleep(delayMs);
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Executor executor = CompletableFuture.delayedExecutor(delayMs, TimeUnit.MILLISECONDS);
+        executor.execute(() -> future.complete(null));
+        try {
+            future.get();
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException runtime) {
+                throw runtime;
+            }
+            throw new IOException("Failed to wait for retry delay", cause);
+        }
     }
 
     private void logRequest(HttpRequest request, String body) {
@@ -620,9 +637,14 @@ public final class MagicHttpClient implements AutoCloseable {
         }
         Map<String, List<String>> redactedHeaders = new LinkedHashMap<>();
         List<String> sensitiveHeaders = logging.getSensitiveHeaders();
+        List<String> allowlist = logging.getHeaderAllowlist();
+        List<String> denylist = logging.getHeaderDenylist();
 
         for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
             String headerName = entry.getKey();
+            if (!isHeaderAllowed(headerName, allowlist, denylist)) {
+                continue;
+            }
             if (sensitiveHeaders.stream().anyMatch(h -> h.equalsIgnoreCase(headerName))) {
                 redactedHeaders.put(headerName, List.of("[REDACTED]"));
             } else {
@@ -630,6 +652,25 @@ public final class MagicHttpClient implements AutoCloseable {
             }
         }
         return redactedHeaders;
+    }
+
+    private boolean isHeaderAllowed(String headerName, List<String> allowlist, List<String> denylist) {
+        if (headerName == null) {
+            return false;
+        }
+        if (allowlist != null && !allowlist.isEmpty()) {
+            boolean allowed = allowlist.stream().anyMatch(h -> h.equalsIgnoreCase(headerName));
+            if (!allowed) {
+                return false;
+            }
+        }
+        if (denylist != null && !denylist.isEmpty()) {
+            boolean denied = denylist.stream().anyMatch(h -> h.equalsIgnoreCase(headerName));
+            if (denied) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Throwable unwrap(Throwable error) {

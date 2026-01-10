@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import dev.ua.theroer.magicutils.utils.placeholders.PlaceholderProcessor;
 
 import org.jetbrains.annotations.Nullable;
 import java.nio.file.Files;
@@ -33,6 +34,7 @@ public class LoggerCore extends LoggerCoreMethods {
     private static final String LOGGER_DIR_DEFAULT = ".";
     private static final String LOGGER_BASE_NAME = "logger";
     private static final List<String> LOGGER_EXTENSIONS = List.of("yml", "yaml", "jsonc", "json", "toml");
+    private static final int DEBUG_VALUE_LIMIT = 256;
 
     @Getter
     private LoggerConfig config;
@@ -63,6 +65,8 @@ public class LoggerCore extends LoggerCoreMethods {
     private final Map<String, PrefixedLoggerCore> prefixedLoggers = new HashMap<>();
     @Getter
     private ExternalPlaceholderEngine externalPlaceholderEngine = ExternalPlaceholderEngine.NOOP;
+    private final PlaceholderProcessor.PlaceholderDebugListener placeholderDebugListener = this::onPlaceholderResolved;
+    private boolean placeholderDebugRegistered;
 
     /**
      * Create a logger core instance.
@@ -357,6 +361,46 @@ public class LoggerCore extends LoggerCoreMethods {
         }
 
         loadSubLoggers();
+        updatePlaceholderDebug();
+    }
+
+    private void updatePlaceholderDebug() {
+        boolean enabled = config != null && config.isDebugPlaceholders();
+        if (enabled == placeholderDebugRegistered) {
+            return;
+        }
+        if (enabled) {
+            PlaceholderProcessor.addDebugListener(placeholderDebugListener);
+        } else {
+            PlaceholderProcessor.removeDebugListener(placeholderDebugListener);
+        }
+        placeholderDebugRegistered = enabled;
+    }
+
+    private void onPlaceholderResolved(String key, Object ownerKey, Audience audience, String value, Throwable error) {
+        if (ownerKey != placeholderOwner) {
+            return;
+        }
+        String normalized = key != null ? key : "unknown";
+        String uuid = audience != null && audience.id() != null ? audience.id().toString() : "null";
+        String output = sanitizeDebug(value);
+        String message = "[MagicUtils][Placeholders] key=" + normalized + " uuid=" + uuid + " value=" + output;
+        if (error != null) {
+            platform.logger().warn(message, error);
+        } else {
+            platform.logger().debug(message);
+        }
+    }
+
+    private String sanitizeDebug(String value) {
+        if (value == null) {
+            return "null";
+        }
+        String normalized = value.replace("\r", "\\r").replace("\n", "\\n");
+        if (normalized.length() > DEBUG_VALUE_LIMIT) {
+            return normalized.substring(0, DEBUG_VALUE_LIMIT) + "...(" + normalized.length() + ")";
+        }
+        return normalized;
     }
 
     private void loadSubLoggers() {

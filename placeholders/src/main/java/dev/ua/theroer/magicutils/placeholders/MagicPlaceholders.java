@@ -130,9 +130,36 @@ public final class MagicPlaceholders {
     public record PlaceholderKey(String namespace, String key) {
     }
 
+    /**
+     * Result of placeholder resolution.
+     *
+     * @param value resolved value (may be null)
+     * @param error resolution error (null on success)
+     */
+    public record PlaceholderResult(@Nullable String value, @Nullable Throwable error) {
+        /**
+         * Returns true when resolution succeeded.
+         *
+         * @return true when no error was recorded
+         */
+        public boolean success() {
+            return error == null;
+        }
+
+        /**
+         * Returns a non-null value or an empty string.
+         *
+         * @return resolved value or empty string
+         */
+        public String valueOrEmpty() {
+            return value != null ? value : "";
+        }
+    }
+
     private static final Map<PlaceholderKey, PlaceholderResolver> PLACEHOLDERS = new ConcurrentHashMap<>();
     private static final Map<String, NamespaceMeta> NAMESPACES = new ConcurrentHashMap<>();
     private static final List<PlaceholderListener> LISTENERS = new CopyOnWriteArrayList<>();
+    private static volatile PlaceholderDebugListener DEBUG_LISTENER;
 
     private MagicPlaceholders() {
     }
@@ -205,6 +232,38 @@ public final class MagicPlaceholders {
     }
 
     /**
+     * Resolves a placeholder value with error details.
+     *
+     * @param namespace namespace id
+     * @param key placeholder key
+     * @param audience optional audience
+     * @param argument optional argument
+     * @return result containing value and error details
+     */
+    public static PlaceholderResult resolveResult(String namespace,
+                                                  String key,
+                                                  @Nullable Audience audience,
+                                                  @Nullable String argument) {
+        PlaceholderKey placeholderKey = new PlaceholderKey(normalizeNamespace(namespace), normalizeKey(key));
+        PlaceholderResolver resolver = PLACEHOLDERS.get(placeholderKey);
+        if (resolver == null) {
+            PlaceholderResult result = new PlaceholderResult("", null);
+            notifyResolved(placeholderKey, audience, argument, result);
+            return result;
+        }
+        try {
+            String value = resolver.resolve(audience, argument);
+            PlaceholderResult result = new PlaceholderResult(value, null);
+            notifyResolved(placeholderKey, audience, argument, result);
+            return result;
+        } catch (Throwable error) {
+            PlaceholderResult result = new PlaceholderResult("", error);
+            notifyResolved(placeholderKey, audience, argument, result);
+            return result;
+        }
+    }
+
+    /**
      * Resolves a placeholder value.
      *
      * @param namespace namespace id
@@ -214,16 +273,7 @@ public final class MagicPlaceholders {
      * @return resolved value or empty string on failure
      */
     public static String resolve(String namespace, String key, @Nullable Audience audience, @Nullable String argument) {
-        PlaceholderResolver resolver = get(namespace, key);
-        if (resolver == null) {
-            return "";
-        }
-        try {
-            String value = resolver.resolve(audience, argument);
-            return value != null ? value : "";
-        } catch (Throwable ignored) {
-            return "";
-        }
+        return resolveResult(namespace, key, audience, argument).valueOrEmpty();
     }
 
     /**
@@ -282,6 +332,15 @@ public final class MagicPlaceholders {
     }
 
     /**
+     * Sets a debug listener for placeholder resolution events.
+     *
+     * @param listener debug listener (null disables)
+     */
+    public static void setDebugListener(@Nullable PlaceholderDebugListener listener) {
+        DEBUG_LISTENER = listener;
+    }
+
+    /**
      * Creates a lightweight audience wrapper for a UUID.
      *
      * @param uuid audience UUID
@@ -296,19 +355,49 @@ public final class MagicPlaceholders {
 
     private static void notifyRegistered(PlaceholderKey key) {
         for (PlaceholderListener listener : LISTENERS) {
-            listener.onPlaceholderRegistered(key);
+            try {
+                listener.onPlaceholderRegistered(key);
+            } catch (Throwable error) {
+                notifyListenerError("register", key, error);
+            }
         }
     }
 
     private static void notifyUnregistered(PlaceholderKey key) {
         for (PlaceholderListener listener : LISTENERS) {
-            listener.onPlaceholderUnregistered(key);
+            try {
+                listener.onPlaceholderUnregistered(key);
+            } catch (Throwable error) {
+                notifyListenerError("unregister", key, error);
+            }
         }
     }
 
     private static void notifyNamespaceUpdated(String namespace) {
         for (PlaceholderListener listener : LISTENERS) {
-            listener.onNamespaceUpdated(namespace);
+            try {
+                listener.onNamespaceUpdated(namespace);
+            } catch (Throwable error) {
+                notifyListenerError("namespace", new PlaceholderKey(namespace, ""), error);
+            }
+        }
+    }
+
+    private static void notifyResolved(PlaceholderKey key,
+                                       @Nullable Audience audience,
+                                       @Nullable String argument,
+                                       PlaceholderResult result) {
+        PlaceholderDebugListener listener = DEBUG_LISTENER;
+        if (listener == null) {
+            return;
+        }
+        listener.onResolve(key, audience, argument, result.value(), result.error());
+    }
+
+    private static void notifyListenerError(String action, PlaceholderKey key, Throwable error) {
+        PlaceholderDebugListener listener = DEBUG_LISTENER;
+        if (listener != null) {
+            listener.onListenerError(action, key, error);
         }
     }
 
@@ -332,6 +421,36 @@ public final class MagicPlaceholders {
             throw new IllegalArgumentException("key is empty");
         }
         return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Debug listener for placeholder resolution events.
+     */
+    public interface PlaceholderDebugListener {
+        /**
+         * Called when a placeholder resolves or fails.
+         *
+         * @param key placeholder key
+         * @param audience audience context
+         * @param argument placeholder argument
+         * @param value resolved value (null on error)
+         * @param error error during resolution (null on success)
+         */
+        void onResolve(PlaceholderKey key,
+                       @Nullable Audience audience,
+                       @Nullable String argument,
+                       @Nullable String value,
+                       @Nullable Throwable error);
+
+        /**
+         * Called when a listener throws during registry notifications.
+         *
+         * @param action lifecycle action name
+         * @param key placeholder key
+         * @param error thrown error
+         */
+        default void onListenerError(String action, PlaceholderKey key, Throwable error) {
+        }
     }
 
     private static final class SimpleAudience implements Audience {

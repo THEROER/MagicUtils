@@ -143,6 +143,14 @@ public class HttpClientConfig {
         @Comment("Log retry attempts")
         private boolean logRetries = true;
 
+        @ConfigValue("header-allowlist")
+        @Comment("Only log these headers (case-insensitive). Empty means log all.")
+        private List<String> headerAllowlist = new ArrayList<>();
+
+        @ConfigValue("header-denylist")
+        @Comment("Headers to skip from logs (case-insensitive)")
+        private List<String> headerDenylist = new ArrayList<>();
+
         @ConfigValue("sensitive-headers")
         @Comment("List of headers that should be redacted from logs (e.g., Authorization, Cookie)")
         private List<String> sensitiveHeaders = new ArrayList<>(List.of("Authorization", "Cookie"));

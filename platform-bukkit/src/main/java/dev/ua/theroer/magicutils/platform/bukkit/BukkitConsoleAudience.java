@@ -67,7 +67,9 @@ public final class BukkitConsoleAudience implements Audience {
         if (logger == null) {
             return;
         }
-        logger.setLevel(Level.ALL);
+        if (logger.getLevel() == null && baseLogger != null && baseLogger.getLevel() != null) {
+            logger.setLevel(baseLogger.getLevel());
+        }
         logger.setUseParentHandlers(true);
         if (baseLogger != null && logger.getParent() == null) {
             Logger parent = baseLogger.getParent();

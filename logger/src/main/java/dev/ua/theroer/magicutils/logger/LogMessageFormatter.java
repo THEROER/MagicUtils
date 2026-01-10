@@ -50,16 +50,38 @@ public final class LogMessageFormatter {
         String finalMessage = attachPrefix(logger, processed, level, target, prefixOverride);
 
         ExternalPlaceholderEngine engine = logger.getExternalPlaceholderEngine();
-        TagResolver externalResolver = engine.tagResolver(targetAudience);
+        TagResolver externalResolver = null;
+        try {
+            externalResolver = engine.tagResolver(targetAudience);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to resolve external placeholder tags", error);
+        }
         TagResolver resolver = externalResolver == null
                 ? TagResolver.standard()
                 : TagResolver.resolver(TagResolver.standard(), externalResolver);
 
-        net.kyori.adventure.pointer.Pointered pointered = engine.adventureAudience(targetAudience);
-        Component component = pointered != null
-                ? logger.getMiniMessage().deserialize(finalMessage, pointered, resolver)
-                : logger.getMiniMessage().deserialize(finalMessage, resolver);
-        component = engine.applyComponent(targetAudience, component);
+        net.kyori.adventure.pointer.Pointered pointered = null;
+        try {
+            pointered = engine.adventureAudience(targetAudience);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to resolve external placeholder audience", error);
+        }
+
+        Component component;
+        try {
+            component = pointered != null
+                    ? logger.getMiniMessage().deserialize(finalMessage, pointered, resolver)
+                    : logger.getMiniMessage().deserialize(finalMessage, resolver);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to deserialize message", error);
+            component = Component.text(finalMessage);
+        }
+
+        try {
+            component = engine.applyComponent(targetAudience, component);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to apply external component placeholders", error);
+        }
         if ((target == LogTarget.CONSOLE || target == LogTarget.BOTH) && logger.isConsoleStripFormatting()) {
             component = Component.text(PlainTextComponentSerializer.plainText().serialize(component));
         }
@@ -98,12 +120,28 @@ public final class LogMessageFormatter {
     }
 
     private static String applyPipeline(LoggerCore logger, String messageStr, @Nullable Audience audience, Object[] args) {
-        String processed = PlaceholderProcessor.applyPlaceholders(logger.getPlaceholderOwner(), audience, messageStr, args);
-        processed = logger.getExternalPlaceholderEngine().apply(audience, processed);
-        processed = applyLocalization(logger, processed, audience);
-        processed = logger.getExternalPlaceholderEngine().apply(audience, processed);
+        String processed = safeApplyLocalization(logger, messageStr, audience);
         processed = PlaceholderProcessor.applyPlaceholders(logger.getPlaceholderOwner(), audience, processed, args);
+        processed = safeApplyExternal(logger, audience, processed);
         return ColorUtils.legacyToMiniMessage(processed);
+    }
+
+    private static String safeApplyExternal(LoggerCore logger, @Nullable Audience audience, String input) {
+        try {
+            return logger.getExternalPlaceholderEngine().apply(audience, input);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to apply external placeholders", error);
+            return input;
+        }
+    }
+
+    private static String safeApplyLocalization(LoggerCore logger, String messageStr, @Nullable Audience audience) {
+        try {
+            return applyLocalization(logger, messageStr, audience);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to localize message", error);
+            return messageStr;
+        }
     }
 
     private static String attachPrefix(LoggerCore logger, String message, LogLevel level, LogTarget target, @Nullable PrefixMode prefixOverride) {

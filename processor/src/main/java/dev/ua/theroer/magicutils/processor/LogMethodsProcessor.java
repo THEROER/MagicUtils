@@ -1,13 +1,14 @@
 package dev.ua.theroer.magicutils.processor;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.FilerException;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -22,6 +23,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 /**
@@ -37,6 +39,7 @@ public class LogMethodsProcessor extends AbstractProcessor {
     private static final String DEFAULT_AUDIENCE_TYPE = "dev.ua.theroer.magicutils.platform.Audience";
 
     private Filer filer;
+    private final Set<String> generatedFiles = new HashSet<>();
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -81,6 +84,11 @@ public class LogMethodsProcessor extends AbstractProcessor {
         String packageName = pkg.isUnnamed() ? "" : pkg.getQualifiedName().toString();
         String simpleName = type.getSimpleName().toString();
         String generatedName = simpleName + "Methods";
+        String qualifiedName = packageName.isEmpty() ? generatedName : packageName + "." + generatedName;
+
+        if (!generatedFiles.add(qualifiedName)) {
+            return;
+        }
 
         Set<String> levels = extractLevels(type);
         boolean staticMethods = shouldGenerateStatic(type);
@@ -88,12 +96,16 @@ public class LogMethodsProcessor extends AbstractProcessor {
 
         String source = buildSource(packageName, generatedName, simpleName, levels, staticMethods, audienceType);
         try {
-            JavaFileObject file = filer.createSourceFile(packageName + "." + generatedName, type);
+            JavaFileObject file = filer.createSourceFile(qualifiedName, type);
             try (Writer writer = file.openWriter()) {
                 writer.write(source);
             }
+        } catch (FilerException ignored) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
+                    "Skipping generation for " + qualifiedName + " (already generated)", type);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to generate " + generatedName, e);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                    "Failed to generate " + qualifiedName + ": " + e.getMessage(), type);
         }
     }
 

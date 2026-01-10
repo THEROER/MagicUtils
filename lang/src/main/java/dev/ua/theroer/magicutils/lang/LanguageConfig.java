@@ -19,7 +19,7 @@ import java.util.function.Function;
  * Constructor initializes all message categories with their default values.
  */
 @Getter
-@ConfigFile("lang/{lang}.yml")
+@ConfigFile("lang/{lang}.{ext}")
 @Comment("Language file for MagicUtils")
 public class LanguageConfig {
 
@@ -149,5 +149,54 @@ public class LanguageConfig {
             map.put(name, field);
         }
         return map;
+    }
+
+    void applyTranslations(Map<String, Map<String, String>> translations, boolean override) {
+        if (translations == null || translations.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Map<String, String>> sectionEntry : translations.entrySet()) {
+            String sectionPath = sectionEntry.getKey();
+            Map<String, String> values = sectionEntry.getValue();
+            if (values == null || values.isEmpty()) {
+                continue;
+            }
+
+            Object section = resolveSection(sectionPath);
+            if (section == null) {
+                continue;
+            }
+            Map<String, Field> fieldMap = SECTION_FIELD_CACHE.computeIfAbsent(section.getClass(),
+                    LanguageConfig::mapSectionFields);
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                Field field = fieldMap.get(entry.getKey());
+                if (field == null) {
+                    continue;
+                }
+                try {
+                    Object current = field.get(section);
+                    if (!override && current != null) {
+                        continue;
+                    }
+                    field.set(section, entry.getValue());
+                } catch (IllegalAccessException ignored) {
+                }
+            }
+        }
+    }
+
+    private Object resolveSection(String sectionPath) {
+        if (sectionPath == null || sectionPath.isBlank()) {
+            return null;
+        }
+        if ("language".equals(sectionPath)) {
+            return metadata;
+        }
+        if (sectionPath.startsWith("magicutils.")) {
+            String key = sectionPath.substring("magicutils.".length());
+            Function<LanguageConfig, Object> accessor = SECTION_ACCESSORS.get(key);
+            return accessor != null ? accessor.apply(this) : null;
+        }
+        return null;
     }
 }
