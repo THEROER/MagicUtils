@@ -10,7 +10,7 @@
   },
   "createdBy": {
     "gradle": {
-      "version": "8.14.1"
+      "version": "9.2.1"
     }
   },
   "variants": [
@@ -27,11 +27,11 @@
         {
           "name": "magicutils-processor-1.10.0.jar",
           "url": "magicutils-processor-1.10.0.jar",
-          "size": 9101,
-          "sha512": "993559efdadca504f327f32f072191faa786bf16d3dfdd8eda61b246a4d1aafc3e71624767202d913bd3ba9c3ead2ec15ba58f847c38ae6e55100653e56d02e1",
-          "sha256": "18ed6e2422002b07fe0aa148db291ee84fb21d9759e8789c28856b5bdf9b2ec2",
-          "sha1": "79f7f013f134572cdd21ce6f585d4cd6404565c4",
-          "md5": "8229cf45b738c5d4ad538c749cea5bb0"
+          "size": 9405,
+          "sha512": "ed7f28598c4cb0f483d882ad39171230a194d522390aea3235bf04241eb2de83b6186fa031b82a66a6d43a25ab6e60bf98998e159c5a1c2561a574464eee1400",
+          "sha256": "34745004f3606fe84530b306cb57fe4d836f6dc5e4ae0bab23cb43d5c1b87a56",
+          "sha1": "24062c38659a9081093dcd7ec4fa5c8b2fe363ac",
+          "md5": "b7a3f1cdd83aceab2564527b36b11ab0"
         }
       ]
     },
@@ -48,11 +48,11 @@
         {
           "name": "magicutils-processor-1.10.0.jar",
           "url": "magicutils-processor-1.10.0.jar",
-          "size": 9101,
-          "sha512": "993559efdadca504f327f32f072191faa786bf16d3dfdd8eda61b246a4d1aafc3e71624767202d913bd3ba9c3ead2ec15ba58f847c38ae6e55100653e56d02e1",
-          "sha256": "18ed6e2422002b07fe0aa148db291ee84fb21d9759e8789c28856b5bdf9b2ec2",
-          "sha1": "79f7f013f134572cdd21ce6f585d4cd6404565c4",
-          "md5": "8229cf45b738c5d4ad538c749cea5bb0"
+          "size": 9405,
+          "sha512": "ed7f28598c4cb0f483d882ad39171230a194d522390aea3235bf04241eb2de83b6186fa031b82a66a6d43a25ab6e60bf98998e159c5a1c2561a574464eee1400",
+          "sha256": "34745004f3606fe84530b306cb57fe4d836f6dc5e4ae0bab23cb43d5c1b87a56",
+          "sha1": "24062c38659a9081093dcd7ec4fa5c8b2fe363ac",
+          "md5": "b7a3f1cdd83aceab2564527b36b11ab0"
         }
       ]
     },
@@ -61,47 +61,19 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 11,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-runtime"
-      }
-    },
-    {
-      "name": "sourcesElements",
-      "attributes": {
-        "org.gradle.category": "documentation",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.docstype": "sources",
-        "org.gradle.usage": "java-runtime"
       },
       "files": [
         {
-          "name": "magicutils-processor-1.10.0-sources.jar",
-          "url": "magicutils-processor-1.10.0-sources.jar",
-          "size": 5019,
-          "sha512": "bde3e4d130139e177b9ad7caf290caa278740cf522dcd9a8e8651631c4bd9d1e698bd12ca8bb2baffdc72bc1d96e47752ffced64a17ed12ec333077eec43960a",
-          "sha256": "61d99fa255dc1a9b1a41d1b16f8d5b65eb3b2a9aa10316ac668576b5b2aa7ec8",
-          "sha1": "f9fee1d44a50917aeec9284383dc10d668438449",
-          "md5": "a982f000235d0619a5e922d87df81e30"
-        }
-      ]
-    },
-    {
-      "name": "javadocElements",
-      "attributes": {
-        "org.gradle.category": "documentation",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.docstype": "javadoc",
-        "org.gradle.usage": "java-runtime"
-      },
-      "files": [
-        {
-          "name": "magicutils-processor-1.10.0-javadoc.jar",
-          "url": "magicutils-processor-1.10.0-javadoc.jar",
-          "size": 85266,
-          "sha512": "54befcdce6741c5f67688f8e5c0805d9396f3ce0623cad950aa358b52f2568b27e09213019cbc012b735cb1cb60983c34665e5c65c1328f902aa0e90349c519e",
-          "sha256": "601e6bd7a29be616a81c2b4f055c3d06fe3f578faa305805ce1c988ab84c79cd",
-          "sha1": "88a54cd224e6c73f61c73b5cfcf0e2cd43a9ba9c",
-          "md5": "5c54d2dade08fa33cdef88c30a292fb4"
+          "name": "magicutils-processor-1.10.0-all.jar",
+          "url": "magicutils-processor-1.10.0-all.jar",
+          "size": 9581,
+          "sha512": "b70154ad4850e6031bad080a60a212139fa83d56d29a7b1925cddcdce82c2828b598f691243326c80dbd87a8b7fb8370a6143043720fc726e1a2f9331da864ba",
+          "sha256": "0cd39a73206c501cf052702ab47babccd96b2ee96f7d5581d0ccc0f998b9cdf7",
+          "sha1": "2ffcbb6cf5ff4a95ddb37bd8d68d29b1afebe35f",
+          "md5": "1f74059d669c25cbb7251fc67f75340c"
         }
       ]
     }

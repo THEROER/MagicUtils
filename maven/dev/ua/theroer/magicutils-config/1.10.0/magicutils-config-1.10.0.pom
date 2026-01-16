@@ -10,6 +10,7 @@
   <groupId>dev.ua.theroer</groupId>
   <artifactId>magicutils-config</artifactId>
   <version>1.10.0</version>
+  <packaging>pom</packaging>
   <dependencies>
     <dependency>
       <groupId>dev.ua.theroer</groupId>

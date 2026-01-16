@@ -10,7 +10,7 @@
   },
   "createdBy": {
     "gradle": {
-      "version": "8.14.1"
+      "version": "9.2.1"
     }
   },
   "variants": [
@@ -39,6 +39,13 @@
           }
         },
         {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-placeholders",
+          "version": {
+            "requires": "1.10.0"
+          }
+        },
+        {
           "group": "net.kyori",
           "module": "adventure-text-minimessage",
           "version": {
@@ -48,13 +55,13 @@
       ],
       "files": [
         {
-          "name": "magicutils-logger-1.10.0.jar",
-          "url": "magicutils-logger-1.10.0.jar",
-          "size": 77452,
-          "sha512": "785b4aa6232be2deb3a9c58da55c3fdfc58b678a7293eaf7d70f8d8b5ea7fe7635db125c57ca9d3f6532c4d00e877b929a77d6ea6d3a05c0b1a6a50ad35726f2",
-          "sha256": "a2dfdbd2a6e4ebfd9e6dd783d255ecd92e05bb8e8c30ef93d7d2d039ed6c9f43",
-          "sha1": "61aad5562c2fcdd07c295f0669cd8c5643b7c9ad",
-          "md5": "dab8cc5e7c47793822a7d29c606ea826"
+          "name": "magicutils-logger-1.10.0-mc1.21.jar",
+          "url": "magicutils-logger-1.10.0-mc1.21.jar",
+          "size": 77625,
+          "sha512": "5a1c12c75304ca91c2ae892262a667a851d977b1fea3ca797081796470ff88ebd3b31076200194b77125556fef055ba4a47c2f1e11096a9e9a4adffaf45d9841",
+          "sha256": "8f99426d80449bbcc3cde59b8e2973cfe8a55ace98aa49817dedcecc32c62f2b",
+          "sha1": "766f5cb1bad8e88f1686e2a7e4b6840d211c1ebd",
+          "md5": "748570e5ad9ef55939ff10dc5175fdd8"
         }
       ]
     },
@@ -90,6 +97,13 @@
           }
         },
         {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-placeholders",
+          "version": {
+            "requires": "1.10.0"
+          }
+        },
+        {
           "group": "net.kyori",
           "module": "adventure-text-minimessage",
           "version": {
@@ -99,33 +113,13 @@
       ],
       "files": [
         {
-          "name": "magicutils-logger-1.10.0.jar",
-          "url": "magicutils-logger-1.10.0.jar",
-          "size": 77452,
-          "sha512": "785b4aa6232be2deb3a9c58da55c3fdfc58b678a7293eaf7d70f8d8b5ea7fe7635db125c57ca9d3f6532c4d00e877b929a77d6ea6d3a05c0b1a6a50ad35726f2",
-          "sha256": "a2dfdbd2a6e4ebfd9e6dd783d255ecd92e05bb8e8c30ef93d7d2d039ed6c9f43",
-          "sha1": "61aad5562c2fcdd07c295f0669cd8c5643b7c9ad",
-          "md5": "dab8cc5e7c47793822a7d29c606ea826"
-        }
-      ]
-    },
-    {
-      "name": "shadowRuntimeElements",
-      "attributes": {
-        "org.gradle.category": "library",
-        "org.gradle.dependency.bundling": "shadowed",
-        "org.gradle.libraryelements": "jar",
-        "org.gradle.usage": "java-runtime"
-      },
-      "files": [
-        {
-          "name": "magicutils-logger-1.10.0-all.jar",
-          "url": "magicutils-logger-1.10.0-all.jar",
-          "size": 3179978,
-          "sha512": "1b7652d4cf52a3a97eca586d0ebe3480e27a59c0128fda657209395878f541bf6f2cfcc16f9d2fffd22f370d75b3196893d4e6bc71ffc39d0c73258766ac0214",
-          "sha256": "5e3a197f3b6e4aed702e679d43beb5e300bf5749510a119d45b8888a7d960220",
-          "sha1": "b5652d47fba63bf5dcc4c83933e65ddddc218c7c",
-          "md5": "721e4e7fa852163547f371d86e535fd8"
+          "name": "magicutils-logger-1.10.0-mc1.21.jar",
+          "url": "magicutils-logger-1.10.0-mc1.21.jar",
+          "size": 77625,
+          "sha512": "5a1c12c75304ca91c2ae892262a667a851d977b1fea3ca797081796470ff88ebd3b31076200194b77125556fef055ba4a47c2f1e11096a9e9a4adffaf45d9841",
+          "sha256": "8f99426d80449bbcc3cde59b8e2973cfe8a55ace98aa49817dedcecc32c62f2b",
+          "sha1": "766f5cb1bad8e88f1686e2a7e4b6840d211c1ebd",
+          "md5": "748570e5ad9ef55939ff10dc5175fdd8"
         }
       ]
     },
@@ -141,11 +135,11 @@
         {
           "name": "magicutils-logger-1.10.0-sources.jar",
           "url": "magicutils-logger-1.10.0-sources.jar",
-          "size": 34680,
-          "sha512": "6c0b58de4a637782f1368423ed5d36406d5c87829d6af1c61a8ac23dec3b115bf36c37c2ad7a62074d276c8c6c6d9b788ada025d06f72b8f7894dee0310df719",
-          "sha256": "e54c6e18d6682f147a93d52d9acd963a19dde58a6928f0b179137f8df265b85d",
-          "sha1": "c2042932ceaa4dea1792f444a7f2b2677353bfb4",
-          "md5": "dda8c57b898aa57badf48161859a16fe"
+          "size": 35476,
+          "sha512": "e1278ad8aa538ee283d71dba7b2fdc6906ff6fec309eeb5771cfeb53ad33739c59cca5a0d9974997f9672b9321d43664aaaa14ce3268e3bb3edf3502dab7ffea",
+          "sha256": "be5680d78bccc936dab4b6a2276878154c3996ab18f0195e80bb26971240d62a",
+          "sha1": "789d506bf48cc5bc9319e9606fc169a6833e7d72",
+          "md5": "0297e41bd2871b88c268a8faeaf17f9f"
         }
       ]
     },
@@ -161,11 +155,32 @@
         {
           "name": "magicutils-logger-1.10.0-javadoc.jar",
           "url": "magicutils-logger-1.10.0-javadoc.jar",
-          "size": 206972,
-          "sha512": "60188b5adb5058bcc340fa35bf3e60d9dd0d2d51905a49896386eb0c99922593040c561be8c8d53d2687802ed647fe9616d8ca366dc7eb644a4213db0ad54b5c",
-          "sha256": "856c9718ad55c85506a08362a01d959d501380c80d074dd9777c330d5a6e3eb9",
-          "sha1": "fdd3c89fb7660ffd76d39b7d35c50c75aa14f7ca",
-          "md5": "430111b484d6d238062febfa9a55a42d"
+          "size": 203092,
+          "sha512": "e00102ec8a947760241243216068c348340e22e7706eeb143195fa4d895fa1e72f5fbbf102a82d621139f219761af6b8e918e3e7125101c8f11e1e1ec614351d",
+          "sha256": "e405cd3f9f1b265adc70f343c939edc1e14f13b443909c46bb79360ce664d20a",
+          "sha1": "40ff1f18d7e6e5d42b44e050f64abae3c93130db",
+          "md5": "2c271eaf141bbefdafe47646b00ca223"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.10.0-all.jar",
+          "url": "magicutils-logger-1.10.0-all.jar",
+          "size": 3192209,
+          "sha512": "8cd99abd6ecc656865461c9a3143e85e04bd3b456903274bba82e0a355b557fb53c303d1fdc74af1b799809c518b2cefc83b42f5cad7cb5149f6acdb9a9e22bd",
+          "sha256": "156ecc80f903b4326eff548847fc6744b2aca01e93694f10b39ae1e1fb620391",
+          "sha1": "3f7ddf5250a27bbdf476db7dccdeca49862b955c",
+          "md5": "218a9496da793a34ebb7278f4bc336ab"
         }
       ]
     }
