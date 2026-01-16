@@ -10,7 +10,7 @@ import org.gradle.api.file.FileCopyDetails
 import org.gradle.kotlin.dsl.*
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 
-class MagicutilsJavaLibraryPlugin : Plugin<Project> {
+class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.pluginManager.apply("java-library")
         project.pluginManager.apply("maven-publish")
@@ -19,7 +19,7 @@ class MagicutilsJavaLibraryPlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.target")
         project.pluginManager.apply("magicutils.common")
 
-        val magicutilsTarget = project.extensions.getByType(MagicutilsTargetExtension::class.java)
+        val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
 
         project.extensions.configure(JavaPluginExtension::class.java) { javaExtension ->
             javaExtension.toolchain.languageVersion.set(JavaLanguageVersion.of(magicutilsTarget.java.get()))

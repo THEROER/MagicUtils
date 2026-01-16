@@ -3,13 +3,14 @@ package dev.ua.theroer.magicutils.platform.bukkit;
 import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Registers MagicPlaceholders with Bukkit placeholder backend when available.
  */
 public final class BukkitPlaceholderRegistrar implements MagicPlaceholders.PlaceholderListener {
-    private static final AtomicBoolean INSTALLED = new AtomicBoolean();
+    private static final Set<JavaPlugin> INSTALLED = ConcurrentHashMap.newKeySet();
 
     private final BukkitPlaceholderBackend backend;
 
@@ -26,7 +27,7 @@ public final class BukkitPlaceholderRegistrar implements MagicPlaceholders.Place
         if (plugin == null) {
             return;
         }
-        if (!INSTALLED.compareAndSet(false, true)) {
+        if (!INSTALLED.add(plugin)) {
             return;
         }
         BukkitPlaceholderRegistrar registrar = new BukkitPlaceholderRegistrar(plugin);
@@ -47,7 +48,9 @@ public final class BukkitPlaceholderRegistrar implements MagicPlaceholders.Place
     @Override
     public void onPlaceholderUnregistered(MagicPlaceholders.PlaceholderKey key) {
         if (backend != null) {
-            backend.ensureNamespace(key.namespace());
+            if (MagicPlaceholders.keysForNamespace(key.namespace()).isEmpty()) {
+                backend.unregisterNamespace(key.namespace());
+            }
         }
     }
 

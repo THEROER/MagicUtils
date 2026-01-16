@@ -57,11 +57,6 @@ public class LoggerConfig {
     @Comment("Whether to log placeholder resolution details")
     private boolean debugPlaceholders = false;
 
-    @ConfigValue("auto-localization")
-    @Comment("Whether to automatically localize messages using LanguageManager")
-    @Setter
-    private boolean autoLocalization = true;
-
     @ConfigSection("prefix")
     @Comment("Prefix configuration")
     @Getter(AccessLevel.NONE)

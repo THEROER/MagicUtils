@@ -4,7 +4,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.attributes.Usage
 import org.gradle.kotlin.dsl.*
 
-class MagicutilsShadedModulePlugin : Plugin<Project> {
+class MagicUtilsShadedModulePlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.pluginManager.apply("magicutils.shadow")
 

@@ -10,4 +10,13 @@ public interface ShutdownHookRegistrar {
      * @param hook shutdown callback
      */
     void registerShutdownHook(Runnable hook);
+
+    /**
+     * Unregisters a previously registered shutdown hook.
+     *
+     * @param hook shutdown callback to remove
+     */
+    default void unregisterShutdownHook(Runnable hook) {
+        // Optional
+    }
 }

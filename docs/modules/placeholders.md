@@ -22,6 +22,47 @@ MagicPlaceholders.register("myplugin", "balance", (audience, arg) -> {
 String value = MagicPlaceholders.resolve("myplugin", "online", audience, null);
 ```
 
+## Render placeholders in text
+
+Use `{placeholder}` tokens to render text with the shared registry:
+
+```java
+PlaceholderContext context = PlaceholderContext.builder()
+    .audience(audience)
+    .defaultNamespace("myplugin")
+    .ownerKey(this) // optional local scope key
+    .inline(Map.of("player", "Steve"))
+    .build();
+
+String text = "Hello {player}! Balance: {balance|bank}";
+String rendered = MagicPlaceholders.render(context, text);
+```
+
+Resolution order for `{key}`:
+
+1. Inline values from the context.
+2. Local placeholders registered for the `ownerKey`.
+3. Default namespace (`defaultNamespace:key`).
+4. Global placeholders.
+
+Namespaced tokens use `{namespace:key}` or `{namespace:key:arg}`. Unqualified
+tokens with `:` are not supported. Use the argument separator (default `|`)
+for `key|arg` instead.
+
+To change or disable the separator:
+
+```java
+PlaceholderContext context = PlaceholderContext.builder()
+    .argumentSeparator("::") // set your own
+    .build();
+```
+
+Convenience overloads:
+
+```java
+String rendered = MagicPlaceholders.render(audience, "Hello {server}");
+```
+
 Resolvers receive:
 
 - `Audience` when available (player context).

@@ -13,7 +13,6 @@ Formats:
 ```yaml
 plugin-name: DonateMenu
 short-name: DM
-auto-localization: true
 debug-placeholders: false
 
 prefix:
@@ -69,11 +68,6 @@ sub-loggers:
 
 Auto-filled on first run and used in prefix rendering. `short-name` is used by
 `PrefixMode.SHORT`.
-
-### auto-localization
-
-When enabled, any message that starts with `@` is treated as a language key and
-resolved via `LanguageManager`.
 
 ### prefix
 

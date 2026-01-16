@@ -4,7 +4,7 @@ import org.gradle.api.provider.Property
 import java.io.File
 import java.util.Properties
 
-abstract class MagicutilsTargetExtension {
+abstract class MagicUtilsTargetExtension {
     abstract val minecraft: Property<String>
     abstract val java: Property<Int>
     abstract val yarn: Property<String>
@@ -15,10 +15,10 @@ abstract class MagicutilsTargetExtension {
     abstract val neoforge: Property<String>
 }
 
-class MagicutilsTargetPlugin : Plugin<Project> {
+class MagicUtilsTargetPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         with(project) {
-            val extension = extensions.create("magicutilsTarget", MagicutilsTargetExtension::class.java)
+            val extension = extensions.create("magicutilsTarget", MagicUtilsTargetExtension::class.java)
 
             val targetsFile = File(rootDir, "gradle/targets.properties")
             val properties = Properties()

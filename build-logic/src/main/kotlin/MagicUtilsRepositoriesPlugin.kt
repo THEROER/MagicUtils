@@ -2,7 +2,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 
-class MagicutilsRepositoriesPlugin : Plugin<Project> {
+class MagicUtilsRepositoriesPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.repositories.apply {
             mavenCentral()

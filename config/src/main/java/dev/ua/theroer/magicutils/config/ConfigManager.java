@@ -50,6 +50,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 public class ConfigManager {
     private final Platform platform;
     private final PlatformLogger logger;
+    private final ShutdownHookRegistrar shutdownRegistrar;
+    private final Runnable shutdownHook;
     private final Map<ConfigKey, ConfigEntry<?>> configs = new ConcurrentHashMap<>();
     private final Map<Class<?>, Set<ConfigKey>> classIndex = new ConcurrentHashMap<>();
     private final Map<Object, ConfigKey> instanceIndex = new ConcurrentHashMap<>();
@@ -84,8 +86,13 @@ public class ConfigManager {
     public ConfigManager(Platform platform) {
         this.platform = platform;
         this.logger = platform.logger();
-        if (platform instanceof ShutdownHookRegistrar registrar) {
-            registrar.registerShutdownHook(this::shutdown);
+        ShutdownHookRegistrar registrar = platform instanceof ShutdownHookRegistrar hookRegistrar
+                ? hookRegistrar
+                : null;
+        this.shutdownRegistrar = registrar;
+        this.shutdownHook = this::shutdown;
+        if (registrar != null) {
+            registrar.registerShutdownHook(shutdownHook);
         }
     }
 
@@ -1645,10 +1652,14 @@ public class ConfigManager {
     }
 
     private void warnIfMainThread(String action) {
-        if (platform != null && platform.isMainThread()) {
+        if (isBlockingSensitiveThread()) {
             logger.warn("ConfigManager." + action + " performs disk I/O. Consider using " + action
                     + "Async() to avoid main-thread stalls.");
         }
+    }
+
+    private boolean isBlockingSensitiveThread() {
+        return platform != null && platform.threadContext().isBlockingSensitive();
     }
 
     /**
@@ -1656,6 +1667,9 @@ public class ConfigManager {
      */
     public void shutdown() {
         shuttingDown = true;
+        if (shutdownRegistrar != null && shutdownHook != null) {
+            shutdownRegistrar.unregisterShutdownHook(shutdownHook);
+        }
 
         if (reloadExecutor != null) {
             reloadExecutor.shutdownNow();

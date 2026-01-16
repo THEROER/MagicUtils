@@ -8,7 +8,7 @@ MagicUtils placeholders.
 Register namespaces to expose author/version data to integrations:
 
 ```java
-MagicPlaceholders.registerNamespace("donatemenu", "Theroer", "1.10.0");
+MagicPlaceholders.registerNamespace("donatemenu", "THEROER", "1.10.0");
 ```
 
 Metadata is used by PlaceholderAPI expansions and MiniPlaceholders namespace
@@ -31,6 +31,15 @@ PlaceholderAPI example:
 On Fabric, the argument is supplied by the active placeholder mod. Use the
 syntax required by [Text Placeholder API](https://modrinth.com/mod/placeholder-api)
 or [MiniPlaceholders](https://modrinth.com/mod/miniplaceholders).
+
+For `{key|arg}` rendering inside MagicPlaceholders, the `|` separator is used
+by default. You can override it per context:
+
+```java
+PlaceholderContext context = PlaceholderContext.builder()
+    .argumentSeparator("::")
+    .build();
+```
 
 ## Audience handling
 
@@ -64,10 +73,46 @@ MagicPlaceholders.addListener(new MagicPlaceholders.PlaceholderListener() {
 });
 ```
 
+## Local and global placeholders
+
+Global placeholders work without a namespace:
+
+```java
+MagicPlaceholders.registerGlobal("server", (audience, arg) -> "Example");
+```
+
+Local placeholders are scoped to an owner key (plugin/mod instance, a logger,
+or any stable object):
+
+```java
+MagicPlaceholders.registerLocal(this, "balance", (audience, arg) -> "42");
+```
+
+## Resolution order
+
+For `{key}` tokens rendered via `MagicPlaceholders.render(...)`:
+
+1. Inline values supplied by `PlaceholderContext`.
+2. Local placeholders for the `ownerKey`.
+3. Default namespace (`defaultNamespace:key`).
+4. Global placeholders.
+
+For `{namespace:key(:arg)}` tokens, only the namespaced registry is used.
+
 ## Safe resolution
 
 `MagicPlaceholders.resolve(...)` returns an empty string when the placeholder is
 missing or when a resolver throws. Keep resolvers fast and side-effect free.
+
+## Debug listeners
+
+Subscribe to resolution events:
+
+```java
+MagicPlaceholders.addDebugListener((ownerKey, key, audience, arg, result) -> {
+    // log or inspect result.value()
+});
+```
 
 ## Integration summary
 

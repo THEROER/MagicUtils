@@ -9,14 +9,14 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-class MagicutilsFabricBundlePlugin : Plugin<Project> {
+class MagicUtilsFabricBundlePlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.pluginManager.apply("magicutils.java-library")
         project.pluginManager.apply("fabric-loom")
         project.pluginManager.apply("magicutils.target")
         project.pluginManager.apply("magicutils.common")
 
-        val magicutilsTarget = project.extensions.getByType(MagicutilsTargetExtension::class.java)
+        val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
         val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
         val moduleName = getModuleName(project.name)
 

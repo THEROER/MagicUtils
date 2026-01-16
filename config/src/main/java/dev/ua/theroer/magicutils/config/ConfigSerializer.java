@@ -95,6 +95,7 @@ public class ConfigSerializer {
      * Deserializes a map to an object.
      * 
      * @param <T>   the type to deserialize to
+     * @param logger logger for diagnostics
      * @param data  the map data to deserialize
      * @param clazz the class to deserialize to
      * @return the deserialized object

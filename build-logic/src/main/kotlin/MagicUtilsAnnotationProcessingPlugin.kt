@@ -3,7 +3,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.*
 
-class MagicutilsAnnotationProcessingPlugin : Plugin<Project> {
+class MagicUtilsAnnotationProcessingPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         if (project.name != "processor") {
             project.dependencies.add("annotationProcessor", project.project(":processor")) 

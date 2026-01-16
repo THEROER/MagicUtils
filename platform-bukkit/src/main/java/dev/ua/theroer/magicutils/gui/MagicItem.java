@@ -22,6 +22,9 @@ public final class MagicItem {
     private final ItemStack stack;
     private final ItemMeta meta;
 
+    /**
+     * Unbreaking enchantment resolved for supported server versions.
+     */
     public static final Enchantment UNBREAKING = resolveUnbreaking();
 
     private static Enchantment resolveUnbreaking() {

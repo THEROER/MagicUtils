@@ -165,7 +165,6 @@ public class BukkitCommandWrapper extends Command {
      * 
      * @param permissionMessage the permission message
      */
-    @SuppressWarnings("deprecation")
     @Override
     public BukkitCommandWrapper setPermissionMessage(String permissionMessage) {
         super.permissionMessage(Component.text(permissionMessage));

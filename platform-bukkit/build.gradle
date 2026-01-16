@@ -5,7 +5,7 @@ plugins {
     id 'magicutils.target'
 }
 
-def target = project.extensions.getByType(MagicutilsTargetExtension)
+def target = project.extensions.getByType(MagicUtilsTargetExtension)
 
 dependencies {
     api project(':core')

@@ -61,6 +61,11 @@ public final class HelpCommandSupport {
         return createHelpSubCommand("help", logger, managerSupplier);
     }
 
+    public static <S> SubCommandSpec<S> createHelpSubCommandMulti(LoggerCore logger,
+                                                                  Supplier<List<CommandManager<?>>> managersSupplier) {
+        return createHelpSubCommandMulti("help", logger, managersSupplier);
+    }
+
     public static <S> SubCommandSpec<S> createHelpSubCommand(String subCommandName,
                                                              LoggerCore logger,
                                                              Supplier<CommandManager<?>> managerSupplier) {
@@ -79,7 +84,7 @@ public final class HelpCommandSupport {
                         .build())
                 .argument(CommandArgument.builder("command", String.class)
                         .optional()
-                        .suggestions("@commands")
+                        .suggestions("getHelpCommandSuggestions|@commands")
                         .build())
                 .argument(CommandArgument.builder("subcommand", String.class)
                         .optional()
@@ -120,6 +125,65 @@ public final class HelpCommandSupport {
                 .build();
     }
 
+    public static <S> SubCommandSpec<S> createHelpSubCommandMulti(String subCommandName,
+                                                                  LoggerCore logger,
+                                                                  Supplier<List<CommandManager<?>>> managersSupplier) {
+        String helpName = safeTrim(subCommandName);
+        if (helpName == null) {
+            helpName = "help";
+        }
+        final String helpNameFinal = helpName;
+        Supplier<List<CommandManager<?>>> supplier = managersSupplier != null ? managersSupplier : List::of;
+
+        return SubCommandSpec.<S>builder(helpNameFinal)
+                .description("Shows available commands and usages")
+                .permissionDefault(MagicPermissionDefault.TRUE)
+                .argument(CommandArgument.builder("sender", MagicSender.class)
+                        .sender(new AllowedSender[] { AllowedSender.ANY })
+                        .build())
+                .argument(CommandArgument.builder("command", String.class)
+                        .optional()
+                        .suggestions("getHelpCommandSuggestions|@commands")
+                        .build())
+                .argument(CommandArgument.builder("subcommand", String.class)
+                        .optional()
+                        .greedy()
+                        .build())
+                .execute(execution -> {
+                    MagicSender sender = execution.arg("sender", MagicSender.class);
+                    if (sender == null) {
+                        return CommandResult.failure("Sender unavailable");
+                    }
+
+                    List<CommandManager<?>> managers = normalizeManagers(supplier.get());
+                    String commandName = execution.arg("command", String.class);
+                    String subCommand = execution.arg("subcommand", String.class);
+
+                    CommandInfo info = resolveCommandInfo(managers, execution.command());
+                    String rootCommand = info != null ? info.name() : execution.commandName();
+                    String helpCommand = rootCommand + " " + helpNameFinal;
+
+                    if (commandName != null && !managers.isEmpty()) {
+                        String candidate = subCommand != null && !subCommand.isBlank()
+                                ? commandName + " " + subCommand
+                                : commandName;
+                        if (findSubCommand(managers, execution.command(), candidate) != null) {
+                            subCommand = candidate;
+                            commandName = rootCommand;
+                        }
+                    }
+
+                    HelpResult result = build(managers, commandName, subCommand, helpCommand, logger, sender);
+                    if (!result.success()) {
+                        return CommandResult.failure(result.errorMessage());
+                    }
+
+                    sendLines(logger, sender, result.lines());
+                    return CommandResult.success(false, "");
+                })
+                .build();
+    }
+
     public static HelpResult build(CommandManager<?> manager, String commandName, String subCommand) {
         return build(manager, commandName, subCommand, DEFAULT_HELP_COMMAND, null, null);
     }
@@ -150,6 +214,28 @@ public final class HelpCommandSupport {
         return HelpResult.success(buildOverview(manager, request.query, request.page, context, style, sender));
     }
 
+    public static HelpResult build(List<CommandManager<?>> managers, String commandName, String subCommand,
+                                   String helpCommand, LoggerCore logger, MagicSender sender) {
+        List<CommandManager<?>> normalized = normalizeManagers(managers);
+        if (normalized.isEmpty()) {
+            return HelpResult.failure("Help unavailable (command manager not ready)");
+        }
+
+        HelpStyle style = resolveStyle(logger);
+        HelpContext context = new HelpContext(normalizeHelpCommand(helpCommand));
+        HelpRequest request = parseRequest(normalized, commandName, subCommand);
+        if (request.detailTarget != null) {
+            CommandManager<?> detailManager = resolveManagerForCommand(normalized, request.detailTarget,
+                    request.detailSub);
+            if (detailManager == null) {
+                return HelpResult.failure("Command not found");
+            }
+            return HelpResult.success(buildDetails(detailManager, request.detailTarget, request.detailSub,
+                    context, style, sender));
+        }
+        return HelpResult.success(buildOverview(normalized, request.query, request.page, context, style, sender));
+    }
+
     public static String[] getCommandSuggestions(CommandManager<?> manager) {
         if (manager == null) {
             return new String[0];
@@ -169,9 +255,66 @@ public final class HelpCommandSupport {
                 .toArray(String[]::new);
     }
 
+    public static String[] getCommandSuggestions(List<CommandManager<?>> managers) {
+        List<CommandManager<?>> normalized = normalizeManagers(managers);
+        if (normalized.isEmpty()) {
+            return new String[0];
+        }
+        return normalized.stream()
+                .flatMap(manager -> manager.getAll().stream()
+                        .map(cmd -> resolveCommandInfo(manager, cmd))
+                        .filter(Objects::nonNull)
+                        .flatMap(info -> {
+                            List<String> names = new ArrayList<>();
+                            names.add(info.name());
+                            for (String alias : info.aliases()) {
+                                names.add(alias);
+                            }
+                            return names.stream();
+                        }))
+                .distinct()
+                .toArray(String[]::new);
+    }
+
     private static List<String> buildOverview(CommandManager<?> manager, String query, int page,
                                               HelpContext context, HelpStyle style, MagicSender sender) {
         List<HelpEntry> entries = buildEntries(manager, sender);
+        List<HelpEntry> filtered = filterEntries(entries, query);
+        int pageSize = style.pageSize();
+        int totalPages = Math.max(1, (int) Math.ceil(filtered.size() / (double) pageSize));
+        int safePage = clamp(page, 1, totalPages);
+
+        int start = (safePage - 1) * pageSize;
+        int end = Math.min(filtered.size(), start + pageSize);
+        List<HelpEntry> pageEntries = filtered.subList(start, end);
+
+        List<String> lines = new ArrayList<>();
+        lines.addAll(buildHeaderLines("Help", safePage, totalPages, style));
+        lines.add(buildQueryLine(query, style));
+        lines.add(color(style.mutedTag(), "|- Available commands:"));
+
+        if (pageEntries.isEmpty()) {
+            lines.add(color(style.mutedTag(), "|- No commands found."));
+        } else {
+            for (int i = 0; i < pageEntries.size(); i++) {
+                HelpEntry entry = pageEntries.get(i);
+                boolean last = i == pageEntries.size() - 1;
+                lines.add(buildEntryLine(entry, last, context, style));
+            }
+        }
+
+        if (totalPages > 1) {
+            lines.add(buildFooter(query, safePage, totalPages, context, style));
+        } else {
+            lines.add(color(style.lineTag(), style.lineText()));
+        }
+
+        return lines;
+    }
+
+    private static List<String> buildOverview(List<CommandManager<?>> managers, String query, int page,
+                                              HelpContext context, HelpStyle style, MagicSender sender) {
+        List<HelpEntry> entries = buildEntries(managers, sender);
         List<HelpEntry> filtered = filterEntries(entries, query);
         int pageSize = style.pageSize();
         int totalPages = Math.max(1, (int) Math.ceil(filtered.size() / (double) pageSize));
@@ -262,6 +405,46 @@ public final class HelpCommandSupport {
         return new HelpRequest(null, null, query, 1);
     }
 
+    private static HelpRequest parseRequest(List<CommandManager<?>> managers, String commandName, String subCommand) {
+        String first = safeTrim(commandName);
+        String second = safeTrim(subCommand);
+
+        if (first == null) {
+            return new HelpRequest(null, null, "", 1);
+        }
+
+        Integer page = parsePage(first);
+        if (page != null) {
+            String query = second != null ? second : "";
+            return new HelpRequest(null, null, query, page);
+        }
+
+        for (CommandManager<?> manager : managers) {
+            MagicCommand target = findCommand(manager, first);
+            if (target != null) {
+                if (second != null) {
+                    CommandManager.CommandAction<?> sub = findSubCommand(manager, target, second);
+                    if (sub != null) {
+                        return new HelpRequest(target, sub, "", 1);
+                    }
+                    Integer subPage = parsePage(second);
+                    if (subPage != null) {
+                        return new HelpRequest(null, null, first, subPage);
+                    }
+                }
+                return new HelpRequest(target, null, "", 1);
+            }
+        }
+
+        Integer secondPage = parsePage(second);
+        if (secondPage != null) {
+            return new HelpRequest(null, null, first, secondPage);
+        }
+
+        String query = second != null ? first + " " + second : first;
+        return new HelpRequest(null, null, query, 1);
+    }
+
     private static CommandManager.CommandAction<?> findSubCommand(CommandManager<?> manager,
                                                                   MagicCommand command,
                                                                   String name) {
@@ -271,6 +454,21 @@ public final class HelpCommandSupport {
         List<String> segments = splitSubCommandPath(name);
         for (CommandManager.CommandAction<?> sub : getSubCommandActions(manager, command)) {
             if (matchesSubCommandPath(sub, segments)) {
+                return sub;
+            }
+        }
+        return null;
+    }
+
+    private static CommandManager.CommandAction<?> findSubCommand(List<CommandManager<?>> managers,
+                                                                  MagicCommand command,
+                                                                  String name) {
+        if (managers == null || managers.isEmpty() || command == null || name == null || name.isEmpty()) {
+            return null;
+        }
+        for (CommandManager<?> manager : managers) {
+            CommandManager.CommandAction<?> sub = findSubCommand(manager, command, name);
+            if (sub != null) {
                 return sub;
             }
         }
@@ -448,6 +646,19 @@ public final class HelpCommandSupport {
         return entries;
     }
 
+    private static List<HelpEntry> buildEntries(List<CommandManager<?>> managers, MagicSender sender) {
+        Map<String, HelpEntry> unique = new LinkedHashMap<>();
+        for (CommandManager<?> manager : managers) {
+            for (HelpEntry entry : buildEntries(manager, sender)) {
+                String key = entry.usage.toLowerCase(Locale.ROOT) + "|" + entry.command + "|" + entry.subcommand;
+                unique.putIfAbsent(key, entry);
+            }
+        }
+        List<HelpEntry> entries = new ArrayList<>(unique.values());
+        entries.sort(Comparator.comparing(HelpEntry::usage, String.CASE_INSENSITIVE_ORDER));
+        return entries;
+    }
+
     private static List<HelpEntry> filterEntries(List<HelpEntry> entries, String query) {
         if (query == null || query.isEmpty()) {
             return entries;
@@ -516,6 +727,52 @@ public final class HelpCommandSupport {
             line += " " + color(style.mutedTag(), "(aliases: " + joinValues(entry.aliases) + ")");
         }
         return line;
+    }
+
+    private static CommandInfo resolveCommandInfo(List<CommandManager<?>> managers, MagicCommand command) {
+        if (command == null) {
+            return null;
+        }
+        for (CommandManager<?> manager : managers) {
+            CommandInfo info = resolveCommandInfo(manager, command);
+            if (info != null) {
+                return info;
+            }
+        }
+        return null;
+    }
+
+    private static CommandManager<?> resolveManagerForCommand(List<CommandManager<?>> managers,
+                                                              MagicCommand command,
+                                                              CommandManager.CommandAction<?> sub) {
+        if (command == null) {
+            return null;
+        }
+        for (CommandManager<?> manager : managers) {
+            if (resolveCommandInfo(manager, command) == null) {
+                continue;
+            }
+            if (sub == null) {
+                return manager;
+            }
+            if (getSubCommandActions(manager, command).contains(sub)) {
+                return manager;
+            }
+        }
+        return null;
+    }
+
+    private static List<CommandManager<?>> normalizeManagers(List<CommandManager<?>> managers) {
+        if (managers == null || managers.isEmpty()) {
+            return List.of();
+        }
+        List<CommandManager<?>> filtered = new ArrayList<>();
+        for (CommandManager<?> manager : managers) {
+            if (manager != null) {
+                filtered.add(manager);
+            }
+        }
+        return filtered;
     }
 
     private static String clickable(String text, String hover, String command, HelpStyle style) {

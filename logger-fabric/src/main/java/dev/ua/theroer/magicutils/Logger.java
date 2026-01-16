@@ -33,11 +33,18 @@ import java.util.Map;
  * Fabric logger adapter backed by {@link LoggerCore}.
  */
 @LogMethods(staticMethods = false, audienceType = "net.minecraft.server.network.ServerPlayerEntity")
-@SuppressWarnings("doclint:missing")
 public final class Logger extends LoggerMethods implements LoggerAdapter<ServerPlayerEntity, PrefixedLogger> {
     private final LoggerCore core;
     private final Map<String, PrefixedLogger> prefixedLoggers = new HashMap<>();
 
+    /**
+     * Creates a Fabric logger instance.
+     *
+     * @param platform platform adapter
+     * @param manager config manager
+     * @param placeholderOwner placeholder owner key
+     * @param modName mod name for logger prefix
+     */
     public Logger(Platform platform, ConfigManager manager, Object placeholderOwner, String modName) {
         Platform effectivePlatform = wrapPlatform(platform, modName);
         this.core = new LoggerCore(effectivePlatform, manager, placeholderOwner, modName);
@@ -49,10 +56,23 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
         }
     }
 
+    /**
+     * Creates a Fabric logger instance.
+     *
+     * @param platform platform adapter
+     * @param manager config manager
+     * @param modName mod name for logger prefix
+     */
     public Logger(Platform platform, ConfigManager manager, String modName) {
         this(platform, manager, null, modName);
     }
 
+    /**
+     * Creates a Fabric logger instance with default mod name.
+     *
+     * @param platform platform adapter
+     * @param manager config manager
+     */
     public Logger(Platform platform, ConfigManager manager) {
         this(platform, manager, null, null);
     }
@@ -79,30 +99,65 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
         FabricComponentSerializer.setMaxJsonLength(config.getDefaults().getTextMaxLength());
     }
 
+    /**
+     * Creates an INFO level log builder.
+     *
+     * @return log builder
+     */
     public LogBuilder log() {
         return new LogBuilder(this, LogLevel.INFO);
     }
 
+    /**
+     * Creates an INFO level log builder with prefix disabled.
+     *
+     * @return log builder
+     */
     public LogBuilder noPrefix() {
         return new LogBuilder(this, LogLevel.INFO).noPrefix();
     }
 
+    /**
+     * Creates an INFO level log builder.
+     *
+     * @return log builder
+     */
     public LogBuilder info() {
         return new LogBuilder(this, LogLevel.INFO);
     }
 
+    /**
+     * Creates a WARN level log builder.
+     *
+     * @return log builder
+     */
     public LogBuilder warn() {
         return new LogBuilder(this, LogLevel.WARN);
     }
 
+    /**
+     * Creates an ERROR level log builder.
+     *
+     * @return log builder
+     */
     public LogBuilder error() {
         return new LogBuilder(this, LogLevel.ERROR);
     }
 
+    /**
+     * Creates a DEBUG level log builder.
+     *
+     * @return log builder
+     */
     public LogBuilder debug() {
         return new LogBuilder(this, LogLevel.DEBUG);
     }
 
+    /**
+     * Creates a SUCCESS level log builder.
+     *
+     * @return log builder
+     */
     public LogBuilder success() {
         return new LogBuilder(this, LogLevel.SUCCESS);
     }
@@ -137,14 +192,33 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
         return player != null ? new FabricAudience(player) : null;
     }
 
+    /**
+     * Wraps a command source as an audience.
+     *
+     * @param source command source
+     * @return wrapped audience or null
+     */
     public Audience wrapAudience(ServerCommandSource source) {
         return source != null ? new FabricCommandAudience(source, false) : null;
     }
 
+    /**
+     * Wraps a command source as an audience with optional op broadcast.
+     *
+     * @param source command source
+     * @param broadcastToOps whether to broadcast to ops
+     * @return wrapped audience or null
+     */
     public Audience wrapAudience(ServerCommandSource source, boolean broadcastToOps) {
         return source != null ? new FabricCommandAudience(source, broadcastToOps) : null;
     }
 
+    /**
+     * Wraps a command source as an error audience.
+     *
+     * @param source command source
+     * @return wrapped audience or null
+     */
     public Audience wrapErrorAudience(ServerCommandSource source) {
         return source != null ? new FabricCommandAudience(source, false, FabricCommandAudience.Mode.ERROR) : null;
     }

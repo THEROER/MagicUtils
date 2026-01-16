@@ -6,7 +6,7 @@ import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
 import org.gradle.kotlin.dsl.*
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-class MagicutilsPublishingPlugin : Plugin<Project> {
+class MagicUtilsPublishingPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.pluginManager.apply(MavenPublishPlugin::class.java)
         project.pluginManager.apply("magicutils.common")

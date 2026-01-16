@@ -30,6 +30,7 @@ public class LanguageManager {
     private final ConfigManager configManager;
     private final PlatformLogger logger;
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
+    private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
@@ -73,10 +74,10 @@ public class LanguageManager {
     public void init(String defaultLanguage) {
         this.currentLanguage = defaultLanguage;
         this.loggedMissingMessages.clear();
-        loadLanguage(currentLanguage);
+        loadLanguageBlocking(currentLanguage);
 
         if (!currentLanguage.equals(fallbackLanguage)) {
-            loadFallbackLanguage(fallbackLanguage);
+            loadFallbackLanguageBlocking(fallbackLanguage);
         } else {
             fallbackConfig = currentConfig;
         }
@@ -89,7 +90,21 @@ public class LanguageManager {
      * @return true if successfully loaded
      */
     public boolean loadLanguage(String languageCode) {
-        warnIfMainThread("loadLanguage");
+        if (languageCode == null || languageCode.isBlank()) {
+            return false;
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            return true;
+        }
+        if (isBlockingSensitiveThread()) {
+            warnIfMainThread("loadLanguage");
+            scheduleLanguageLoad(languageCode);
+            return false;
+        }
+        return loadLanguageBlocking(languageCode);
+    }
+
+    private boolean loadLanguageBlocking(String languageCode) {
         boolean existed = languageFileExists(languageCode);
         try {
             this.loggedMissingMessages.clear();
@@ -117,6 +132,17 @@ public class LanguageManager {
         }
     }
 
+    private void scheduleLanguageLoad(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return;
+        }
+        if (!pendingLanguages.add(languageCode)) {
+            return;
+        }
+        CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
+    }
+
     private void initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
         Map<String, Map<String, String>> translations = createTranslations(languageCode);
         if (translations.isEmpty()) {
@@ -133,9 +159,33 @@ public class LanguageManager {
     }
 
     private void loadFallbackLanguage(String languageCode) {
-        if (loadLanguage(languageCode)) {
-            this.fallbackLanguage = languageCode;
-            fallbackConfig = loadedLanguages.get(languageCode);
+        if (languageCode == null || languageCode.isBlank()) {
+            return;
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            applyFallback(languageCode);
+            return;
+        }
+        if (isBlockingSensitiveThread()) {
+            warnIfMainThread("loadLanguage");
+            loadLanguageAsync(languageCode).thenAccept(success -> {
+                if (Boolean.TRUE.equals(success)) {
+                    platform.runOnMain(() -> applyFallback(languageCode));
+                }
+            });
+            return;
+        }
+        if (loadLanguageBlocking(languageCode)) {
+            applyFallback(languageCode);
+        }
+    }
+
+    private void loadFallbackLanguageBlocking(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return;
+        }
+        if (loadLanguageBlocking(languageCode)) {
+            applyFallback(languageCode);
         }
     }
 
@@ -146,14 +196,26 @@ public class LanguageManager {
      * @return true if language is now active
      */
     public boolean setLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return false;
+        }
         if (!loadedLanguages.containsKey(languageCode)) {
-            if (!loadLanguage(languageCode)) {
+            if (isBlockingSensitiveThread()) {
+                warnIfMainThread("loadLanguage");
+                CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                        .thenAccept(success -> {
+                            if (Boolean.TRUE.equals(success)) {
+                                platform.runOnMain(() -> applyLanguage(languageCode));
+                            }
+                        });
+                return false;
+            }
+            if (!loadLanguageBlocking(languageCode)) {
                 return false;
             }
         }
 
-        this.currentLanguage = languageCode;
-        this.currentConfig = loadedLanguages.get(languageCode);
+        applyLanguage(languageCode);
         return true;
     }
 
@@ -427,8 +489,13 @@ public class LanguageManager {
             return true;
         }
 
-        if (!loadedLanguages.containsKey(languageCode) && !loadLanguage(languageCode)) {
-            return false;
+        if (!loadedLanguages.containsKey(languageCode)) {
+            if (isBlockingSensitiveThread()) {
+                warnIfMainThread("loadLanguage");
+                scheduleLanguageLoad(languageCode);
+            } else if (!loadLanguageBlocking(languageCode)) {
+                return false;
+            }
         }
 
         playerLanguages.put(playerId, languageCode);
@@ -592,13 +659,13 @@ public class LanguageManager {
 
         currentConfig = loadedLanguages.get(currentLanguage);
         if (currentConfig == null) {
-            loadLanguage(currentLanguage);
+            loadLanguageBlocking(currentLanguage);
             currentConfig = loadedLanguages.get(currentLanguage);
         }
 
         fallbackConfig = loadedLanguages.get(fallbackLanguage);
         if (fallbackConfig == null && fallbackLanguage != null) {
-            loadFallbackLanguage(fallbackLanguage);
+            loadFallbackLanguageBlocking(fallbackLanguage);
         }
     }
 
@@ -642,7 +709,17 @@ public class LanguageManager {
      * @return future that completes with true if loaded successfully
      */
     public CompletableFuture<Boolean> loadLanguageAsync(String languageCode) {
-        return CompletableFuture.supplyAsync(() -> loadLanguage(languageCode));
+        if (languageCode == null || languageCode.isBlank()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            return CompletableFuture.completedFuture(true);
+        }
+        if (!pendingLanguages.add(languageCode)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
     }
 
     /**
@@ -652,7 +729,16 @@ public class LanguageManager {
      * @return future that completes with true if active language is set
      */
     public CompletableFuture<Boolean> setLanguageAsync(String languageCode) {
-        return CompletableFuture.supplyAsync(() -> setLanguage(languageCode));
+        if (languageCode == null || languageCode.isBlank()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return loadLanguageAsync(languageCode).thenApply(success -> {
+            if (!Boolean.TRUE.equals(success)) {
+                return false;
+            }
+            platform.runOnMain(() -> applyLanguage(languageCode));
+            return true;
+        });
     }
 
     /**
@@ -670,15 +756,43 @@ public class LanguageManager {
         }
 
         LanguageConfig config = loadedLanguages.get(languageCode);
-        if (config == null && loadLanguage(languageCode)) {
-            config = loadedLanguages.get(languageCode);
+        if (config == null) {
+            if (isBlockingSensitiveThread()) {
+                scheduleLanguageLoad(languageCode);
+                return null;
+            }
+            if (loadLanguageBlocking(languageCode)) {
+                config = loadedLanguages.get(languageCode);
+            }
         }
         return config;
     }
 
+    private void applyLanguage(String languageCode) {
+        this.currentLanguage = languageCode;
+        this.currentConfig = loadedLanguages.get(languageCode);
+    }
+
+    private void applyFallback(String languageCode) {
+        this.fallbackLanguage = languageCode;
+        fallbackConfig = loadedLanguages.get(languageCode);
+    }
+
+    private boolean isBlockingSensitiveThread() {
+        return platform != null && platform.threadContext().isBlockingSensitive();
+    }
+
     private void ensureFallbackLoaded() {
         if (fallbackConfig == null && fallbackLanguage != null) {
-            loadFallbackLanguage(fallbackLanguage);
+            if (isBlockingSensitiveThread()) {
+                loadLanguageAsync(fallbackLanguage).thenAccept(success -> {
+                    if (Boolean.TRUE.equals(success)) {
+                        platform.runOnMain(() -> applyFallback(fallbackLanguage));
+                    }
+                });
+            } else {
+                loadFallbackLanguageBlocking(fallbackLanguage);
+            }
         }
     }
 
@@ -697,7 +811,7 @@ public class LanguageManager {
     }
 
     private void warnIfMainThread(String action) {
-        if (platform != null && platform.isMainThread()) {
+        if (isBlockingSensitiveThread()) {
             logger.warn("LanguageManager." + action + " performs disk I/O. Consider using "
                     + action + "Async() to avoid main-thread stalls.");
         }

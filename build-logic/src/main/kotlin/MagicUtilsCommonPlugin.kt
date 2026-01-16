@@ -1,7 +1,7 @@
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
-class MagicutilsCommonPlugin : Plugin<Project> {
+class MagicUtilsCommonPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         with(project) {
             val moduleNameMap = mapOf(

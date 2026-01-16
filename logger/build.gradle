@@ -7,6 +7,7 @@ plugins {
 dependencies {
     api project(':config')
     api project(':lang')
+    api project(':placeholders')
     api libs.kyori.adventure.text.minimessage
     implementation libs.kyori.adventure.text.serializer.plain
     compileOnly libs.jetbrains.annotations

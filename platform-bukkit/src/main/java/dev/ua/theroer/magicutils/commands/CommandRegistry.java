@@ -129,6 +129,29 @@ public class CommandRegistry {
         return create(plugin, permissionPrefix, loggerInstance, true);
     }
 
+    /**
+     * Removes the registry entry for a plugin.
+     *
+     * @param plugin plugin instance
+     */
+    public static void shutdown(JavaPlugin plugin) {
+        if (plugin == null) {
+            return;
+        }
+        CommandRegistry registry = REGISTRIES.remove(registryKey(plugin));
+        if (registry != null && defaultRegistry == registry) {
+            defaultRegistry = null;
+        }
+    }
+
+    /**
+     * Clears all registry references.
+     */
+    public static void clearRegistries() {
+        REGISTRIES.clear();
+        defaultRegistry = null;
+    }
+
     private static CommandRegistry create(JavaPlugin plugin,
             String permissionPrefix,
             Logger loggerInstance,

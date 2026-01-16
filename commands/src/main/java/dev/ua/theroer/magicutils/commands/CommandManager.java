@@ -37,6 +37,10 @@ public class CommandManager<S> {
     private final Map<String, MagicCommand> commands = new ConcurrentHashMap<>();
     private final Map<String, CommandInfo> commandInfos = new ConcurrentHashMap<>();
     private final Map<MagicCommand, CommandInfo> commandInfoByInstance = new ConcurrentHashMap<>();
+    private final Map<MagicCommand, CommandCache<S>> commandCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Method> executeMethodCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, List<MagicCommand.SubCommandInfo>> subCommandInfoCache = new ConcurrentHashMap<>();
+    private final Map<Method, List<CommandArgument>> argumentCache = new ConcurrentHashMap<>();
     private final String permissionPrefix;
     private final String pluginName;
     @Getter
@@ -77,24 +81,31 @@ public class CommandManager<S> {
         commandInfos.put(name, info);
         commandInfoByInstance.put(command, info);
 
-        String namespacedName = pluginName + ":" + name;
-        commands.put(namespacedName, command);
-        commandInfos.put(namespacedName, info);
+        String namespacedName = "";
+        if (!pluginName.isEmpty()) {
+            namespacedName = pluginName + ":" + name;
+            commands.put(namespacedName, command);
+            commandInfos.put(namespacedName, info);
+        }
 
-        logger.debug("Registered command: " + name + " and " + namespacedName + " with class: "
-                + command.getClass().getSimpleName());
+        logger.debug("Registered command: " + name + (namespacedName.isEmpty() ? "" : " and " + namespacedName)
+                + " with class: " + command.getClass().getSimpleName());
 
         for (String alias : info.aliases()) {
             String aliasLower = alias.toLowerCase();
             commands.put(aliasLower, command);
             commandInfos.put(aliasLower, info);
 
-            // Also register alias with plugin namespace
-            String namespacedAlias = pluginName + ":" + aliasLower;
-            commands.put(namespacedAlias, command);
-            commandInfos.put(namespacedAlias, info);
+            String namespacedAlias = "";
+            if (!pluginName.isEmpty()) {
+                // Also register alias with plugin namespace
+                namespacedAlias = pluginName + ":" + aliasLower;
+                commands.put(namespacedAlias, command);
+                commandInfos.put(namespacedAlias, info);
+            }
 
-            logger.debug("Registered alias: " + aliasLower + " and " + namespacedAlias + " for command: " + name);
+            logger.debug("Registered alias: " + aliasLower + (namespacedAlias.isEmpty() ? "" : " and " + namespacedAlias)
+                    + " for command: " + name);
         }
 
         List<CommandAction<S>> subCommands = getSubCommandActions(command);
@@ -111,7 +122,7 @@ public class CommandManager<S> {
      * @param clazz the command class
      * @return the execute method or null if not found
      */
-    private Method getExecuteMethod(Class<?> clazz) {
+    private Method findExecuteMethod(Class<?> clazz) {
         for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
             for (Method method : current.getDeclaredMethods()) {
                 if (method.getName().equals("execute") && !method.isAnnotationPresent(SubCommand.class)) {
@@ -122,45 +133,108 @@ public class CommandManager<S> {
         return null;
     }
 
-    CommandAction<S> getDirectAction(MagicCommand command, CommandInfo info) {
-        Method executeMethod = getExecuteMethod(command.getClass());
+    private Method getExecuteMethodCached(Class<?> clazz) {
+        return executeMethodCache.computeIfAbsent(clazz, this::findExecuteMethod);
+    }
+
+    private List<MagicCommand.SubCommandInfo> getSubCommandInfoCached(Class<?> clazz) {
+        return subCommandInfoCache.computeIfAbsent(clazz, MagicCommand::getSubCommands);
+    }
+
+    private List<CommandArgument> getArgumentsCached(Method method) {
+        return argumentCache.computeIfAbsent(method, MagicCommand::getArguments);
+    }
+
+    private CommandCache<S> getCommandCache(MagicCommand command, CommandInfo info) {
+        if (command == null || info == null) {
+            return new CommandCache<>(0, null, List.of(), null, new SubCommandNode<>(""));
+        }
+        CommandCache<S> cached = commandCache.get(command);
+        if (cached == null || cached.isStale(command)) {
+            cached = buildCommandCache(command, info);
+            commandCache.put(command, cached);
+        }
+        return cached;
+    }
+
+    private CommandCache<S> buildCommandCache(MagicCommand command, CommandInfo info) {
+        Class<?> clazz = command.getClass();
+        Method executeMethod = getExecuteMethodCached(clazz);
+        CommandAction<S> baseDirectAction = null;
+        if (executeMethod != null) {
+            List<CommandArgument> arguments = getArgumentsCached(executeMethod);
+            baseDirectAction = CommandAction.forMethod(info.name(), info.description(), info.permission(),
+                    info.permissionDefault(), arguments, executeMethod);
+        }
+
+        List<CommandAction<S>> staticSubActions = new ArrayList<>();
+        for (MagicCommand.SubCommandInfo subInfo : getSubCommandInfoCached(clazz)) {
+            List<CommandArgument> arguments = getArgumentsCached(subInfo.method);
+            staticSubActions.add(CommandAction.forSubCommand(subInfo, arguments));
+        }
+
+        List<MagicCommand.DynamicSubCommand> dynamicSubs = command.getDynamicSubCommands();
         MagicCommand.DynamicExecute dynamicExecute = command.getDynamicExecute();
 
-        if (dynamicExecute != null && (dynamicExecute.replaceExisting() || executeMethod == null)) {
+        List<CommandAction<S>> combinedSubActions = resolveSubCommandActions(staticSubActions, dynamicSubs);
+        CommandAction<S> resolvedDirectAction = resolveDirectAction(info, baseDirectAction, dynamicExecute);
+        SubCommandNode<S> tree = buildSubCommandTree(combinedSubActions);
+
+        return new CommandCache<>(dynamicSubs.size(), dynamicExecute, combinedSubActions, resolvedDirectAction, tree);
+    }
+
+    private SubCommandNode<S> getSubCommandTree(MagicCommand command, CommandInfo info) {
+        return getCommandCache(command, info).tree();
+    }
+
+    private List<CommandAction<S>> resolveSubCommandActions(List<CommandAction<S>> staticActions,
+                                                           List<MagicCommand.DynamicSubCommand> dynamicSubs) {
+        if (staticActions == null || staticActions.isEmpty()) {
+            staticActions = List.of();
+        }
+        List<CommandAction<S>> resolved = new ArrayList<>(staticActions);
+        if (dynamicSubs != null) {
+            for (MagicCommand.DynamicSubCommand dynamic : dynamicSubs) {
+                CommandAction<S> action = CommandAction.forDynamicSubCommand(dynamic.spec(),
+                        castExecutor(dynamic.spec().executor()));
+                if (dynamic.replaceExisting()) {
+                    removeMatchingSubCommands(resolved, action);
+                }
+                resolved.add(action);
+            }
+        }
+        return resolved;
+    }
+
+    private CommandAction<S> resolveDirectAction(CommandInfo info,
+                                                 @Nullable CommandAction<S> baseAction,
+                                                 @Nullable MagicCommand.DynamicExecute dynamicExecute) {
+        if (dynamicExecute != null && (dynamicExecute.replaceExisting() || baseAction == null)) {
             return CommandAction.forExecute(info.name(), info.description(), info.permission(),
                     info.permissionDefault(), dynamicExecute.arguments(),
                     castExecutor(dynamicExecute.executor()));
         }
-
-        if (executeMethod != null) {
-            List<CommandArgument> arguments = MagicCommand.getArguments(executeMethod);
-            return CommandAction.forMethod(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), arguments, executeMethod);
+        if (baseAction != null) {
+            return baseAction;
         }
-
         if (dynamicExecute != null) {
             return CommandAction.forExecute(info.name(), info.description(), info.permission(),
                     info.permissionDefault(), dynamicExecute.arguments(),
                     castExecutor(dynamicExecute.executor()));
         }
-
         return null;
     }
 
-    List<CommandAction<S>> getSubCommandActions(MagicCommand command) {
-        List<CommandAction<S>> actions = new ArrayList<>();
-        for (MagicCommand.SubCommandInfo subInfo : MagicCommand.getSubCommands(command.getClass())) {
-            actions.add(CommandAction.forSubCommand(subInfo));
-        }
+    CommandAction<S> getDirectAction(MagicCommand command, CommandInfo info) {
+        CommandInfo resolvedInfo = info != null ? info : commandInfoByInstance.get(command);
+        CommandCache<S> cache = getCommandCache(command, resolvedInfo);
+        return cache.directAction();
+    }
 
-        for (MagicCommand.DynamicSubCommand dynamic : command.getDynamicSubCommands()) {
-            CommandAction<S> action = CommandAction.forDynamicSubCommand(dynamic.spec(), castExecutor(dynamic.spec().executor()));
-            if (dynamic.replaceExisting()) {
-                removeMatchingSubCommands(actions, action);
-            }
-            actions.add(action);
-        }
-        return actions;
+    List<CommandAction<S>> getSubCommandActions(MagicCommand command) {
+        CommandInfo resolvedInfo = commandInfoByInstance.get(command);
+        CommandCache<S> cache = getCommandCache(command, resolvedInfo);
+        return cache.subActions();
     }
 
     @SuppressWarnings("unchecked")
@@ -215,10 +289,53 @@ public class CommandManager<S> {
      * @return the result of command execution
      */
     public CommandResult execute(String name, S sender, List<String> args) {
+        try {
+            return executeInternal(name, sender, args, false);
+        } catch (CommandExecutionException e) {
+            return CommandResult.failure(e.getUserMessage());
+        }
+    }
+
+    /**
+     * Executes a command, optionally bubbling unexpected failures.
+     *
+     * @param name command name
+     * @param sender sender handle
+     * @param args command arguments
+     * @return command result
+     * @throws CommandExecutionException when execution fails unexpectedly and bubbling is enabled
+     */
+    public CommandResult executeOrThrow(String name, S sender, List<String> args) throws CommandExecutionException {
+        return executeInternal(name, sender, args, true);
+    }
+
+    /**
+     * Checks if a sender can access the command (base permission or any sub/arg permission).
+     *
+     * @param name command label or alias
+     * @param sender sender handle
+     * @param targetSubName optional first subcommand token (for more accurate checks)
+     * @return true if accessible
+     */
+    public boolean canAccessCommand(String name, S sender, @Nullable String targetSubName) {
+        if (name == null) {
+            return false;
+        }
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
+        if (command == null || info == null) {
+            return false;
+        }
+        String baseCommandName = info.name().toLowerCase(Locale.ROOT);
+        return hasCommandPermission(command, info, sender, baseCommandName, targetSubName);
+    }
+
+    private CommandResult executeInternal(String name, S sender, List<String> args, boolean bubbleErrors)
+            throws CommandExecutionException {
         logger.debug("Attempting to execute command: " + name + " with args: " + args);
 
-        MagicCommand command = commands.get(name.toLowerCase());
-        CommandInfo info = commandInfos.get(name.toLowerCase());
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
 
         if (command == null || info == null) {
             logger.debug("Command not found: " + name + ". Available commands: " + commands.keySet());
@@ -229,26 +346,47 @@ public class CommandManager<S> {
 
         String baseCommandName = info.name().toLowerCase(Locale.ROOT);
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
-        String commandPermission = resolvePermission(info.permission(),
-                "commands." + baseCommandName);
-        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
-        if (!commandPermission.isEmpty() && !platform.hasPermission(sender, commandPermission, info.permissionDefault())
-                && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
-            logger.debug("Permission denied for " + platform.getName(sender) + " on permission: " + commandPermission);
+        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
         try {
-            return executeCommand(command, info, sender, args, baseCommandName);
+            return executeCommand(command, info, sender, args, baseCommandName, bubbleErrors);
+        } catch (CommandExecutionException e) {
+            if (bubbleErrors) {
+                throw e;
+            }
+            logger.error("Error executing command " + name + ": " + e.getMessage(), e.getCause());
+            return CommandResult.failure(e.getUserMessage());
         } catch (Exception e) {
-            logger.error("Error executing command " + name + ": " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error executing command " + name + ": " + e.getMessage(), e);
+            if (bubbleErrors) {
+                throw new CommandExecutionException(InternalMessages.CMD_EXECUTION_ERROR.get(), e);
+            }
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
     }
 
+    private boolean hasCommandPermission(MagicCommand command, CommandInfo info, S sender,
+            String baseCommandName, @Nullable String targetSubName) {
+        String commandPermission = resolvePermission(info.permission(),
+                "commands." + baseCommandName);
+        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+        if (commandPermission.isEmpty()) {
+            return true;
+        }
+        if (platform.hasPermission(sender, commandPermission, info.permissionDefault())) {
+            return true;
+        }
+        if (hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
+            return true;
+        }
+        logger.debug("Permission denied for " + platform.getName(sender) + " on permission: " + commandPermission);
+        return false;
+    }
+
     private CommandResult executeCommand(MagicCommand command, CommandInfo info, S sender,
-            List<String> args, String normalizedCommandName) {
+            List<String> args, String normalizedCommandName, boolean bubbleErrors) throws CommandExecutionException {
         List<CommandAction<S>> subCommands = getSubCommandActions(command);
         CommandAction<S> directAction = getDirectAction(command, info);
 
@@ -258,7 +396,7 @@ public class CommandManager<S> {
         // If there's a direct execute handler and no subcommands, or if there are no args
         if (directAction != null && (subCommands.isEmpty() || args.isEmpty())) {
             logger.debug("Using direct execute handler");
-            return executeAction(command, info, directAction, sender, args, normalizedCommandName, null);
+            return executeAction(command, info, directAction, sender, args, normalizedCommandName, null, bubbleErrors);
         }
 
         // If there are subcommands but no execute handler and no args
@@ -275,7 +413,7 @@ public class CommandManager<S> {
                     .failure(InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", availableSubCommands));
         }
 
-        SubCommandNode<S> root = buildSubCommandTree(subCommands);
+        SubCommandNode<S> root = getSubCommandTree(command, info);
         SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
 
         if (traversal.consumed() == 0) {
@@ -322,11 +460,12 @@ public class CommandManager<S> {
         logger.debug("Executing subcommand: " + subCommandName + " with args: " + subArgs);
 
         return executeAction(command, info, targetSubCommand, sender, subArgs, normalizedCommandName,
-                subCommandName);
+                subCommandName, bubbleErrors);
     }
 
     private CommandResult executeAction(MagicCommand command, CommandInfo info, CommandAction<S> action,
-            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName) {
+            S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
+            boolean bubbleErrors) throws CommandExecutionException {
         if (action == null) {
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
@@ -383,8 +522,10 @@ public class CommandManager<S> {
             return CommandResult.failure(e.getMessage());
         } catch (Exception e) {
             logger.error("Error executing " + (subCommandName != null ? "subcommand" : "direct command") + ": "
-                    + e.getMessage());
-            e.printStackTrace();
+                    + e.getMessage(), e);
+            if (bubbleErrors) {
+                throw new CommandExecutionException(InternalMessages.CMD_EXECUTION_ERROR.get(), e);
+            }
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
     }
@@ -909,14 +1050,9 @@ public class CommandManager<S> {
             return Collections.emptyList();
         }
 
-        String commandPermission = resolvePermission(info.permission(),
-                "commands." + baseCommandName);
-        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
-        if (!commandPermission.isEmpty()
-                && !platform.hasPermission(sender, commandPermission, info.permissionDefault())
-                && !hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
-            logger.debug("No permission for suggestions: " + commandPermission);
+        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
+            logger.debug("No permission for suggestions");
             return Collections.emptyList();
         }
 
@@ -1549,7 +1685,6 @@ public class CommandManager<S> {
         Class<?> playerType = platform.playerType();
         Class<?> senderType = platform.senderType();
 
-        boolean methodTakesSender = false;
         boolean methodTakesPlayer = false;
 
         try {
@@ -1575,7 +1710,6 @@ public class CommandManager<S> {
             if (senderType != null && !methodTakesPlayer) {
                 dynamicArgs.add(sender);
                 dynamicArgTypes.add(senderType);
-                methodTakesSender = true;
             }
         }
 
@@ -1662,7 +1796,7 @@ public class CommandManager<S> {
             return false;
         }
         if (targetSubName != null && !targetSubName.isEmpty()) {
-            SubCommandNode<S> root = buildSubCommandTree(subs);
+            SubCommandNode<S> root = getSubCommandTree(command, info);
             SubCommandTraversal<S> traversal = traverseSubCommands(root, List.of(targetSubName));
             if (traversal.consumed() > 0 && hasPermissionInNode(traversal.node(), sender, baseCommandName)) {
                 return true;
@@ -1972,7 +2106,7 @@ public class CommandManager<S> {
                 continue;
             }
             available.add(child.name());
-            if (child.action() != null && canAccessAction(child.action(), sender, commandName)) {
+            if (child.action() != null && canAccessActionOrArguments(child.action(), sender, commandName)) {
                 for (String alias : child.aliases()) {
                     if (alias != null && !alias.isBlank()) {
                         available.add(alias);
@@ -2024,7 +2158,7 @@ public class CommandManager<S> {
         if (node == null) {
             return false;
         }
-        if (node.action() != null && canAccessAction(node.action(), sender, commandName)) {
+        if (node.action() != null && canAccessActionOrArguments(node.action(), sender, commandName)) {
             return true;
         }
         for (SubCommandNode<S> child : node.children().values()) {
@@ -2033,6 +2167,14 @@ public class CommandManager<S> {
             }
         }
         return false;
+    }
+
+    private boolean canAccessActionOrArguments(CommandAction<S> action, S sender, String commandName) {
+        if (action == null) {
+            return false;
+        }
+        return canAccessAction(action, sender, commandName)
+                || hasArgumentPermissionOverride(commandName, action.fullPath(), sender);
     }
 
     private SubCommandNode<S> buildSubCommandTree(List<CommandAction<S>> subCommands) {
@@ -2091,6 +2233,46 @@ public class CommandManager<S> {
             }
         }
         return new SubCommandTraversal<>(node, index, lastAction, lastActionIndex);
+    }
+
+    private static final class CommandCache<S> {
+        private final int dynamicSubCount;
+        private final MagicCommand.DynamicExecute dynamicExecute;
+        private final List<CommandAction<S>> subActions;
+        private final CommandAction<S> directAction;
+        private final SubCommandNode<S> tree;
+
+        private CommandCache(int dynamicSubCount,
+                             MagicCommand.DynamicExecute dynamicExecute,
+                             List<CommandAction<S>> subActions,
+                             CommandAction<S> directAction,
+                             SubCommandNode<S> tree) {
+            this.dynamicSubCount = dynamicSubCount;
+            this.dynamicExecute = dynamicExecute;
+            this.subActions = subActions != null ? Collections.unmodifiableList(subActions) : List.of();
+            this.directAction = directAction;
+            this.tree = tree;
+        }
+
+        boolean isStale(MagicCommand command) {
+            if (command == null) {
+                return false;
+            }
+            return command.getDynamicSubCommands().size() != dynamicSubCount
+                    || command.getDynamicExecute() != dynamicExecute;
+        }
+
+        List<CommandAction<S>> subActions() {
+            return subActions;
+        }
+
+        CommandAction<S> directAction() {
+            return directAction;
+        }
+
+        SubCommandNode<S> tree() {
+            return tree;
+        }
     }
 
     private record SubCommandTraversal<S>(SubCommandNode<S> node, int consumed,
@@ -2204,6 +2386,11 @@ public class CommandManager<S> {
 
         static <S> CommandAction<S> forSubCommand(MagicCommand.SubCommandInfo subInfo) {
             List<CommandArgument> arguments = MagicCommand.getArguments(subInfo.method);
+            return forSubCommand(subInfo, arguments);
+        }
+
+        static <S> CommandAction<S> forSubCommand(MagicCommand.SubCommandInfo subInfo,
+                                                  List<CommandArgument> arguments) {
             return new CommandAction<>(
                     subInfo.annotation.name(),
                     Arrays.asList(subInfo.annotation.path()),

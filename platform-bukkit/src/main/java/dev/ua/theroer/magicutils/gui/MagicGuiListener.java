@@ -10,6 +10,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.HandlerList;
 import java.util.logging.Logger;
 
 import java.util.HashMap;
@@ -23,6 +24,7 @@ class MagicGuiListener implements Listener {
     private static boolean registered = false;
     private static final Map<Player, MagicGui> openGuis = new HashMap<>();
     private static Plugin registeredPlugin = null;
+    private static MagicGuiListener listenerInstance = null;
 
     /**
      * Ensure the listener is registered with the given plugin.
@@ -41,14 +43,29 @@ class MagicGuiListener implements Listener {
     public static void register(Plugin plugin) {
         if (!registered || registeredPlugin != plugin) {
             if (registered && registeredPlugin != null) {
-                // Re-registering with different plugin
-                openGuis.clear();
+                shutdown();
             }
-            Bukkit.getPluginManager().registerEvents(new MagicGuiListener(), plugin);
+            MagicGuiListener listener = new MagicGuiListener();
+            Bukkit.getPluginManager().registerEvents(listener, plugin);
             registered = true;
             registeredPlugin = plugin;
             logger = plugin.getLogger();
+            listenerInstance = listener;
         }
+    }
+
+    /**
+     * Clears tracked GUIs and unregisters the listener.
+     */
+    public static void shutdown() {
+        openGuis.clear();
+        if (listenerInstance != null) {
+            HandlerList.unregisterAll(listenerInstance);
+        }
+        listenerInstance = null;
+        registered = false;
+        registeredPlugin = null;
+        logger = null;
     }
 
     /**
