@@ -1570,6 +1570,8 @@ JSON mapping, retries, and a small multipart helper.</p>
 <li>Retries apply to the convenience methods (<code>get</code>, <code>post</code>, <code>postJson</code>, etc.).</li>
 <li>For raw <code>send(...)</code>, retries are not automatic.</li>
 <li>JSON mapping uses Jackson; invalid JSON throws <code>IllegalStateException</code>.</li>
+<li>Synchronous methods throw <code>IllegalStateException</code> when called from the main
+  thread (use the <code>...Async()</code> variants in handlers).</li>
 </ul>
 
 

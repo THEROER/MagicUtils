@@ -1019,6 +1019,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#render-placeholders-in-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render placeholders in text
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#platform-bridges" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1412,6 +1423,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#render-placeholders-in-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render placeholders in text
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#platform-bridges" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1468,6 +1490,36 @@
 </code></pre></div>
 <h2 id="resolve-placeholders">Resolve placeholders<a class="headerlink" href="#resolve-placeholders" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;online&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="render-placeholders-in-text">Render placeholders in text<a class="headerlink" href="#render-placeholders-in-text" title="Permanent link">&para;</a></h2>
+<p>Use <code>{placeholder}</code> tokens to render text with the shared registry:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">PlaceholderContext</span><span class="w"> </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PlaceholderContext</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="na">audience</span><span class="p">(</span><span class="n">audience</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">defaultNamespace</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">ownerKey</span><span class="p">(</span><span class="k">this</span><span class="p">)</span><span class="w"> </span><span class="c1">// optional local scope key</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p">.</span><span class="na">inline</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Steve&quot;</span><span class="p">))</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">String</span><span class="w"> </span><span class="n">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello {player}! Balance: {balance|bank}&quot;</span><span class="p">;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">String</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">render</span><span class="p">(</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">);</span>
+</code></pre></div>
+<p>Resolution order for <code>{key}</code>:</p>
+<ol>
+<li>Inline values from the context.</li>
+<li>Local placeholders registered for the <code>ownerKey</code>.</li>
+<li>Default namespace (<code>defaultNamespace:key</code>).</li>
+<li>Global placeholders.</li>
+</ol>
+<p>Namespaced tokens use <code>{namespace:key}</code> or <code>{namespace:key:arg}</code>. Unqualified
+tokens with <code>:</code> are not supported. Use the argument separator (default <code>|</code>)
+for <code>key|arg</code> instead.</p>
+<p>To change or disable the separator:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">PlaceholderContext</span><span class="w"> </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PlaceholderContext</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="p">.</span><span class="na">argumentSeparator</span><span class="p">(</span><span class="s">&quot;::&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// set your own</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+<p>Convenience overloads:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">String</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">render</span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Hello {server}&quot;</span><span class="p">);</span>
 </code></pre></div>
 <p>Resolvers receive:</p>
 <ul>
