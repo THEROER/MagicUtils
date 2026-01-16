@@ -1,10 +1,12 @@
 plugins {
-    id 'java-library'
+    id 'magicutils.java-library'
+    id 'magicutils.annotation-processing'
+    id 'magicutils.publishing'
 }
 
 dependencies {
     api project(':platform-api')
-    compileOnly 'org.jetbrains:annotations:24.0.1'
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    compileOnly libs.jetbrains.annotations
+    compileOnly libs.projectlombok.lombok
+    annotationProcessor libs.projectlombok.lombok
 }

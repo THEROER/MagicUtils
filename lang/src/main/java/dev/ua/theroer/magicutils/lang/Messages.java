@@ -166,7 +166,7 @@ public class Messages {
      * @return component
      */
     public static Component get(String key, String... replacements) {
-        String raw = getRaw(key, replacements);
+        String raw = languageManager != null ? languageManager.getMessageEscaped(key, replacements) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -178,7 +178,7 @@ public class Messages {
      * @return component
      */
     public static Component get(String key, Map<String, String> placeholders) {
-        String raw = getRaw(key, placeholders);
+        String raw = languageManager != null ? languageManager.getMessageEscaped(key, placeholders) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -203,7 +203,7 @@ public class Messages {
      * @return component
      */
     public static Component get(Audience audience, String key, String... replacements) {
-        String raw = getRaw(audience, key, replacements);
+        String raw = languageManager != null ? languageManager.getMessageForAudienceEscaped(audience, key, replacements) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -216,7 +216,7 @@ public class Messages {
      * @return component
      */
     public static Component get(Audience audience, String key, Map<String, String> placeholders) {
-        String raw = getRaw(audience, key, placeholders);
+        String raw = languageManager != null ? languageManager.getMessageForAudienceEscaped(audience, key, placeholders) : key;
         return miniMessage.deserialize(raw);
     }
 

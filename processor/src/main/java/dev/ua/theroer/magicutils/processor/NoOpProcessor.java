@@ -29,15 +29,7 @@ public class NoOpProcessor extends AbstractProcessor {
             "dev.ua.theroer.magicutils.annotations.CommandInfo",
             "dev.ua.theroer.magicutils.annotations.SubCommand",
             "dev.ua.theroer.magicutils.annotations.OptionalArgument",
-            "dev.ua.theroer.magicutils.annotations.Suggest",
-            "dev.ua.theroer.magicutils.logger.LogMethods",
-            // Common nullity annotations often reported
-            "org.jetbrains.annotations.NotNull",
-            "org.jetbrains.annotations.Nullable",
-            "javax.annotation.Nullable",
-            "javax.annotation.Nonnull",
-            // Bukkit event annotations
-            "org.bukkit.event.EventHandler"
+            "dev.ua.theroer.magicutils.annotations.Suggest"
     );
 
     @Override
@@ -52,7 +44,14 @@ public class NoOpProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        // No code generation; just claim the annotations.
+        if (annotations == null || annotations.isEmpty()) {
+            return false;
+        }
+        for (TypeElement annotation : annotations) {
+            if (annotation == null || !SUPPORTED.contains(annotation.getQualifiedName().toString())) {
+                return false;
+            }
+        }
         return true;
     }
 }

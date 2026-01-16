@@ -27,4 +27,12 @@ public @interface Suggest {
      * @return true if permission is required for suggestions
      */
     boolean permission() default false;
+
+    /**
+     * Names of arguments whose parsed values should be available when generating suggestions.
+     * These arguments must appear before the current argument in the command signature.
+     *
+     * @return array of argument names
+     */
+    String[] contextArgs() default {};
 }

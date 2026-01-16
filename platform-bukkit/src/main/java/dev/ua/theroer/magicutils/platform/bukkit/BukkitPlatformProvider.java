@@ -106,6 +106,14 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         }
     }
 
+    @Override
+    public void unregisterShutdownHook(Runnable hook) {
+        if (hook == null) {
+            return;
+        }
+        shutdownHooks.remove(hook);
+    }
+
     private Audience wrap(CommandSender sender) {
         return new BukkitAudienceWrapper(sender);
     }

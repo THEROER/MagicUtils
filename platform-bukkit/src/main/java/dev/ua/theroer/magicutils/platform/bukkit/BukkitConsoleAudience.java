@@ -10,6 +10,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,6 +20,7 @@ import java.util.logging.Logger;
 public final class BukkitConsoleAudience implements Audience {
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private static final ComponentLoggerSupport COMPONENT_LOGGER = ComponentLoggerSupport.load();
+    private static final AnsiSerializerSupport ANSI = AnsiSerializerSupport.load();
 
     private final Logger baseLogger;
     private final String baseLoggerName;
@@ -51,7 +53,8 @@ public final class BukkitConsoleAudience implements Audience {
             return;
         }
         Logger logger = resolveLogger(loggerName);
-        logWithLevel(logger, parsed.level(), parsed.message());
+        String rendered = renderForConsole(stripped, parsed.message());
+        logWithLevel(logger, parsed.level(), rendered);
     }
 
     private Logger resolveLogger(String loggerName) {
@@ -67,7 +70,9 @@ public final class BukkitConsoleAudience implements Audience {
         if (logger == null) {
             return;
         }
-        logger.setLevel(Level.ALL);
+        if (logger.getLevel() == null && baseLogger != null && baseLogger.getLevel() != null) {
+            logger.setLevel(baseLogger.getLevel());
+        }
         logger.setUseParentHandlers(true);
         if (baseLogger != null && logger.getParent() == null) {
             Logger parent = baseLogger.getParent();
@@ -100,6 +105,14 @@ public final class BukkitConsoleAudience implements Audience {
             return;
         }
         logger.log(jul, message);
+    }
+
+    private String renderForConsole(Component component, String fallback) {
+        if (component == null) {
+            return fallback;
+        }
+        String ansi = ANSI != null ? ANSI.serialize(component) : null;
+        return ansi != null ? ansi : fallback;
     }
 
     private Level toJulLevel(LogLevel level) {
@@ -217,6 +230,43 @@ public final class BukkitConsoleAudience implements Audience {
                 return result instanceof Boolean && (Boolean) result;
             } catch (Throwable ignored) {
                 return false;
+            }
+        }
+    }
+
+    private static final class AnsiSerializerSupport {
+        private final Method serialize;
+        private final Object serializer;
+
+        private AnsiSerializerSupport(Object serializer, Method serialize) {
+            this.serializer = serializer;
+            this.serialize = serialize;
+        }
+
+        static AnsiSerializerSupport load() {
+            try {
+                Class<?> serializerClass = Class.forName(
+                        "net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer");
+                Method ansi = serializerClass.getMethod("ansi");
+                Method serialize = serializerClass.getMethod("serialize", Component.class);
+                Object serializer = ansi.invoke(null);
+                return new AnsiSerializerSupport(serializer, serialize);
+            } catch (ClassNotFoundException ignored) {
+                return null;
+            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ignored) {
+                return null;
+            }
+        }
+
+        String serialize(Component component) {
+            if (serializer == null || serialize == null || component == null) {
+                return null;
+            }
+            try {
+                Object value = serialize.invoke(serializer, component);
+                return value != null ? value.toString() : null;
+            } catch (IllegalAccessException | InvocationTargetException ignored) {
+                return null;
             }
         }
     }

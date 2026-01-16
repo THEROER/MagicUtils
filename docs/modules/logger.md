@@ -86,15 +86,18 @@ Attach a `LanguageManager` to enable auto-localisation:
 logger.setLanguageManager(languageManager);
 ```
 
-When `auto-localization` is enabled (default), any message that starts with
-`@` is treated as a language key:
+When a `LanguageManager` is attached, any message that starts with `@` is treated
+as a language key:
 
 ```java
 logger.info("@myplugin.ready");
 ```
 
 The key is resolved via `LanguageManager` and then rendered as MiniMessage.
-You can toggle this in `logger.yml` (`auto-localization`).
+
+Logger messages also pass through MagicPlaceholders. Use `{key}` to resolve
+placeholders from the logger namespace (based on the logger name), or
+`{namespace:key}` for explicit namespaces.
 
 On Bukkit, the logger automatically bridges MagicPlaceholders to
 [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) when it is

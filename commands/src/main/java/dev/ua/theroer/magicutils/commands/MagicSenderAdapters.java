@@ -34,6 +34,32 @@ public final class MagicSenderAdapters {
     }
 
     /**
+     * Unregisters an adapter by identifier.
+     *
+     * @param id adapter id
+     * @return true if an adapter was removed
+     */
+    public static boolean unregister(String id) {
+        if (id == null || id.isEmpty()) {
+            return false;
+        }
+        MagicSenderAdapter adapter = ADAPTERS.remove(id);
+        if (adapter != null) {
+            ORDER.remove(adapter);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Clears all registered adapters.
+     */
+    public static void clear() {
+        ADAPTERS.clear();
+        ORDER.clear();
+    }
+
+    /**
      * Attempts to wrap a raw sender using registered adapters.
      *
      * @param sender raw sender instance

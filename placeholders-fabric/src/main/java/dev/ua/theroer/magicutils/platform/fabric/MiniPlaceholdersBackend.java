@@ -63,6 +63,7 @@ final class MiniPlaceholdersBackend implements FabricPlaceholderBackend {
         if (namespace == null || namespace.isBlank()) {
             return;
         }
+    
         List<MagicPlaceholders.PlaceholderKey> keys = MagicPlaceholders.keysForNamespace(namespace);
         Expansion existing = expansions.remove(namespace);
         if (existing != null && existing.registered()) {
@@ -71,20 +72,47 @@ final class MiniPlaceholdersBackend implements FabricPlaceholderBackend {
         if (keys.isEmpty()) {
             return;
         }
-
+    
         MagicPlaceholders.NamespaceMeta meta = MagicPlaceholders.getNamespaceMeta(namespace);
-        Expansion.Builder builder = Expansion.builder(namespace)
-                .author(meta.author())
-                .version(meta.version());
-
+    
+        Expansion.Builder builder = Expansion.builder(namespace);
+    
+        // Optional metadata across miniplaceholders-api versions
+        invokeBuilderString(builder, "author", meta.author());
+        invokeBuilderString(builder, "version", meta.version());
+    
         for (MagicPlaceholders.PlaceholderKey key : keys) {
             builder.audiencePlaceholder(key.key(), (audience, queue, ctx) -> resolveTag(key, audience, queue));
         }
-
+    
         Expansion expansion = builder.build();
         expansion.register();
         expansions.put(namespace, expansion);
     }
+    
+    private static void invokeBuilderString(Object builder, String methodName, String value) {
+        if (builder == null || value == null || value.isBlank()) {
+            return;
+        }
+        try {
+            Method method;
+            try {
+                method = builder.getClass().getMethod(methodName, String.class);
+            } catch (NoSuchMethodException ex) {
+                method = builder.getClass().getDeclaredMethod(methodName, String.class);
+            }
+            if (!method.canAccess(builder)) {
+                method.setAccessible(true);
+            }
+            method.invoke(builder, value);
+        } catch (NoSuchMethodException ignored) {
+            // Method does not exist in this API version
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            // Ignore reflective access issues to avoid breaking placeholder registration
+        }
+    }
+    
+    
 
     private Tag resolveTag(MagicPlaceholders.PlaceholderKey key,
                            net.kyori.adventure.audience.Audience adventureAudience,

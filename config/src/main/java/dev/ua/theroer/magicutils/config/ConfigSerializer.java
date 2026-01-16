@@ -4,6 +4,7 @@ import dev.ua.theroer.magicutils.config.annotations.ConfigSerializable;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
+import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -94,13 +95,14 @@ public class ConfigSerializer {
      * Deserializes a map to an object.
      * 
      * @param <T>   the type to deserialize to
+     * @param logger logger for diagnostics
      * @param data  the map data to deserialize
      * @param clazz the class to deserialize to
      * @return the deserialized object
      * @throws SecurityException if the class is not marked as @ConfigSerializable
      */
     @SuppressWarnings("unchecked")
-    public static <T> T deserialize(Map<String, Object> data, Class<T> clazz) {
+    public static <T> T deserialize(PlatformLogger logger, Map<String, Object> data, Class<T> clazz) {
         // Security check: only allow deserialization of classes marked with @ConfigSerializable
         if (!clazz.isAnnotationPresent(ConfigSerializable.class)) {
             throw new SecurityException(
@@ -150,14 +152,24 @@ public class ConfigSerializer {
                     } else if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
                         ParameterizedType listType = (ParameterizedType) field.getGenericType();
                         Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
-                        field.set(instance, deserializeList((List<?>) value, elementType));
+                        field.set(instance, deserializeList(logger, (List<?>) value, elementType));
                     } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
-                        ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-                        Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
-                        field.set(instance, deserializeMap((Map<?, ?>) value, valueType));
+                        Class<?> valueType = null;
+                        Type genericType = field.getGenericType();
+                        if (genericType instanceof ParameterizedType) {
+                            ParameterizedType mapType = (ParameterizedType) genericType;
+                            Type[] typeArgs = mapType.getActualTypeArguments();
+                            if (typeArgs.length > 1 && typeArgs[1] instanceof Class) {
+                                valueType = (Class<?>) typeArgs[1];
+                            }
+                        }
+
+                        // If valueType is found, deserialize map with typed values
+                        // Otherwise, for raw maps or maps with complex generics, deserialize with raw values
+                        field.set(instance, deserializeMap(logger, (Map<?, ?>) value, valueType));
                     } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                         // Recursive deserialization - security check is already in deserialize method
-                        field.set(instance, deserialize((Map<String, Object>) value, fieldType));
+                        field.set(instance, deserialize(logger, (Map<String, Object>) value, fieldType));
                     }
                 } catch (ReflectiveOperationException | ClassCastException | IllegalArgumentException e) {
                     // Skip field
@@ -205,7 +217,7 @@ public class ConfigSerializer {
      * Deserializes a list.
      */
     @SuppressWarnings("unchecked")
-    private static <T> List<T> deserializeList(List<?> data, Class<T> elementType) {
+    private static <T> List<T> deserializeList(PlatformLogger logger, List<?> data, Class<T> elementType) {
         List<T> result = new ArrayList<>();
 
         ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
@@ -220,7 +232,7 @@ public class ConfigSerializer {
                 result.add((T) convertValue(item, elementType));
             } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
                 // Recursive deserialization - security check is already in deserialize method
-                result.add(deserialize((Map<String, Object>) item, elementType));
+                result.add(deserialize(logger, (Map<String, Object>) item, elementType));
             } else {
                 result.add((T) item);
             }
@@ -323,7 +335,7 @@ public class ConfigSerializer {
      * Deserializes a map using adapters/serializable types for values.
      */
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> deserializeMap(Map<?, ?> data, Class<?> valueType) {
+    private static Map<String, Object> deserializeMap(PlatformLogger logger, Map<?, ?> data, Class<?> valueType) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
@@ -340,9 +352,12 @@ public class ConfigSerializer {
             if (adapter != null) {
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                 result.put(key, typed.deserialize(raw));
-            } else if (valueType.isAnnotationPresent(ConfigSerializable.class) && raw instanceof Map) {
-                result.put(key, deserialize((Map<String, Object>) raw, valueType));
+            } else if (valueType != null && valueType.isAnnotationPresent(ConfigSerializable.class) && raw instanceof Map) {
+                result.put(key, deserialize(logger, (Map<String, Object>) raw, valueType));
             } else {
+                if (valueType != null) { // Only warn if a specific type was expected
+                    logger.warn("Unknown or unhandled map value type '" + valueType.getName() + "' for key '" + key + "'. Falling back to raw value. Value: " + raw);
+                }
                 result.put(key, raw);
             }
         }

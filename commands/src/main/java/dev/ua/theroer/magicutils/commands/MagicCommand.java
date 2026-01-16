@@ -274,6 +274,7 @@ public abstract class MagicCommand {
             List<String> optionShortNames = new ArrayList<>();
             List<String> optionLongNames = new ArrayList<>();
             boolean isFlag = false;
+            List<String> contextArgs = new ArrayList<>();
 
             for (Annotation annotation : paramAnnotations[i]) {
                 if (annotation instanceof DefaultValue) {
@@ -286,6 +287,9 @@ public abstract class MagicCommand {
                 if (annotation instanceof Suggest) {
                     Suggest suggest = (Suggest) annotation;
                     suggestions.addAll(Arrays.asList(suggest.value()));
+                    if (suggest.contextArgs() != null && suggest.contextArgs().length > 0) {
+                        contextArgs.addAll(Arrays.asList(suggest.contextArgs()));
+                    }
                 }
                 if (annotation instanceof Permission) {
                     Permission perm = (Permission) annotation;
@@ -361,6 +365,7 @@ public abstract class MagicCommand {
                         optionLongNames.toArray(new String[0]),
                         isFlag);
             }
+            builder.contextArgs(contextArgs.toArray(new String[0]));
 
             args.add(builder.build());
         }

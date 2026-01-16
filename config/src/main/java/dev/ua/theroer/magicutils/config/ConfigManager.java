@@ -26,6 +26,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 public class ConfigManager {
     private final Platform platform;
     private final PlatformLogger logger;
+    private final ShutdownHookRegistrar shutdownRegistrar;
+    private final Runnable shutdownHook;
     private final Map<ConfigKey, ConfigEntry<?>> configs = new ConcurrentHashMap<>();
     private final Map<Class<?>, Set<ConfigKey>> classIndex = new ConcurrentHashMap<>();
     private final Map<Object, ConfigKey> instanceIndex = new ConcurrentHashMap<>();
@@ -59,8 +62,10 @@ public class ConfigManager {
     private final Map<Path, Set<ConfigKey>> fileIndex = new ConcurrentHashMap<>();
     private final Map<Path, WatchKey> directoryWatchKeys = new ConcurrentHashMap<>();
     private final Map<Path, Integer> directoryRefCounts = new ConcurrentHashMap<>();
+    private final Object watcherLock = new Object();
     private WatchService watchService;
     private ExecutorService watcherExecutor;
+    private ExecutorService reloadExecutor;
     private volatile boolean watchServiceUnavailable = false;
     private volatile boolean watchServiceWarned = false;
     private volatile boolean shuttingDown = false;
@@ -81,8 +86,13 @@ public class ConfigManager {
     public ConfigManager(Platform platform) {
         this.platform = platform;
         this.logger = platform.logger();
-        if (platform instanceof ShutdownHookRegistrar registrar) {
-            registrar.registerShutdownHook(this::shutdown);
+        ShutdownHookRegistrar registrar = platform instanceof ShutdownHookRegistrar hookRegistrar
+                ? hookRegistrar
+                : null;
+        this.shutdownRegistrar = registrar;
+        this.shutdownHook = this::shutdown;
+        if (registrar != null) {
+            registrar.registerShutdownHook(shutdownHook);
         }
     }
 
@@ -242,9 +252,15 @@ public class ConfigManager {
      * Reload all registered configuration instances from disk.
      */
     public void reloadAll() {
+        warnIfMainThread("reloadAll");
         List<ConfigEntry<?>> entries = new ArrayList<>(configs.values());
         for (ConfigEntry<?> entry : entries) {
-            reload(entry.instance);
+            if (reloadEntry(entry, Collections.emptySet(), false)) {
+                ConfigReloadable reloadable = entry.key.configClass.getAnnotation(ConfigReloadable.class);
+                if (reloadable != null && reloadable.notifyOnChange()) {
+                    notifyChangeListeners(entry, Collections.emptySet());
+                }
+            }
         }
     }
 
@@ -509,7 +525,7 @@ public class ConfigManager {
                     List<Object> deserializedList = new ArrayList<>();
                     for (Object item : list) {
                         if (item instanceof Map) {
-                            deserializedList.add(ConfigSerializer.deserialize((Map<String, Object>) item, elementType));
+                            deserializedList.add(ConfigSerializer.deserialize(logger, (Map<String, Object>) item, elementType));
                         } else {
                             deserializedList.add(item);
                         }
@@ -549,7 +565,7 @@ public class ConfigManager {
                         Object entryValue = entry.getValue();
                         if (entryValue instanceof Map) {
                             deserializedMap.put(entry.getKey(),
-                                    ConfigSerializer.deserialize((Map<String, Object>) entryValue, valueType));
+                                    ConfigSerializer.deserialize(logger, (Map<String, Object>) entryValue, valueType));
                         } else {
                             deserializedMap.put(entry.getKey(), entryValue);
                         }
@@ -574,7 +590,7 @@ public class ConfigManager {
                     }
                 }
         } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
-                value = ConfigSerializer.deserialize((Map<String, Object>) value, fieldType);
+                value = ConfigSerializer.deserialize(logger, (Map<String, Object>) value, fieldType);
         } else {
             ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
             if (adapter != null) {
@@ -1187,6 +1203,7 @@ public class ConfigManager {
      * @param configInstance config instance to reload
      */
     public void reload(Object configInstance) {
+        warnIfMainThread("reload");
         ConfigEntry<?> entry = getEntry(configInstance);
         if (entry == null) {
             return;
@@ -1311,6 +1328,7 @@ public class ConfigManager {
      * @param sections sections to reload (empty for full reload)
      */
     public <T> void reload(Class<T> configClass, String... sections) {
+        warnIfMainThread("reload");
         Set<String> sectionSet = (sections == null || sections.length == 0)
                 ? Collections.emptySet()
                 : new HashSet<>(Arrays.asList(sections));
@@ -1331,6 +1349,37 @@ public class ConfigManager {
                 notifyChangeListeners(entry, sectionSet);
             }
         }
+    }
+
+    /**
+     * Reloads a configuration instance asynchronously.
+     *
+     * @param configInstance config instance to reload
+     * @return future that completes after reload
+     */
+    public CompletableFuture<Void> reloadAsync(Object configInstance) {
+        return CompletableFuture.runAsync(() -> reload(configInstance));
+    }
+
+    /**
+     * Reloads config instances for a class asynchronously.
+     *
+     * @param configClass config type
+     * @param sections optional sections
+     * @param <T> config type
+     * @return future that completes after reload
+     */
+    public <T> CompletableFuture<Void> reloadAsync(Class<T> configClass, String... sections) {
+        return CompletableFuture.runAsync(() -> reload(configClass, sections));
+    }
+
+    /**
+     * Reloads all registered configs asynchronously.
+     *
+     * @return future that completes after reload
+     */
+    public CompletableFuture<Void> reloadAllAsync() {
+        return CompletableFuture.runAsync(this::reloadAll);
     }
 
     /**
@@ -1414,17 +1463,19 @@ public class ConfigManager {
         }
 
         Path dir = filePath.getParent();
-        directoryRefCounts.computeIfPresent(dir, (path, count) -> {
-            int next = count - 1;
-            if (next <= 0) {
-                WatchKey watchKey = directoryWatchKeys.remove(path);
-                if (watchKey != null) {
-                    watchKey.cancel();
+        synchronized (watcherLock) {
+            directoryRefCounts.computeIfPresent(dir, (path, count) -> {
+                int next = count - 1;
+                if (next <= 0) {
+                    WatchKey watchKey = directoryWatchKeys.remove(path);
+                    if (watchKey != null) {
+                        watchKey.cancel();
+                    }
+                    return null;
                 }
-                return null;
-            }
-            return next;
-        });
+                return next;
+            });
+        }
     }
 
     private void saveEntry(ConfigEntry<?> entry) {
@@ -1486,18 +1537,19 @@ public class ConfigManager {
 
         try {
             ensureWatchService();
+            synchronized (watcherLock) {
+                if (!directoryWatchKeys.containsKey(directory)) {
+                    Files.createDirectories(directory);
 
-            if (!directoryWatchKeys.containsKey(directory)) {
-                Files.createDirectories(directory);
+                    WatchKey watchKey = directory.register(watchService,
+                            StandardWatchEventKinds.ENTRY_CREATE,
+                            StandardWatchEventKinds.ENTRY_MODIFY,
+                            StandardWatchEventKinds.ENTRY_DELETE);
+                    directoryWatchKeys.put(directory, watchKey);
+                }
 
-                WatchKey watchKey = directory.register(watchService,
-                        StandardWatchEventKinds.ENTRY_CREATE,
-                        StandardWatchEventKinds.ENTRY_MODIFY,
-                        StandardWatchEventKinds.ENTRY_DELETE);
-                directoryWatchKeys.put(directory, watchKey);
+                directoryRefCounts.merge(directory, 1, Integer::sum);
             }
-
-            directoryRefCounts.merge(directory, 1, Integer::sum);
             startWatcherThread();
 
         } catch (IOException e) {
@@ -1543,6 +1595,7 @@ public class ConfigManager {
             }
 
             Path directory = (Path) key.watchable();
+            Set<Path> changedFiles = new HashSet<>();
             for (WatchEvent<?> event : key.pollEvents()) {
                 WatchEvent.Kind<?> kind = event.kind();
                 if (kind == StandardWatchEventKinds.OVERFLOW) {
@@ -1550,6 +1603,10 @@ public class ConfigManager {
                 }
 
                 Path changed = directory.resolve((Path) event.context()).toAbsolutePath();
+                changedFiles.add(changed);
+            }
+
+            for (Path changed : changedFiles) {
                 Set<ConfigKey> affectedKeys = fileIndex.get(changed);
                 if (affectedKeys == null || affectedKeys.isEmpty()) {
                     continue;
@@ -1565,8 +1622,10 @@ public class ConfigManager {
 
             boolean valid = key.reset();
             if (!valid) {
-                directoryWatchKeys.remove(directory);
-                directoryRefCounts.remove(directory);
+                synchronized (watcherLock) {
+                    directoryWatchKeys.remove(directory);
+                    directoryRefCounts.remove(directory);
+                }
             }
         }
     }
@@ -1580,10 +1639,11 @@ public class ConfigManager {
             return;
         }
 
-        platform.runOnMain(() -> {
+        ensureReloadExecutor();
+        reloadExecutor.submit(() -> {
             try {
                 if (reloadEntry(entry, Collections.emptySet(), true)) {
-                    notifyChangeListeners(entry, Collections.emptySet());
+                    platform.runOnMain(() -> notifyChangeListeners(entry, Collections.emptySet()));
                 }
             } finally {
                 entry.reloadComplete();
@@ -1591,11 +1651,35 @@ public class ConfigManager {
         });
     }
 
+    private void warnIfMainThread(String action) {
+        if (isBlockingSensitiveThread()) {
+            logger.warn("ConfigManager." + action + " performs disk I/O. Consider using " + action
+                    + "Async() to avoid main-thread stalls.");
+        }
+    }
+
+    private boolean isBlockingSensitiveThread() {
+        return platform != null && platform.threadContext().isBlockingSensitive();
+    }
+
     /**
      * Stops the watcher service and releases associated resources.
      */
     public void shutdown() {
         shuttingDown = true;
+        if (shutdownRegistrar != null && shutdownHook != null) {
+            shutdownRegistrar.unregisterShutdownHook(shutdownHook);
+        }
+
+        if (reloadExecutor != null) {
+            reloadExecutor.shutdownNow();
+            try {
+                reloadExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            reloadExecutor = null;
+        }
 
         if (watcherExecutor != null) {
             watcherExecutor.shutdownNow();
@@ -1619,6 +1703,17 @@ public class ConfigManager {
         directoryWatchKeys.clear();
         directoryRefCounts.clear();
         fileIndex.clear();
+    }
+
+    private synchronized void ensureReloadExecutor() {
+        if (reloadExecutor != null) {
+            return;
+        }
+        reloadExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "MagicUtils-ConfigReload");
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     private record ExtensionInfo(String basePath, String extension) {

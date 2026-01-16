@@ -1,65 +1,16 @@
 plugins {
-    id 'fabric-loom' version '1.13.6'
+    id 'magicutils.fabric-module'
 }
-
-def minecraftVersion = project.findProperty('minecraft_version') ?: '1.21.10'
-def yarnMappings = project.findProperty('yarn_mappings') ?: '1.21.10+build.3'
-def loaderVersion = project.findProperty('loader_version') ?: '0.18.3'
 
 dependencies {
     api project(':core')
 
-    minecraft "com.mojang:minecraft:${minecraftVersion}"
-    mappings "net.fabricmc:yarn:${yarnMappings}:v2"
-    modCompileOnly "net.fabricmc:fabric-loader:${loaderVersion}"
+    implementation libs.kyori.adventure.text.minimessage
+    implementation libs.kyori.adventure.text.serializer.gson
+    implementation libs.kyori.adventure.text.serializer.plain
 
-    implementation 'net.kyori:adventure-text-minimessage:4.24.0'
-    implementation 'net.kyori:adventure-text-serializer-gson:4.24.0'
-    implementation 'net.kyori:adventure-text-serializer-plain:4.24.0'
-
-    compileOnly 'org.slf4j:slf4j-api:2.0.13'
-    compileOnly 'org.jetbrains:annotations:24.0.1'
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
-}
-
-tasks.named('remapJar') {
-    dependsOn tasks.named('jar')
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                artifactId = 'magicutils-fabric'
-                from components.java
-                artifacts.removeAll { it.classifier == null && it.extension == 'jar' }
-                artifacts.removeAll { it.classifier == 'all' }
-                artifact(tasks.named('remapJar')) {
-                    builtBy tasks.named('remapJar')
-                }
-            }
-            if (!project.hasProperty('skip_shadow_publish')) {
-                register('mavenShadow', MavenPublication) {
-                    artifactId = 'magicutils-fabric-all'
-                    artifact tasks.named('shadowJar')
-                }
-            }
-        }
-    }
-}
-
-configurations {
-    jiJRemap {
-        canBeConsumed = true
-        canBeResolved = false
-    }
-}
-
-artifacts {
-    jiJRemap(tasks.named('remapJar'))
-}
-
-tasks.withType(GenerateModuleMetadata).configureEach {
-    enabled = false
+    compileOnly libs.slf4j.api
+    compileOnly libs.jetbrains.annotations
+    compileOnly libs.projectlombok.lombok
+    annotationProcessor libs.projectlombok.lombok
 }

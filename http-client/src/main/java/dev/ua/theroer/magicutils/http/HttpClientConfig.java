@@ -14,12 +14,20 @@ import java.util.Map;
 
 /**
  * Configuration for MagicUtils HTTP client.
+ *
+ * <p>Stored in {@code http-client.{ext}} and reloadable per section.
  */
 @ConfigFile("http-client.{ext}")
 @ConfigReloadable(sections = { "timeouts", "retry", "logging", "defaults" })
 @Comment("MagicUtils HTTP client configuration")
 @Data
 public class HttpClientConfig {
+    /**
+     * Creates a config instance with default values.
+     */
+    public HttpClientConfig() {
+    }
+
     @ConfigSection("timeouts")
     @Comment("Timeout configuration")
     private Timeouts timeouts = new Timeouts();
@@ -36,8 +44,17 @@ public class HttpClientConfig {
     @Comment("Default request settings")
     private DefaultSettings defaults = new DefaultSettings();
 
+    /**
+     * Timeouts used for HTTP connection and request handling.
+     */
     @Data
     public static class Timeouts {
+        /**
+         * Creates default timeout settings.
+         */
+        public Timeouts() {
+        }
+
         @ConfigValue("connect-seconds")
         @Comment("HTTP connect timeout in seconds")
         private int connectSeconds = 10;
@@ -47,8 +64,17 @@ public class HttpClientConfig {
         private int requestSeconds = 30;
     }
 
+    /**
+     * Retry and backoff configuration values.
+     */
     @Data
     public static class RetrySettings {
+        /**
+         * Creates default retry settings.
+         */
+        public RetrySettings() {
+        }
+
         @ConfigValue("enabled")
         @Comment("Enable retries for failed requests")
         private boolean enabled = true;
@@ -86,8 +112,17 @@ public class HttpClientConfig {
         private boolean retryOnTimeout = true;
     }
 
+    /**
+     * Request/response logging configuration.
+     */
     @Data
     public static class LoggingSettings {
+        /**
+         * Creates default logging settings.
+         */
+        public LoggingSettings() {
+        }
+
         @ConfigValue("enabled")
         @Comment("Enable request/response logging")
         private boolean enabled = false;
@@ -107,10 +142,31 @@ public class HttpClientConfig {
         @ConfigValue("log-retries")
         @Comment("Log retry attempts")
         private boolean logRetries = true;
+
+        @ConfigValue("header-allowlist")
+        @Comment("Only log these headers (case-insensitive). Empty means log all.")
+        private List<String> headerAllowlist = new ArrayList<>();
+
+        @ConfigValue("header-denylist")
+        @Comment("Headers to skip from logs (case-insensitive)")
+        private List<String> headerDenylist = new ArrayList<>();
+
+        @ConfigValue("sensitive-headers")
+        @Comment("List of headers that should be redacted from logs (e.g., Authorization, Cookie)")
+        private List<String> sensitiveHeaders = new ArrayList<>(List.of("Authorization", "Cookie"));
     }
 
+    /**
+     * Default request settings applied to each request.
+     */
     @Data
     public static class DefaultSettings {
+        /**
+         * Creates default request settings.
+         */
+        public DefaultSettings() {
+        }
+
         @ConfigValue("base-url")
         @Comment("Base URL used for relative request paths")
         private String baseUrl = "";

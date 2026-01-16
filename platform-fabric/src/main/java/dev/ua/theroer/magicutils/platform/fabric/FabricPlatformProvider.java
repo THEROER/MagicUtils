@@ -145,6 +145,14 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         }
     }
 
+    @Override
+    public void unregisterShutdownHook(Runnable hook) {
+        if (hook == null) {
+            return;
+        }
+        SHUTDOWN_HOOKS.remove(hook);
+    }
+
     private Audience wrap(ServerPlayerEntity player) {
         return new FabricAudience(player);
     }

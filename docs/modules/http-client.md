@@ -68,3 +68,5 @@ client.postMultipart("upload", body);
 - Retries apply to the convenience methods (`get`, `post`, `postJson`, etc.).
 - For raw `send(...)`, retries are not automatic.
 - JSON mapping uses Jackson; invalid JSON throws `IllegalStateException`.
+- Synchronous methods throw `IllegalStateException` when called from the main
+  thread (use the `...Async()` variants in handlers).

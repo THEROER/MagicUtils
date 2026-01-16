@@ -48,4 +48,13 @@ public interface Platform {
      * @return true if current thread is main/platform thread.
      */
     boolean isMainThread();
+
+    /**
+     * Returns the current execution context for thread-sensitive operations.
+     *
+     * @return thread context classification
+     */
+    default ThreadContext threadContext() {
+        return isMainThread() ? ThreadContext.MAIN : ThreadContext.WORKER;
+    }
 }

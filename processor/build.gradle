@@ -1,14 +1,20 @@
 plugins {
-    id 'java-library'
+    id 'java-library' // Keep direct application of java-library
+    id 'magicutils.repositories'
+    id 'magicutils.publishing'
+    id 'magicutils.shadow' // Shadow plugin is applied in this project to disable shadowJar
 }
 
 java {
-    // Compile the processor with Java 17 toolchain, target bytecode 11 for wider IDE compatibility
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 11
 }
 
 dependencies {

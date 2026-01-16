@@ -1,9 +1,14 @@
 package dev.ua.theroer.magicutils.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.Message;
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.ua.theroer.magicutils.Logger;
@@ -346,7 +351,8 @@ public final class CommandRegistry {
             return;
         }
 
-        LiteralArgumentBuilder<ServerCommandSource> root = LiteralArgumentBuilder.<ServerCommandSource>literal(label);
+        LiteralArgumentBuilder<ServerCommandSource> root = LiteralArgumentBuilder.<ServerCommandSource>literal(label)
+                .requires(source -> commandManager.canAccessCommand(label, source, null));
         root.executes(context -> executeCommand(label, context.getSource(), Collections.emptyList()));
 
         RequiredArgumentBuilder<ServerCommandSource, String> argsNode = RequiredArgumentBuilder
@@ -362,9 +368,10 @@ public final class CommandRegistry {
         dispatcher.register(root);
     }
 
-    private int executeCommand(String label, ServerCommandSource source, List<String> args) {
+    private int executeCommand(String label, ServerCommandSource source, List<String> args)
+            throws CommandSyntaxException {
         try {
-            CommandResult result = commandManager.execute(label, source, args);
+            CommandResult result = commandManager.executeOrThrow(label, source, args);
             if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
                 if (result.isSuccess()) {
                     messageLogger.success().target(LogTarget.CHAT).to(source).send(result.getMessage());
@@ -373,12 +380,21 @@ public final class CommandRegistry {
                 }
             }
             return result.isSuccess() ? 1 : 0;
+        } catch (CommandExecutionException e) {
+            messageLogger.error("Error executing command " + label + ": " + e.getMessage());
+            throw createSyntaxException(e.getUserMessage());
         } catch (Exception e) {
             messageLogger.error("Error executing command " + label + ": " + e.getMessage());
-            messageLogger.error().toError(source).send(InternalMessages.CMD_INTERNAL_ERROR.get());
-            e.printStackTrace();
-            return 0;
+            throw createSyntaxException(InternalMessages.CMD_INTERNAL_ERROR.get());
         }
+    }
+
+    private CommandSyntaxException createSyntaxException(String message) {
+        String safe = message != null && !message.isBlank()
+                ? message
+                : InternalMessages.CMD_INTERNAL_ERROR.get();
+        Message brigMessage = new LiteralMessage(safe);
+        return new SimpleCommandExceptionType(brigMessage).create();
     }
 
     private CompletableFuture<Suggestions> suggest(String label, ServerCommandSource source,
@@ -388,8 +404,9 @@ public final class CommandRegistry {
         String remaining = (input != null && start >= 0 && start <= input.length())
                 ? input.substring(start)
                 : builder.getRemaining();
-        List<String> args = parseArgsForSuggestions(remaining);
-        SuggestionsBuilder offsetBuilder = builder.createOffset(builder.getStart() + findSuggestionOffset(remaining));
+        TokenizedInput tokenized = tokenize(remaining, true);
+        List<String> args = tokenized.tokens();
+        SuggestionsBuilder offsetBuilder = builder.createOffset(builder.getStart() + tokenized.currentTokenStart());
         List<String> suggestions = commandManager.getSuggestions(label, source, args);
         for (String suggestion : suggestions) {
             if (suggestion != null && !suggestion.trim().isEmpty()) {
@@ -399,36 +416,62 @@ public final class CommandRegistry {
         return offsetBuilder.buildFuture();
     }
 
-    private static List<String> parseArgsForSuggestions(String input) {
-        if (input == null) {
-            return new ArrayList<>();
-        }
-        if (input.isEmpty()) {
-            return new ArrayList<>(List.of(""));
-        }
-        return new ArrayList<>(Arrays.asList(input.split(" ", -1)));
-    }
-
-    private static int findSuggestionOffset(String remaining) {
-        if (remaining == null || remaining.isEmpty()) {
-            return 0;
-        }
-        int lastSpace = remaining.lastIndexOf(' ');
-        if (lastSpace >= 0) {
-            return lastSpace + 1;
-        }
-        return 0;
-    }
-
     private static List<String> parseArgsForExecution(String input) {
-        if (input == null || input.isBlank()) {
-            return new ArrayList<>();
+        return new ArrayList<>(tokenize(input, false).tokens());
+    }
+
+    private static TokenizedInput tokenize(String input, boolean includeTrailingEmpty) {
+        if (input == null || input.isEmpty()) {
+            if (includeTrailingEmpty) {
+                return new TokenizedInput(List.of(""), 0);
+            }
+            return new TokenizedInput(List.of(), 0);
         }
-        String trimmed = input.trim();
-        if (trimmed.isEmpty()) {
-            return new ArrayList<>();
+
+        if (input.trim().isEmpty()) {
+            return includeTrailingEmpty
+                    ? new TokenizedInput(List.of(""), input.length())
+                    : new TokenizedInput(List.of(), 0);
         }
-        return new ArrayList<>(Arrays.asList(trimmed.split("\\s+")));
+
+        List<String> tokens = new ArrayList<>();
+        List<Integer> starts = new ArrayList<>();
+        StringReader reader = new StringReader(input);
+
+        while (reader.canRead()) {
+            reader.skipWhitespace();
+            if (!reader.canRead()) {
+                break;
+            }
+            int start = reader.getCursor();
+            try {
+                String token = StringArgumentType.string().parse(reader);
+                tokens.add(token);
+                starts.add(start);
+            } catch (CommandSyntaxException e) {
+                String rest = input.substring(start);
+                tokens.add(rest);
+                starts.add(start);
+                reader.setCursor(input.length());
+                break;
+            }
+        }
+
+        if (includeTrailingEmpty && input.length() > 0 && Character.isWhitespace(input.charAt(input.length() - 1))) {
+            tokens.add("");
+            starts.add(input.length());
+        }
+
+        if (tokens.isEmpty() && includeTrailingEmpty) {
+            tokens.add("");
+            starts.add(input.length());
+        }
+
+        int offset = starts.isEmpty() ? 0 : starts.get(starts.size() - 1);
+        return new TokenizedInput(tokens, offset);
+    }
+
+    private record TokenizedInput(List<String> tokens, int currentTokenStart) {
     }
 
     private static void registerMagicSenderAdapter(int opLevel) {

@@ -39,10 +39,15 @@ public interface CommandLogger {
      * @param throwable exception to print
      */
     default void error(String message, Throwable throwable) {
-        error(message);
-        if (throwable != null) {
-            throwable.printStackTrace();
+        if (throwable == null) {
+            error(message);
+            return;
         }
+        String detail = throwable.getMessage();
+        String suffix = (detail != null && !detail.isBlank())
+                ? throwable.getClass().getSimpleName() + ": " + detail
+                : throwable.getClass().getSimpleName();
+        error(message + " (" + suffix + ")");
     }
 
     /**

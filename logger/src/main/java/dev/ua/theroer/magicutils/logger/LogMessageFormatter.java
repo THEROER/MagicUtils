@@ -2,10 +2,13 @@ package dev.ua.theroer.magicutils.logger;
 
 import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
+import dev.ua.theroer.magicutils.placeholders.PlaceholderContext;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.utils.ColorUtils;
-import dev.ua.theroer.magicutils.utils.placeholders.PlaceholderProcessor;
+import dev.ua.theroer.magicutils.utils.MsgFmt;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
@@ -46,20 +49,51 @@ public final class LogMessageFormatter {
         Object[] args = placeholdersArgs != null ? placeholdersArgs : new Object[0];
         Audience targetAudience = resolveTargetAudience(directAudience, audienceCollection, args);
 
-        String processed = applyPipeline(logger, content, targetAudience, args);
-        String finalMessage = attachPrefix(logger, processed, level, target, prefixOverride);
-
         ExternalPlaceholderEngine engine = logger.getExternalPlaceholderEngine();
-        TagResolver externalResolver = engine.tagResolver(targetAudience);
-        TagResolver resolver = externalResolver == null
-                ? TagResolver.standard()
-                : TagResolver.resolver(TagResolver.standard(), externalResolver);
+        TagResolver externalResolver = null;
+        try {
+            externalResolver = engine.tagResolver(targetAudience);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to resolve external placeholder tags", error);
+        }
+        String processed = applyPipeline(logger, content, targetAudience, args);
+        PrefixRender prefixRender = buildPrefixRender(logger, level, target, prefixOverride);
+        String combined = combinePrefix(prefixRender.text(), processed);
+        boolean needsMini = prefixRender.useGradient() || hasMiniMessageTags(combined)
+                || hasExternalResolver(externalResolver);
 
-        net.kyori.adventure.pointer.Pointered pointered = engine.adventureAudience(targetAudience);
-        Component component = pointered != null
-                ? logger.getMiniMessage().deserialize(finalMessage, pointered, resolver)
-                : logger.getMiniMessage().deserialize(finalMessage, resolver);
-        component = engine.applyComponent(targetAudience, component);
+        Component component;
+        try {
+            if (needsMini) {
+                String finalMessage = attachPrefix(prefixRender, combined, logger, level, target);
+                TagResolver resolver = externalResolver == null
+                        ? TagResolver.standard()
+                        : TagResolver.resolver(TagResolver.standard(), externalResolver);
+                net.kyori.adventure.pointer.Pointered pointered = null;
+                try {
+                    pointered = engine.adventureAudience(targetAudience);
+                } catch (Throwable error) {
+                    logger.getPlatform().logger().warn("Failed to resolve external placeholder audience", error);
+                }
+                component = pointered != null
+                        ? logger.getMiniMessage().deserialize(finalMessage, pointered, resolver)
+                        : logger.getMiniMessage().deserialize(finalMessage, resolver);
+            } else {
+                component = Component.text(combined);
+                if (component.decoration(TextDecoration.ITALIC) == TextDecoration.State.NOT_SET) {
+                    component = component.decoration(TextDecoration.ITALIC, false);
+                }
+            }
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to deserialize message", error);
+            component = Component.text(combined);
+        }
+
+        try {
+            component = engine.applyComponent(targetAudience, component);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to apply external component placeholders", error);
+        }
         if ((target == LogTarget.CONSOLE || target == LogTarget.BOTH) && logger.isConsoleStripFormatting()) {
             component = Component.text(PlainTextComponentSerializer.plainText().serialize(component));
         }
@@ -94,33 +128,110 @@ public final class LogMessageFormatter {
         if (candidate != null) {
             return candidate;
         }
-        return PlaceholderProcessor.pickPrimaryAudience(directAudience, audienceCollection);
+        return pickPrimaryAudience(directAudience, audienceCollection);
     }
 
     private static String applyPipeline(LoggerCore logger, String messageStr, @Nullable Audience audience, Object[] args) {
-        String processed = PlaceholderProcessor.applyPlaceholders(logger.getPlaceholderOwner(), audience, messageStr, args);
-        processed = logger.getExternalPlaceholderEngine().apply(audience, processed);
-        processed = applyLocalization(logger, processed, audience);
-        processed = logger.getExternalPlaceholderEngine().apply(audience, processed);
-        processed = PlaceholderProcessor.applyPlaceholders(logger.getPlaceholderOwner(), audience, processed, args);
+        String processed = safeApplyLocalization(logger, messageStr, audience);
+        processed = applyInlinePlaceholders(processed, args);
+        PlaceholderContext context = PlaceholderContext.builder()
+                .audience(audience)
+                .ownerKey(logger.getPlaceholderOwner())
+                .defaultNamespace(logger.getPlaceholderNamespace())
+                .build();
+        processed = MagicPlaceholders.render(context, processed);
+        processed = safeApplyExternal(logger, audience, processed);
         return ColorUtils.legacyToMiniMessage(processed);
     }
 
-    private static String attachPrefix(LoggerCore logger, String message, LogLevel level, LogTarget target, @Nullable PrefixMode prefixOverride) {
+    private static Audience pickPrimaryAudience(@Nullable Audience direct,
+                                                @Nullable Collection<? extends Audience> collection) {
+        if (direct != null) {
+            return direct;
+        }
+        if (collection != null) {
+            for (Audience candidate : collection) {
+                if (candidate != null) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String applyInlinePlaceholders(String messageStr, Object[] args) {
+        if (messageStr == null || messageStr.isEmpty() || args == null || args.length == 0) {
+            return messageStr;
+        }
+        return MsgFmt.apply(messageStr, args);
+    }
+
+    private static String safeApplyExternal(LoggerCore logger, @Nullable Audience audience, String input) {
+        try {
+            return logger.getExternalPlaceholderEngine().apply(audience, input);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to apply external placeholders", error);
+            return input;
+        }
+    }
+
+    private static String safeApplyLocalization(LoggerCore logger, String messageStr, @Nullable Audience audience) {
+        try {
+            return applyLocalization(logger, messageStr, audience);
+        } catch (Throwable error) {
+            logger.getPlatform().logger().warn("Failed to localize message", error);
+            return messageStr;
+        }
+    }
+
+    private static PrefixRender buildPrefixRender(LoggerCore logger, LogLevel level, LogTarget target,
+                                                  @Nullable PrefixMode prefixOverride) {
         PrefixMode mode = prefixOverride != null
                 ? prefixOverride
                 : (target == LogTarget.CONSOLE || target == LogTarget.BOTH)
                         ? logger.getConsolePrefixMode()
                         : logger.getChatPrefixMode();
         String prefix = buildPrefix(logger, level, mode);
+        boolean useGradient = !prefix.isEmpty() && shouldUseGradient(logger, target);
+        return new PrefixRender(prefix, useGradient);
+    }
 
-        String combined = prefix.isEmpty() ? message : prefix + " " + message;
-        if (!prefix.isEmpty() && shouldUseGradient(logger, target)) {
+    private static String attachPrefix(PrefixRender prefixRender,
+                                       String combined,
+                                       LoggerCore logger,
+                                       LogLevel level,
+                                       LogTarget target) {
+        if (prefixRender.useGradient()) {
             String[] colors = logger.resolveColorsForLevel(level, target == LogTarget.CONSOLE);
             String gradientTag = ColorUtils.createGradientTag(colors);
             return "<reset>" + gradientTag + combined + "</gradient>";
         }
         return "<reset>" + combined;
+    }
+
+    private static String combinePrefix(String prefix, String message) {
+        if (prefix == null || prefix.isEmpty()) {
+            return message;
+        }
+        if (message == null || message.isEmpty()) {
+            return prefix;
+        }
+        return prefix + " " + message;
+    }
+
+    private static boolean hasMiniMessageTags(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        int open = value.indexOf('<');
+        return open >= 0 && value.indexOf('>', open + 1) > open;
+    }
+
+    private static boolean hasExternalResolver(TagResolver resolver) {
+        return resolver != null && resolver != TagResolver.empty();
+    }
+
+    private record PrefixRender(String text, boolean useGradient) {
     }
 
     private static String buildPrefix(LoggerCore logger, LogLevel level, PrefixMode mode) {
@@ -155,10 +266,8 @@ public final class LogMessageFormatter {
     }
 
     private static String applyLocalization(LoggerCore logger, String messageStr, @Nullable Audience audience) {
-        LoggerConfig cfg = logger.getConfig();
         LanguageManager lang = logger.getLanguageManager();
-        if (cfg != null && cfg.isAutoLocalization() && lang != null && messageStr != null
-                && messageStr.startsWith("@")) {
+        if (lang != null && messageStr != null && messageStr.startsWith("@")) {
             String key = messageStr.substring(1);
             String localized = audience != null
                     ? lang.getMessageForAudience(audience, key)

@@ -212,10 +212,9 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
     }
 
     private CommandSender unwrapSender(CommandSender sender) {
-        if (sender instanceof ProxiedCommandSender proxied && proxied.getCallee() instanceof CommandSender callee) {
-            return callee;
-        }
-        return sender;
+        return (sender instanceof ProxiedCommandSender proxied && proxied.getCallee() != null)
+                ? proxied.getCallee()
+                : sender;
     }
 
     private AllowedSender classifySender(CommandSender sender) {

@@ -7,15 +7,9 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import lombok.Getter;
 import lombok.Setter;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +18,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Platform-agnostic language manager.
@@ -33,16 +30,19 @@ public class LanguageManager {
     private final ConfigManager configManager;
     private final PlatformLogger logger;
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
+    private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
-    private static volatile ObjectMapper yamlMapper;
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([^{}]+)}");
+    private static final Set<String> LANGUAGE_EXTENSIONS = Set.of("jsonc", "json", "yml", "yaml", "toml");
     @Getter
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
     private LanguageConfig fallbackConfig;
     private String fallbackLanguage = "en";
     @Getter @Setter
-    private boolean logMissingMessages = false;
+    private boolean logMissingMessages = true;
 
     /**
      * Create a language manager, resolving a {@link Platform} from the provided platform or legacy plugin instance.
@@ -74,10 +74,10 @@ public class LanguageManager {
     public void init(String defaultLanguage) {
         this.currentLanguage = defaultLanguage;
         this.loggedMissingMessages.clear();
-        loadLanguage(currentLanguage);
+        loadLanguageBlocking(currentLanguage);
 
         if (!currentLanguage.equals(fallbackLanguage)) {
-            loadFallbackLanguage(fallbackLanguage);
+            loadFallbackLanguageBlocking(fallbackLanguage);
         } else {
             fallbackConfig = currentConfig;
         }
@@ -90,21 +90,31 @@ public class LanguageManager {
      * @return true if successfully loaded
      */
     public boolean loadLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return false;
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            return true;
+        }
+        if (isBlockingSensitiveThread()) {
+            warnIfMainThread("loadLanguage");
+            scheduleLanguageLoad(languageCode);
+            return false;
+        }
+        return loadLanguageBlocking(languageCode);
+    }
+
+    private boolean loadLanguageBlocking(String languageCode) {
+        boolean existed = languageFileExists(languageCode);
         try {
             this.loggedMissingMessages.clear();
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("lang", languageCode);
 
             LanguageConfig config = configManager.register(LanguageConfig.class, placeholders);
-            initializeLanguageDefaults(config, languageCode);
+            initializeLanguageDefaults(config, languageCode, existed);
 
             loadedLanguages.put(languageCode, config);
-
-            try {
-                configManager.save(config);
-            } catch (Exception e) {
-                logger.warn("Failed to persist language file for: " + languageCode, e);
-            }
 
             if (languageCode.equals(currentLanguage)) {
                 currentConfig = config;
@@ -122,22 +132,60 @@ public class LanguageManager {
         }
     }
 
-    private void initializeLanguageDefaults(LanguageConfig config, String languageCode) {
+    private void scheduleLanguageLoad(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return;
+        }
+        if (!pendingLanguages.add(languageCode)) {
+            return;
+        }
+        CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
+    }
+
+    private void initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
         Map<String, Map<String, String>> translations = createTranslations(languageCode);
-        if (!translations.isEmpty()) {
-            saveLanguageTranslations(languageCode, translations);
+        if (translations.isEmpty()) {
+            return;
+        }
+        if (!existed) {
+            config.applyTranslations(translations, true);
             try {
-                configManager.reload(config);
+                configManager.save(config);
             } catch (Exception e) {
-                logger.warn("Failed to reload language config after setting translations", e);
+                logger.warn("Failed to save language defaults for: " + languageCode, e);
             }
         }
     }
 
     private void loadFallbackLanguage(String languageCode) {
-        if (loadLanguage(languageCode)) {
-            this.fallbackLanguage = languageCode;
-            fallbackConfig = loadedLanguages.get(languageCode);
+        if (languageCode == null || languageCode.isBlank()) {
+            return;
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            applyFallback(languageCode);
+            return;
+        }
+        if (isBlockingSensitiveThread()) {
+            warnIfMainThread("loadLanguage");
+            loadLanguageAsync(languageCode).thenAccept(success -> {
+                if (Boolean.TRUE.equals(success)) {
+                    platform.runOnMain(() -> applyFallback(languageCode));
+                }
+            });
+            return;
+        }
+        if (loadLanguageBlocking(languageCode)) {
+            applyFallback(languageCode);
+        }
+    }
+
+    private void loadFallbackLanguageBlocking(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return;
+        }
+        if (loadLanguageBlocking(languageCode)) {
+            applyFallback(languageCode);
         }
     }
 
@@ -148,14 +196,26 @@ public class LanguageManager {
      * @return true if language is now active
      */
     public boolean setLanguage(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return false;
+        }
         if (!loadedLanguages.containsKey(languageCode)) {
-            if (!loadLanguage(languageCode)) {
+            if (isBlockingSensitiveThread()) {
+                warnIfMainThread("loadLanguage");
+                CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                        .thenAccept(success -> {
+                            if (Boolean.TRUE.equals(success)) {
+                                platform.runOnMain(() -> applyLanguage(languageCode));
+                            }
+                        });
+                return false;
+            }
+            if (!loadLanguageBlocking(languageCode)) {
                 return false;
             }
         }
 
-        this.currentLanguage = languageCode;
-        this.currentConfig = loadedLanguages.get(languageCode);
+        applyLanguage(languageCode);
         return true;
     }
 
@@ -209,11 +269,24 @@ public class LanguageManager {
         File langDir = platform.configDir().resolve("lang").toFile();
 
         if (langDir.exists() && langDir.isDirectory()) {
-            File[] files = langDir.listFiles((dir, name) -> name.endsWith(".yml"));
+            File[] files = langDir.listFiles((dir, name) -> {
+                if (name == null) {
+                    return false;
+                }
+                int dot = name.lastIndexOf('.');
+                if (dot <= 0 || dot >= name.length() - 1) {
+                    return false;
+                }
+                String ext = name.substring(dot + 1).toLowerCase();
+                return LANGUAGE_EXTENSIONS.contains(ext);
+            });
             if (files != null) {
                 for (File file : files) {
                     String name = file.getName();
-                    languages.add(name.substring(0, name.length() - 4));
+                    int dot = name.lastIndexOf('.');
+                    if (dot > 0) {
+                        languages.add(name.substring(0, dot));
+                    }
                 }
             }
         }
@@ -337,6 +410,30 @@ public class LanguageManager {
     }
 
     /**
+     * Resolve a message with placeholders safely escaped for MiniMessage parsing.
+     *
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved message with escaped placeholder values
+     */
+    public String getMessageEscaped(String key, Map<String, String> placeholders) {
+        String message = resolveMessage(currentLanguage, key);
+        return applyPlaceholders(message, placeholders, true);
+    }
+
+    /**
+     * Resolve a message with positional replacements escaped for MiniMessage parsing.
+     *
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved message with escaped replacement values
+     */
+    public String getMessageEscaped(String key, String... replacements) {
+        String message = resolveMessage(currentLanguage, key);
+        return applyReplacements(message, true, replacements);
+    }
+
+    /**
      * Resolve a message with positional replacements for a specific language code.
      *
      * @param languageCode language to use
@@ -347,6 +444,32 @@ public class LanguageManager {
     public String getMessageForLanguage(String languageCode, String key, String... replacements) {
         String message = resolveMessage(languageCode, key);
         return applyReplacements(message, replacements);
+    }
+
+    /**
+     * Resolve a message with placeholders for a specific language code, escaping values for MiniMessage.
+     *
+     * @param languageCode language to use
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved message with escaped placeholder values
+     */
+    public String getMessageForLanguageEscaped(String languageCode, String key, Map<String, String> placeholders) {
+        String message = resolveMessage(languageCode, key);
+        return applyPlaceholders(message, placeholders, true);
+    }
+
+    /**
+     * Resolve a message with replacements for a specific language code, escaping values for MiniMessage.
+     *
+     * @param languageCode language to use
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved message with escaped replacement values
+     */
+    public String getMessageForLanguageEscaped(String languageCode, String key, String... replacements) {
+        String message = resolveMessage(languageCode, key);
+        return applyReplacements(message, true, replacements);
     }
 
     /**
@@ -366,8 +489,13 @@ public class LanguageManager {
             return true;
         }
 
-        if (!loadedLanguages.containsKey(languageCode) && !loadLanguage(languageCode)) {
-            return false;
+        if (!loadedLanguages.containsKey(languageCode)) {
+            if (isBlockingSensitiveThread()) {
+                warnIfMainThread("loadLanguage");
+                scheduleLanguageLoad(languageCode);
+            } else if (!loadLanguageBlocking(languageCode)) {
+                return false;
+            }
         }
 
         playerLanguages.put(playerId, languageCode);
@@ -492,9 +620,36 @@ public class LanguageManager {
     }
 
     /**
+     * Resolve a message for an audience with placeholders escaped for MiniMessage.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved message with escaped placeholder values
+     */
+    public String getMessageForAudienceEscaped(Audience audience, String key, Map<String, String> placeholders) {
+        String message = getMessageForAudience(audience, key);
+        return applyPlaceholders(message, placeholders, true);
+    }
+
+    /**
+     * Resolve a message for an audience with replacements escaped for MiniMessage.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved message with escaped replacement values
+     */
+    public String getMessageForAudienceEscaped(Audience audience, String key, String... replacements) {
+        String message = getMessageForAudience(audience, key);
+        return applyReplacements(message, true, replacements);
+    }
+
+    /**
      * Reload all loaded languages from disk.
      */
     public void reload() {
+        warnIfMainThread("reload");
         loggedMissingMessages.clear();
         Map<String, LanguageConfig> snapshot = new HashMap<>(loadedLanguages);
 
@@ -504,13 +659,13 @@ public class LanguageManager {
 
         currentConfig = loadedLanguages.get(currentLanguage);
         if (currentConfig == null) {
-            loadLanguage(currentLanguage);
+            loadLanguageBlocking(currentLanguage);
             currentConfig = loadedLanguages.get(currentLanguage);
         }
 
         fallbackConfig = loadedLanguages.get(fallbackLanguage);
         if (fallbackConfig == null && fallbackLanguage != null) {
-            loadFallbackLanguage(fallbackLanguage);
+            loadFallbackLanguageBlocking(fallbackLanguage);
         }
     }
 
@@ -547,21 +702,118 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Load a language asynchronously to avoid blocking the main thread.
+     *
+     * @param languageCode language code to load
+     * @return future that completes with true if loaded successfully
+     */
+    public CompletableFuture<Boolean> loadLanguageAsync(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            return CompletableFuture.completedFuture(true);
+        }
+        if (!pendingLanguages.add(languageCode)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
+    }
+
+    /**
+     * Switch active language asynchronously.
+     *
+     * @param languageCode language code
+     * @return future that completes with true if active language is set
+     */
+    public CompletableFuture<Boolean> setLanguageAsync(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return loadLanguageAsync(languageCode).thenApply(success -> {
+            if (!Boolean.TRUE.equals(success)) {
+                return false;
+            }
+            platform.runOnMain(() -> applyLanguage(languageCode));
+            return true;
+        });
+    }
+
+    /**
+     * Reload all loaded languages asynchronously.
+     *
+     * @return future that completes after reload
+     */
+    public CompletableFuture<Void> reloadAsync() {
+        return CompletableFuture.runAsync(this::reload);
+    }
+
     private LanguageConfig getOrLoadLanguage(String languageCode) {
         if (languageCode == null || languageCode.isEmpty()) {
             return currentConfig;
         }
 
         LanguageConfig config = loadedLanguages.get(languageCode);
-        if (config == null && loadLanguage(languageCode)) {
-            config = loadedLanguages.get(languageCode);
+        if (config == null) {
+            if (isBlockingSensitiveThread()) {
+                scheduleLanguageLoad(languageCode);
+                return null;
+            }
+            if (loadLanguageBlocking(languageCode)) {
+                config = loadedLanguages.get(languageCode);
+            }
         }
         return config;
     }
 
+    private void applyLanguage(String languageCode) {
+        this.currentLanguage = languageCode;
+        this.currentConfig = loadedLanguages.get(languageCode);
+    }
+
+    private void applyFallback(String languageCode) {
+        this.fallbackLanguage = languageCode;
+        fallbackConfig = loadedLanguages.get(languageCode);
+    }
+
+    private boolean isBlockingSensitiveThread() {
+        return platform != null && platform.threadContext().isBlockingSensitive();
+    }
+
     private void ensureFallbackLoaded() {
         if (fallbackConfig == null && fallbackLanguage != null) {
-            loadFallbackLanguage(fallbackLanguage);
+            if (isBlockingSensitiveThread()) {
+                loadLanguageAsync(fallbackLanguage).thenAccept(success -> {
+                    if (Boolean.TRUE.equals(success)) {
+                        platform.runOnMain(() -> applyFallback(fallbackLanguage));
+                    }
+                });
+            } else {
+                loadFallbackLanguageBlocking(fallbackLanguage);
+            }
+        }
+    }
+
+    private boolean languageFileExists(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return false;
+        }
+        Path base = platform.configDir().resolve("lang");
+        for (String ext : LANGUAGE_EXTENSIONS) {
+            Path candidate = base.resolve(languageCode + "." + ext);
+            if (candidate.toFile().exists()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void warnIfMainThread(String action) {
+        if (isBlockingSensitiveThread()) {
+            logger.warn("LanguageManager." + action + " performs disk I/O. Consider using "
+                    + action + "Async() to avoid main-thread stalls.");
         }
     }
 
@@ -603,25 +855,50 @@ public class LanguageManager {
     }
 
     private String applyPlaceholders(String message, Map<String, String> placeholders) {
-        if (placeholders == null || placeholders.isEmpty()) {
+        return applyPlaceholders(message, placeholders, false);
+    }
+
+    private String applyPlaceholders(String message, Map<String, String> placeholders, boolean escapeTags) {
+        if (message == null || placeholders == null || placeholders.isEmpty()) {
             return message;
         }
-        String result = message;
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            result = result.replace("{" + entry.getKey() + "}", entry.getValue());
+        Matcher matcher = PLACEHOLDER_PATTERN.matcher(message);
+        StringBuffer buffer = new StringBuffer(message.length());
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            if (key == null || !placeholders.containsKey(key)) {
+                matcher.appendReplacement(buffer, Matcher.quoteReplacement(matcher.group(0)));
+                continue;
+            }
+            String value = placeholders.get(key);
+            if (value == null) {
+                value = "";
+            } else if (escapeTags) {
+                value = MINI_MESSAGE.escapeTags(value);
+            }
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(value));
         }
-        return result;
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 
     private String applyReplacements(String message, String... replacements) {
-        if (replacements == null || replacements.length == 0) {
+        return applyReplacements(message, false, replacements);
+    }
+
+    private String applyReplacements(String message, boolean escapeTags, String... replacements) {
+        if (message == null || replacements == null || replacements.length == 0) {
             return message;
         }
         String result = message;
         for (int i = 0; i < replacements.length - 1; i += 2) {
             String placeholder = replacements[i];
             String value = replacements[i + 1];
-
+            if (value == null) {
+                value = "";
+            } else if (escapeTags) {
+                value = MINI_MESSAGE.escapeTags(value);
+            }
             result = result.replace("{" + placeholder + "}", value);
             result = result.replace(placeholder, value);
         }
@@ -630,156 +907,6 @@ public class LanguageManager {
 
     private Map<String, Map<String, String>> createTranslations(String languageCode) {
         return LanguageDefaults.localizedSections(languageCode);
-    }
-
-    private void saveLanguageTranslations(String languageCode, Map<String, Map<String, String>> translations) {
-        try {
-            File langFile = platform.configDir().resolve("lang/" + languageCode + ".yml").toFile();
-            Path parent = langFile.toPath().getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-
-            Map<String, Object> data = new HashMap<>();
-            if (langFile.exists() && langFile.length() > 0) {
-                ObjectMapper mapper = yamlMapper();
-                Map<String, Object> loaded = mapper.readValue(langFile, new TypeReference<>() {});
-                if (loaded != null) {
-                    data.putAll(castMap(loaded));
-                }
-            }
-
-            for (Map.Entry<String, Map<String, String>> section : translations.entrySet()) {
-                for (Map.Entry<String, String> entry : section.getValue().entrySet()) {
-                    applyPathIfAbsent(data, section.getKey() + "." + entry.getKey(), entry.getValue());
-                }
-            }
-
-            ObjectWriter writer = yamlMapper().writerWithDefaultPrettyPrinter();
-            writer.writeValue(langFile, data);
-        } catch (IOException | RuntimeException e) {
-            logger.warn("Failed to save language translations for: " + languageCode, e);
-        }
-    }
-
-    private static ObjectMapper yamlMapper() {
-        ObjectMapper local = yamlMapper;
-        if (local != null) {
-            return local;
-        }
-        synchronized (LanguageManager.class) {
-            local = yamlMapper;
-            if (local == null) {
-                local = createYamlMapper();
-                yamlMapper = local;
-            }
-        }
-        return local;
-    }
-
-    private static ObjectMapper createYamlMapper() {
-        JsonFactory factory = buildYamlFactory();
-        ObjectMapper mapper = new ObjectMapper(factory);
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        return mapper;
-    }
-
-    private static JsonFactory buildYamlFactory() {
-        try {
-            Class<?> factoryClass = Class.forName(resolveJacksonClass("com.fasterxml.jackson.dataformat.yaml.YAMLFactory"));
-            Object builder = invokeStatic(factoryClass, "builder");
-            if (builder != null) {
-                disableYamlDocStart(builder);
-                Object built = invokeNoArgs(builder, "build");
-                if (built instanceof JsonFactory) {
-                    return (JsonFactory) built;
-                }
-            }
-            Object factory = factoryClass.getDeclaredConstructor().newInstance();
-            return (JsonFactory) factory;
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("YAML support failed to initialize. Add magicutils-config-yaml.", e);
-        }
-    }
-
-    private static Object invokeStatic(Class<?> type, String methodName) {
-        try {
-            return type.getMethod(methodName).invoke(null);
-        } catch (ReflectiveOperationException ignored) {
-            return null;
-        }
-    }
-
-    private static Object invokeNoArgs(Object target, String methodName) {
-        if (target == null) {
-            return null;
-        }
-        try {
-            return target.getClass().getMethod(methodName).invoke(target);
-        } catch (ReflectiveOperationException ignored) {
-            return null;
-        }
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void disableYamlDocStart(Object builder) {
-        if (builder == null) {
-            return;
-        }
-        try {
-            Class<?> featureClass = Class.forName(resolveJacksonClass("com.fasterxml.jackson.dataformat.yaml.YAMLGenerator$Feature"));
-            Object feature = Enum.valueOf((Class<Enum>) featureClass, "WRITE_DOC_START_MARKER");
-            builder.getClass().getMethod("disable", featureClass).invoke(builder, feature);
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-        }
-    }
-
-    private static String resolveJacksonClass(String className) {
-        if (className == null) {
-            return null;
-        }
-        String relocated = className.replace("com.fasterxml.jackson.", "dev.ua.theroer.magicutils.libs.jackson.");
-        if (!relocated.equals(className) && isClassPresent(relocated)) {
-            return relocated;
-        }
-        return className;
-    }
-
-    private static boolean isClassPresent(String name) {
-        try {
-            Class.forName(name, false, LanguageManager.class.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    private Map<String, Object> castMap(Map<?, ?> raw) {
-        Map<String, Object> out = new HashMap<>();
-        for (Map.Entry<?, ?> e : raw.entrySet()) {
-            out.put(String.valueOf(e.getKey()), e.getValue());
-        }
-        return out;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void applyPathIfAbsent(Map<String, Object> root, String path, Object value) {
-        String[] parts = path.split("\\.");
-        Map<String, Object> current = root;
-        for (int i = 0; i < parts.length - 1; i++) {
-            String part = parts[i];
-            Object child = current.get(part);
-            if (!(child instanceof Map)) {
-                child = new HashMap<String, Object>();
-                current.put(part, child);
-            }
-            current = (Map<String, Object>) child;
-        }
-        String leaf = parts[parts.length - 1];
-        Object existing = current.get(leaf);
-        if (existing == null) {
-            current.put(leaf, value);
-        }
     }
 
     private UUID extractUuid(Object obj) {

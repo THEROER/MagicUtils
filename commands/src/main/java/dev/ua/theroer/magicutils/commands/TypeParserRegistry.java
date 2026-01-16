@@ -2,9 +2,8 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.commands.parsers.BooleanTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.EnumTypeParser;
-import dev.ua.theroer.magicutils.commands.parsers.IntegerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.ListTypeParser;
-import dev.ua.theroer.magicutils.commands.parsers.LongTypeParser;
+import dev.ua.theroer.magicutils.commands.parsers.NumberTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.StringTypeParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -51,8 +51,7 @@ public class TypeParserRegistry<S> {
      */
     private void registerDefaultParsers() {
         register(new StringTypeParser<>());
-        register(new IntegerTypeParser<>());
-        register(new LongTypeParser<>());
+        register(new NumberTypeParser<>());
         register(new BooleanTypeParser<>());
         register(new EnumTypeParser<>());
         register(new ListTypeParser<>());
@@ -124,7 +123,7 @@ public class TypeParserRegistry<S> {
      */
     @NotNull
     public List<String> getSuggestionsForType(@NotNull Class<?> targetType, @NotNull S sender) {
-        return getSuggestionsInternal(targetType, sender, null);
+        return getSuggestionsInternal(targetType, sender, null, Collections.emptyMap(), null);
     }
 
     /**
@@ -136,7 +135,7 @@ public class TypeParserRegistry<S> {
      */
     @NotNull
     public List<String> getSuggestionsForArgument(@NotNull CommandArgument argument, @NotNull S sender) {
-        return getSuggestionsInternal(argument.getType(), sender, argument);
+        return getSuggestionsInternal(argument.getType(), sender, argument, Collections.emptyMap(), null);
     }
 
     /**
@@ -202,12 +201,13 @@ public class TypeParserRegistry<S> {
      * @param targetType   the target class type
      * @param currentInput current user input
      * @param sender       the command sender for context
+     * @param previousParsedArguments a map of argument names to their parsed values that appeared before this argument.
      * @return filtered list of suggestions
      */
     @NotNull
     public List<String> getSuggestionsForTypeFiltered(@NotNull Class<?> targetType, @NotNull String currentInput,
-            @NotNull S sender) {
-        return getSuggestionsForTypeFiltered(targetType, currentInput, sender, null);
+            @NotNull S sender, @NotNull Map<String, Object> previousParsedArguments) {
+        return getSuggestionsForTypeFiltered(targetType, currentInput, sender, null, previousParsedArguments);
     }
 
     /**
@@ -216,17 +216,18 @@ public class TypeParserRegistry<S> {
      * @param argument     the command argument metadata
      * @param currentInput current user input
      * @param sender       the command sender
+     * @param previousParsedArguments a map of argument names to their parsed values that appeared before this argument.
      * @return filtered list of suggestions
      */
     @NotNull
     public List<String> getSuggestionsForArgumentFiltered(@NotNull CommandArgument argument,
-            @NotNull String currentInput, @NotNull S sender) {
-        return getSuggestionsForTypeFiltered(argument.getType(), currentInput, sender, argument);
+            @NotNull String currentInput, @NotNull S sender, @NotNull Map<String, Object> previousParsedArguments) {
+        return getSuggestionsForTypeFiltered(argument.getType(), currentInput, sender, argument, previousParsedArguments);
     }
 
     private List<String> getSuggestionsForTypeFiltered(@NotNull Class<?> targetType, @Nullable String currentInput,
-            @NotNull S sender, @Nullable CommandArgument argument) {
-        List<String> suggestions = getSuggestionsInternal(targetType, sender, argument);
+            @NotNull S sender, @Nullable CommandArgument argument, @NotNull Map<String, Object> previousParsedArguments) {
+        List<String> suggestions = getSuggestionsInternal(targetType, sender, argument, previousParsedArguments, currentInput);
 
         if (currentInput == null || currentInput.isEmpty()) {
             return suggestions;
@@ -239,14 +240,22 @@ public class TypeParserRegistry<S> {
     }
 
     private List<String> getSuggestionsInternal(@NotNull Class<?> targetType, @NotNull S sender,
-            @Nullable CommandArgument argument) {
+            @Nullable CommandArgument argument, @NotNull Map<String, Object> previousParsedArguments,
+            @Nullable String currentInput) {
         logger.debug("Getting suggestions for type: " + targetType.getSimpleName());
 
         for (TypeParser<S, ?> parser : parsers) {
             if (parser.canParse(targetType)) {
                 logger.debug("Using parser for suggestions: " + parser.getClass().getSimpleName());
                 try {
-                    List<String> suggestions = parser.getSuggestions(sender, argument);
+                    List<String> suggestions;
+                    if (overridesSuggestionsWithContext(parser)) {
+                        suggestions = parser.getSuggestions(sender, argument, previousParsedArguments, currentInput);
+                    } else if (overridesSuggestionsLegacy(parser)) {
+                        suggestions = parser.getSuggestions(sender, argument);
+                    } else {
+                        suggestions = parser.getSuggestions(sender, argument, previousParsedArguments, currentInput);
+                    }
                     logger.debug("Got " + suggestions.size() + " suggestions");
                     return suggestions;
                 } catch (Exception e) {
@@ -258,6 +267,24 @@ public class TypeParserRegistry<S> {
 
         logger.debug("No suitable parser found for suggestions");
         return new ArrayList<>();
+    }
+
+    private boolean overridesSuggestionsWithContext(@NotNull TypeParser<S, ?> parser) {
+        return isOverride(parser.getClass(), "getSuggestions",
+                Object.class, CommandArgument.class, Map.class, String.class);
+    }
+
+    private boolean overridesSuggestionsLegacy(@NotNull TypeParser<S, ?> parser) {
+        return isOverride(parser.getClass(), "getSuggestions",
+                Object.class, CommandArgument.class);
+    }
+
+    private boolean isOverride(@NotNull Class<?> type, @NotNull String name, @NotNull Class<?>... parameterTypes) {
+        try {
+            return !type.getMethod(name, parameterTypes).getDeclaringClass().equals(TypeParser.class);
+        } catch (NoSuchMethodException ex) {
+            return false;
+        }
     }
 
     /**

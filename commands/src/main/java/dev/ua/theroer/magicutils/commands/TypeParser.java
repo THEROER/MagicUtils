@@ -3,7 +3,10 @@ package dev.ua.theroer.magicutils.commands;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -52,7 +55,34 @@ public interface TypeParser<S, T> {
      */
     @NotNull
     default List<String> getSuggestions(@NotNull S sender, @Nullable CommandArgument argument) {
-        return getSuggestions(sender);
+        return getSuggestions(sender, argument, Collections.emptyMap(), null);
+    }
+
+    /**
+     * Gets suggestions for this type with access to the argument metadata and previously parsed arguments.
+     *
+     * @param sender the command sender for context
+     * @param argument the command argument (may be null)
+     * @param previousParsedArguments a map of argument names to their parsed values that appeared before this argument.
+     * @param currentInput the current user input for filtering (optional)
+     * @return list of suggestions
+     */
+    @NotNull
+    default List<String> getSuggestions(@NotNull S sender, @Nullable CommandArgument argument,
+                                       @NotNull Map<String, Object> previousParsedArguments, @Nullable String currentInput) {
+        List<String> base = new ArrayList<>(getSuggestions(sender));
+        if (argument != null && !argument.getSuggestions().isEmpty()) {
+            base.addAll(argument.getSuggestions());
+        }
+
+        if (currentInput == null || currentInput.isEmpty()) {
+            return base;
+        }
+
+        final String lowered = currentInput.toLowerCase();
+        return base.stream()
+                .filter(suggestion -> suggestion != null && suggestion.toLowerCase().startsWith(lowered))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -66,15 +96,7 @@ public interface TypeParser<S, T> {
     @NotNull
     default List<String> getSuggestionsFiltered(@Nullable String currentInput, @NotNull S sender,
             @Nullable CommandArgument argument) {
-        List<String> base = getSuggestions(sender, argument);
-        if (currentInput == null || currentInput.isEmpty()) {
-            return base;
-        }
-
-        final String lowered = currentInput.toLowerCase();
-        return base.stream()
-                .filter(suggestion -> suggestion != null && suggestion.toLowerCase().startsWith(lowered))
-                .collect(Collectors.toList());
+        return getSuggestions(sender, argument, Collections.emptyMap(), currentInput);
     }
 
     /**

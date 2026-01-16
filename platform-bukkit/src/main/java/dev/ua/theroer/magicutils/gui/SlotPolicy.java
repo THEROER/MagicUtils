@@ -29,6 +29,14 @@ public record SlotPolicy(
 
     /**
      * Compact constructor to defensively copy the placeholder item.
+     *
+     * @param editable whether the slot is editable
+     * @param consumesItem whether items are consumed
+     * @param placeholder placeholder item
+     * @param id slot identifier
+     * @param permission permission predicate
+     * @param validator item validator predicate
+     * @param onChange change callback
      */
     public SlotPolicy {
         if (placeholder != null) {
