@@ -739,6 +739,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#brigadier-integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brigadier integrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fabric-integrations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1401,6 +1412,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#brigadier-integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brigadier integrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fabric-integrations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1448,7 +1470,7 @@ NeoForge.</p>
 <tr>
 <td>Platform API</td>
 <td><code>magicutils-api</code></td>
-<td><code>Platform</code>, <code>Audience</code>, and shared interfaces.</td>
+<td><code>Platform</code>, <code>Audience</code>, <code>TaskScheduler</code>, and shared interfaces.</td>
 </tr>
 <tr>
 <td>Core</td>
@@ -1518,6 +1540,11 @@ NeoForge.</p>
 <td>Includes core modules + Bukkit integrations.</td>
 </tr>
 <tr>
+<td>Bukkit bundle</td>
+<td><code>magicutils-bukkit-bundle</code></td>
+<td>Shared Bukkit/Paper plugin bundle.</td>
+</tr>
+<tr>
 <td>Fabric</td>
 <td><code>magicutils-fabric</code></td>
 <td>Platform API adapter for Fabric.</td>
@@ -1531,6 +1558,28 @@ NeoForge.</p>
 <td>NeoForge</td>
 <td><code>magicutils-neoforge</code></td>
 <td>Platform API adapter for NeoForge.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="brigadier-integrations">Brigadier integrations<a class="headerlink" href="#brigadier-integrations" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Artifact</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Brigadier base</td>
+<td><code>magicutils-commands-brigadier</code></td>
+<td>Shared Brigadier command registry.</td>
+</tr>
+<tr>
+<td>Commands (NeoForge)</td>
+<td><code>magicutils-commands-neoforge</code></td>
+<td>Brigadier integration for NeoForge.</td>
 </tr>
 </tbody>
 </table>
@@ -1552,7 +1601,7 @@ NeoForge.</p>
 <tr>
 <td>Commands (Fabric)</td>
 <td><code>magicutils-commands-fabric</code></td>
-<td>Brigadier integration.</td>
+<td>Brigadier integration for Fabric.</td>
 </tr>
 <tr>
 <td>Placeholders (Fabric)</td>

@@ -1321,13 +1321,20 @@
 
 
 <h1 id="neoforge">NeoForge<a class="headerlink" href="#neoforge" title="Permanent link">&para;</a></h1>
-<p>NeoForge support focuses on platform wiring, config, and logging.</p>
+<p>NeoForge support includes platform wiring, config, logging, and Brigadier commands.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NeoForgePlatformProvider</span><span class="p">();</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">LoggerCore</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">LoggerCore</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
 </code></pre></div>
-<p>Commands and placeholders are not wired on NeoForge yet. Use MagicUtils core
-modules where applicable and handle command registration separately.</p>
+<p>Register commands via <code>RegisterCommandsEvent</code> and the Brigadier dispatcher:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@SubscribeEvent</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onRegisterCommands</span><span class="p">(</span><span class="n">RegisterCommandsEvent</span><span class="w"> </span><span class="n">event</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">event</span><span class="p">.</span><span class="na">getDispatcher</span><span class="p">(),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">));</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</code></pre></div>
+<p>There is no NeoForge placeholder bridge yet. Use MagicUtils core placeholders
+directly where needed.</p>
 
 
 

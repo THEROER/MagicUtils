@@ -980,6 +980,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#threading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#resolving-messages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1412,6 +1423,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#threading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#resolving-messages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1484,33 +1506,48 @@ language overrides.</p>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setFallbackLanguage</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">);</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">addMagicUtilsMessages</span><span class="p">();</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">Messages</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">Messages</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">plugin</span><span class="p">.</span><span class="na">getName</span><span class="p">(),</span><span class="w"> </span><span class="n">languageManager</span><span class="p">);</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
 </code></pre></div>
 <p>Language files are stored under <code>config/lang/&lt;lang&gt;.yml</code>. The lang module uses
 YAML, so include <code>magicutils-config-yaml</code> if you use <code>LanguageManager</code>.</p>
+<p>Use <code>Messages.setLanguageManager(...)</code> only if you need the legacy global
+default. <code>Messages.register(...)</code> keeps each plugin isolated.</p>
+<h2 id="threading">Threading<a class="headerlink" href="#threading" title="Permanent link">&para;</a></h2>
+<p>Language loading touches disk. Use the async or smart helpers when running on
+blocking-sensitive threads:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">loadLanguageAsync</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setLanguageAsync</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">reloadAsync</span><span class="p">();</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">loadLanguageSmart</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setLanguageSmart</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">reloadSmart</span><span class="p">();</span>
+</code></pre></div>
 <h2 id="resolving-messages">Resolving messages<a class="headerlink" href="#resolving-messages" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Component</span><span class="w"> </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Messages</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;myplugin.welcome&quot;</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">Messages</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">playerAudience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin.goodbye&quot;</span><span class="p">);</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">String</span><span class="w"> </span><span class="n">raw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Messages</span><span class="p">.</span><span class="na">getRaw</span><span class="p">(</span><span class="s">&quot;myplugin.balance&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;42&quot;</span><span class="p">);</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">Component</span><span class="w"> </span><span class="n">rich</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Messages</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;myplugin.balance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;42&quot;</span><span class="p">));</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">MessagesView</span><span class="w"> </span><span class="n">messages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Messages</span><span class="p">.</span><span class="na">view</span><span class="p">(</span><span class="n">plugin</span><span class="p">.</span><span class="na">getName</span><span class="p">());</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">Component</span><span class="w"> </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">messages</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;myplugin.welcome&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">messages</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">playerAudience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin.goodbye&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">String</span><span class="w"> </span><span class="n">raw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">messages</span><span class="p">.</span><span class="na">getRaw</span><span class="p">(</span><span class="s">&quot;myplugin.balance&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;42&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">Component</span><span class="w"> </span><span class="n">rich</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">messages</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;myplugin.balance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;42&quot;</span><span class="p">));</span>
 </code></pre></div>
 <p><code>Messages</code> uses MiniMessage for rich output and supports <code>{placeholder}</code> style
 replacements.</p>
 <h2 id="per-player-languages">Per-player languages<a class="headerlink" href="#per-player-languages" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setPlayerLanguage</span><span class="p">(</span><span class="n">playerUuid</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;uk&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">String</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">languageManager</span><span class="p">.</span><span class="na">getMessageForAudience</span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin.welcome&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setPlayerLanguage</span><span class="p">(</span><span class="n">playerUuid</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;uk&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">String</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">languageManager</span><span class="p">.</span><span class="na">getMessageForAudience</span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin.welcome&quot;</span><span class="p">);</span>
 </code></pre></div>
 <p><code>setPlayerLanguage(...)</code> accepts UUIDs, Audience, or player objects with
 <code>getUniqueId()</code>.</p>
 <h2 id="custom-messages">Custom messages<a class="headerlink" href="#custom-messages" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">putCustomMessage</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin.welcome&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;&lt;green&gt;Hello&lt;/green&gt;&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">putCustomMessage</span><span class="p">(</span><span class="s">&quot;en&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin.welcome&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;&lt;green&gt;Hello&lt;/green&gt;&quot;</span><span class="p">);</span>
 </code></pre></div>
 <p>Custom messages are persisted in the same language files under <code>messages</code>.</p>
 <h2 id="missing-keys">Missing keys<a class="headerlink" href="#missing-keys" title="Permanent link">&para;</a></h2>
 <p>Enable logging for missing translations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setLogMissingMessages</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">languageManager</span><span class="p">.</span><span class="na">setLogMissingMessages</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
 </code></pre></div>
 
 
