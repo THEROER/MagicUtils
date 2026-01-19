@@ -2,6 +2,10 @@
 
 Use `magicutils-bukkit` to wire MagicUtils to Bukkit/Paper.
 
+If you want a shared install for multiple plugins, use
+`magicutils-bukkit-bundle` as a standalone plugin and add a dependency on it
+in your `plugin.yml` (`depend: [MagicUtils]`).
+
 ## Bootstrap
 
 ```java
@@ -14,8 +18,8 @@ Logger logger = new Logger(platform, plugin, configManager);
 
 ```java
 CommandRegistry.initialize(plugin, "myplugin", logger);
-CommandRegistry.register(new HelpCommand(logger));
-CommandRegistry.register(new ExampleCommand());
+CommandRegistry.register(plugin, new HelpCommand(logger));
+CommandRegistry.register(plugin, new ExampleCommand());
 ```
 
 `CommandRegistry` registers commands directly with the Bukkit CommandMap, so

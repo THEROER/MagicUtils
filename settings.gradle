@@ -3,8 +3,9 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.neoforged.net/releases' }
     }
 }
 
 rootProject.name = 'MagicUtils'
-include 'platform-api', 'core', 'config', 'lang', 'logger', 'commands', 'placeholders', 'http-client', 'config-yaml', 'config-toml', 'platform-bukkit', 'platform-neoforge', 'platform-velocity', 'platform-fabric', 'commands-fabric', 'logger-fabric', 'placeholders-fabric', 'fabric-bundle', 'processor'
+include 'platform-api', 'core', 'config', 'lang', 'logger', 'commands', 'commands-brigadier', 'commands-neoforge', 'placeholders', 'http-client', 'config-yaml', 'config-toml', 'platform-bukkit', 'platform-neoforge', 'platform-velocity', 'platform-fabric', 'commands-fabric', 'logger-fabric', 'placeholders-fabric', 'fabric-bundle', 'bukkit-bundle', 'processor'

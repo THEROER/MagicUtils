@@ -4,6 +4,8 @@ import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.Tasks;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,6 +31,7 @@ public class LanguageManager {
     private final Platform platform;
     private final ConfigManager configManager;
     private final PlatformLogger logger;
+    private final TaskScheduler scheduler;
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
@@ -64,6 +67,7 @@ public class LanguageManager {
         this.platform = platform;
         this.configManager = configManager;
         this.logger = platform.logger();
+        this.scheduler = Tasks.scheduler(platform);
     }
 
     /**
@@ -139,7 +143,7 @@ public class LanguageManager {
         if (!pendingLanguages.add(languageCode)) {
             return;
         }
-        CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+        CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                 .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
     }
 
@@ -202,7 +206,7 @@ public class LanguageManager {
         if (!loadedLanguages.containsKey(languageCode)) {
             if (isBlockingSensitiveThread()) {
                 warnIfMainThread("loadLanguage");
-                CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+                CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                         .thenAccept(success -> {
                             if (Boolean.TRUE.equals(success)) {
                                 platform.runOnMain(() -> applyLanguage(languageCode));
@@ -718,8 +722,30 @@ public class LanguageManager {
         if (!pendingLanguages.add(languageCode)) {
             return CompletableFuture.completedFuture(false);
         }
-        return CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode))
+        return CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                 .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
+    }
+
+    /**
+     * Load a language and return a future that completes when loading finishes.
+     *
+     * @param languageCode language code to load
+     * @return future that completes with true if loaded successfully
+     */
+    public CompletableFuture<Boolean> loadLanguageSmart(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        if (loadedLanguages.containsKey(languageCode)) {
+            return CompletableFuture.completedFuture(true);
+        }
+        if (pendingLanguages.contains(languageCode)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        if (isBlockingSensitiveThread()) {
+            return loadLanguageAsync(languageCode);
+        }
+        return CompletableFuture.completedFuture(loadLanguageBlocking(languageCode));
     }
 
     /**
@@ -742,12 +768,41 @@ public class LanguageManager {
     }
 
     /**
+     * Switch active language, auto-switching to async when on sensitive threads.
+     *
+     * @param languageCode language code
+     * @return future that completes with true if active language is set
+     */
+    public CompletableFuture<Boolean> setLanguageSmart(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        if (isBlockingSensitiveThread()) {
+            return setLanguageAsync(languageCode);
+        }
+        return CompletableFuture.completedFuture(setLanguage(languageCode));
+    }
+
+    /**
      * Reload all loaded languages asynchronously.
      *
      * @return future that completes after reload
      */
     public CompletableFuture<Void> reloadAsync() {
-        return CompletableFuture.runAsync(this::reload);
+        return CompletableFuture.runAsync(this::reload, scheduler.io());
+    }
+
+    /**
+     * Reload all loaded languages, auto-switching to async on sensitive threads.
+     *
+     * @return future that completes after reload
+     */
+    public CompletableFuture<Void> reloadSmart() {
+        if (isBlockingSensitiveThread()) {
+            return reloadAsync();
+        }
+        reload();
+        return CompletableFuture.completedFuture(null);
     }
 
     private LanguageConfig getOrLoadLanguage(String languageCode) {

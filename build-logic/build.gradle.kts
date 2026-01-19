@@ -62,5 +62,9 @@ gradlePlugin {
             id = "magicutils.fabric-bundle"
             implementationClass = "MagicUtilsFabricBundlePlugin"
         }
+        register("magicutilsBukkitBundle") {
+            id = "magicutils.bukkit-bundle"
+            implementationClass = "MagicUtilsBukkitBundlePlugin"
+        }
     }
 }

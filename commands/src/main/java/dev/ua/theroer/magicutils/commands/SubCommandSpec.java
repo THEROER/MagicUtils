@@ -18,6 +18,7 @@ public final class SubCommandSpec<S> {
     private final List<String> aliases;
     private final String permission;
     private final MagicPermissionDefault permissionDefault;
+    private final CommandThreading threading;
     private final List<CommandArgument> arguments;
     private final CommandExecutor<S> executor;
     private final boolean replaceExisting;
@@ -29,6 +30,7 @@ public final class SubCommandSpec<S> {
         this.aliases = List.copyOf(builder.aliases);
         this.permission = builder.permission;
         this.permissionDefault = builder.permissionDefault;
+        this.threading = builder.threading;
         this.arguments = List.copyOf(builder.arguments);
         this.executor = builder.executor;
         this.replaceExisting = builder.replaceExisting;
@@ -56,6 +58,10 @@ public final class SubCommandSpec<S> {
 
     public MagicPermissionDefault permissionDefault() {
         return permissionDefault;
+    }
+
+    public CommandThreading threading() {
+        return threading;
     }
 
     public List<CommandArgument> arguments() {
@@ -99,6 +105,7 @@ public final class SubCommandSpec<S> {
         private final List<String> aliases = new ArrayList<>();
         private String permission = "";
         private MagicPermissionDefault permissionDefault = MagicPermissionDefault.OP;
+        private CommandThreading threading = CommandThreading.MAIN;
         private final List<CommandArgument> arguments = new ArrayList<>();
         private CommandExecutor<S> executor;
         private boolean replaceExisting = false;
@@ -144,6 +151,11 @@ public final class SubCommandSpec<S> {
 
         public Builder<S> permissionDefault(MagicPermissionDefault permissionDefault) {
             this.permissionDefault = permissionDefault != null ? permissionDefault : MagicPermissionDefault.OP;
+            return this;
+        }
+
+        public Builder<S> threading(CommandThreading threading) {
+            this.threading = threading != null ? threading : CommandThreading.MAIN;
             return this;
         }
 

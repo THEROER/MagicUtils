@@ -1,24 +1,113 @@
 package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.platform.Audience;
-import lombok.Getter;
-import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
+import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Static language helper using LanguageManager.
  */
 public class Messages {
-    @Setter @Getter
-    private static LanguageManager languageManager;
+    private static final String DEFAULT_SCOPE = "default";
+    private static final Map<String, LanguageManager> LANGUAGE_MANAGERS = new ConcurrentHashMap<>();
+    private static volatile LanguageManager languageManager;
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     private Messages() {
+    }
+
+    /**
+     * Sets the default global language manager (legacy).
+     *
+     * @param manager language manager to use as default
+     */
+    public static void setLanguageManager(LanguageManager manager) {
+        languageManager = manager;
+        if (manager != null) {
+            LANGUAGE_MANAGERS.put(DEFAULT_SCOPE, manager);
+        } else {
+            LANGUAGE_MANAGERS.remove(DEFAULT_SCOPE);
+        }
+    }
+
+    /**
+     * Returns the default global language manager.
+     *
+     * @return language manager or null
+     */
+    public static LanguageManager getLanguageManager() {
+        return languageManager;
+    }
+
+    /**
+     * Registers a language manager for a scope (plugin/mod name).
+     *
+     * @param scope scope identifier
+     * @param manager language manager to register
+     */
+    public static void register(String scope, LanguageManager manager) {
+        String key = normalizeScope(scope);
+        if (manager == null) {
+            LANGUAGE_MANAGERS.remove(key);
+            if (DEFAULT_SCOPE.equals(key)) {
+                languageManager = null;
+            }
+            return;
+        }
+        LANGUAGE_MANAGERS.put(key, manager);
+        if (DEFAULT_SCOPE.equals(key)) {
+            languageManager = manager;
+        }
+    }
+
+    /**
+     * Unregisters a language manager for a scope.
+     *
+     * @param scope scope identifier
+     */
+    public static void unregister(String scope) {
+        register(scope, null);
+    }
+
+    /**
+     * Returns the language manager for a scope.
+     *
+     * @param scope scope identifier
+     * @return language manager or null
+     */
+    public static LanguageManager getLanguageManager(String scope) {
+        return LANGUAGE_MANAGERS.get(normalizeScope(scope));
+    }
+
+    /**
+     * Returns a scoped view for message resolution.
+     *
+     * @param scope scope identifier
+     * @return messages view
+     */
+    public static MessagesView view(String scope) {
+        return new MessagesView(normalizeScope(scope));
+    }
+
+    /**
+     * Returns a view bound to a specific language manager.
+     *
+     * @param manager language manager
+     * @return messages view
+     */
+    public static MessagesView view(LanguageManager manager) {
+        return new MessagesView(manager);
+    }
+
+    private static String normalizeScope(String scope) {
+        String normalized = scope != null ? scope.trim().toLowerCase(Locale.ROOT) : "";
+        return normalized.isEmpty() ? DEFAULT_SCOPE : normalized;
     }
 
     /**
@@ -28,7 +117,8 @@ public class Messages {
      * @return raw string or key if missing
      */
     public static String getRaw(String key) {
-        return languageManager != null ? languageManager.getMessage(key) : key;
+        LanguageManager manager = getLanguageManager();
+        return manager != null ? manager.getMessage(key) : key;
     }
 
     /**
@@ -39,7 +129,8 @@ public class Messages {
      * @return resolved string
      */
     public static String getRaw(String key, String... replacements) {
-        return languageManager != null ? languageManager.getMessage(key, replacements) : key;
+        LanguageManager manager = getLanguageManager();
+        return manager != null ? manager.getMessage(key, replacements) : key;
     }
 
     /**
@@ -50,7 +141,8 @@ public class Messages {
      * @return resolved string
      */
     public static String getRaw(String key, Map<String, String> placeholders) {
-        return languageManager != null ? languageManager.getMessage(key, placeholders) : key;
+        LanguageManager manager = getLanguageManager();
+        return manager != null ? manager.getMessage(key, placeholders) : key;
     }
 
     /**
@@ -65,8 +157,9 @@ public class Messages {
             return getRaw(audience, key);
         }
         UUID id = extractUuid(sender);
-        if (languageManager != null && id != null) {
-            return languageManager.getMessageForLanguage(languageManager.getPlayerLanguage(id), key);
+        LanguageManager manager = getLanguageManager();
+        if (manager != null && id != null) {
+            return manager.getMessageForLanguage(manager.getPlayerLanguage(id), key);
         }
         return getRaw(key);
     }
@@ -84,8 +177,9 @@ public class Messages {
             return getRaw(audience, key, replacements);
         }
         UUID id = extractUuid(sender);
-        if (languageManager != null && id != null) {
-            return languageManager.getMessageForLanguage(languageManager.getPlayerLanguage(id), key, replacements);
+        LanguageManager manager = getLanguageManager();
+        if (manager != null && id != null) {
+            return manager.getMessageForLanguage(manager.getPlayerLanguage(id), key, replacements);
         }
         return getRaw(key, replacements);
     }
@@ -111,10 +205,11 @@ public class Messages {
      * @return resolved string
      */
     public static String getRaw(Audience audience, String key) {
-        if (languageManager == null) {
+        LanguageManager manager = getLanguageManager();
+        if (manager == null) {
             return key;
         }
-        return languageManager.getMessageForAudience(audience, key);
+        return manager.getMessageForAudience(audience, key);
     }
 
     /**
@@ -126,10 +221,11 @@ public class Messages {
      * @return resolved string
      */
     public static String getRaw(Audience audience, String key, String... replacements) {
-        if (languageManager == null) {
+        LanguageManager manager = getLanguageManager();
+        if (manager == null) {
             return key;
         }
-        return languageManager.getMessageForAudience(audience, key, replacements);
+        return manager.getMessageForAudience(audience, key, replacements);
     }
 
     /**
@@ -141,10 +237,11 @@ public class Messages {
      * @return resolved string
      */
     public static String getRaw(Audience audience, String key, Map<String, String> placeholders) {
-        if (languageManager == null) {
+        LanguageManager manager = getLanguageManager();
+        if (manager == null) {
             return key;
         }
-        return languageManager.getMessageForAudience(audience, key, placeholders);
+        return manager.getMessageForAudience(audience, key, placeholders);
     }
 
     /**
@@ -166,7 +263,8 @@ public class Messages {
      * @return component
      */
     public static Component get(String key, String... replacements) {
-        String raw = languageManager != null ? languageManager.getMessageEscaped(key, replacements) : key;
+        LanguageManager manager = getLanguageManager();
+        String raw = manager != null ? manager.getMessageEscaped(key, replacements) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -178,7 +276,8 @@ public class Messages {
      * @return component
      */
     public static Component get(String key, Map<String, String> placeholders) {
-        String raw = languageManager != null ? languageManager.getMessageEscaped(key, placeholders) : key;
+        LanguageManager manager = getLanguageManager();
+        String raw = manager != null ? manager.getMessageEscaped(key, placeholders) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -203,7 +302,8 @@ public class Messages {
      * @return component
      */
     public static Component get(Audience audience, String key, String... replacements) {
-        String raw = languageManager != null ? languageManager.getMessageForAudienceEscaped(audience, key, replacements) : key;
+        LanguageManager manager = getLanguageManager();
+        String raw = manager != null ? manager.getMessageForAudienceEscaped(audience, key, replacements) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -216,7 +316,8 @@ public class Messages {
      * @return component
      */
     public static Component get(Audience audience, String key, Map<String, String> placeholders) {
-        String raw = languageManager != null ? languageManager.getMessageForAudienceEscaped(audience, key, placeholders) : key;
+        LanguageManager manager = getLanguageManager();
+        String raw = manager != null ? manager.getMessageForAudienceEscaped(audience, key, placeholders) : key;
         return miniMessage.deserialize(raw);
     }
 
@@ -259,7 +360,8 @@ public class Messages {
      * @return true if present
      */
     public static boolean exists(String key) {
-        return languageManager != null && languageManager.hasMessage(key);
+        LanguageManager manager = getLanguageManager();
+        return manager != null && manager.hasMessage(key);
     }
 
     /**
@@ -268,6 +370,7 @@ public class Messages {
      * @return current language code or "en" if manager is missing
      */
     public static String getCurrentLanguage() {
-        return languageManager != null ? languageManager.getCurrentLanguage() : "en";
+        LanguageManager manager = getLanguageManager();
+        return manager != null ? manager.getCurrentLanguage() : "en";
     }
 }

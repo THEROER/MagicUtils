@@ -372,7 +372,7 @@ public class MagicGui {
     public void open() {
         MagicGuiListener.ensureRegistered(plugin);
         owner.openInventory(inventory);
-        MagicGuiListener.registerGui(owner, this);
+        MagicGuiListener.registerGui(plugin, owner, this);
     }
 
     /**
@@ -894,7 +894,7 @@ public class MagicGui {
     }
 
     void handleClose(InventoryCloseEvent event) {
-        MagicGuiListener.unregisterGui(owner);
+        MagicGuiListener.unregisterGui(plugin, owner);
         if (closeCallback != null) {
             try {
                 closeCallback.accept(event);

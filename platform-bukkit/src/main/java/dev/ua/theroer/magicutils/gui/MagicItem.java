@@ -11,6 +11,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -221,8 +222,36 @@ public final class MagicItem {
      * @return this builder
      */
     public MagicItem customModelData(int data) {
-        meta.setCustomModelData(data);
+        if (!applyCustomModelDataComponent(data)) {
+            applyLegacyCustomModelData(data);
+        }
         return this;
+    }
+
+    private boolean applyCustomModelDataComponent(int data) {
+        try {
+            Method getComponent = meta.getClass().getMethod("getCustomModelDataComponent");
+            Class<?> componentType = getComponent.getReturnType();
+            Object component = getComponent.invoke(meta);
+            if (component == null) {
+                return false;
+            }
+            Method setFloats = componentType.getMethod("setFloats", List.class);
+            setFloats.invoke(component, List.of((float) data));
+            Method setComponent = meta.getClass().getMethod("setCustomModelDataComponent", componentType);
+            setComponent.invoke(meta, component);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private void applyLegacyCustomModelData(int data) {
+        try {
+            Method setCustomModelData = meta.getClass().getMethod("setCustomModelData", Integer.class);
+            setCustomModelData.invoke(meta, data);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+        }
     }
 
     /**

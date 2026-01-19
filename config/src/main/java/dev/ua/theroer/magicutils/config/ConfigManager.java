@@ -7,6 +7,8 @@ import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.Tasks;
 import lombok.Getter;
 
 import java.io.File;
@@ -50,6 +52,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 public class ConfigManager {
     private final Platform platform;
     private final PlatformLogger logger;
+    private final TaskScheduler scheduler;
     private final ShutdownHookRegistrar shutdownRegistrar;
     private final Runnable shutdownHook;
     private final Map<ConfigKey, ConfigEntry<?>> configs = new ConcurrentHashMap<>();
@@ -86,6 +89,7 @@ public class ConfigManager {
     public ConfigManager(Platform platform) {
         this.platform = platform;
         this.logger = platform.logger();
+        this.scheduler = Tasks.scheduler(platform);
         ShutdownHookRegistrar registrar = platform instanceof ShutdownHookRegistrar hookRegistrar
                 ? hookRegistrar
                 : null;
@@ -1358,7 +1362,21 @@ public class ConfigManager {
      * @return future that completes after reload
      */
     public CompletableFuture<Void> reloadAsync(Object configInstance) {
-        return CompletableFuture.runAsync(() -> reload(configInstance));
+        return CompletableFuture.runAsync(() -> reload(configInstance), scheduler.io());
+    }
+
+    /**
+     * Reloads a configuration instance, auto-switching to async on sensitive threads.
+     *
+     * @param configInstance config instance
+     * @return future that completes after reload
+     */
+    public CompletableFuture<Void> reloadSmart(Object configInstance) {
+        if (isBlockingSensitiveThread()) {
+            return reloadAsync(configInstance);
+        }
+        reload(configInstance);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -1370,7 +1388,23 @@ public class ConfigManager {
      * @return future that completes after reload
      */
     public <T> CompletableFuture<Void> reloadAsync(Class<T> configClass, String... sections) {
-        return CompletableFuture.runAsync(() -> reload(configClass, sections));
+        return CompletableFuture.runAsync(() -> reload(configClass, sections), scheduler.io());
+    }
+
+    /**
+     * Reloads config instances for a class, auto-switching to async on sensitive threads.
+     *
+     * @param configClass config class
+     * @param sections optional sections
+     * @param <T> config type
+     * @return future that completes after reload
+     */
+    public <T> CompletableFuture<Void> reloadSmart(Class<T> configClass, String... sections) {
+        if (isBlockingSensitiveThread()) {
+            return reloadAsync(configClass, sections);
+        }
+        reload(configClass, sections);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -1379,7 +1413,20 @@ public class ConfigManager {
      * @return future that completes after reload
      */
     public CompletableFuture<Void> reloadAllAsync() {
-        return CompletableFuture.runAsync(this::reloadAll);
+        return CompletableFuture.runAsync(this::reloadAll, scheduler.io());
+    }
+
+    /**
+     * Reloads all registered configs, auto-switching to async on sensitive threads.
+     *
+     * @return future that completes after reload
+     */
+    public CompletableFuture<Void> reloadAllSmart() {
+        if (isBlockingSensitiveThread()) {
+            return reloadAllAsync();
+        }
+        reloadAll();
+        return CompletableFuture.completedFuture(null);
     }
 
     /**

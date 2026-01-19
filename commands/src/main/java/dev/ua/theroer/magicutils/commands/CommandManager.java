@@ -22,7 +22,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -164,7 +166,7 @@ public class CommandManager<S> {
         if (executeMethod != null) {
             List<CommandArgument> arguments = getArgumentsCached(executeMethod);
             baseDirectAction = CommandAction.forMethod(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), arguments, executeMethod);
+                    info.permissionDefault(), info.threading(), arguments, executeMethod);
         }
 
         List<CommandAction<S>> staticSubActions = new ArrayList<>();
@@ -211,7 +213,7 @@ public class CommandManager<S> {
                                                  @Nullable MagicCommand.DynamicExecute dynamicExecute) {
         if (dynamicExecute != null && (dynamicExecute.replaceExisting() || baseAction == null)) {
             return CommandAction.forExecute(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), dynamicExecute.arguments(),
+                    info.permissionDefault(), dynamicExecute.threading(), dynamicExecute.arguments(),
                     castExecutor(dynamicExecute.executor()));
         }
         if (baseAction != null) {
@@ -219,7 +221,7 @@ public class CommandManager<S> {
         }
         if (dynamicExecute != null) {
             return CommandAction.forExecute(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), dynamicExecute.arguments(),
+                    info.permissionDefault(), dynamicExecute.threading(), dynamicExecute.arguments(),
                     castExecutor(dynamicExecute.executor()));
         }
         return null;
@@ -297,6 +299,23 @@ public class CommandManager<S> {
     }
 
     /**
+     * Executes a command asynchronously on the provided executor.
+     *
+     * @param name command name
+     * @param sender sender handle
+     * @param args command arguments
+     * @param executor executor to run on (uses common pool when null)
+     * @return future with command result
+     */
+    public CompletableFuture<CommandResult> executeAsync(String name, S sender, List<String> args,
+                                                         Executor executor) {
+        if (executor == null) {
+            return CompletableFuture.supplyAsync(() -> execute(name, sender, args));
+        }
+        return CompletableFuture.supplyAsync(() -> execute(name, sender, args), executor);
+    }
+
+    /**
      * Executes a command, optionally bubbling unexpected failures.
      *
      * @param name command name
@@ -307,6 +326,43 @@ public class CommandManager<S> {
      */
     public CommandResult executeOrThrow(String name, S sender, List<String> args) throws CommandExecutionException {
         return executeInternal(name, sender, args, true);
+    }
+
+    /**
+     * Resolves the threading policy for the targeted command action.
+     *
+     * @param name command name
+     * @param args command arguments
+     * @return resolved threading policy
+     */
+    public CommandThreading resolveThreading(String name, List<String> args) {
+        if (name == null) {
+            return CommandThreading.MAIN;
+        }
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
+        if (command == null || info == null) {
+            return CommandThreading.MAIN;
+        }
+
+        List<CommandAction<S>> subCommands = getSubCommandActions(command);
+        CommandAction<S> directAction = getDirectAction(command, info);
+        if (directAction != null && (subCommands.isEmpty() || args == null || args.isEmpty())) {
+            return directAction.threading();
+        }
+        if (subCommands.isEmpty()) {
+            return directAction != null ? directAction.threading() : CommandThreading.MAIN;
+        }
+        if (args == null || args.isEmpty()) {
+            return directAction != null ? directAction.threading() : CommandThreading.MAIN;
+        }
+
+        SubCommandNode<S> root = getSubCommandTree(command, info);
+        SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
+        if (traversal.lastActionNode() != null && traversal.lastActionNode().action() != null) {
+            return traversal.lastActionNode().action().threading();
+        }
+        return directAction != null ? directAction.threading() : CommandThreading.MAIN;
     }
 
     /**
@@ -2360,6 +2416,7 @@ public class CommandManager<S> {
         private final List<String> aliases;
         private final String permission;
         private final MagicPermissionDefault permissionDefault;
+        private final CommandThreading threading;
         private final List<CommandArgument> arguments;
         private final Method method;
         private final CommandExecutor<S> executor;
@@ -2370,6 +2427,7 @@ public class CommandManager<S> {
                               List<String> aliases,
                               String permission,
                               MagicPermissionDefault permissionDefault,
+                              CommandThreading threading,
                               List<CommandArgument> arguments,
                               Method method,
                               CommandExecutor<S> executor) {
@@ -2379,6 +2437,7 @@ public class CommandManager<S> {
             this.aliases = aliases != null ? new ArrayList<>(aliases) : new ArrayList<>();
             this.permission = permission != null ? permission : "";
             this.permissionDefault = permissionDefault != null ? permissionDefault : MagicPermissionDefault.OP;
+            this.threading = threading != null ? threading : CommandThreading.MAIN;
             this.arguments = arguments != null ? new ArrayList<>(arguments) : new ArrayList<>();
             this.method = method;
             this.executor = executor;
@@ -2398,6 +2457,7 @@ public class CommandManager<S> {
                     Arrays.asList(subInfo.annotation.aliases()),
                     subInfo.annotation.permission(),
                     subInfo.annotation.permissionDefault(),
+                    subInfo.annotation.threading(),
                     arguments,
                     subInfo.method,
                     null
@@ -2412,6 +2472,7 @@ public class CommandManager<S> {
                     spec.aliases(),
                     spec.permission(),
                     spec.permissionDefault(),
+                    spec.threading(),
                     spec.arguments(),
                     null,
                     executor
@@ -2422,6 +2483,7 @@ public class CommandManager<S> {
                                               String description,
                                               String permission,
                                               MagicPermissionDefault permissionDefault,
+                                              CommandThreading threading,
                                               List<CommandArgument> arguments,
                                               Method method) {
             return new CommandAction<>(
@@ -2431,6 +2493,7 @@ public class CommandManager<S> {
                     List.of(),
                     permission,
                     permissionDefault,
+                    threading,
                     arguments,
                     method,
                     null
@@ -2441,6 +2504,7 @@ public class CommandManager<S> {
                                                String description,
                                                String permission,
                                                MagicPermissionDefault permissionDefault,
+                                               CommandThreading threading,
                                                List<CommandArgument> arguments,
                                                CommandExecutor<S> executor) {
             return new CommandAction<>(
@@ -2450,6 +2514,7 @@ public class CommandManager<S> {
                     List.of(),
                     permission,
                     permissionDefault,
+                    threading,
                     arguments,
                     null,
                     executor
@@ -2501,6 +2566,10 @@ public class CommandManager<S> {
 
         MagicPermissionDefault permissionDefault() {
             return permissionDefault;
+        }
+
+        CommandThreading threading() {
+            return threading;
         }
 
         List<CommandArgument> arguments() {

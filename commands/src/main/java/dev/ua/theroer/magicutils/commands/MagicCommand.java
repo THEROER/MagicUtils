@@ -123,11 +123,25 @@ public abstract class MagicCommand {
      */
     public MagicCommand setExecute(CommandExecutor<?> executor, List<CommandArgument> arguments,
                                    boolean replaceExisting) {
+        return setExecute(executor, arguments, CommandThreading.MAIN, replaceExisting);
+    }
+
+    /**
+     * Define a dynamic execute handler (builder API).
+     *
+     * @param executor command executor
+     * @param arguments argument definitions
+     * @param threading threading policy
+     * @param replaceExisting whether to replace annotated execute method
+     * @return this
+     */
+    public MagicCommand setExecute(CommandExecutor<?> executor, List<CommandArgument> arguments,
+                                   CommandThreading threading, boolean replaceExisting) {
         if (executor == null) {
             return this;
         }
         List<CommandArgument> args = arguments != null ? new ArrayList<>(arguments) : List.of();
-        this.dynamicExecute = new DynamicExecute(executor, args, replaceExisting);
+        this.dynamicExecute = new DynamicExecute(executor, args, threading, replaceExisting);
         return this;
     }
 
@@ -143,6 +157,19 @@ public abstract class MagicCommand {
     }
 
     /**
+     * Define a dynamic execute handler (builder API) with explicit threading policy.
+     *
+     * @param executor command executor
+     * @param arguments argument definitions
+     * @param threading threading policy
+     * @return this
+     */
+    public MagicCommand setExecute(CommandExecutor<?> executor, List<CommandArgument> arguments,
+                                   CommandThreading threading) {
+        return setExecute(executor, arguments, threading, false);
+    }
+
+    /**
      * Define a dynamic execute handler (builder API).
      *
      * @param executor command executor
@@ -152,6 +179,20 @@ public abstract class MagicCommand {
     public MagicCommand setExecute(CommandExecutor<?> executor, CommandArgument... arguments) {
         List<CommandArgument> args = arguments != null ? Arrays.asList(arguments) : List.of();
         return setExecute(executor, args, false);
+    }
+
+    /**
+     * Define a dynamic execute handler (builder API) with explicit threading policy.
+     *
+     * @param executor command executor
+     * @param threading threading policy
+     * @param arguments argument definitions
+     * @return this
+     */
+    public MagicCommand setExecute(CommandExecutor<?> executor, CommandThreading threading,
+                                   CommandArgument... arguments) {
+        List<CommandArgument> args = arguments != null ? Arrays.asList(arguments) : List.of();
+        return setExecute(executor, args, threading, false);
     }
 
     /**
@@ -201,6 +242,11 @@ public abstract class MagicCommand {
             @Override
             public MagicPermissionDefault permissionDefault() {
                 return base.permissionDefault();
+            }
+
+            @Override
+            public CommandThreading threading() {
+                return base.threading();
             }
         };
     }
@@ -469,11 +515,14 @@ public abstract class MagicCommand {
     static final class DynamicExecute {
         private final CommandExecutor<?> executor;
         private final List<CommandArgument> arguments;
+        private final CommandThreading threading;
         private final boolean replaceExisting;
 
-        DynamicExecute(CommandExecutor<?> executor, List<CommandArgument> arguments, boolean replaceExisting) {
+        DynamicExecute(CommandExecutor<?> executor, List<CommandArgument> arguments,
+                       CommandThreading threading, boolean replaceExisting) {
             this.executor = executor;
             this.arguments = arguments != null ? new ArrayList<>(arguments) : List.of();
+            this.threading = threading != null ? threading : CommandThreading.MAIN;
             this.replaceExisting = replaceExisting;
         }
 
@@ -483,6 +532,10 @@ public abstract class MagicCommand {
 
         List<CommandArgument> arguments() {
             return new ArrayList<>(arguments);
+        }
+
+        CommandThreading threading() {
+            return threading;
         }
 
         boolean replaceExisting() {

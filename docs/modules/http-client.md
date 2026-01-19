@@ -36,6 +36,17 @@ MagicHttpClient client = MagicHttpClient.builder(platform, configManager)
 HttpResponse<String> response = client.get("status");
 ```
 
+## Smart methods
+
+Smart methods switch to async automatically on blocking-sensitive threads and
+return a `CompletableFuture`:
+
+```java
+client.getSmart("status").thenAccept(response -> {
+    // ...
+});
+```
+
 ## JSON to POJO
 
 ```java
@@ -68,5 +79,5 @@ client.postMultipart("upload", body);
 - Retries apply to the convenience methods (`get`, `post`, `postJson`, etc.).
 - For raw `send(...)`, retries are not automatic.
 - JSON mapping uses Jackson; invalid JSON throws `IllegalStateException`.
-- Synchronous methods throw `IllegalStateException` when called from the main
-  thread (use the `...Async()` variants in handlers).
+- Synchronous methods throw `IllegalStateException` on blocking-sensitive
+  threads. Use `...Async()` or `...Smart()` in handlers.

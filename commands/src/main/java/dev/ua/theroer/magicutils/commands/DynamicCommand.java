@@ -18,7 +18,7 @@ public final class DynamicCommand extends MagicCommand {
         this.spec = spec;
         withInfo(spec.toCommandInfo());
         if (spec.executor() != null) {
-            setExecute(spec.executor(), spec.arguments(), true);
+            setExecute(spec.executor(), spec.arguments(), spec.threading(), true);
         }
         for (SubCommandSpec<?> sub : spec.subCommands()) {
             addSubCommand(sub, sub.replaceExisting());

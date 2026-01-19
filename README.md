@@ -56,6 +56,8 @@ If you use the shared bundle, place `magicutils-fabric-bundle` in the server
 ```kotlin
 dependencies {
     implementation("dev.ua.theroer:magicutils-neoforge:<version>")
+    // Optional command integration
+    implementation("dev.ua.theroer:magicutils-commands-neoforge:<version>")
 }
 ```
 
@@ -65,10 +67,11 @@ dependencies {
 - HTTP client: `magicutils-http-client`
 - Config: `magicutils-config`, `magicutils-config-yaml`, `magicutils-config-toml`
 - Lang: `magicutils-lang`
-- Commands: `magicutils-commands`
+- Commands: `magicutils-commands`, `magicutils-commands-brigadier`
 - Logger: `magicutils-logger`
 - Placeholders: `magicutils-placeholders`
 - Platform adapters: `magicutils-bukkit`, `magicutils-fabric`, `magicutils-neoforge`
+- NeoForge commands: `magicutils-commands-neoforge`
 - Velocity adapter: `magicutils-velocity`
 - Fabric bundle: `magicutils-fabric-bundle`
 

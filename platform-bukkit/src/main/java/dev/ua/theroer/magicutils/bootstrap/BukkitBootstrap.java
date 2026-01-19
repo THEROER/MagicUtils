@@ -41,6 +41,7 @@ public final class BukkitBootstrap {
         private boolean initLanguage = true;
         private boolean bindLoggerLanguage = true;
         private boolean setMessagesManager = true;
+        private boolean registerMessages = true;
         private boolean addMagicUtilsMessages = true;
         private Consumer<LanguageManager> translations;
         private boolean enableCommands;
@@ -131,6 +132,17 @@ public final class BukkitBootstrap {
         }
 
         /**
+         * Toggles registering Messages scope for the plugin.
+         *
+         * @param registerMessages true to call Messages.register(pluginName)
+         * @return builder
+         */
+        public Builder registerMessages(boolean registerMessages) {
+            this.registerMessages = registerMessages;
+            return this;
+        }
+
+        /**
          * Toggles persisting MagicUtils default messages.
          *
          * @param addMagicUtilsMessages true to save MagicUtils defaults
@@ -212,6 +224,10 @@ public final class BukkitBootstrap {
 
             if (addMagicUtilsMessages) {
                 resolvedLanguageManager.addMagicUtilsMessages();
+            }
+
+            if (registerMessages) {
+                Messages.register(plugin.getName(), resolvedLanguageManager);
             }
 
             if (setMessagesManager) {

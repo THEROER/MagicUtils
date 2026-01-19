@@ -1,0 +1,10 @@
+plugins {
+    id 'magicutils.java-library'
+    id 'magicutils.publishing'
+}
+
+dependencies {
+    api project(':commands')
+    compileOnly libs.brigadier
+    compileOnly libs.jetbrains.annotations
+}

@@ -13,6 +13,16 @@ public final class DonateCommand extends MagicCommand {
 }
 ```
 
+## Threading (async)
+
+```java
+@CommandInfo(name = "donate", threading = CommandThreading.ASYNC)
+public final class DonateCommand extends MagicCommand {
+    @SubCommand(name = "give", threading = CommandThreading.ASYNC)
+    public CommandResult give(@Sender MagicSender sender, Player target) { ... }
+}
+```
+
 ## Subcommands and nested paths
 
 ```java
@@ -83,9 +93,11 @@ Allowed senders:
 CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
         .description("Main command")
         .aliases("d")
+        .threading(CommandThreading.ASYNC)
         .execute(ctx -> CommandResult.success("ok"))
         .subCommand(SubCommandSpec.<CommandSender>builder("give")
                 .argument(CommandArgument.builder("player", Player.class).build())
+                .threading(CommandThreading.ASYNC)
                 .execute(ctx -> CommandResult.success("ok"))
                 .build())
         .build();

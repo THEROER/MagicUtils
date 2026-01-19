@@ -27,6 +27,12 @@ repositories {
 The Bukkit/Paper adapter bundles the core modules (config, logger, commands,
 lang, placeholders). Add optional format helpers only when you need them.
 
+You can use it in two ways:
+
+1) Embed MagicUtils into your plugin (default).
+2) Use a shared MagicUtils plugin (`magicutils-bukkit-bundle`) so multiple
+   plugins reuse the same runtime.
+
 Kotlin DSL:
 
 ```kotlin
@@ -48,6 +54,24 @@ dependencies {
     implementation 'dev.ua.theroer:magicutils-config-toml:{{ magicutils_version }}'
 }
 ```
+
+### Shared Bukkit bundle (optional)
+
+If you want a single shared MagicUtils install for multiple plugins, use the
+bundle plugin and do not embed MagicUtils inside your plugins.
+
+Dependencies (compile-only):
+
+```kotlin
+dependencies {
+    compileOnly("dev.ua.theroer:magicutils-bukkit-bundle:{{ magicutils_version }}")
+}
+```
+
+Install the bundle on the server:
+
+- Drop `magicutils-bukkit-bundle-{{ magicutils_version }}.jar` into `plugins/`.
+- Add `depend: [MagicUtils]` (or `softdepend`) to your `plugin.yml`.
 
 ## Fabric
 
@@ -125,14 +149,16 @@ dependencies {
 
 ## NeoForge
 
-NeoForge currently exposes platform, config, and logger integrations. Commands
-and placeholders are not wired on NeoForge yet.
+NeoForge exposes platform, config, logger, and command integrations. There is
+no NeoForge placeholder bridge yet.
 
 Kotlin DSL:
 
 ```kotlin
 dependencies {
     implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
+    // Optional command integration
+    implementation("dev.ua.theroer:magicutils-commands-neoforge:{{ magicutils_version }}")
 }
 ```
 
@@ -141,6 +167,8 @@ Groovy DSL:
 ```groovy
 dependencies {
     implementation 'dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}'
+    // Optional command integration
+    implementation 'dev.ua.theroer:magicutils-commands-neoforge:{{ magicutils_version }}'
 }
 ```
 

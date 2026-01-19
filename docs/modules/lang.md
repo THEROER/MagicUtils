@@ -11,21 +11,41 @@ languageManager.init("en");
 languageManager.setFallbackLanguage("en");
 languageManager.addMagicUtilsMessages();
 
-Messages.setLanguageManager(languageManager);
+Messages.register(plugin.getName(), languageManager);
 logger.setLanguageManager(languageManager);
 ```
 
 Language files are stored under `config/lang/<lang>.yml`. The lang module uses
 YAML, so include `magicutils-config-yaml` if you use `LanguageManager`.
 
+Use `Messages.setLanguageManager(...)` only if you need the legacy global
+default. `Messages.register(...)` keeps each plugin isolated.
+
+## Threading
+
+Language loading touches disk. Use the async or smart helpers when running on
+blocking-sensitive threads:
+
+```java
+languageManager.loadLanguageAsync("en");
+languageManager.setLanguageAsync("en");
+languageManager.reloadAsync();
+
+languageManager.loadLanguageSmart("en");
+languageManager.setLanguageSmart("en");
+languageManager.reloadSmart();
+```
+
 ## Resolving messages
 
 ```java
-Component title = Messages.get("myplugin.welcome");
-Messages.send(playerAudience, "myplugin.goodbye");
+MessagesView messages = Messages.view(plugin.getName());
 
-String raw = Messages.getRaw("myplugin.balance", "amount", "42");
-Component rich = Messages.get("myplugin.balance", Map.of("amount", "42"));
+Component title = messages.get("myplugin.welcome");
+messages.send(playerAudience, "myplugin.goodbye");
+
+String raw = messages.getRaw("myplugin.balance", "amount", "42");
+Component rich = messages.get("myplugin.balance", Map.of("amount", "42"));
 ```
 
 `Messages` uses MiniMessage for rich output and supports `{placeholder}` style

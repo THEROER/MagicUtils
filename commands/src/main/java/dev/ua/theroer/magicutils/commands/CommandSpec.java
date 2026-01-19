@@ -19,6 +19,7 @@ public final class CommandSpec<S> {
     private final List<String> aliases;
     private final String permission;
     private final MagicPermissionDefault permissionDefault;
+    private final CommandThreading threading;
     private final List<CommandArgument> arguments;
     private final CommandExecutor<S> executor;
     private final List<SubCommandSpec<S>> subCommands;
@@ -29,6 +30,7 @@ public final class CommandSpec<S> {
         this.aliases = List.copyOf(builder.aliases);
         this.permission = builder.permission;
         this.permissionDefault = builder.permissionDefault;
+        this.threading = builder.threading;
         this.arguments = List.copyOf(builder.arguments);
         this.executor = builder.executor;
         this.subCommands = List.copyOf(builder.subCommands);
@@ -77,6 +79,15 @@ public final class CommandSpec<S> {
      */
     public MagicPermissionDefault permissionDefault() {
         return permissionDefault;
+    }
+
+    /**
+     * Returns the threading policy for execution.
+     *
+     * @return threading policy
+     */
+    public CommandThreading threading() {
+        return threading;
     }
 
     /**
@@ -148,6 +159,11 @@ public final class CommandSpec<S> {
             public MagicPermissionDefault permissionDefault() {
                 return permissionDefault;
             }
+
+            @Override
+            public CommandThreading threading() {
+                return threading;
+            }
         };
     }
 
@@ -162,6 +178,7 @@ public final class CommandSpec<S> {
         private final List<String> aliases = new ArrayList<>();
         private String permission = "";
         private MagicPermissionDefault permissionDefault = MagicPermissionDefault.OP;
+        private CommandThreading threading = CommandThreading.MAIN;
         private final List<CommandArgument> arguments = new ArrayList<>();
         private CommandExecutor<S> executor;
         private final List<SubCommandSpec<S>> subCommands = new ArrayList<>();
@@ -221,6 +238,17 @@ public final class CommandSpec<S> {
          */
         public Builder<S> permissionDefault(MagicPermissionDefault permissionDefault) {
             this.permissionDefault = permissionDefault != null ? permissionDefault : MagicPermissionDefault.OP;
+            return this;
+        }
+
+        /**
+         * Sets the threading policy.
+         *
+         * @param threading threading policy
+         * @return this builder
+         */
+        public Builder<S> threading(CommandThreading threading) {
+            this.threading = threading != null ? threading : CommandThreading.MAIN;
             return this;
         }
 

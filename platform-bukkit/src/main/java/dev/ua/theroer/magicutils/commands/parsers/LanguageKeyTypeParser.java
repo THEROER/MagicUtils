@@ -18,21 +18,34 @@ import org.bukkit.configuration.ConfigurationSection;
  * Type parser for language key suggestions.
  */
 public class LanguageKeyTypeParser implements TypeParser<CommandSender, String> {
+    private static volatile JavaPlugin fallbackPlugin;
+
     /**
      * Default constructor for LanguageKeyTypeParser.
      */
     public LanguageKeyTypeParser() {
+        this(null);
     }
 
-    private static JavaPlugin plugin;
+    /**
+     * Constructor for LanguageKeyTypeParser.
+     *
+     * @param plugin plugin instance to bind
+     */
+    public LanguageKeyTypeParser(@Nullable JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    private final JavaPlugin plugin;
 
     /**
-     * Sets the plugin for this parser.
-     * 
+     * Sets a fallback plugin for parsers created without a plugin.
+     *
      * @param p the plugin
      */
+    @Deprecated
     public static void setPlugin(JavaPlugin p) {
-        plugin = p;
+        fallbackPlugin = p;
     }
 
     @Override
@@ -68,8 +81,9 @@ public class LanguageKeyTypeParser implements TypeParser<CommandSender, String> 
         Set<String> allKeys = new HashSet<>();
 
         try {
-            if (plugin != null) {
-                File langDir = new File(plugin.getDataFolder(), "lang");
+            JavaPlugin resolved = resolvePlugin();
+            if (resolved != null) {
+                File langDir = new File(resolved.getDataFolder(), "lang");
                 if (langDir.exists()) {
                     File[] langFiles;
                     if (languageCode != null) {
@@ -127,5 +141,9 @@ public class LanguageKeyTypeParser implements TypeParser<CommandSender, String> 
                 allKeys.add(fullKey);
             }
         }
+    }
+
+    private JavaPlugin resolvePlugin() {
+        return plugin != null ? plugin : fallbackPlugin;
     }
 }

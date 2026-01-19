@@ -15,17 +15,17 @@ Download link:
 ## Register the built-in help command
 
 ```java
-CommandRegistry.register(new HelpCommand(logger));
+CommandRegistry.register(plugin, new HelpCommand(logger));
 ```
 
 ## Add help as a subcommand
 
 ```java
-CommandRegistry.register(new MyCommand()
+CommandRegistry.register(plugin, new MyCommand()
         .addSubCommand(HelpCommandSupport.createHelpSubCommand(
                 "help",
                 logger.getCore(),
-                CommandRegistry::getCommandManager
+                () -> CommandRegistry.getCommandManager(plugin)
         )));
 ```
 

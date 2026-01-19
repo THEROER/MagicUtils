@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.annotations;
 
 import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
+import dev.ua.theroer.magicutils.commands.CommandThreading;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -49,4 +50,11 @@ public @interface CommandInfo {
      * @return default permission
      */
     MagicPermissionDefault permissionDefault() default MagicPermissionDefault.OP;
+
+    /**
+     * Threading policy for command execution.
+     *
+     * @return threading policy
+     */
+    CommandThreading threading() default CommandThreading.MAIN;
 }

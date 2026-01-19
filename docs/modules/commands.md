@@ -12,23 +12,40 @@ See [Commands Cheat Sheet](commands-cheatsheet.md) for a quick reference and
 
 ```java
 CommandRegistry.initialize(plugin, "myplugin", logger);
-CommandRegistry.register(new DonateCommand());
+CommandRegistry.register(plugin, new DonateCommand());
 ```
 
 Register multiple commands at once:
 
 ```java
-CommandRegistry.registerAll(new DonateCommand(), new AdminCommand());
+CommandRegistry.registerAll(plugin, new DonateCommand(), new AdminCommand());
 ```
 
 ### Fabric
 
 ```java
 CommandRegistry.initialize("mymod", "mymod", logger);
-CommandRegistry.register(new DonateCommand());
+
+CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+    CommandRegistry.register("mymod", dispatcher, new DonateCommand());
+});
+```
+
+### NeoForge
+
+```java
+CommandRegistry.initialize("mymod", "mymod", loggerCore);
+
+@SubscribeEvent
+public void onRegisterCommands(RegisterCommandsEvent event) {
+    CommandRegistry.register("mymod", event.getDispatcher(), new DonateCommand());
+}
 ```
 
 The second argument is the permission prefix used when building nodes.
+
+Use the overloads that accept a plugin or mod name to avoid cross-plugin
+collisions. The no-arg register methods use the default registry.
 
 ## Annotation-based commands
 
@@ -148,6 +165,7 @@ chosen defaults and also creates wildcard nodes:
 
 On Fabric, it uses `fabric-permissions-api` when available, otherwise falls
 back to op-level checks (configurable in `CommandRegistry.initialize`).
+On NeoForge, it falls back to op-level checks (configurable in `CommandRegistry.initialize`).
 
 Example with conditional permission:
 
@@ -179,6 +197,43 @@ automatically.
 message is sent back to the sender. Use `success()` to avoid output, or pass a
 message for automatic reply.
 
+## Threading
+
+Commands run on the main thread by default. Use `CommandThreading.ASYNC` for
+heavy IO/CPU work:
+
+```java
+@CommandInfo(name = "donate", threading = CommandThreading.ASYNC)
+public final class DonateCommand extends MagicCommand {
+    public CommandResult execute(@Sender MagicSender sender) {
+        return CommandResult.success("done");
+    }
+
+    @SubCommand(name = "give", threading = CommandThreading.ASYNC)
+    public CommandResult give(@Sender MagicSender sender, Player target) {
+        return CommandResult.success("ok");
+    }
+}
+```
+
+Builder equivalents:
+
+```java
+CommandSpec.<CommandSender>builder("donate")
+        .threading(CommandThreading.ASYNC)
+        .execute(ctx -> CommandResult.success("done"))
+        .build();
+
+SubCommandSpec.<CommandSender>builder("give")
+        .threading(CommandThreading.ASYNC)
+        .execute(ctx -> CommandResult.success("ok"))
+        .build();
+```
+
+Only mark commands as async when your code is thread-safe. If you must touch
+platform APIs, switch back to the main thread via `Platform.runOnMain(...)` or
+`Tasks.runOnMain(...)`.
+
 ## Help output
 
 The help renderer respects permissions and hides commands or arguments the
@@ -192,13 +247,13 @@ sender cannot access. You can embed help into your command tree via
 Register the built-in help command to expose `/mhelp` (alias `/help`):
 
 ```java
-CommandRegistry.register(new HelpCommand(logger));
+CommandRegistry.register(plugin, new HelpCommand(logger));
 ```
 
 You can rename or add aliases using runtime overrides:
 
 ```java
-CommandRegistry.register(new HelpCommand(logger)
+CommandRegistry.register(plugin, new HelpCommand(logger)
         .withName("donatehelp")
         .addAlias("dhelp"));
 ```
@@ -208,11 +263,11 @@ CommandRegistry.register(new HelpCommand(logger)
 Attach help as a subcommand to an existing command:
 
 ```java
-CommandRegistry.register(new DonateCommand()
+CommandRegistry.register(plugin, new DonateCommand()
         .addSubCommand(HelpCommandSupport.createHelpSubCommand(
                 "help",
                 logger.getCore(),
-                CommandRegistry::getCommandManager
+                () -> CommandRegistry.getCommandManager(plugin)
         )));
 ```
 
@@ -247,7 +302,7 @@ CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
                 .build())
         .build();
 
-CommandRegistry.register(spec);
+CommandRegistry.register(plugin, spec);
 ```
 
 You can also mix annotations with dynamic overrides:
@@ -271,7 +326,7 @@ SubCommandSpec<CommandSender> npcAdd = SubCommandSpec.<CommandSender>builder("ad
 Custom parsers and suggestions are registered per registry:
 
 ```java
-CommandRegistry.getCommandManager()
+CommandRegistry.getCommandManager(plugin)
         .getTypeParserRegistry()
         .register(new MyTypeParser());
 ```

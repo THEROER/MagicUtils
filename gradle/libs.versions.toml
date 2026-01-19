@@ -18,6 +18,7 @@ slf4j = "2.0.13"
 velocityApi = "3.1.1"
 junitJupiter = "5.9.2"
 mockito = "5.1.1"
+brigadier = "1.0.18"
 
 
 [libraries]
@@ -48,6 +49,8 @@ kyori-option = { module = "net.kyori:option", version.ref = "kyoriOption" }
 clip-placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocityApi" }
+brigadier = { module = "com.mojang:brigadier", version.ref = "brigadier" }
+neoforge = { module = "net.neoforged:neoforge" }
 
 # Testing
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junitJupiter" }
