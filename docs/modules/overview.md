@@ -8,7 +8,7 @@ NeoForge.
 
 | Module | Artifact | Notes |
 | --- | --- | --- |
-| Platform API | `magicutils-api` | `Platform`, `Audience`, and shared interfaces. |
+| Platform API | `magicutils-api` | `Platform`, `Audience`, `TaskScheduler`, and shared interfaces. |
 | Core | `magicutils-core` | Config + lang + commands + logger + placeholders. |
 | HTTP client | `magicutils-http-client` | HttpClient wrapper with JSON + retries. |
 | Config | `magicutils-config` | JSON/JSONC config engine, migrations, comments. |
@@ -25,16 +25,24 @@ NeoForge.
 | Platform | Artifact | Notes |
 | --- | --- | --- |
 | Bukkit/Paper | `magicutils-bukkit` | Includes core modules + Bukkit integrations. |
+| Bukkit bundle | `magicutils-bukkit-bundle` | Shared Bukkit/Paper plugin bundle. |
 | Fabric | `magicutils-fabric` | Platform API adapter for Fabric. |
 | Velocity | `magicutils-velocity` | Minimal platform adapter for Velocity. |
 | NeoForge | `magicutils-neoforge` | Platform API adapter for NeoForge. |
+
+## Brigadier integrations
+
+| Module | Artifact | Notes |
+| --- | --- | --- |
+| Brigadier base | `magicutils-commands-brigadier` | Shared Brigadier command registry. |
+| Commands (NeoForge) | `magicutils-commands-neoforge` | Brigadier integration for NeoForge. |
 
 ## Fabric integrations
 
 | Module | Artifact | Notes |
 | --- | --- | --- |
 | Logger (Fabric) | `magicutils-logger-fabric` | Fabric logger adapter. |
-| Commands (Fabric) | `magicutils-commands-fabric` | Brigadier integration. |
+| Commands (Fabric) | `magicutils-commands-fabric` | Brigadier integration for Fabric. |
 | Placeholders (Fabric) | `magicutils-placeholders-fabric` | Fabric placeholder bridge. |
 | Fabric bundle | `magicutils-fabric-bundle` | Jar-in-jar distribution for servers. |
 

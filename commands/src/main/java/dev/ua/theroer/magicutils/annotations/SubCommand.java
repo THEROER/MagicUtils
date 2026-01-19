@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.annotations;
 
+import dev.ua.theroer.magicutils.commands.CommandThreading;
 import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
 
 import java.lang.annotation.ElementType;
@@ -56,4 +57,11 @@ public @interface SubCommand {
      * @return default permission
      */
     MagicPermissionDefault permissionDefault() default MagicPermissionDefault.OP;
+
+    /**
+     * Threading policy for subcommand execution.
+     *
+     * @return threading policy
+     */
+    CommandThreading threading() default CommandThreading.MAIN;
 }

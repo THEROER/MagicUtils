@@ -22,6 +22,7 @@ logging, placeholders, and platform adapters.
 | Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders`, `magicutils-http-client` | Mix and match. |
 | Format helpers | `magicutils-config-yaml`, `magicutils-config-toml` | Enable extra config formats. |
 | Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge` | Wire MagicUtils to a runtime. |
+| Brigadier integrations | `magicutils-commands-brigadier`, `magicutils-commands-fabric`, `magicutils-commands-neoforge` | Brigadier-based command wiring for Fabric and NeoForge. |
 | Fabric extras | `magicutils-commands-fabric`, `magicutils-logger-fabric`, `magicutils-placeholders-fabric`, `magicutils-fabric-bundle` | Brigadier integration and jar-in-jar bundle. |
 
 ## Quick start

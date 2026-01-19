@@ -1,16 +1,18 @@
 package dev.ua.theroer.magicutils.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
-import net.kyori.adventure.text.Component;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +26,8 @@ public class BukkitCommandWrapper extends Command {
     private final PrefixedLogger commandLogger;
     private final dev.ua.theroer.magicutils.Logger messageLogger;
     private final CommandManager<CommandSender> commandManager;
+    private final JavaPlugin plugin;
+    private final TaskScheduler scheduler;
 
     @Getter
     @Setter
@@ -40,11 +44,15 @@ public class BukkitCommandWrapper extends Command {
     private BukkitCommandWrapper(String name,
                                  CommandManager<CommandSender> commandManager,
                                  PrefixedLogger commandLogger,
-                                 dev.ua.theroer.magicutils.Logger messageLogger) {
+                                 dev.ua.theroer.magicutils.Logger messageLogger,
+                                 JavaPlugin plugin,
+                                 TaskScheduler scheduler) {
         super(name);
         this.commandManager = commandManager;
         this.commandLogger = commandLogger;
         this.messageLogger = messageLogger;
+        this.plugin = plugin;
+        this.scheduler = scheduler;
     }
 
     /**
@@ -55,14 +63,19 @@ public class BukkitCommandWrapper extends Command {
      * @param aliases        optional aliases
      * @param commandLogger  command logger
      * @param messageLogger  message logger
+     * @param plugin         owning plugin
+     * @param scheduler      task scheduler (nullable)
      * @return fully initialised wrapper
      */
     public static BukkitCommandWrapper create(String name,
                                               CommandManager<CommandSender> commandManager,
                                               List<String> aliases,
                                               PrefixedLogger commandLogger,
-                                              dev.ua.theroer.magicutils.Logger messageLogger) {
-        BukkitCommandWrapper wrapper = new BukkitCommandWrapper(name, commandManager, commandLogger, messageLogger);
+                                              dev.ua.theroer.magicutils.Logger messageLogger,
+                                              JavaPlugin plugin,
+                                              TaskScheduler scheduler) {
+        BukkitCommandWrapper wrapper = new BukkitCommandWrapper(name, commandManager, commandLogger, messageLogger,
+                plugin, scheduler);
         if (aliases != null && !aliases.isEmpty()) {
             wrapper.setAliases(aliases);
         }
@@ -83,24 +96,15 @@ public class BukkitCommandWrapper extends Command {
             commandLogger.debug("Executing command: " + commandLabel + " with args: "
                     + Arrays.toString(args) + " by " + sender.getName());
 
-            CommandResult result = commandManager.execute(commandLabel, sender, Arrays.asList(args));
-
-            if (result.isSendMessage() && result.getMessage() != null && !result.getMessage().isEmpty()) {
-                if (result.isSuccess()) {
-                    if (sender instanceof Player) {
-                        messageLogger.success().target(LogTarget.CHAT).to((Player) sender).send(result.getMessage());
-                    } else {
-                        messageLogger.success(result.getMessage());
-                    }
-                } else {
-                    if (sender instanceof Player) {
-                        messageLogger.error().target(LogTarget.CHAT).to((Player) sender).send(result.getMessage());
-                    } else {
-                        messageLogger.error(result.getMessage());
-                    }
-                }
+            List<String> argList = Arrays.asList(args);
+            CommandThreading threading = commandManager.resolveThreading(commandLabel, argList);
+            if (threading == CommandThreading.ASYNC) {
+                dispatchAsync(sender, commandLabel, argList);
+                return true;
             }
 
+            CommandResult result = commandManager.execute(commandLabel, sender, argList);
+            sendResult(sender, result);
             return result.isSuccess();
         } catch (Exception e) {
             messageLogger.error("Error executing command " + commandLabel + ": " + e.getMessage());
@@ -111,6 +115,59 @@ public class BukkitCommandWrapper extends Command {
             }
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private void dispatchAsync(CommandSender sender, String commandLabel, List<String> args) {
+        if (scheduler == null) {
+            CommandResult result = commandManager.execute(commandLabel, sender, args);
+            sendResult(sender, result);
+            return;
+        }
+        scheduler.cpu().execute(() -> {
+            CommandResult result;
+            try {
+                result = commandManager.execute(commandLabel, sender, args);
+            } catch (Exception e) {
+                messageLogger.error("Error executing command " + commandLabel + ": " + e.getMessage());
+                result = CommandResult.failure(InternalMessages.CMD_INTERNAL_ERROR.get());
+            }
+            CommandResult finalResult = result;
+            runOnMain(() -> sendResult(sender, finalResult));
+        });
+    }
+
+    private void runOnMain(Runnable task) {
+        if (task == null) {
+            return;
+        }
+        if (plugin == null) {
+            task.run();
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, task);
+    }
+
+    private void sendResult(CommandSender sender, CommandResult result) {
+        if (result == null || !result.isSendMessage()) {
+            return;
+        }
+        String message = result.getMessage();
+        if (message == null || message.isEmpty()) {
+            return;
+        }
+        if (result.isSuccess()) {
+            if (sender instanceof Player) {
+                messageLogger.success().target(LogTarget.CHAT).to((Player) sender).send(message);
+            } else {
+                messageLogger.success(message);
+            }
+        } else {
+            if (sender instanceof Player) {
+                messageLogger.error().target(LogTarget.CHAT).to((Player) sender).send(message);
+            } else {
+                messageLogger.error(message);
+            }
         }
     }
 
@@ -158,16 +215,4 @@ public class BukkitCommandWrapper extends Command {
         super.setPermission(permission);
     }
 
-    /**
-     * Sets the permission message for this command.
-     * Note: Permission messages do not work for player-executed commands since
-     * 1.13.
-     * 
-     * @param permissionMessage the permission message
-     */
-    @Override
-    public BukkitCommandWrapper setPermissionMessage(String permissionMessage) {
-        super.permissionMessage(Component.text(permissionMessage));
-        return this;
-    }
 }

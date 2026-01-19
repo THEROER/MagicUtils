@@ -59,6 +59,21 @@ manager.onChange(ExampleConfig.class, (config, sections) -> {
 
 `@ConfigReloadable` restricts which sections may reload at runtime.
 
+### Threading helpers
+
+Reloading touches disk. Use async or smart helpers when running on
+blocking-sensitive threads:
+
+```java
+manager.reloadAsync(cfg);
+manager.reloadAsync(ExampleConfig.class);
+manager.reloadAllAsync();
+
+manager.reloadSmart(cfg);
+manager.reloadSmart(ExampleConfig.class);
+manager.reloadAllSmart();
+```
+
 ## Migrations
 
 Config migrations are declared with `ConfigMigration` and tracked by the

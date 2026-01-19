@@ -6,6 +6,8 @@ import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -40,6 +42,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     private final Path configDir;
     private final boolean useConfigNamespace;
     private final String configNamespace;
+    private final TaskScheduler taskScheduler;
 
     public FabricPlatformProvider(MinecraftServer server) {
         this(() -> server, LoggerFactory.getLogger("MagicUtils-Fabric"));
@@ -66,6 +69,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         this.configDir = resolvedConfig;
         this.useConfigNamespace = isDefaultConfigDir(resolvedConfig);
         this.configNamespace = effective.getName();
+        this.taskScheduler = TaskSchedulers.create("MagicUtils-Fabric", this);
     }
 
     @Override
@@ -127,6 +131,11 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     public boolean isMainThread() {
         MinecraftServer server = server();
         return server == null || server.isOnThread();
+    }
+
+    @Override
+    public TaskScheduler scheduler() {
+        return taskScheduler;
     }
 
     @Override

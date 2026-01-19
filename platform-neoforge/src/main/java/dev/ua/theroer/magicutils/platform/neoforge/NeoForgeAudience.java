@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.platform.neoforge;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.Logger;
 
 import java.util.UUID;
@@ -10,6 +11,8 @@ import java.util.UUID;
  * Minimal audience wrapper for NeoForge; routes messages to logger.
  */
 public class NeoForgeAudience implements Audience {
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+
     private final Logger logger;
     private final UUID id;
 
@@ -26,7 +29,10 @@ public class NeoForgeAudience implements Audience {
 
     @Override
     public void send(Component component) {
-        logger.info(component.toString());
+        if (component == null) {
+            return;
+        }
+        logger.info(PLAIN.serialize(component));
     }
 
     @Override

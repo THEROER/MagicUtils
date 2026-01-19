@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.gui;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -10,25 +11,28 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.event.HandlerList;
-import java.util.logging.Logger;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * Internal listener for handling GUI events.
  */
 class MagicGuiListener implements Listener {
-    private static Logger logger;
-    private static boolean registered = false;
-    private static final Map<Player, MagicGui> openGuis = new HashMap<>();
-    private static Plugin registeredPlugin = null;
-    private static MagicGuiListener listenerInstance = null;
+    private static final Map<Plugin, MagicGuiListener> LISTENERS = new ConcurrentHashMap<>();
+
+    private final Logger logger;
+    private final Map<Player, MagicGui> openGuis = new ConcurrentHashMap<>();
+
+    private MagicGuiListener(Plugin plugin) {
+        this.logger = plugin != null ? plugin.getLogger() : null;
+    }
 
     /**
      * Ensure the listener is registered with the given plugin.
-     * 
+     *
      * @param plugin plugin to register with
      */
     public static void ensureRegistered(JavaPlugin plugin) {
@@ -37,63 +41,83 @@ class MagicGuiListener implements Listener {
 
     /**
      * Register the listener with a specific plugin.
-     * 
+     *
      * @param plugin plugin to register with
      */
     public static void register(Plugin plugin) {
-        if (!registered || registeredPlugin != plugin) {
-            if (registered && registeredPlugin != null) {
-                shutdown();
-            }
-            MagicGuiListener listener = new MagicGuiListener();
-            Bukkit.getPluginManager().registerEvents(listener, plugin);
-            registered = true;
-            registeredPlugin = plugin;
-            logger = plugin.getLogger();
-            listenerInstance = listener;
+        resolveListener(plugin);
+    }
+
+    /**
+     * Clears tracked GUIs and unregisters all listeners.
+     */
+    public static void shutdown() {
+        for (Plugin plugin : new ArrayList<>(LISTENERS.keySet())) {
+            shutdown(plugin);
         }
     }
 
     /**
-     * Clears tracked GUIs and unregisters the listener.
+     * Clears tracked GUIs and unregisters the listener for a plugin.
+     *
+     * @param plugin plugin instance
      */
-    public static void shutdown() {
-        openGuis.clear();
-        if (listenerInstance != null) {
-            HandlerList.unregisterAll(listenerInstance);
+    public static void shutdown(Plugin plugin) {
+        MagicGuiListener listener = plugin != null ? LISTENERS.remove(plugin) : null;
+        if (listener != null) {
+            listener.openGuis.clear();
+            HandlerList.unregisterAll(listener);
         }
-        listenerInstance = null;
-        registered = false;
-        registeredPlugin = null;
-        logger = null;
     }
 
     /**
      * Register a GUI for a player.
-     * 
+     *
+     * @param plugin plugin instance
      * @param player player
      * @param gui    GUI instance
      */
-    public static void registerGui(Player player, MagicGui gui) {
-        if (logger != null) {
-            logger.fine("[MagicGuiListener] Registering GUI for player " + player.getName());
+    public static void registerGui(Plugin plugin, Player player, MagicGui gui) {
+        MagicGuiListener listener = resolveListener(plugin);
+        if (listener == null || player == null || gui == null) {
+            return;
         }
-        openGuis.put(player, gui);
+        if (listener.logger != null) {
+            listener.logger.fine("[MagicGuiListener] Registering GUI for player " + player.getName());
+        }
+        listener.openGuis.put(player, gui);
     }
 
     /**
      * Unregister a GUI for a player.
-     * 
+     *
+     * @param plugin plugin instance
      * @param player player
      */
-    public static void unregisterGui(Player player) {
-        openGuis.remove(player);
+    public static void unregisterGui(Plugin plugin, Player player) {
+        MagicGuiListener listener = plugin != null ? LISTENERS.get(plugin) : null;
+        if (listener == null || player == null) {
+            return;
+        }
+        listener.openGuis.remove(player);
+    }
+
+    private static MagicGuiListener resolveListener(Plugin plugin) {
+        if (plugin == null) {
+            return null;
+        }
+        return LISTENERS.computeIfAbsent(plugin, key -> {
+            MagicGuiListener listener = new MagicGuiListener(key);
+            Bukkit.getPluginManager().registerEvents(listener, key);
+            return listener;
+        });
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player))
+        if (!(event.getWhoClicked() instanceof Player player)) {
             return;
+        }
 
         if (logger != null) {
             logger.fine("[MagicGuiListener] Click event for player " + player.getName() +
@@ -124,8 +148,9 @@ class MagicGuiListener implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player))
+        if (!(event.getPlayer() instanceof Player player)) {
             return;
+        }
         MagicGui gui = openGuis.get(player);
         if (gui != null && event.getInventory().equals(gui.getInventory())) {
             gui.handleClose(event);
@@ -134,8 +159,9 @@ class MagicGuiListener implements Listener {
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player))
+        if (!(event.getWhoClicked() instanceof Player player)) {
             return;
+        }
         MagicGui gui = openGuis.get(player);
         if (gui != null && event.getInventory().equals(gui.getInventory())) {
             gui.handleDrag(event);

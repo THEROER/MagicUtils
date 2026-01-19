@@ -14,8 +14,11 @@ Logger logger = new Logger(platform, configManager, "MyMod");
 
 ```java
 CommandRegistry.initialize("mymod", "mymod", logger);
-CommandRegistry.register(new HelpCommand(logger));
-CommandRegistry.register(new ExampleCommand());
+
+CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+    CommandRegistry.register("mymod", dispatcher, new HelpCommand(logger));
+    CommandRegistry.register("mymod", dispatcher, new ExampleCommand());
+});
 ```
 
 You can pass a custom op level via `CommandRegistry.initialize(..., opLevel)`.

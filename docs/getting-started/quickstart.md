@@ -22,11 +22,11 @@ public final class MyPlugin extends JavaPlugin {
         languageManager.addMagicUtilsMessages();
 
         logger.setLanguageManager(languageManager);
-        Messages.setLanguageManager(languageManager);
+        Messages.register(getName(), languageManager);
 
         CommandRegistry.initialize(this, "myplugin", logger);
-        CommandRegistry.register(new HelpCommand(logger));
-        CommandRegistry.register(new ExampleCommand());
+        CommandRegistry.register(this, new HelpCommand(logger));
+        CommandRegistry.register(this, new ExampleCommand());
     }
 }
 ```
@@ -44,8 +44,11 @@ public final class MyMod implements ModInitializer {
             Logger logger = new Logger(platform, configManager, "MyMod");
 
             CommandRegistry.initialize("mymod", "mymod", logger);
-            CommandRegistry.register(new HelpCommand(logger));
-            CommandRegistry.register(new ExampleCommand());
+
+            CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+                CommandRegistry.register("mymod", dispatcher, new HelpCommand(logger));
+                CommandRegistry.register("mymod", dispatcher, new ExampleCommand());
+            });
         });
     }
 }
@@ -64,6 +67,12 @@ public final class MyMod {
 
         logger = new LoggerCore(platform, configManager, this, "MyMod");
         logger.info().send("<green>Ready.</green>");
+
+        CommandRegistry.initialize("mymod", "mymod", logger);
+    }
+
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        CommandRegistry.register("mymod", event.getDispatcher(), new HelpCommand(logger));
     }
 }
 ```

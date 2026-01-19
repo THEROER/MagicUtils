@@ -57,4 +57,13 @@ public interface Platform {
     default ThreadContext threadContext() {
         return isMainThread() ? ThreadContext.MAIN : ThreadContext.WORKER;
     }
+
+    /**
+     * Returns the task scheduler for async work.
+     *
+     * @return task scheduler
+     */
+    default TaskScheduler scheduler() {
+        return TaskSchedulers.shared();
+    }
 }

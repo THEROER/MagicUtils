@@ -8,6 +8,8 @@ import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginIdentifiableCommand;
@@ -42,6 +44,7 @@ public class CommandRegistry {
     private final CommandMap commandMap;
     private final JavaPlugin plugin;
     private final String permissionPrefix;
+    private final TaskScheduler scheduler;
 
     private CommandRegistry(JavaPlugin plugin, String permissionPrefix, Logger loggerInstance) {
         if (plugin == null) {
@@ -54,6 +57,7 @@ public class CommandRegistry {
         this.permissionPrefix = permissionPrefix != null ? permissionPrefix : "";
         this.logger = loggerInstance.withPrefix("Commands", "[Commands]");
         this.messageLogger = loggerInstance;
+        this.scheduler = TaskSchedulers.shared();
 
         CommandLogger commandLogger = new CommandLogger() {
             @Override
@@ -83,8 +87,7 @@ public class CommandRegistry {
         parserRegistry.register(new PlayerTypeParser(logger));
         parserRegistry.register(new OfflinePlayerTypeParser(logger));
         parserRegistry.register(new WorldTypeParser(logger));
-        LanguageKeyTypeParser.setPlugin(plugin);
-        parserRegistry.register(new LanguageKeyTypeParser());
+        parserRegistry.register(new LanguageKeyTypeParser(plugin));
 
         this.commandManager = new CommandManager<>(this.permissionPrefix, plugin.getName(),
                 commandLogger, platform, parserRegistry);
@@ -191,6 +194,57 @@ public class CommandRegistry {
     }
 
     /**
+     * Registers multiple commands at once for a plugin.
+     *
+     * @param plugin plugin instance
+     * @param commands the commands to register
+     */
+    public static void registerAll(JavaPlugin plugin, MagicCommand... commands) {
+        require(plugin).registerAllCommands(commands);
+    }
+
+    /**
+     * Registers multiple builder-defined commands at once for a plugin.
+     *
+     * @param plugin plugin instance
+     * @param specs command specs to register
+     */
+    public static void registerAll(JavaPlugin plugin, CommandSpec<?>... specs) {
+        require(plugin).registerAllSpecs(specs);
+    }
+
+    /**
+     * Registers a single command for a plugin.
+     *
+     * @param plugin plugin instance
+     * @param command the command to register
+     */
+    public static void register(JavaPlugin plugin, MagicCommand command) {
+        require(plugin).registerCommand(command);
+    }
+
+    /**
+     * Registers a single builder-defined command for a plugin.
+     *
+     * @param plugin plugin instance
+     * @param spec command spec to register
+     */
+    public static void register(JavaPlugin plugin, CommandSpec<?> spec) {
+        require(plugin).registerSpec(spec);
+    }
+
+    /**
+     * Unregisters a command by name for a plugin.
+     *
+     * @param plugin plugin instance
+     * @param commandName the command name to unregister
+     * @return true if the command was successfully unregistered
+     */
+    public static boolean unregister(JavaPlugin plugin, String commandName) {
+        return require(plugin).unregisterCommand(commandName);
+    }
+
+    /**
      * Registers multiple commands at once.
      *
      * @param commands the commands to register
@@ -267,6 +321,17 @@ public class CommandRegistry {
     }
 
     /**
+     * Returns the command manager for a plugin.
+     *
+     * @param plugin plugin instance
+     * @return command manager or null
+     */
+    public static CommandManager<CommandSender> getCommandManager(JavaPlugin plugin) {
+        CommandRegistry registry = get(plugin);
+        return registry != null ? registry.commandManager : null;
+    }
+
+    /**
      * Returns the default plugin.
      *
      * @return plugin or null
@@ -283,6 +348,17 @@ public class CommandRegistry {
      */
     public static String getPermissionPrefix() {
         CommandRegistry registry = defaultRegistry;
+        return registry != null ? registry.permissionPrefix : null;
+    }
+
+    /**
+     * Returns the permission prefix for a plugin.
+     *
+     * @param plugin plugin instance
+     * @return permission prefix or null
+     */
+    public static String getPermissionPrefix(JavaPlugin plugin) {
+        CommandRegistry registry = get(plugin);
         return registry != null ? registry.permissionPrefix : null;
     }
 
@@ -377,7 +453,9 @@ public class CommandRegistry {
                 commandManager,
                 Arrays.asList(info.aliases()),
                 logger,
-                messageLogger);
+                messageLogger,
+                plugin,
+                scheduler);
 
         bukkitCommand.setDescription(info.description());
         bukkitCommand.setUsage(usage);
@@ -424,7 +502,9 @@ public class CommandRegistry {
                     commandManager,
                     Arrays.asList(info.name()),
                     logger,
-                    messageLogger);
+                    messageLogger,
+                    plugin,
+                    scheduler);
             aliasCommand.setDescription(info.description());
             aliasCommand.setUsage(aliasUsage);
             if (!commandPermission.isEmpty()) {
@@ -700,6 +780,14 @@ public class CommandRegistry {
 
     private static CommandRegistry requireDefault() {
         CommandRegistry registry = defaultRegistry;
+        if (registry == null) {
+            throw new IllegalStateException(InternalMessages.ERR_REGISTRY_NOT_INITIALIZED.get());
+        }
+        return registry;
+    }
+
+    private static CommandRegistry require(JavaPlugin plugin) {
+        CommandRegistry registry = get(plugin);
         if (registry == null) {
             throw new IllegalStateException(InternalMessages.ERR_REGISTRY_NOT_INITIALIZED.get());
         }

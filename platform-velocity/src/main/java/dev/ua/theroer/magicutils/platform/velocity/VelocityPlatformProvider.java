@@ -10,6 +10,8 @@ import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.ThreadContext;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +44,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     private final boolean cacheAudiences;
     private final AtomicBoolean shutdownListenerRegistered = new AtomicBoolean(false);
     private final AtomicBoolean eventListenerRegistered = new AtomicBoolean(false);
+    private final TaskScheduler taskScheduler;
 
     /**
      * Creates a Velocity platform provider with explicit logger and data directory.
@@ -59,6 +62,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         this.configDir = dataDirectory != null ? dataDirectory : DEFAULT_CONFIG_DIR;
         this.plugin = plugin;
         this.cacheAudiences = plugin != null;
+        this.taskScheduler = TaskSchedulers.create("MagicUtils-Velocity", this);
         if (cacheAudiences) {
             registerEventListener();
         }
@@ -139,6 +143,11 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     @Override
     public ThreadContext threadContext() {
         return ThreadContext.UNKNOWN;
+    }
+
+    @Override
+    public TaskScheduler scheduler() {
+        return taskScheduler;
     }
 
     @Override

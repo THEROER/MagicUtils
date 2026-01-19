@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.Tasks;
+import dev.ua.theroer.magicutils.platform.ThreadContext;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -59,12 +62,39 @@ public final class MagicHttpClient implements AutoCloseable {
         this.client = builder.client != null ? builder.client : buildHttpClient(builder);
     }
 
+    private boolean isBlockingSensitiveThread() {
+        if (platform == null) {
+            return false;
+        }
+        ThreadContext context = platform.threadContext();
+        if (context == ThreadContext.UNKNOWN) {
+            return platform.isMainThread();
+        }
+        return context.isBlockingSensitive();
+    }
+
     private void checkNotMainThread(String method) {
-        if (platform != null && platform.isMainThread()) {
+        if (isBlockingSensitiveThread()) {
             throw new IllegalStateException(
-                    "Synchronous HTTP call '" + method + "' is not allowed on the main thread. " +
+                    "Synchronous HTTP call '" + method + "' is not allowed on a blocking-sensitive thread. " +
                     "Use the ...Async() variant instead to avoid server/client freezes."
             );
+        }
+    }
+
+    private <T> CompletableFuture<T> smartCall(String method,
+                                               Callable<T> blockingCall,
+                                               Supplier<CompletableFuture<T>> asyncCall) {
+        if (isBlockingSensitiveThread()) {
+            return asyncCall.get();
+        }
+        try {
+            return CompletableFuture.completedFuture(blockingCall.call());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Tasks.failedFuture(e);
+        } catch (Exception e) {
+            return Tasks.failedFuture(e);
         }
     }
 
@@ -153,6 +183,16 @@ public final class MagicHttpClient implements AutoCloseable {
     }
 
     /**
+     * Sends a GET request, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @return future with response
+     */
+    public CompletableFuture<HttpResponse<String>> getSmart(String path) {
+        return smartCall("get", () -> get(path), () -> getAsync(path));
+    }
+
+    /**
      * Sends a GET request and deserializes the JSON response into a type.
      *
      * @param path absolute URL or a path resolved against base URL
@@ -178,6 +218,18 @@ public final class MagicHttpClient implements AutoCloseable {
      */
     public <T> CompletableFuture<T> getJsonAsync(String path, Class<T> type) {
         return getAsync(path).thenApply(response -> readJson(response.body(), type));
+    }
+
+    /**
+     * Sends a GET request and deserializes JSON response, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param type target type
+     * @param <T> type of result
+     * @return future with deserialized response
+     */
+    public <T> CompletableFuture<T> getJsonSmart(String path, Class<T> type) {
+        return smartCall("getJson", () -> getJson(path, type), () -> getJsonAsync(path, type));
     }
 
     /**
@@ -211,6 +263,17 @@ public final class MagicHttpClient implements AutoCloseable {
                 .POST(HttpRequest.BodyPublishers.ofString(body != null ? body : "", StandardCharsets.UTF_8))
                 .build();
         return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), body);
+    }
+
+    /**
+     * Sends a plain-text POST request, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body
+     * @return future with response
+     */
+    public CompletableFuture<HttpResponse<String>> postSmart(String path, String body) {
+        return smartCall("post", () -> post(path, body), () -> postAsync(path, body));
     }
 
     /**
@@ -268,6 +331,17 @@ public final class MagicHttpClient implements AutoCloseable {
     }
 
     /**
+     * Sends a JSON POST request, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body object
+     * @return future with response
+     */
+    public CompletableFuture<HttpResponse<String>> postJsonSmart(String path, Object body) {
+        return smartCall("postJson", () -> postJson(path, body), () -> postJsonAsync(path, body));
+    }
+
+    /**
      * Sends a JSON POST request asynchronously and deserializes the response.
      *
      * @param path absolute URL or a path resolved against base URL
@@ -278,6 +352,19 @@ public final class MagicHttpClient implements AutoCloseable {
      */
     public <T> CompletableFuture<T> postJsonAsync(String path, Object body, Class<T> type) {
         return postJsonAsync(path, body).thenApply(response -> readJson(response.body(), type));
+    }
+
+    /**
+     * Sends a JSON POST request and deserializes the response, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param body request body object
+     * @param type target type
+     * @param <T> type of result
+     * @return future with deserialized response
+     */
+    public <T> CompletableFuture<T> postJsonSmart(String path, Object body, Class<T> type) {
+        return smartCall("postJson", () -> postJson(path, body, type), () -> postJsonAsync(path, body, type));
     }
 
     /**
@@ -316,6 +403,17 @@ public final class MagicHttpClient implements AutoCloseable {
     }
 
     /**
+     * Sends a multipart/form-data POST request, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param multipart multipart body builder
+     * @return future with response
+     */
+    public CompletableFuture<HttpResponse<String>> postMultipartSmart(String path, MultipartBody multipart) {
+        return smartCall("postMultipart", () -> postMultipart(path, multipart), () -> postMultipartAsync(path, multipart));
+    }
+
+    /**
      * Downloads content into a file.
      *
      * @param path absolute URL or a path resolved against base URL
@@ -340,6 +438,17 @@ public final class MagicHttpClient implements AutoCloseable {
     public CompletableFuture<HttpResponse<Path>> downloadToFileAsync(String path, Path target) {
         HttpRequest request = request(path).GET().build();
         return sendWithRetriesAsync(() -> request, HttpResponse.BodyHandlers.ofFile(target), null);
+    }
+
+    /**
+     * Downloads content into a file, switching to async on blocking-sensitive threads.
+     *
+     * @param path absolute URL or a path resolved against base URL
+     * @param target target file path
+     * @return future with file response
+     */
+    public CompletableFuture<HttpResponse<Path>> downloadToFileSmart(String path, Path target) {
+        return smartCall("downloadToFile", () -> downloadToFile(path, target), () -> downloadToFileAsync(path, target));
     }
 
     /**
@@ -380,6 +489,18 @@ public final class MagicHttpClient implements AutoCloseable {
                 logResponse(response);
             }
         });
+    }
+
+    /**
+     * Sends a request, switching to async on blocking-sensitive threads.
+     *
+     * @param request request to send
+     * @param handler body handler
+     * @param <T> body type
+     * @return future with response
+     */
+    public <T> CompletableFuture<HttpResponse<T>> sendSmart(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
+        return smartCall("send", () -> send(request, handler), () -> sendAsync(request, handler));
     }
 
     @Override

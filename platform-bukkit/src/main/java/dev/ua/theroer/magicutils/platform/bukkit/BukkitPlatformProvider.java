@@ -4,6 +4,8 @@ import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import dev.ua.theroer.magicutils.config.adapters.AdaptersBootstrap;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -30,6 +32,7 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
     private final BukkitScheduler scheduler;
     private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
     private final AtomicBoolean shutdownListenerRegistered = new AtomicBoolean(false);
+    private final TaskScheduler taskScheduler;
 
     /**
      * Create a Bukkit/Paper platform adapter around the given plugin.
@@ -41,6 +44,10 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         this.logger = new BukkitPlatformLogger(plugin.getLogger());
         this.scheduler = Bukkit.getScheduler();
         this.consoleAudience = new BukkitConsoleAudience(plugin.getLogger(), plugin.getName());
+        TaskScheduler scheduler = TaskSchedulers.create("MagicUtils-" + plugin.getName(), null);
+        this.taskScheduler = scheduler;
+        registerShutdownHookInternal(this.plugin, this.logger, this.shutdownHooks, this.shutdownListenerRegistered,
+                scheduler::shutdown);
         AdaptersBootstrap.registerDefaults();
     }
 
@@ -81,7 +88,32 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
     }
 
     @Override
+    public TaskScheduler scheduler() {
+        return taskScheduler;
+    }
+
+    @Override
     public void registerShutdownHook(Runnable hook) {
+        registerShutdownHookInternal(plugin, logger, shutdownHooks, shutdownListenerRegistered, hook);
+    }
+
+    @Override
+    public void unregisterShutdownHook(Runnable hook) {
+        if (hook == null) {
+            return;
+        }
+        shutdownHooks.remove(hook);
+    }
+
+    private Audience wrap(CommandSender sender) {
+        return new BukkitAudienceWrapper(sender);
+    }
+
+    private static void registerShutdownHookInternal(JavaPlugin plugin,
+                                                     PlatformLogger logger,
+                                                     List<Runnable> shutdownHooks,
+                                                     AtomicBoolean shutdownListenerRegistered,
+                                                     Runnable hook) {
         if (hook == null) {
             return;
         }
@@ -97,24 +129,14 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
                         try {
                             runnable.run();
                         } catch (RuntimeException e) {
-                            logger.warn("Failed to run shutdown hook", e);
+                            if (logger != null) {
+                                logger.warn("Failed to run shutdown hook", e);
+                            }
                         }
                     }
                     shutdownHooks.clear();
                 }
             }, plugin);
         }
-    }
-
-    @Override
-    public void unregisterShutdownHook(Runnable hook) {
-        if (hook == null) {
-            return;
-        }
-        shutdownHooks.remove(hook);
-    }
-
-    private Audience wrap(CommandSender sender) {
-        return new BukkitAudienceWrapper(sender);
     }
 }
