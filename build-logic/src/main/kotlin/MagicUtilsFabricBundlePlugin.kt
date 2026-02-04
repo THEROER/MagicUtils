@@ -31,6 +31,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 project(":platform-api"),
                 project(":logger"),
                 project(":commands"),
+                project(":commands-brigadier"),
                 project(":placeholders"),
                 project(":core")
             )

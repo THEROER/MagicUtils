@@ -393,6 +393,13 @@ public class BrigadierCommandRegistry<S> {
             int start = reader.getCursor();
             try {
                 String token = StringArgumentType.string().parse(reader);
+                if (reader.getCursor() == start) {
+                    String rest = input.substring(start);
+                    tokens.add(rest);
+                    starts.add(start);
+                    reader.setCursor(input.length());
+                    break;
+                }
                 tokens.add(token);
                 starts.add(start);
             } catch (CommandSyntaxException e) {
