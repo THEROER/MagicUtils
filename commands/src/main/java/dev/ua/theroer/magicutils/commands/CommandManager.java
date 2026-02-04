@@ -473,6 +473,10 @@ public class CommandManager<S> {
         SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
 
         if (traversal.consumed() == 0) {
+            if (directAction != null) {
+                logger.debug("No subcommand match, falling back to direct execute handler");
+                return executeAction(command, info, directAction, sender, args, normalizedCommandName, null, bubbleErrors);
+            }
             String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
             logger.debug("Subcommand not found: " + subCommandName + ". Available: " +
                     getAvailableSubCommands(subCommands, sender, normalizedCommandName));
