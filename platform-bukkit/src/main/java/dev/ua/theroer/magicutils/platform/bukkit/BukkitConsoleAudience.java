@@ -57,6 +57,12 @@ public final class BukkitConsoleAudience implements Audience {
         logWithLevel(logger, parsed.level(), rendered);
     }
 
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
+    }
+
     private Logger resolveLogger(String loggerName) {
         if (loggerName == null || loggerName.isBlank()) {
             return baseLogger;

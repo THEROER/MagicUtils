@@ -42,4 +42,9 @@ public final class FabricAudience implements Audience {
     public UUID id() {
         return player != null ? player.getUuid() : null;
     }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return FabricPermissionBridge.hasPermission(player, permission, 2);
+    }
 }

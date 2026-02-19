@@ -36,4 +36,12 @@ public class BukkitAudienceWrapper implements Audience {
         }
         return null;
     }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        if (permission == null || permission.isBlank()) {
+            return true;
+        }
+        return sender != null && sender.hasPermission(permission);
+    }
 }

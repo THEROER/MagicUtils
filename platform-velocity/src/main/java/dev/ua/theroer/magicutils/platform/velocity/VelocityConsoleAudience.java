@@ -38,6 +38,12 @@ final class VelocityConsoleAudience implements Audience {
         logWithLevel(logger, parsed.level(), parsed.message());
     }
 
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
+    }
+
     private Logger resolveLogger(String loggerName) {
         if (loggerName == null || loggerName.isBlank()) {
             return baseLogger != null ? baseLogger : LoggerFactory.getLogger("MagicUtils-Velocity");

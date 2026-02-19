@@ -22,4 +22,17 @@ public interface Audience {
     default UUID id() {
         return null;
     }
+
+    /**
+     * Checks whether this audience has the given permission.
+     *
+     * <p>Implementations that can resolve permissions should override this method.
+     * Default behavior only allows empty permission checks.</p>
+     *
+     * @param permission permission node
+     * @return true when allowed
+     */
+    default boolean hasPermission(String permission) {
+        return permission == null || permission.isBlank();
+    }
 }

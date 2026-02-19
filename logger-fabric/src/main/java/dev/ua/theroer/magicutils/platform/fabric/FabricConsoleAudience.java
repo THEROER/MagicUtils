@@ -62,6 +62,12 @@ public final class FabricConsoleAudience implements Audience {
         logWithLevel(slf4j, parsed.level(), rendered);
     }
 
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
+    }
+
     private String buildLoggerName(String baseName, String subLogger) {
         if (subLogger == null || subLogger.isBlank()) {
             return baseName;

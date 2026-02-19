@@ -86,4 +86,9 @@ public final class FabricCommandAudience implements Audience {
         ServerPlayerEntity player = source.getPlayer();
         return player != null ? player.getUuid() : null;
     }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return FabricPermissionBridge.hasPermission(source, permission, 2);
+    }
 }

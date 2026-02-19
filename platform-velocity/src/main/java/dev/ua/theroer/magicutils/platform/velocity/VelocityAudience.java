@@ -31,4 +31,12 @@ final class VelocityAudience implements Audience {
     public UUID id() {
         return id;
     }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        if (permission == null || permission.isBlank()) {
+            return true;
+        }
+        return source != null && source.hasPermission(permission);
+    }
 }

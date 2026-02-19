@@ -24,4 +24,10 @@ final class FabricPlainConsoleAudience implements Audience {
         }
         logger.info(PLAIN.serialize(component));
     }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
+    }
 }
