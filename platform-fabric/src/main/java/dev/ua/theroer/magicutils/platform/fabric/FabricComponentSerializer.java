@@ -12,6 +12,10 @@ import net.minecraft.registry.RegistryOps;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.text.Text;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +29,7 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("doclint:missing")
 public final class FabricComponentSerializer {
+    private static final Logger LOGGER = LoggerFactory.getLogger("MagicUtils-Fabric-Serializer");
     private static final GsonComponentSerializer GSON = GsonComponentSerializer.gson();
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private static final int DEFAULT_MAX_JSON_LENGTH = 262_144;
@@ -34,7 +39,7 @@ public final class FabricComponentSerializer {
     // Reflection caches (loaded lazily)
     private static volatile boolean textCodecsChecked = false;
     private static volatile Class<?> textCodecsClass;
-    private static volatile Method textCodecsCodecMethod; 
+    private static volatile Object textCodec; 
     private static volatile Method textSerializerFromJsonMethod;
     private static volatile Method textSerializerToJsonTreeMethod;
 
@@ -79,16 +84,15 @@ public final class FabricComponentSerializer {
             return Text.empty();
         }
 
-        String plain = PLAIN.serialize(component);
-
         try {
             JsonElement tree = GSON.serializeToTree(component);
             Text decoded = decodeText(tree, onError);
-            return decoded != null ? decoded : Text.literal(plain);
+            if (decoded != null) return decoded;
         } catch (Exception e) {
             if (onError != null) onError.accept(e.toString());
-            return Text.literal(plain);
         }
+        
+        return Text.literal(PLAIN.serialize(component));
     }
 
     public static Component toAdventure(Text text) {
@@ -102,13 +106,13 @@ public final class FabricComponentSerializer {
 
         try {
             JsonElement tree = encodeText(text, registries);
-            if (tree == null) {
-                return Component.text(Objects.toString(text.getString(), ""));
+            if (tree != null) {
+                return GSON.deserializeFromTree(tree);
             }
-            return GSON.deserializeFromTree(tree);
         } catch (Exception e) {
-            return Component.text(Objects.toString(text.getString(), ""));
+            // fallback
         }
+        return Component.text(Objects.toString(text.getString(), ""));
     }
 
     public static String toPlain(Component component) {
@@ -130,33 +134,27 @@ public final class FabricComponentSerializer {
 
     /**
      * Decode JSON -> Text.
-     * On 1.20.6+ / 1.21.x uses TextCodecs codec with length limit.
-     * On 1.20.1 falls back to Text.Serializer.fromJson(JsonElement).
      */
     private static Text decodeText(JsonElement tree, Consumer<String> onError) {
         ensureReflectionReady();
 
-        if (textCodecsClass != null && textCodecsCodecMethod != null) {
+        if (textCodec != null) {
             try {
-                Object codec = textCodecsCodecMethod.invoke(null, maxJsonLength);
-
                 @SuppressWarnings("unchecked")
-                DataResult<Text> result = (DataResult<Text>) codec.getClass()
+                DataResult<Text> result = (DataResult<Text>) textCodec.getClass()
                         .getMethod("parse", com.mojang.serialization.DynamicOps.class, Object.class)
-                        .invoke(codec, JsonOps.INSTANCE, tree);
+                        .invoke(textCodec, JsonOps.INSTANCE, tree);
 
                 if (onError != null) result.error().ifPresent(err -> onError.accept(err.message()));
                 return result.result().orElse(null);
             } catch (Throwable t) {
                 if (onError != null) onError.accept(t.toString());
-                // fallback below
             }
         }
 
         try {
             if (textSerializerFromJsonMethod != null) {
-                Object r = textSerializerFromJsonMethod.invoke(null, tree);
-                return (Text) r; // may be null per API
+                return (Text) textSerializerFromJsonMethod.invoke(null, tree);
             }
         } catch (Throwable t) {
             if (onError != null) onError.accept(t.toString());
@@ -167,26 +165,24 @@ public final class FabricComponentSerializer {
 
     /**
      * Encode Text -> JSON.
-     * On 1.20.6+ / 1.21.x uses TextCodecs codec + RegistryOps when provided.
-     * On 1.20.1 falls back to Text.Serializer.toJsonTree(Text).
      */
     private static JsonElement encodeText(Text text, RegistryWrapper.WrapperLookup registries) {
         ensureReflectionReady();
 
-        if (textCodecsClass != null && textCodecsCodecMethod != null) {
+        if (textCodec != null) {
             try {
-                Object codec = textCodecsCodecMethod.invoke(null, maxJsonLength);
                 Object ops = (registries != null)
                         ? RegistryOps.of(JsonOps.INSTANCE, registries)
                         : JsonOps.INSTANCE;
 
                 @SuppressWarnings("unchecked")
-                DataResult<JsonElement> encoded = (DataResult<JsonElement>) codec.getClass()
+                DataResult<JsonElement> encoded = (DataResult<JsonElement>) textCodec.getClass()
                         .getMethod("encodeStart", com.mojang.serialization.DynamicOps.class, Object.class)
-                        .invoke(codec, ops, text);
+                        .invoke(textCodec, ops, text);
 
                 return encoded.result().orElse(null);
             } catch (Throwable t) {
+                // ignore
             }
         }
 
@@ -206,26 +202,92 @@ public final class FabricComponentSerializer {
         synchronized (FabricComponentSerializer.class) {
             if (textCodecsChecked) return;
 
-            try {
-                textCodecsClass = Class.forName("net.minecraft.text.TextCodecs");
-
+            // Try 1.20.5+ TextCodecs (net.minecraft.class_9160)
+            String[] codecClassNames = {"net.minecraft.text.TextCodecs", "net.minecraft.class_9160"};
+            for (String name : codecClassNames) {
                 try {
-                    textCodecsCodecMethod = textCodecsClass.getMethod("withJsonLengthLimit", int.class);
-                } catch (NoSuchMethodException ignored) {
-                    textCodecsCodecMethod = textCodecsClass.getMethod("codec", int.class);
-                }
-            } catch (Throwable ignored) {
-                textCodecsClass = null;
-                textCodecsCodecMethod = null;
+                    textCodecsClass = Class.forName(name);
+                    LOGGER.info("Scanning class for Codecs: {}", name);
+                    
+                    Field[] fields = textCodecsClass.getFields();
+                    for (Field f : fields) {
+                        String typeName = f.getType().getName();
+                        LOGGER.info("  Field: {} Type: {}", f.getName(), typeName);
+                        
+                        // Look for a Codec field
+                        if (typeName.contains("Codec") || typeName.contains("class_7243") || typeName.contains("serialization.Codec")) {
+                            try {
+                                Object value = f.get(null);
+                                if (value != null) {
+                                    textCodec = value;
+                                    LOGGER.info("Found potential codec in field: {} ({})", f.getName(), typeName);
+                                    // Usually the first public static Codec is the main one
+                                    if (f.getName().equals("CODEC") || f.getName().equals("field_48769") || f.getName().equals("field_49651")) {
+                                        break; 
+                                    }
+                                }
+                            } catch (Throwable ignored) {}
+                        }
+                    }
+                    if (textCodec != null) break;
+                } catch (ClassNotFoundException ignored) {}
             }
 
+            // Try 1.21+ Serialization class or 1.20.1 Serializer inner class
             try {
-                Class<?> serializer = Class.forName("net.minecraft.text.Text$Serializer");
-                textSerializerFromJsonMethod = serializer.getMethod("fromJson", com.google.gson.JsonElement.class);
-                textSerializerToJsonTreeMethod = serializer.getMethod("toJsonTree", net.minecraft.text.Text.class);
-            } catch (Throwable ignored) {
-                textSerializerFromJsonMethod = null;
-                textSerializerToJsonTreeMethod = null;
+                Class<?> serializationClass = null;
+                String[] classNames = {
+                    "net.minecraft.text.Text$Serialization", // 1.21+ yarn
+                    "net.minecraft.class_2561$class_9821",   // 1.21+ intermediary
+                    "net.minecraft.text.Text$Serializer",    // <1.21 yarn
+                    "net.minecraft.class_2561$class_2562"    // <1.21 intermediary
+                };
+
+                for (String name : classNames) {
+                    try {
+                        serializationClass = Class.forName(name);
+                        if (serializationClass != null) {
+                            LOGGER.info("Scanning serialization class: {}", name);
+                            break;
+                        }
+                    } catch (ClassNotFoundException ignored) {}
+                }
+
+                if (serializationClass != null) {
+                    Method[] methods = serializationClass.getDeclaredMethods();
+                    LOGGER.info("Dumping methods for {}", serializationClass.getName());
+                    for (Method m : methods) {
+                        Class<?>[] params = m.getParameterTypes();
+                        Class<?> returnType = m.getReturnType();
+                        LOGGER.info("  Method: {} Return: {} Params: {}", m.getName(), returnType.getName(), java.util.Arrays.toString(params));
+                        
+                        // fromJson: takes 1 param (JsonElement or descendant), returns Text (class_2561)
+                        if (params.length == 1 && (params[0].getSimpleName().contains("JsonElement") || params[0].getName().contains("class_3127"))) {
+                            if (returnType.getSimpleName().equals("Text") || returnType.getName().contains("class_2561")) {
+                                textSerializerFromJsonMethod = m;
+                                LOGGER.info("Identified fromJson method: {}", m.getName());
+                            }
+                        }
+                        // toJsonTree: takes 1 param (Text), returns JsonElement
+                        else if (params.length == 1 && (params[0].getSimpleName().equals("Text") || params[0].getName().contains("class_2561"))) {
+                            if (returnType.getSimpleName().contains("JsonElement") || returnType.getName().contains("class_3127")) {
+                                textSerializerToJsonTreeMethod = m;
+                                LOGGER.info("Identified toJsonTree method: {}", m.getName());
+                            }
+                        }
+                    }
+                }
+
+                if (textSerializerFromJsonMethod != null) {
+                    LOGGER.info("Initialized Text serialization via {} -> {}", 
+                        serializationClass.getSimpleName(), textSerializerFromJsonMethod.getName());
+                }
+            } catch (Throwable t) {
+                LOGGER.warn("Error during serialization method scan: {}", t.toString());
+            }
+
+            if (textCodec == null && textSerializerFromJsonMethod == null) {
+                LOGGER.error("CRITICAL: No text serialization methods found! Formatting will be disabled.");
             }
 
             textCodecsChecked = true;

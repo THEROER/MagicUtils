@@ -2,6 +2,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Usage
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -27,13 +28,16 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
             bundleShadowConfig.isCanBeResolved = true
             bundleShadowConfig.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
 
-            val bundleProjects = listOf(
+            val bundleLibProjects = listOf(
                 project(":platform-api"),
+                project(":commands-brigadier"),
+                project(":core")
+            )
+
+            val bundleModProjects = listOf(
                 project(":logger"),
                 project(":commands"),
-                project(":commands-brigadier"),
-                project(":placeholders"),
-                project(":core")
+                project(":placeholders")
             )
 
             val bundleShadedProjects = listOf(
@@ -78,7 +82,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 val depDependency = project.dependencies.add("include", depProject) as org.gradle.api.artifacts.ProjectDependency
                 depDependency.targetConfiguration = "shadedElements"
             }
-            bundleProjects.forEach { dep ->
+            bundleModProjects.forEach { dep ->
                 project.dependencies.add("include", project(dep.path))
             }
             bundleRemappedProjects.forEach { dep ->
@@ -87,12 +91,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 depDependency.targetConfiguration = "jiJRemap"
             }
 
-            bundleShadedProjects.forEach { dep ->
-                val depProject = project(dep.path)
-                val depDependency = project.dependencies.add("bundleShadow", depProject) as org.gradle.api.artifacts.ProjectDependency
-                depDependency.targetConfiguration = "shadedElements"
-            }
-            bundleProjects.forEach { dep ->
+            bundleLibProjects.forEach { dep ->
                 project.dependencies.add("bundleShadow", project(dep.path))
             }
             bundleNamedProjects.forEach { dep ->
@@ -101,24 +100,23 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 depDependency.targetConfiguration = "namedElements"
             }
 
+            val shadowJar = tasks.named("shadowJar", ShadowJar::class.java)
+
             tasks.named("remapJar", RemapJarTask::class.java).configure { remapJarTask ->
                 remapJarTask.archiveClassifier.set("mc${magicutilsTarget.minecraft.get().substringBeforeLast('.')}")
                 remapJarTask.archiveBaseName.set(moduleName)
+                remapJarTask.inputFile.set(shadowJar.get().archiveFile)
             }
 
-            tasks.named("shadowJar", ShadowJar::class.java).configure { shadowJarTask ->
+            shadowJar.configure { shadowJarTask ->
                 shadowJarTask.archiveClassifier.set("dev")
             
                 shadowJarTask.configurations.set(
                     setOf(project.configurations.getByName("bundleShadow"))
                 )
             
-                shadowJarTask.exclude("fabric.mod.json")
+                shadowJarTask.from(project.extensions.getByType(SourceSetContainer::class.java).getByName("main").output)
                 shadowJarTask.mergeServiceFiles()
-                val processResources = tasks.named("processResources", ProcessResources::class.java)
-                shadowJarTask.from(processResources) {
-                    it.include("fabric.mod.json")
-                }
             }
 
             tasks.configureEach {
