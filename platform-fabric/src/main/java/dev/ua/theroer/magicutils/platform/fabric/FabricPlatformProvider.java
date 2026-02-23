@@ -8,6 +8,7 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -206,22 +207,41 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     }
 
     private static void registerFabricShutdownEvent() {
-        try {
-            Class<?> eventsClass = Class.forName("net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents");
-            Object stoppingEvent = eventsClass.getField("SERVER_STOPPING").get(null);
-            Class<?> listenerType = Class.forName(
-                    "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents$ServerStopping");
-            Method register = stoppingEvent.getClass().getMethod("register", listenerType);
-            Object listener = Proxy.newProxyInstance(eventsClass.getClassLoader(), new Class<?>[] { listenerType },
-                    new InvocationHandler() {
-                        @Override
-                        public Object invoke(Object proxy, Method method, Object[] args) {
-                            runShutdownHooks();
-                            return null;
-                        }
-                    });
-            register.invoke(stoppingEvent, listener);
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
+        Class<?> eventsClass = ReflectiveAccess.loadClass(
+                "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents"
+        ).orElse(null);
+        if (eventsClass == null) {
+            return;
         }
+
+        Class<?> listenerType = ReflectiveAccess.loadClass(
+                "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents$ServerStopping"
+        ).orElse(null);
+        if (listenerType == null) {
+            return;
+        }
+
+        Object stoppingEvent = ReflectiveAccess.publicField(eventsClass, "SERVER_STOPPING")
+                .flatMap(field -> ReflectiveAccess.readField(field, null))
+                .orElse(null);
+        if (stoppingEvent == null) {
+            return;
+        }
+
+        Method register = ReflectiveAccess.publicMethod(stoppingEvent.getClass(), "register", listenerType)
+                .orElse(null);
+        if (register == null) {
+            return;
+        }
+
+        Object listener = Proxy.newProxyInstance(eventsClass.getClassLoader(), new Class<?>[]{listenerType},
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        runShutdownHooks();
+                        return null;
+                    }
+                });
+        ReflectiveAccess.invoke(register, stoppingEvent, listener);
     }
 }

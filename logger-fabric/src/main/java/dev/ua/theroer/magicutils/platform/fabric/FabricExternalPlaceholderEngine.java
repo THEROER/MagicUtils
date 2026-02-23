@@ -4,6 +4,7 @@ import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.logger.ExternalPlaceholderEngine;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.text.Component;
@@ -63,17 +64,26 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         Method contextOfServer = null;
 
         try {
-            Class<?> placeholders = Class.forName("eu.pb4.placeholders.api.Placeholders");
-            Class<?> placeholderContext = Class.forName("eu.pb4.placeholders.api.PlaceholderContext");
-            Class<?> placeholderResult = Class.forName("eu.pb4.placeholders.api.PlaceholderResult");
+            Class<?> placeholders = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.Placeholders").orElse(null);
+            Class<?> placeholderContext = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.PlaceholderContext").orElse(null);
+            Class<?> placeholderResult = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.PlaceholderResult").orElse(null);
+            if (placeholders == null || placeholderContext == null || placeholderResult == null) {
+                throw new IllegalStateException("PB4 classes are unavailable");
+            }
 
-            parsePlaceholder = placeholders.getMethod("parsePlaceholder", Identifier.class, String.class, placeholderContext);
-            parseText = placeholders.getMethod("parseText", Text.class, placeholderContext);
-            resultValid = placeholderResult.getMethod("isValid");
-            resultText = placeholderResult.getMethod("text");
+            parsePlaceholder = ReflectiveAccess.publicMethod(
+                    placeholders,
+                    "parsePlaceholder",
+                    Identifier.class,
+                    String.class,
+                    placeholderContext
+            ).orElse(null);
+            parseText = ReflectiveAccess.publicMethod(placeholders, "parseText", Text.class, placeholderContext).orElse(null);
+            resultValid = ReflectiveAccess.publicMethod(placeholderResult, "isValid").orElse(null);
+            resultText = ReflectiveAccess.publicMethod(placeholderResult, "text").orElse(null);
 
-            contextOfPlayer = placeholderContext.getMethod("of", ServerPlayerEntity.class);
-            contextOfServer = placeholderContext.getMethod("of", MinecraftServer.class);
+            contextOfPlayer = ReflectiveAccess.publicMethod(placeholderContext, "of", ServerPlayerEntity.class).orElse(null);
+            contextOfServer = ReflectiveAccess.publicMethod(placeholderContext, "of", MinecraftServer.class).orElse(null);
         } catch (Throwable ignored) {
             // PB4 placeholder api not available
         }
@@ -101,7 +111,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return TagResolver.empty();
         }
         try {
-            Object resolver = miniAudienceGlobalPlaceholders.invoke(null);
+            Object resolver = ReflectiveAccess.invoke(miniAudienceGlobalPlaceholders, null).orElse(null);
             return resolver instanceof TagResolver ? (TagResolver) resolver : TagResolver.empty();
         } catch (Throwable ignored) {
             return TagResolver.empty();
@@ -135,7 +145,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         }
         try {
             Text nativeText = FabricComponentSerializer.toNative(component);
-            Object parsed = pb4ParseText.invoke(null, nativeText, context);
+            Object parsed = ReflectiveAccess.invoke(pb4ParseText, null, nativeText, context).orElse(null);
             if (parsed instanceof Text parsedText) {
                 return FabricComponentSerializer.toAdventure(parsedText);
             }
@@ -147,8 +157,11 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
 
     private Method resolveMiniAudienceGlobalPlaceholders() {
         try {
-            Class<?> miniPlaceholders = Class.forName("io.github.miniplaceholders.api.MiniPlaceholders");
-            return miniPlaceholders.getMethod("audienceGlobalPlaceholders");
+            Class<?> miniPlaceholders = ReflectiveAccess.loadClass("io.github.miniplaceholders.api.MiniPlaceholders")
+                    .orElse(null);
+            return miniPlaceholders != null
+                    ? ReflectiveAccess.publicMethod(miniPlaceholders, "audienceGlobalPlaceholders").orElse(null)
+                    : null;
         } catch (Throwable ignored) {
             return null;
         }
@@ -213,11 +226,11 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         try {
             ServerPlayerEntity player = extractPlayer(audience);
             if (player != null) {
-                return pb4ContextOfPlayer.invoke(null, player);
+                return ReflectiveAccess.invoke(pb4ContextOfPlayer, null, player).orElse(null);
             }
             ServerCommandSource source = extractSource(audience);
             if (source != null && source.getServer() != null) {
-                return pb4ContextOfServer.invoke(null, source.getServer());
+                return ReflectiveAccess.invoke(pb4ContextOfServer, null, source.getServer()).orElse(null);
             }
         } catch (Throwable ignored) {
             return null;
@@ -289,12 +302,16 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         }
         String argument = parts.length > 1 ? parts[1] : null;
         try {
-            Object result = pb4ParsePlaceholder.invoke(null, identifier, argument, context);
-            boolean valid = (boolean) pb4ResultValid.invoke(result);
+            Object result = ReflectiveAccess.invoke(pb4ParsePlaceholder, null, identifier, argument, context).orElse(null);
+            if (result == null) {
+                return null;
+            }
+            Object validValue = ReflectiveAccess.invoke(pb4ResultValid, result).orElse(Boolean.FALSE);
+            boolean valid = validValue instanceof Boolean flag && flag;
             if (!valid) {
                 return null;
             }
-            Object text = pb4ResultText.invoke(result);
+            Object text = ReflectiveAccess.invoke(pb4ResultText, result).orElse(null);
             if (!(text instanceof Text textValue)) {
                 return null;
             }

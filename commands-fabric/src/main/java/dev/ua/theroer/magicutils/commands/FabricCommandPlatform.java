@@ -2,12 +2,14 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -156,24 +158,16 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
 
     private static final class FabricPermissionBridge {
         private static final String PERMISSIONS_CLASS = "me.lucko.fabric.api.permissions.v0.Permissions";
-        private static final java.lang.reflect.Method CHECK_BOOLEAN;
-        private static final java.lang.reflect.Method CHECK_INT;
-        private static final java.lang.reflect.Method CHECK_SIMPLE;
-        private static final java.lang.reflect.Method HAS_PERMISSION_LEVEL;
+        private static final Method CHECK_BOOLEAN;
+        private static final Method CHECK_INT;
+        private static final Method CHECK_SIMPLE;
+        private static final Method HAS_PERMISSION_LEVEL;
 
         static {
-            java.lang.reflect.Method checkBoolean = null;
-            java.lang.reflect.Method checkInt = null;
-            java.lang.reflect.Method checkSimple = null;
-            Class<?> permissions = tryLoad(PERMISSIONS_CLASS);
-            if (permissions != null) {
-                checkBoolean = findMethod(permissions, boolean.class);
-                checkInt = findMethod(permissions, int.class);
-                checkSimple = findMethod(permissions, null);
-            }
-            CHECK_BOOLEAN = checkBoolean;
-            CHECK_INT = checkInt;
-            CHECK_SIMPLE = checkSimple;
+            Class<?> permissions = ReflectiveAccess.loadClass(PERMISSIONS_CLASS).orElse(null);
+            CHECK_BOOLEAN = permissions != null ? findMethod(permissions, boolean.class) : null;
+            CHECK_INT = permissions != null ? findMethod(permissions, int.class) : null;
+            CHECK_SIMPLE = permissions != null ? findMethod(permissions, null) : null;
             HAS_PERMISSION_LEVEL = resolvePermissionLevelMethod();
         }
 
@@ -214,24 +208,24 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             if (CHECK_BOOLEAN != null) {
                 try {
                     boolean fallback = fallback(sender, defaultValue, opLevel);
-                    Object res = CHECK_BOOLEAN.invoke(null, sender, permission, fallback);
-                    return (Boolean) res;
-                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                    Object res = ReflectiveAccess.invoke(CHECK_BOOLEAN, null, sender, permission, fallback).orElse(null);
+                    return res instanceof Boolean value ? value : null;
+                } catch (RuntimeException ignored) {
                 }
             }
             if (CHECK_INT != null) {
                 try {
                     int fallback = fallbackLevel(defaultValue, opLevel);
-                    Object res = CHECK_INT.invoke(null, sender, permission, fallback);
-                    return (Boolean) res;
-                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                    Object res = ReflectiveAccess.invoke(CHECK_INT, null, sender, permission, fallback).orElse(null);
+                    return res instanceof Boolean value ? value : null;
+                } catch (RuntimeException ignored) {
                 }
             }
             if (CHECK_SIMPLE != null) {
                 try {
-                    Object res = CHECK_SIMPLE.invoke(null, sender, permission);
-                    return (Boolean) res;
-                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                    Object res = ReflectiveAccess.invoke(CHECK_SIMPLE, null, sender, permission).orElse(null);
+                    return res instanceof Boolean value ? value : null;
+                } catch (RuntimeException ignored) {
                 }
             }
             return null;
@@ -263,16 +257,16 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             }
             if (HAS_PERMISSION_LEVEL != null) {
                 try {
-                    Object res = HAS_PERMISSION_LEVEL.invoke(sender, opLevel);
-                    return res instanceof Boolean && (Boolean) res;
-                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                    Object res = ReflectiveAccess.invoke(HAS_PERMISSION_LEVEL, sender, opLevel).orElse(Boolean.FALSE);
+                    return res instanceof Boolean value && value;
+                } catch (RuntimeException ignored) {
                 }
             }
             return false;
         }
 
-        private static java.lang.reflect.Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
-            for (java.lang.reflect.Method method : permissionsClass.getMethods()) {
+        private static Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
+            for (Method method : permissionsClass.getMethods()) {
                 if (!method.getName().equals("check")) {
                     continue;
                 }
@@ -292,16 +286,17 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             return null;
         }
 
-        private static java.lang.reflect.Method resolvePermissionLevelMethod() {
-            try {
-                java.lang.reflect.Method direct = ServerCommandSource.class.getMethod("hasPermissionLevel", int.class);
-                direct.setAccessible(true);
+        private static Method resolvePermissionLevelMethod() {
+            Method direct = ReflectiveAccess.publicMethod(
+                    ServerCommandSource.class,
+                    "hasPermissionLevel",
+                    int.class
+            ).orElse(null);
+            if (direct != null) {
                 return direct;
-            } catch (ReflectiveOperationException ignored) {
-                // continue
             }
-            java.lang.reflect.Method candidate = null;
-            for (java.lang.reflect.Method method : ServerCommandSource.class.getMethods()) {
+            Method candidate = null;
+            for (Method method : ServerCommandSource.class.getMethods()) {
                 if (method.getParameterCount() != 1 || method.getParameterTypes()[0] != int.class) {
                     continue;
                 }
@@ -317,14 +312,6 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
                 candidate.setAccessible(true);
             }
             return candidate;
-        }
-
-        private static Class<?> tryLoad(String name) {
-            try {
-                return Class.forName(name);
-            } catch (ClassNotFoundException ignored) {
-                return null;
-            }
         }
     }
 

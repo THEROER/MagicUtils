@@ -1,5 +1,8 @@
 package dev.ua.theroer.magicutils.platform.fabric;
 
+import java.lang.reflect.Method;
+
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -11,24 +14,16 @@ import net.minecraft.server.network.ServerPlayerEntity;
  */
 final class FabricPermissionBridge {
     private static final String PERMISSIONS_CLASS = "me.lucko.fabric.api.permissions.v0.Permissions";
-    private static final java.lang.reflect.Method CHECK_BOOLEAN;
-    private static final java.lang.reflect.Method CHECK_INT;
-    private static final java.lang.reflect.Method CHECK_SIMPLE;
-    private static final java.lang.reflect.Method HAS_PERMISSION_LEVEL;
+    private static final Method CHECK_BOOLEAN;
+    private static final Method CHECK_INT;
+    private static final Method CHECK_SIMPLE;
+    private static final Method HAS_PERMISSION_LEVEL;
 
     static {
-        java.lang.reflect.Method checkBoolean = null;
-        java.lang.reflect.Method checkInt = null;
-        java.lang.reflect.Method checkSimple = null;
-        Class<?> permissions = tryLoad(PERMISSIONS_CLASS);
-        if (permissions != null) {
-            checkBoolean = findMethod(permissions, boolean.class);
-            checkInt = findMethod(permissions, int.class);
-            checkSimple = findMethod(permissions, null);
-        }
-        CHECK_BOOLEAN = checkBoolean;
-        CHECK_INT = checkInt;
-        CHECK_SIMPLE = checkSimple;
+        Class<?> permissions = ReflectiveAccess.loadClass(PERMISSIONS_CLASS).orElse(null);
+        CHECK_BOOLEAN = permissions != null ? findMethod(permissions, boolean.class) : null;
+        CHECK_INT = permissions != null ? findMethod(permissions, int.class) : null;
+        CHECK_SIMPLE = permissions != null ? findMethod(permissions, null) : null;
         HAS_PERMISSION_LEVEL = resolvePermissionLevelMethod();
     }
 
@@ -59,23 +54,29 @@ final class FabricPermissionBridge {
     private static Boolean tryInvoke(ServerCommandSource source, String permission, int opLevel) {
         if (CHECK_BOOLEAN != null) {
             try {
-                Object res = CHECK_BOOLEAN.invoke(null, source, permission, hasPermissionLevel(source, opLevel));
-                return (Boolean) res;
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                Object res = ReflectiveAccess.invoke(
+                        CHECK_BOOLEAN,
+                        null,
+                        source,
+                        permission,
+                        hasPermissionLevel(source, opLevel)
+                ).orElse(null);
+                return res instanceof Boolean value ? value : null;
+            } catch (RuntimeException ignored) {
             }
         }
         if (CHECK_INT != null) {
             try {
-                Object res = CHECK_INT.invoke(null, source, permission, opLevel);
-                return (Boolean) res;
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                Object res = ReflectiveAccess.invoke(CHECK_INT, null, source, permission, opLevel).orElse(null);
+                return res instanceof Boolean value ? value : null;
+            } catch (RuntimeException ignored) {
             }
         }
         if (CHECK_SIMPLE != null) {
             try {
-                Object res = CHECK_SIMPLE.invoke(null, source, permission);
-                return (Boolean) res;
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                Object res = ReflectiveAccess.invoke(CHECK_SIMPLE, null, source, permission).orElse(null);
+                return res instanceof Boolean value ? value : null;
+            } catch (RuntimeException ignored) {
             }
         }
         return null;
@@ -87,16 +88,16 @@ final class FabricPermissionBridge {
         }
         if (HAS_PERMISSION_LEVEL != null) {
             try {
-                Object res = HAS_PERMISSION_LEVEL.invoke(source, opLevel);
-                return res instanceof Boolean && (Boolean) res;
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                Object res = ReflectiveAccess.invoke(HAS_PERMISSION_LEVEL, source, opLevel).orElse(Boolean.FALSE);
+                return res instanceof Boolean value && value;
+            } catch (RuntimeException ignored) {
             }
         }
         return false;
     }
 
-    private static java.lang.reflect.Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
-        for (java.lang.reflect.Method method : permissionsClass.getMethods()) {
+    private static Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
+        for (Method method : permissionsClass.getMethods()) {
             if (!method.getName().equals("check")) {
                 continue;
             }
@@ -114,21 +115,7 @@ final class FabricPermissionBridge {
         return null;
     }
 
-    private static java.lang.reflect.Method resolvePermissionLevelMethod() {
-        try {
-            java.lang.reflect.Method direct = ServerCommandSource.class.getMethod("hasPermissionLevel", int.class);
-            direct.setAccessible(true);
-            return direct;
-        } catch (ReflectiveOperationException ignored) {
-            return null;
-        }
-    }
-
-    private static Class<?> tryLoad(String name) {
-        try {
-            return Class.forName(name);
-        } catch (ClassNotFoundException ignored) {
-            return null;
-        }
+    private static Method resolvePermissionLevelMethod() {
+        return ReflectiveAccess.publicMethod(ServerCommandSource.class, "hasPermissionLevel", int.class).orElse(null);
     }
 }

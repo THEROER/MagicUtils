@@ -6,6 +6,7 @@ import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -42,7 +43,7 @@ public class ConfigSerializer {
             field.setAccessible(true);
 
             // Skip transient fields
-            if (java.lang.reflect.Modifier.isTransient(field.getModifiers())) {
+            if (Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
 

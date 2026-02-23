@@ -84,3 +84,15 @@ https://theroer.github.io/MagicUtils/getting-started/quickstart/
 
 - The GitHub Pages Maven repository does not host `*-all` shaded artifacts.
   Use the thin jars from Maven or build shaded jars locally if needed.
+
+## Reflection automation
+
+MagicUtils includes Gradle tasks to keep reflection usage explicit and reviewable:
+
+- `./gradlew refreshReflectionAllowlist`
+  Regenerates `gradle/reflection-allowlist.txt` from current source.
+- `./gradlew verifyReflectionBoundaries`
+  Fails when new raw reflection markers appear outside the recorded allowlist.
+
+`verifyReflectionBoundaries` is wired into `check`, so CI catches unexpected new
+reflection usage automatically.
