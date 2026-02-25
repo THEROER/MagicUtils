@@ -61,6 +61,13 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
                     publication.artifact(project.tasks.named("sourcesJar", Jar::class.java).get())
                     publication.artifact(project.tasks.named("javadocJar", Jar::class.java).get())
                 }
+
+                if (project.hasProperty("publish_repo")) {
+                    publishing.repositories.maven { repo ->
+                        repo.name = "ghPages"
+                        repo.url = project.uri(project.property("publish_repo") as String)
+                    }
+                }
             }
         }
     }

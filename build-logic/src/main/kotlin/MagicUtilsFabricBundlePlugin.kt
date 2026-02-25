@@ -143,6 +143,13 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                     }
                 }
             }
+
+            if (project.hasProperty("publish_repo")) {
+                publishing.repositories.maven { repo ->
+                    repo.name = "ghPages"
+                    repo.url = project.uri(project.property("publish_repo") as String)
+                }
+            }
         }
     }
 }
