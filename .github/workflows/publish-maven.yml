@@ -33,7 +33,7 @@ jobs:
       - name: Publish to local gh-pages folder
         run: |
           chmod +x ./gradlew
-          ./gradlew publish -Ppublish_repo=$GITHUB_WORKSPACE/maven -Pskip_shadow_publish=true
+          ./gradlew clean publish --rerun-tasks -Ppublish_repo=$GITHUB_WORKSPACE/maven -Pskip_shadow_publish=true
 
       - name: Generate Maven index
         run: |
