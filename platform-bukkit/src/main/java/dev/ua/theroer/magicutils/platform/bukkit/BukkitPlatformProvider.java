@@ -1,16 +1,23 @@
 package dev.ua.theroer.magicutils.platform.bukkit;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerMessage;
+import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
+import dev.ua.theroer.magicutils.platform.PlayerMessageType;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import dev.ua.theroer.magicutils.config.adapters.AdaptersBootstrap;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -31,7 +38,9 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
     private final Audience consoleAudience;
     private final BukkitScheduler scheduler;
     private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
+    private final List<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean shutdownListenerRegistered = new AtomicBoolean(false);
+    private final AtomicBoolean playerMessageListenerRegistered = new AtomicBoolean(false);
     private final TaskScheduler taskScheduler;
 
     /**
@@ -105,8 +114,64 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         shutdownHooks.remove(hook);
     }
 
+    @Override
+    public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        playerMessageListeners.add(listener);
+        registerPlayerMessageHook();
+        return () -> playerMessageListeners.remove(listener);
+    }
+
     private Audience wrap(CommandSender sender) {
         return new BukkitAudienceWrapper(sender);
+    }
+
+    private void registerPlayerMessageHook() {
+        if (!playerMessageListenerRegistered.compareAndSet(false, true)) {
+            return;
+        }
+        Bukkit.getPluginManager().registerEvents(new Listener() {
+            @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+            public void onChat(AsyncPlayerChatEvent event) {
+                if (event == null || event.getPlayer() == null) {
+                    return;
+                }
+                publishPlayerMessage(new PlayerMessage(
+                        event.getPlayer().getUniqueId(),
+                        event.getPlayer().getName(),
+                        event.getMessage(),
+                        PlayerMessageType.CHAT
+                ));
+            }
+
+            @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+            public void onCommand(PlayerCommandPreprocessEvent event) {
+                if (event == null || event.getPlayer() == null) {
+                    return;
+                }
+                publishPlayerMessage(new PlayerMessage(
+                        event.getPlayer().getUniqueId(),
+                        event.getPlayer().getName(),
+                        event.getMessage(),
+                        PlayerMessageType.COMMAND
+                ));
+            }
+        }, plugin);
+    }
+
+    private void publishPlayerMessage(PlayerMessage message) {
+        if (message == null || !message.isValid() || playerMessageListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerMessageListener listener : playerMessageListeners) {
+            try {
+                listener.onPlayerMessage(message);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to deliver player message listener", e);
+            }
+        }
     }
 
     private static void registerShutdownHookInternal(JavaPlugin plugin,

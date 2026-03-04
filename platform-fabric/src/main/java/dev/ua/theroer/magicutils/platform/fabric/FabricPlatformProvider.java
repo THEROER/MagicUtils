@@ -3,8 +3,12 @@ package dev.ua.theroer.magicutils.platform.fabric;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerMessage;
+import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
+import dev.ua.theroer.magicutils.platform.PlayerMessageType;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
@@ -21,8 +25,10 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.function.Supplier;
@@ -44,6 +50,8 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     private final boolean useConfigNamespace;
     private final String configNamespace;
     private final TaskScheduler taskScheduler;
+    private final List<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean playerMessageHooksRegistered = new AtomicBoolean(false);
 
     public FabricPlatformProvider(MinecraftServer server) {
         this(() -> server, LoggerFactory.getLogger("MagicUtils-Fabric"));
@@ -140,6 +148,16 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     }
 
     @Override
+    public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        playerMessageListeners.add(listener);
+        registerPlayerMessageHooks();
+        return () -> playerMessageListeners.remove(listener);
+    }
+
+    @Override
     public void registerShutdownHook(Runnable hook) {
         if (hook == null) {
             return;
@@ -169,6 +187,114 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
 
     private MinecraftServer server() {
         return serverSupplier != null ? serverSupplier.get() : null;
+    }
+
+    private void registerPlayerMessageHooks() {
+        if (!playerMessageHooksRegistered.compareAndSet(false, true)) {
+            return;
+        }
+        registerFabricMessageEvent(
+                "CHAT_MESSAGE",
+                "net.fabricmc.fabric.api.message.v1.ServerMessageEvents$ChatMessage",
+                (proxy, method, args) -> {
+                    if (args == null || args.length < 2) {
+                        return null;
+                    }
+                    String content = extractMessageContent(args[0]);
+                    ServerPlayerEntity sender = ReflectiveAccess.cast(args[1], ServerPlayerEntity.class).orElse(null);
+                    publishPlayerMessage(sender, content, PlayerMessageType.CHAT);
+                    return null;
+                }
+        );
+        registerFabricMessageEvent(
+                "COMMAND_MESSAGE",
+                "net.fabricmc.fabric.api.message.v1.ServerMessageEvents$CommandMessage",
+                (proxy, method, args) -> {
+                    if (args == null || args.length < 2) {
+                        return null;
+                    }
+                    String content = extractMessageContent(args[0]);
+                    Object source = args[1];
+                    ServerPlayerEntity sender = ReflectiveAccess.publicMethod(source.getClass(), "getPlayer")
+                            .flatMap(getPlayer -> ReflectiveAccess.invoke(getPlayer, source))
+                            .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
+                            .orElse(null);
+                    publishPlayerMessage(sender, content, PlayerMessageType.COMMAND);
+                    return null;
+                }
+        );
+    }
+
+    private void registerFabricMessageEvent(
+            String eventFieldName,
+            String listenerClassName,
+            InvocationHandler handler
+    ) {
+        Class<?> eventsClass = ReflectiveAccess.loadClass(
+                "net.fabricmc.fabric.api.message.v1.ServerMessageEvents"
+        ).orElse(null);
+        Class<?> listenerType = ReflectiveAccess.loadClass(listenerClassName).orElse(null);
+        if (eventsClass == null || listenerType == null) {
+            return;
+        }
+
+        Object event = ReflectiveAccess.publicField(eventsClass, eventFieldName)
+                .flatMap(field -> ReflectiveAccess.readField(field, null))
+                .orElse(null);
+        if (event == null) {
+            return;
+        }
+
+        Method register = ReflectiveAccess.publicMethod(event.getClass(), "register", listenerType)
+                .orElse(null);
+        if (register == null) {
+            return;
+        }
+
+        Object listener = Proxy.newProxyInstance(
+                eventsClass.getClassLoader(),
+                new Class<?>[]{listenerType},
+                handler
+        );
+        ReflectiveAccess.invoke(register, event, listener);
+    }
+
+    private void publishPlayerMessage(ServerPlayerEntity player, String message, PlayerMessageType type) {
+        if (player == null || message == null || message.isBlank() || type == null) {
+            return;
+        }
+        PlayerMessage playerMessage = new PlayerMessage(
+                player.getUuid(),
+                player.getName().getString(),
+                message,
+                type
+        );
+        if (!playerMessage.isValid()) {
+            return;
+        }
+        for (PlayerMessageListener listener : playerMessageListeners) {
+            try {
+                listener.onPlayerMessage(playerMessage);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to dispatch Fabric player message", e);
+            }
+        }
+    }
+
+    private static String extractMessageContent(Object signedMessage) {
+        if (signedMessage == null) {
+            return "";
+        }
+        Object content = ReflectiveAccess.publicMethod(signedMessage.getClass(), "getContent")
+                .flatMap(method -> ReflectiveAccess.invoke(method, signedMessage))
+                .orElse(null);
+        if (content == null) {
+            return "";
+        }
+        return ReflectiveAccess.publicMethod(content.getClass(), "getString")
+                .flatMap(method -> ReflectiveAccess.invoke(method, content))
+                .map(Object::toString)
+                .orElse("");
     }
 
     private static Path resolveConfigDir() {

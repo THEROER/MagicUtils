@@ -66,4 +66,14 @@ public interface Platform {
     default TaskScheduler scheduler() {
         return TaskSchedulers.shared();
     }
+
+    /**
+     * Subscribes to normalized player chat/command messages when the platform supports it.
+     *
+     * @param listener message listener
+     * @return subscription handle, or a no-op subscription when unsupported
+     */
+    default ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
+        return ListenerSubscription.noop();
+    }
 }

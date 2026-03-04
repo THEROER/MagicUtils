@@ -1,13 +1,20 @@
 package dev.ua.theroer.magicutils.platform.velocity;
 
+import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerMessage;
+import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
+import dev.ua.theroer.magicutils.platform.PlayerMessageType;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.ThreadContext;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
@@ -22,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -36,6 +44,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     private static volatile PlatformLogger shutdownLogger;
 
     private final Map<UUID, Audience> audienceCache = new ConcurrentHashMap<>();
+    private final Collection<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final ProxyServer proxy;
     private final Object plugin;
     private final PlatformLogger logger;
@@ -176,6 +185,16 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         SHUTDOWN_HOOKS.remove(hook);
     }
 
+    @Override
+    public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
+        if (listener == null || proxy == null || plugin == null) {
+            return ListenerSubscription.noop();
+        }
+        registerEventListener();
+        playerMessageListeners.add(listener);
+        return () -> playerMessageListeners.remove(listener);
+    }
+
     private Audience wrap(Player player) {
         if (player == null) {
             return consoleAudience;
@@ -210,6 +229,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
         audienceCache.clear();
+        playerMessageListeners.clear();
         runShutdownHooks();
     }
 
@@ -224,6 +244,52 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
             return;
         }
         audienceCache.remove(event.getPlayer().getUniqueId());
+    }
+
+    @Subscribe
+    public void onPlayerChat(PlayerChatEvent event) {
+        if (event == null || event.getPlayer() == null || playerMessageListeners.isEmpty()) {
+            return;
+        }
+        publishPlayerMessage(new PlayerMessage(
+                event.getPlayer().getUniqueId(),
+                event.getPlayer().getUsername(),
+                event.getMessage(),
+                PlayerMessageType.CHAT
+        ));
+    }
+
+    @Subscribe(order = PostOrder.LAST)
+    public void onCommandExecute(CommandExecuteEvent event) {
+        if (event == null || playerMessageListeners.isEmpty() || !event.getResult().isAllowed()) {
+            return;
+        }
+        if (!(event.getCommandSource() instanceof Player player)) {
+            return;
+        }
+        String command = event.getCommand();
+        if (command == null || command.isBlank()) {
+            return;
+        }
+        publishPlayerMessage(new PlayerMessage(
+                player.getUniqueId(),
+                player.getUsername(),
+                command,
+                PlayerMessageType.COMMAND
+        ));
+    }
+
+    private void publishPlayerMessage(PlayerMessage message) {
+        if (message == null || !message.isValid() || playerMessageListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerMessageListener listener : playerMessageListeners) {
+            try {
+                listener.onPlayerMessage(message);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to deliver player message listener", e);
+            }
+        }
     }
 
     private static void runShutdownHooks() {
