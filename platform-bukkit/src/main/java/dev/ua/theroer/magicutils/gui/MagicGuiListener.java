@@ -65,6 +65,23 @@ class MagicGuiListener implements Listener {
     public static void shutdown(Plugin plugin) {
         MagicGuiListener listener = plugin != null ? LISTENERS.remove(plugin) : null;
         if (listener != null) {
+            for (Map.Entry<Player, MagicGui> entry : new ArrayList<>(listener.openGuis.entrySet())) {
+                Player player = entry.getKey();
+                MagicGui gui = entry.getValue();
+                if (player == null || gui == null) {
+                    continue;
+                }
+                try {
+                    if (player.getOpenInventory().getTopInventory().equals(gui.getInventory())) {
+                        player.closeInventory();
+                    }
+                } catch (RuntimeException e) {
+                    if (listener.logger != null) {
+                        listener.logger.warning("[MagicGuiListener] Failed to close GUI during shutdown: "
+                                + e.getMessage());
+                    }
+                }
+            }
             listener.openGuis.clear();
             HandlerList.unregisterAll(listener);
         }

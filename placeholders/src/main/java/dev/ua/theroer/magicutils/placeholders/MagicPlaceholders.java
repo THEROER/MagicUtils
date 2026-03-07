@@ -70,8 +70,8 @@ public final class MagicPlaceholders {
      */
     public static final class NamespaceMeta {
         private final String namespace;
-        private String author;
-        private String version;
+        private volatile String author;
+        private volatile String version;
 
         private NamespaceMeta(String namespace, @Nullable String author, @Nullable String version) {
             this.namespace = namespace;

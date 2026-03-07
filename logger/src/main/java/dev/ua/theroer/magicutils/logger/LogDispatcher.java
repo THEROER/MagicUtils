@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.logger;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.Platform;
+import dev.ua.theroer.magicutils.platform.Tasks;
 import net.kyori.adventure.text.Component;
 
 import java.util.ArrayList;
@@ -79,7 +80,11 @@ public final class LogDispatcher {
             if (platform.isMainThread()) {
                 deliver.run();
             } else {
-                platform.runOnMain(deliver);
+                Tasks.runOnMain(platform, deliver).whenComplete((ignored, error) -> {
+                    if (error != null && platform.logger() != null) {
+                        platform.logger().warn("Failed to deliver chat log on the main thread", error);
+                    }
+                });
             }
         }
     }

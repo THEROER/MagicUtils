@@ -2,12 +2,12 @@ package dev.ua.theroer.magicutils.commands;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
-import com.velocitypowered.api.proxy.Player;
 import net.kyori.adventure.text.Component;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -61,25 +61,16 @@ final class VelocityCommandWrapper implements SimpleCommand {
         if (invocation == null || invocation.source() == null) {
             return false;
         }
-        if (!(invocation.source() instanceof Player)) {
-            return true;
-        }
-        return invocation.source().hasPermission("leavepulse.command")
-                || invocation.source().hasPermission("leavepulse.admin");
+        String label = resolveExecutionLabel(invocation.alias());
+        String targetSubName = invocation.arguments().length > 0 ? invocation.arguments()[0] : null;
+        return commandManager.canAccessCommand(label, invocation.source(), targetSubName);
     }
 
     private String resolveExecutionLabel(String invocationAlias) {
         if (invocationAlias == null || invocationAlias.isBlank()) {
             return commandLabel;
         }
-        String alias = invocationAlias.toLowerCase();
-        if ("leavepulsevelocity".equals(alias)
-                || "lplv".equals(alias)
-                || "whitelistvelocity".equals(alias)
-                || "wlv".equals(alias)) {
-            return commandLabel;
-        }
-        return alias;
+        return invocationAlias.toLowerCase(Locale.ROOT);
     }
 
     private CommandResult runCommand(String label, CommandSource source, List<String> args) {

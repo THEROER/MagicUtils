@@ -48,6 +48,7 @@ public final class MagicHttpClient implements AutoCloseable {
     private final Duration requestTimeout;
     private final Map<String, String> defaultHeaders;
     private final Platform platform;
+    private final boolean ownsClient;
 
     private MagicHttpClient(Builder builder) {
         this.config = builder.config != null ? builder.config : new HttpClientConfig();
@@ -59,6 +60,7 @@ public final class MagicHttpClient implements AutoCloseable {
         this.baseUrl = builder.baseUrl != null ? builder.baseUrl : config.getDefaults().getBaseUrl();
         this.requestTimeout = builder.requestTimeout != null ? builder.requestTimeout : toDuration(config.getTimeouts().getRequestSeconds());
         this.defaultHeaders = buildDefaultHeaders(builder);
+        this.ownsClient = builder.client == null;
         this.client = builder.client != null ? builder.client : buildHttpClient(builder);
     }
 
@@ -505,7 +507,16 @@ public final class MagicHttpClient implements AutoCloseable {
 
     @Override
     public void close() {
-        // no resources to release yet
+        if (!ownsClient) {
+            return;
+        }
+        try {
+            client.close();
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warn("Failed to close HTTP client", e);
+            }
+        }
     }
 
     private Map<String, String> buildDefaultHeaders(Builder builder) {
@@ -569,10 +580,21 @@ public final class MagicHttpClient implements AutoCloseable {
         if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("path is empty");
         }
-        if (baseUrl != null && !baseUrl.isBlank()) {
-            return URI.create(baseUrl).resolve(path);
+        URI resolved = URI.create(path);
+        if (resolved.isAbsolute()) {
+            return resolved;
         }
-        return URI.create(path);
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            URI base = URI.create(baseUrl);
+            if (!path.startsWith("/")
+                    && base.getPath() != null
+                    && !base.getPath().isEmpty()
+                    && !base.getPath().endsWith("/")) {
+                base = URI.create(base.toString() + "/");
+            }
+            return base.resolve(resolved);
+        }
+        return resolved;
     }
 
     private ObjectMapper defaultMapper() {
@@ -697,18 +719,7 @@ public final class MagicHttpClient implements AutoCloseable {
         if (delayMs <= 0) {
             return;
         }
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        Executor executor = CompletableFuture.delayedExecutor(delayMs, TimeUnit.MILLISECONDS);
-        executor.execute(() -> future.complete(null));
-        try {
-            future.get();
-        } catch (java.util.concurrent.ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException runtime) {
-                throw runtime;
-            }
-            throw new IOException("Failed to wait for retry delay", cause);
-        }
+        TimeUnit.MILLISECONDS.sleep(delayMs);
     }
 
     private void logRequest(HttpRequest request, String body) {

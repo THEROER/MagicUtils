@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
@@ -29,6 +30,7 @@ import java.nio.file.WatchService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -280,6 +282,10 @@ public class ConfigManager {
     }
 
     private <T> LoadResult loadConfig(T instance, ConfigMetadata metadata) throws Exception {
+        return loadConfig(instance, metadata, Collections.emptySet());
+    }
+
+    private <T> LoadResult loadConfig(T instance, ConfigMetadata metadata, Set<String> sections) throws Exception {
         File configFile = metadata.resolveFile(platform.configDir());
         boolean created = false;
 
@@ -290,7 +296,10 @@ public class ConfigManager {
 
         ConfigDocument document = ConfigDocument.load(configFile);
         MigrationResult migrationResult = applyMigrations(instance.getClass(), document, created);
-        processFields(instance, document, instance.getClass());
+        Set<String> normalizedSections = normalizeSections(sections);
+        boolean fullReload = normalizedSections.isEmpty() || migrationResult.shouldSave();
+        processFields(instance, document, instance.getClass(), "",
+                fullReload ? Collections.emptySet() : normalizedSections);
         if (migrationResult.shouldSave()) {
             saveConfigToFile(instance, metadata, migrationResult.schemaVersion());
         }
@@ -402,7 +411,7 @@ public class ConfigManager {
     }
 
     private void writeDefaults(Object instance, ConfigDocument document, Class<?> clazz, String prefix) throws Exception {
-        for (Field field : clazz.getDeclaredFields()) {
+        for (Field field : getConfigFields(clazz)) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
@@ -450,13 +459,21 @@ public class ConfigManager {
     }
 
     private void processFields(Object instance, ConfigDocument document, Class<?> clazz) throws Exception {
-        for (Field field : clazz.getDeclaredFields()) {
+        processFields(instance, document, clazz, "", Collections.emptySet());
+    }
+
+    private void processFields(Object instance, ConfigDocument document, Class<?> clazz,
+                               String prefix, Set<String> sections) throws Exception {
+        for (Field field : getConfigFields(clazz)) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
                 continue;
 
-            String path = getFieldPath(field, "");
+            String path = getFieldPath(field, prefix);
+            if (!shouldProcessPath(path, sections)) {
+                continue;
+            }
 
             ConfigSection section = field.getAnnotation(ConfigSection.class);
             if (section != null) {
@@ -467,7 +484,8 @@ public class ConfigManager {
                 }
                 ConfigSectionView subsection = document.getConfigurationSection(path);
                 if (subsection != null) {
-                    processFields(sectionInstance, new ConfigDocument(subsection.unwrap(), document.header), field.getType());
+                    processFields(sectionInstance, new ConfigDocument(subsection.unwrap(), document.header),
+                            field.getType(), "", narrowSections(path, sections));
                 }
                 continue;
             }
@@ -521,11 +539,17 @@ public class ConfigManager {
         Class<?> fieldType = field.getType();
 
         if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
-                ParameterizedType listType = (ParameterizedType) field.getGenericType();
-                Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+                Class<?> elementType = null;
+                Type genericType = field.getGenericType();
+                if (genericType instanceof ParameterizedType listType) {
+                    Type[] typeArgs = listType.getActualTypeArguments();
+                    if (typeArgs.length > 0) {
+                        elementType = resolveRawClass(typeArgs[0]);
+                    }
+                }
 
                 List<?> list = (List<?>) value;
-                if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
+                if (elementType != null && elementType.isAnnotationPresent(ConfigSerializable.class)) {
                     List<Object> deserializedList = new ArrayList<>();
                     for (Object item : list) {
                         if (item instanceof Map) {
@@ -536,7 +560,7 @@ public class ConfigManager {
                     }
                     value = deserializedList;
                 } else {
-                    ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+                    ConfigValueAdapter<?> adapter = elementType != null ? ConfigAdapters.get(elementType) : null;
                     if (adapter != null) {
                         ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                         List<Object> converted = new ArrayList<>(list.size());
@@ -552,9 +576,21 @@ public class ConfigManager {
                     value = processList(field, (List<?>) value);
                 }
         } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
-                ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-                Class<?> keyType = (Class<?>) mapType.getActualTypeArguments()[0];
-                Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
+                Class<?> keyType = String.class;
+                Class<?> valueType = null;
+                Type genericType = field.getGenericType();
+                if (genericType instanceof ParameterizedType mapType) {
+                    Type[] typeArgs = mapType.getActualTypeArguments();
+                    if (typeArgs.length > 0) {
+                        Class<?> resolvedKeyType = resolveRawClass(typeArgs[0]);
+                        if (resolvedKeyType != null) {
+                            keyType = resolvedKeyType;
+                        }
+                    }
+                    if (typeArgs.length > 1) {
+                        valueType = resolveRawClass(typeArgs[1]);
+                    }
+                }
 
                 Map<Object, Object> map = new LinkedHashMap<>();
                 ConfigValueAdapter<?> keyAdapter = keyType == String.class ? null : ConfigAdapters.get(keyType);
@@ -662,9 +698,15 @@ public class ConfigManager {
         }
 
         if (value instanceof List && List.class.isAssignableFrom(field.getType())) {
-            ParameterizedType listType = (ParameterizedType) field.getGenericType();
-            Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
-            if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
+            Class<?> elementType = null;
+            Type genericType = field.getGenericType();
+            if (genericType instanceof ParameterizedType listType) {
+                Type[] typeArgs = listType.getActualTypeArguments();
+                if (typeArgs.length > 0) {
+                    elementType = resolveRawClass(typeArgs[0]);
+                }
+            }
+            if (elementType != null && elementType.isAnnotationPresent(ConfigSerializable.class)) {
                 List<Object> serializedList = new ArrayList<>();
                 for (Object item : (List<?>) value) {
                     if (item == null) {
@@ -678,7 +720,7 @@ public class ConfigManager {
                 return serializedList;
             }
 
-            ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+            ConfigValueAdapter<?> adapter = elementType != null ? ConfigAdapters.get(elementType) : null;
             if (adapter != null) {
                 @SuppressWarnings("unchecked")
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
@@ -691,9 +733,15 @@ public class ConfigManager {
         }
 
         if (value instanceof Map && Map.class.isAssignableFrom(field.getType())) {
-            ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-            Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
-            if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
+            Class<?> valueType = null;
+            Type genericType = field.getGenericType();
+            if (genericType instanceof ParameterizedType mapType) {
+                Type[] typeArgs = mapType.getActualTypeArguments();
+                if (typeArgs.length > 1) {
+                    valueType = resolveRawClass(typeArgs[1]);
+                }
+            }
+            if (valueType != null && valueType.isAnnotationPresent(ConfigSerializable.class)) {
                 Map<String, Object> serializedMap = new LinkedHashMap<>();
                 Map<?, ?> map = (Map<?, ?>) value;
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -717,7 +765,7 @@ public class ConfigManager {
                 }
             }
 
-            ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+            ConfigValueAdapter<?> adapter = valueType != null ? ConfigAdapters.get(valueType) : null;
             if (adapter != null) {
                 @SuppressWarnings("unchecked")
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
@@ -750,7 +798,7 @@ public class ConfigManager {
     }
 
     private void writeSectionToMap(Object instance, Map<String, Object> out, String prefix, Map<String, List<String>> comments) throws Exception {
-        for (Field field : instance.getClass().getDeclaredFields()) {
+        for (Field field : getConfigFields(instance.getClass())) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
@@ -1177,6 +1225,77 @@ public class ConfigManager {
         return prefix + field.getName();
     }
 
+    private List<Field> getConfigFields(Class<?> clazz) {
+        List<Class<?>> hierarchy = new ArrayList<>();
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            hierarchy.add(current);
+        }
+        Collections.reverse(hierarchy);
+
+        List<Field> fields = new ArrayList<>();
+        for (Class<?> current : hierarchy) {
+            fields.addAll(Arrays.asList(current.getDeclaredFields()));
+        }
+        return fields;
+    }
+
+    private Set<String> normalizeSections(Set<String> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String section : sections) {
+            if (section == null) {
+                continue;
+            }
+            String trimmed = section.trim();
+            if (!trimmed.isEmpty()) {
+                normalized.add(trimmed);
+            }
+        }
+        return normalized.isEmpty() ? Collections.emptySet() : normalized;
+    }
+
+    private boolean shouldProcessPath(String path, Set<String> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return true;
+        }
+        for (String section : sections) {
+            if (section.equals(path)
+                    || section.startsWith(path + ".")
+                    || path.startsWith(section + ".")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<String> narrowSections(String parentPath, Set<String> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> nested = new LinkedHashSet<>();
+        for (String section : sections) {
+            if (section.equals(parentPath)) {
+                return Collections.emptySet();
+            }
+            if (section.startsWith(parentPath + ".")) {
+                nested.add(section.substring(parentPath.length() + 1));
+            }
+        }
+        return nested.isEmpty() ? Collections.emptySet() : nested;
+    }
+
+    private Class<?> resolveRawClass(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return clazz;
+        }
+        if (type instanceof ParameterizedType parameterizedType && parameterizedType.getRawType() instanceof Class<?> rawClass) {
+            return rawClass;
+        }
+        return null;
+    }
+
     /**
      * Saves all registered instances of the given config class.
      *
@@ -1252,7 +1371,7 @@ public class ConfigManager {
     }
 
     private void saveFields(Object instance, ConfigDocument document, Class<?> clazz, String prefix) throws Exception {
-        for (Field field : clazz.getDeclaredFields()) {
+        for (Field field : getConfigFields(clazz)) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
@@ -1438,7 +1557,7 @@ public class ConfigManager {
      */
     @SuppressWarnings("unchecked")
     public <T> void onChange(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
-        changeListeners.computeIfAbsent(configClass, k -> new ArrayList<>())
+        changeListeners.computeIfAbsent(configClass, k -> new CopyOnWriteArrayList<>())
                 .add((BiConsumer<Object, Set<String>>) listener);
     }
 
@@ -1449,7 +1568,12 @@ public class ConfigManager {
         }
 
         for (BiConsumer<Object, Set<String>> listener : listeners) {
-            listener.accept(entry.instance, changedSections);
+            try {
+                listener.accept(entry.instance, changedSections);
+            } catch (Throwable error) {
+                logger.error("Failed to notify config change listener for "
+                        + entry.key.configClass.getName(), error);
+            }
         }
     }
 
@@ -1554,7 +1678,7 @@ public class ConfigManager {
         synchronized (entry.monitor) {
             try {
                 long beforeReload = entry.file.exists() ? entry.file.lastModified() : -1L;
-                LoadResult loadResult = loadConfig(entry.instance, entry.metadata);
+                LoadResult loadResult = loadConfig(entry.instance, entry.metadata, sections);
                 entry.schemaVersion = loadResult.schemaVersion();
 
                 entry.lastModified.set(beforeReload);
@@ -1690,10 +1814,18 @@ public class ConfigManager {
         reloadExecutor.submit(() -> {
             try {
                 if (reloadEntry(entry, Collections.emptySet(), true)) {
-                    platform.runOnMain(() -> notifyChangeListeners(entry, Collections.emptySet()));
+                    notifyChangeListenersOnMain(entry, Collections.emptySet());
                 }
             } finally {
                 entry.reloadComplete();
+            }
+        });
+    }
+
+    private void notifyChangeListenersOnMain(ConfigEntry<?> entry, Set<String> sections) {
+        Tasks.runOnMain(platform, () -> notifyChangeListeners(entry, sections)).whenComplete((ignored, error) -> {
+            if (error != null) {
+                logger.warn("Failed to notify config change listeners for " + entry.key.filePath, error);
             }
         });
     }
@@ -1943,7 +2075,7 @@ public class ConfigManager {
      * Minimal config document helper backed by Jackson.
      */
     private static class ConfigDocument extends ConfigSectionView {
-        private static final ObjectMapper SCALAR_MAPPER = JsonMapper.builder().build();
+        private static final ObjectMapper SCALAR_MAPPER = createScalarMapper();
         private final Map<String, Object> data;
         private final Map<String, List<String>> comments;
         private List<String> header;
@@ -1957,6 +2089,12 @@ public class ConfigManager {
 
         static ConfigDocument empty() {
             return new ConfigDocument(new LinkedHashMap<>(), null);
+        }
+
+        private static ObjectMapper createScalarMapper() {
+            ObjectMapper mapper = JsonMapper.builder().build();
+            mapper.findAndRegisterModules();
+            return mapper;
         }
 
         static ConfigDocument load(File file) throws IOException {
@@ -2350,15 +2488,12 @@ public class ConfigManager {
             if (value == null) {
                 return null;
             }
-            if (value instanceof Map) {
-                return null;
+            if (value instanceof Map<?, ?> map) {
+                return formatTomlInlineTable(castMap(map));
             }
             if (value instanceof List<?> list) {
                 List<String> parts = new ArrayList<>();
                 for (Object item : list) {
-                    if (item instanceof Map) {
-                        return null;
-                    }
                     String formatted = formatTomlValue(item);
                     if (formatted != null) {
                         parts.add(formatted);
@@ -2367,6 +2502,20 @@ public class ConfigManager {
                 return "[" + String.join(", ", parts) + "]";
             }
             return formatScalar(value);
+        }
+
+        private static String formatTomlInlineTable(Map<String, Object> map) {
+            if (map == null || map.isEmpty()) {
+                return "{}";
+            }
+            List<String> parts = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String formatted = formatTomlValue(entry.getValue());
+                if (formatted != null) {
+                    parts.add(formatTomlKey(entry.getKey()) + " = " + formatted);
+                }
+            }
+            return "{" + String.join(", ", parts) + "}";
         }
 
         private static String formatJsonKey(String key) {

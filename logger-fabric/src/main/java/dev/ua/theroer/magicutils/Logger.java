@@ -13,8 +13,12 @@ import dev.ua.theroer.magicutils.logger.PrefixedLoggerCore;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
+import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.ThreadContext;
 import dev.ua.theroer.magicutils.platform.fabric.FabricAudience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricComponentSerializer;
@@ -276,6 +280,21 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
         @Override
         public boolean isMainThread() {
             return delegate.isMainThread();
+        }
+
+        @Override
+        public ThreadContext threadContext() {
+            return delegate.threadContext();
+        }
+
+        @Override
+        public TaskScheduler scheduler() {
+            return delegate.scheduler();
+        }
+
+        @Override
+        public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
+            return delegate.subscribePlayerMessages(listener);
         }
 
         @Override

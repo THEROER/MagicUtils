@@ -128,10 +128,16 @@ public final class ReflectiveAccess {
     }
 
     public static <T> Optional<T> cast(Object value, Class<T> expectedType) {
-        if (value == null || expectedType == null || !expectedType.isInstance(value)) {
+        if (value == null || expectedType == null) {
             return Optional.empty();
         }
-        return Optional.of(expectedType.cast(value));
+        Class<?> targetType = expectedType.isPrimitive() ? wrapPrimitive(expectedType) : expectedType;
+        if (targetType == null || !targetType.isInstance(value)) {
+            return Optional.empty();
+        }
+        @SuppressWarnings("unchecked")
+        T castValue = (T) targetType.cast(value);
+        return Optional.of(castValue);
     }
 
     public static Predicate<Method> signature(
@@ -151,5 +157,36 @@ public final class ReflectiveAccess {
             }
             return Arrays.equals(method.getParameterTypes(), params != null ? params : new Class<?>[0]);
         };
+    }
+
+    private static Class<?> wrapPrimitive(Class<?> type) {
+        if (type == null || !type.isPrimitive()) {
+            return type;
+        }
+        if (type == boolean.class) {
+            return Boolean.class;
+        }
+        if (type == byte.class) {
+            return Byte.class;
+        }
+        if (type == short.class) {
+            return Short.class;
+        }
+        if (type == int.class) {
+            return Integer.class;
+        }
+        if (type == long.class) {
+            return Long.class;
+        }
+        if (type == float.class) {
+            return Float.class;
+        }
+        if (type == double.class) {
+            return Double.class;
+        }
+        if (type == char.class) {
+            return Character.class;
+        }
+        return type;
     }
 }

@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class TypeParserRegistry<S> {
     private final CommandLogger logger;
-    private final List<TypeParser<S, ?>> parsers = new ArrayList<>();
+    private final List<TypeParser<S, ?>> parsers = new CopyOnWriteArrayList<>();
 
     /**
      * Create a new empty TypeParserRegistry; prefer {@link #createWithDefaults(CommandLogger)}.

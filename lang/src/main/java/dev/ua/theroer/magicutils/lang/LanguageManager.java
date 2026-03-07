@@ -174,7 +174,7 @@ public class LanguageManager {
             warnIfMainThread("loadLanguage");
             loadLanguageAsync(languageCode).thenAccept(success -> {
                 if (Boolean.TRUE.equals(success)) {
-                    platform.runOnMain(() -> applyFallback(languageCode));
+                    runOnMain(() -> applyFallback(languageCode), "apply fallback language " + languageCode);
                 }
             });
             return;
@@ -209,7 +209,7 @@ public class LanguageManager {
                 CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                         .thenAccept(success -> {
                             if (Boolean.TRUE.equals(success)) {
-                                platform.runOnMain(() -> applyLanguage(languageCode));
+                                runOnMain(() -> applyLanguage(languageCode), "apply language " + languageCode);
                             }
                         });
                 return false;
@@ -758,12 +758,18 @@ public class LanguageManager {
         if (languageCode == null || languageCode.isBlank()) {
             return CompletableFuture.completedFuture(false);
         }
-        return loadLanguageAsync(languageCode).thenApply(success -> {
+        return loadLanguageAsync(languageCode).thenCompose(success -> {
             if (!Boolean.TRUE.equals(success)) {
-                return false;
+                return CompletableFuture.completedFuture(false);
             }
-            platform.runOnMain(() -> applyLanguage(languageCode));
-            return true;
+            return Tasks.runOnMain(platform, () -> applyLanguage(languageCode))
+                    .handle((ignored, error) -> {
+                        if (error != null) {
+                            logger.warn("Failed to apply language on main thread: " + languageCode, error);
+                            return false;
+                        }
+                        return true;
+                    });
         });
     }
 
@@ -842,13 +848,22 @@ public class LanguageManager {
             if (isBlockingSensitiveThread()) {
                 loadLanguageAsync(fallbackLanguage).thenAccept(success -> {
                     if (Boolean.TRUE.equals(success)) {
-                        platform.runOnMain(() -> applyFallback(fallbackLanguage));
+                        runOnMain(() -> applyFallback(fallbackLanguage),
+                                "apply fallback language " + fallbackLanguage);
                     }
                 });
             } else {
                 loadFallbackLanguageBlocking(fallbackLanguage);
             }
         }
+    }
+
+    private void runOnMain(Runnable task, String action) {
+        Tasks.runOnMain(platform, task).whenComplete((ignored, error) -> {
+            if (error != null) {
+                logger.warn("Failed to run language action on main thread: " + action, error);
+            }
+        });
     }
 
     private boolean languageFileExists(String languageCode) {

@@ -53,6 +53,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     private final boolean cacheAudiences;
     private final AtomicBoolean shutdownListenerRegistered = new AtomicBoolean(false);
     private final AtomicBoolean eventListenerRegistered = new AtomicBoolean(false);
+    private final AtomicBoolean inlineMainFallbackWarned = new AtomicBoolean(false);
     private final TaskScheduler taskScheduler;
 
     /**
@@ -137,11 +138,12 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         if (task == null) {
             return;
         }
-        if (proxy != null && plugin != null) {
-            proxy.getScheduler().buildTask(plugin, task).schedule();
+        if (proxy == null || plugin == null) {
+            warnInlineMainFallback();
+            task.run();
             return;
         }
-        task.run();
+        proxy.getScheduler().buildTask(plugin, task).schedule();
     }
 
     @Override
@@ -210,6 +212,12 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
             return new VelocityConsoleAudience(slf4j);
         }
         return new VelocityAudience(proxy.getConsoleCommandSource());
+    }
+
+    private void warnInlineMainFallback() {
+        if (inlineMainFallbackWarned.compareAndSet(false, true)) {
+            logger.warn("Velocity plugin context is unavailable; running task inline because no main-thread scheduler is accessible.");
+        }
     }
 
     private void registerEventListener() {

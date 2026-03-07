@@ -37,6 +37,7 @@ public final class MagicWebSocketClient implements AutoCloseable {
     private final Map<String, String> defaultHeaders;
     private final Platform platform;
     private final List<String> subprotocols;
+    private final boolean ownsClient;
 
     private MagicWebSocketClient(Builder builder) {
         this.platform = builder.platform;
@@ -49,6 +50,7 @@ public final class MagicWebSocketClient implements AutoCloseable {
                 : toDuration(config.getTimeouts().getConnectSeconds());
         this.defaultHeaders = buildDefaultHeaders(builder);
         this.subprotocols = builder.subprotocols;
+        this.ownsClient = builder.client == null;
         this.client = builder.client != null ? builder.client : buildHttpClient(builder);
     }
 
@@ -139,7 +141,16 @@ public final class MagicWebSocketClient implements AutoCloseable {
 
     @Override
     public void close() {
-        // no resources to release yet
+        if (!ownsClient) {
+            return;
+        }
+        try {
+            client.close();
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warn("Failed to close WebSocket HTTP client", e);
+            }
+        }
     }
 
     private boolean isBlockingSensitiveThread() {
@@ -244,10 +255,21 @@ public final class MagicWebSocketClient implements AutoCloseable {
         if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("path is empty");
         }
-        if (baseUrl != null && !baseUrl.isBlank()) {
-            return URI.create(baseUrl).resolve(path);
+        URI resolved = URI.create(path);
+        if (resolved.isAbsolute()) {
+            return resolved;
         }
-        return URI.create(path);
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            URI base = URI.create(baseUrl);
+            if (!path.startsWith("/")
+                    && base.getPath() != null
+                    && !base.getPath().isEmpty()
+                    && !base.getPath().endsWith("/")) {
+                base = URI.create(base.toString() + "/");
+            }
+            return base.resolve(resolved);
+        }
+        return resolved;
     }
 
     private URI normalizeWebSocketUri(URI uri) {

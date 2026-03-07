@@ -41,7 +41,7 @@ public class ConfigSerializer {
         boolean includeNulls = serializable != null && serializable.includeNulls();
 
         // Process all fields
-        for (Field field : clazz.getDeclaredFields()) {
+        for (Field field : getSerializableFields(clazz)) {
             field.setAccessible(true);
 
             // Skip transient fields
@@ -129,7 +129,7 @@ public class ConfigSerializer {
         try {
             T instance = clazz.getDeclaredConstructor().newInstance();
 
-            for (Field field : clazz.getDeclaredFields()) {
+            for (Field field : getSerializableFields(clazz)) {
                 field.setAccessible(true);
 
                 String key = resolveKey(field);
@@ -138,7 +138,9 @@ public class ConfigSerializer {
 
                 Object value = data.get(key);
                 if (value == null) {
-                    field.set(instance, null);
+                    if (!field.getType().isPrimitive()) {
+                        field.set(instance, null);
+                    }
                     continue;
                 }
 
@@ -154,22 +156,10 @@ public class ConfigSerializer {
                     } else if (isPrimitiveOrWrapper(fieldType) || fieldType == String.class) {
                         deserializedValue = convertValue(value, fieldType);
                     } else if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
-                        ParameterizedType listType = (ParameterizedType) field.getGenericType();
-                        Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+                        Class<?> elementType = extractListElementType(field);
                         deserializedValue = deserializeList(logger, (List<?>) value, elementType);
                     } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
-                        Class<?> valueType = null;
-                        Type genericType = field.getGenericType();
-                        if (genericType instanceof ParameterizedType) {
-                            ParameterizedType mapType = (ParameterizedType) genericType;
-                            Type[] typeArgs = mapType.getActualTypeArguments();
-                            if (typeArgs.length > 1 && typeArgs[1] instanceof Class) {
-                                valueType = (Class<?>) typeArgs[1];
-                            }
-                        }
-
-                        // If valueType is found, deserialize map with typed values
-                        // Otherwise, for raw maps or maps with complex generics, deserialize with raw values
+                        Class<?> valueType = extractMapValueType(field);
                         deserializedValue = deserializeMap(logger, (Map<?, ?>) value, valueType);
                     } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                         // Recursive deserialization - security check is already in deserialize method
@@ -183,7 +173,10 @@ public class ConfigSerializer {
 
                     field.set(instance, deserializedValue);
                 } catch (ReflectiveOperationException | ClassCastException | IllegalArgumentException e) {
-                    // Skip field
+                    if (logger != null) {
+                        logger.warn("Failed to deserialize field '" + field.getName()
+                                + "' in " + clazz.getName() + ". Keeping current/default value.", e);
+                    }
                 }
             }
 
@@ -231,7 +224,7 @@ public class ConfigSerializer {
     private static <T> List<T> deserializeList(PlatformLogger logger, List<?> data, Class<T> elementType) {
         List<T> result = new ArrayList<>();
 
-        ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+        ConfigValueAdapter<?> adapter = elementType != null ? ConfigAdapters.get(elementType) : null;
 
         for (Object item : data) {
             if (item == null) {
@@ -239,9 +232,9 @@ public class ConfigSerializer {
             } else if (adapter != null) {
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                 result.add((T) typed.deserialize(item));
-            } else if (isPrimitiveOrWrapper(elementType) || elementType == String.class) {
+            } else if (elementType != null && (isPrimitiveOrWrapper(elementType) || elementType == String.class)) {
                 result.add((T) convertValue(item, elementType));
-            } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
+            } else if (elementType != null && elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
                 // Recursive deserialization - security check is already in deserialize method
                 result.add(deserialize(logger, (Map<String, Object>) item, elementType));
             } else {
@@ -349,7 +342,7 @@ public class ConfigSerializer {
     private static Map<String, Object> deserializeMap(PlatformLogger logger, Map<?, ?> data, Class<?> valueType) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+        ConfigValueAdapter<?> adapter = valueType != null ? ConfigAdapters.get(valueType) : null;
 
         for (Map.Entry<?, ?> entry : data.entrySet()) {
             String key = String.valueOf(entry.getKey());
@@ -367,13 +360,30 @@ public class ConfigSerializer {
                 result.put(key, deserialize(logger, (Map<String, Object>) raw, valueType));
             } else {
                 if (valueType != null) { // Only warn if a specific type was expected
-                    logger.warn("Unknown or unhandled map value type '" + valueType.getName() + "' for key '" + key + "'. Falling back to raw value. Value: " + raw);
+                    if (logger != null) {
+                        logger.warn("Unknown or unhandled map value type '" + valueType.getName()
+                                + "' for key '" + key + "'. Falling back to raw value. Value: " + raw);
+                    }
                 }
                 result.put(key, raw);
             }
         }
 
         return result;
+    }
+
+    private static List<Field> getSerializableFields(Class<?> clazz) {
+        List<Class<?>> hierarchy = new ArrayList<>();
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            hierarchy.add(current);
+        }
+        Collections.reverse(hierarchy);
+
+        List<Field> fields = new ArrayList<>();
+        for (Class<?> current : hierarchy) {
+            fields.addAll(Arrays.asList(current.getDeclaredFields()));
+        }
+        return fields;
     }
 
     /**

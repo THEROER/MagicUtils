@@ -12,6 +12,7 @@ import dev.ua.theroer.magicutils.platform.PlayerMessageType;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
+import dev.ua.theroer.magicutils.platform.ThreadContext;
 import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
@@ -52,6 +53,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     private final TaskScheduler taskScheduler;
     private final List<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean playerMessageHooksRegistered = new AtomicBoolean(false);
+    private final AtomicBoolean inlineMainFallbackWarned = new AtomicBoolean(false);
 
     public FabricPlatformProvider(MinecraftServer server) {
         this(() -> server, LoggerFactory.getLogger("MagicUtils-Fabric"));
@@ -129,7 +131,12 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
             return;
         }
         MinecraftServer server = server();
-        if (server == null || server.isOnThread()) {
+        if (server == null) {
+            warnInlineMainFallback();
+            task.run();
+            return;
+        }
+        if (server.isOnThread()) {
             task.run();
             return;
         }
@@ -139,7 +146,16 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     @Override
     public boolean isMainThread() {
         MinecraftServer server = server();
-        return server == null || server.isOnThread();
+        return server != null && server.isOnThread();
+    }
+
+    @Override
+    public ThreadContext threadContext() {
+        MinecraftServer server = server();
+        if (server == null) {
+            return ThreadContext.UNKNOWN;
+        }
+        return server.isOnThread() ? ThreadContext.MAIN : ThreadContext.WORKER;
     }
 
     @Override
@@ -187,6 +203,12 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
 
     private MinecraftServer server() {
         return serverSupplier != null ? serverSupplier.get() : null;
+    }
+
+    private void warnInlineMainFallback() {
+        if (inlineMainFallbackWarned.compareAndSet(false, true)) {
+            logger.warn("Fabric server is not available yet; running task inline because the main-thread executor is unavailable.");
+        }
     }
 
     private void registerPlayerMessageHooks() {

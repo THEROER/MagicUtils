@@ -880,9 +880,9 @@ public class CommandManager<S> {
                             + (subCommandName != null ? " " + subCommandName : ""));
             if (resolved != null && !resolved.isEmpty()
                     && !platform.hasPermission(sender, resolved, argument.getPermissionDefault())) {
-                logger.debug("Skipping permission check for argument " + argument.getName()
-                        + " (missing permission " + resolved + "), treating as optional");
-                continue;
+                logger.debug("Permission denied for argument " + argument.getName()
+                        + " (missing permission " + resolved + ")");
+                return false;
             }
         }
         return true;
