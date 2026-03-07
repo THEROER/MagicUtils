@@ -4,6 +4,7 @@ import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
@@ -261,14 +262,11 @@ public class ConfigManager {
         warnIfMainThread("reloadAll");
         List<ConfigEntry<?>> entries = new ArrayList<>(configs.values());
         for (ConfigEntry<?> entry : entries) {
-            if (reloadEntry(entry, Collections.emptySet(), false)) {
-                ConfigReloadable reloadable = entry.key.configClass.getAnnotation(ConfigReloadable.class);
-                if (reloadable != null && reloadable.notifyOnChange()) {
+                if (reloadEntry(entry, Collections.emptySet(), false) && shouldNotifyOnChange(entry)) {
                     notifyChangeListeners(entry, Collections.emptySet());
                 }
             }
         }
-    }
 
     /**
      * Unregisters all instances of a config class.
@@ -1468,7 +1466,7 @@ public class ConfigManager {
         }
 
         for (ConfigEntry<?> entry : getEntries(configClass)) {
-            if (reloadEntry(entry, sectionSet, false) && reloadable != null && reloadable.notifyOnChange()) {
+            if (reloadEntry(entry, sectionSet, false) && shouldNotifyOnChange(entry)) {
                 notifyChangeListeners(entry, sectionSet);
             }
         }
@@ -1557,8 +1555,33 @@ public class ConfigManager {
      */
     @SuppressWarnings("unchecked")
     public <T> void onChange(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
-        changeListeners.computeIfAbsent(configClass, k -> new CopyOnWriteArrayList<>())
-                .add((BiConsumer<Object, Set<String>>) listener);
+        subscribeChanges(configClass, listener);
+    }
+
+    /**
+     * Subscribes to config change notifications and returns an unregister handle.
+     *
+     * @param <T> config type
+     * @param configClass config type to monitor
+     * @param listener callback receiving updated instance and changed sections
+     * @return subscription handle that removes the listener when closed
+     */
+    @SuppressWarnings("unchecked")
+    public <T> ListenerSubscription subscribeChanges(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
+        Objects.requireNonNull(configClass, "configClass");
+        Objects.requireNonNull(listener, "listener");
+
+        CopyOnWriteArrayList<BiConsumer<Object, Set<String>>> listeners =
+                (CopyOnWriteArrayList<BiConsumer<Object, Set<String>>>) changeListeners.computeIfAbsent(
+                        configClass, k -> new CopyOnWriteArrayList<>());
+        BiConsumer<Object, Set<String>> typedListener = (BiConsumer<Object, Set<String>>) listener;
+        listeners.add(typedListener);
+        return () -> {
+            listeners.remove(typedListener);
+            if (listeners.isEmpty()) {
+                changeListeners.remove(configClass, listeners);
+            }
+        };
     }
 
     private void notifyChangeListeners(ConfigEntry<?> entry, Set<String> changedSections) {
@@ -1575,6 +1598,11 @@ public class ConfigManager {
                         + entry.key.configClass.getName(), error);
             }
         }
+    }
+
+    private boolean shouldNotifyOnChange(ConfigEntry<?> entry) {
+        ConfigReloadable reloadable = entry.key.configClass.getAnnotation(ConfigReloadable.class);
+        return reloadable == null || reloadable.notifyOnChange();
     }
 
     private Collection<ConfigEntry<?>> getEntries(Class<?> configClass) {

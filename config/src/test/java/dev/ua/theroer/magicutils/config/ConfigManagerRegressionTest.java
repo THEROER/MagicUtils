@@ -5,6 +5,7 @@ import dev.ua.theroer.magicutils.config.annotations.ConfigReloadable;
 import dev.ua.theroer.magicutils.config.annotations.ConfigSection;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -110,6 +112,38 @@ class ConfigManagerRegressionTest {
         }
     }
 
+    @Test
+    void subscriptionStopsChangeCallbacksAfterClose() throws IOException {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager manager = new ConfigManager(platform);
+        try {
+            PlainChangeConfig config = manager.register(PlainChangeConfig.class);
+            AtomicInteger calls = new AtomicInteger();
+            ListenerSubscription subscription = manager.subscribeChanges(PlainChangeConfig.class,
+                    (updated, sections) -> calls.incrementAndGet());
+            manager.shutdown();
+
+            Files.writeString(tempDir.resolve("plain-change.json"),
+                    "{\n  \"value\" : \"updated-once\"\n}\n");
+            manager.reload(PlainChangeConfig.class);
+
+            assertEquals("updated-once", config.value);
+            assertEquals(1, calls.get());
+
+            subscription.close();
+
+            Files.writeString(tempDir.resolve("plain-change.json"),
+                    "{\n  \"value\" : \"updated-twice\"\n}\n");
+            manager.reload(PlainChangeConfig.class);
+
+            assertEquals("updated-twice", config.value);
+            assertEquals(1, calls.get());
+        } finally {
+            manager.shutdown();
+            platform.shutdown();
+        }
+    }
+
     private static class BaseConfig {
         @ConfigValue("base")
         String base = "base-default";
@@ -145,6 +179,12 @@ class ConfigManagerRegressionTest {
     static final class FeatureSection {
         @ConfigValue("enabled")
         boolean enabled = false;
+    }
+
+    @ConfigFile("plain-change.json")
+    static final class PlainChangeConfig {
+        @ConfigValue("value")
+        String value = "plain-default";
     }
 
     private static final class TestPlatform implements Platform {

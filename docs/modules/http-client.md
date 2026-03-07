@@ -36,6 +36,36 @@ MagicHttpClient client = MagicHttpClient.builder(platform, configManager)
 HttpResponse<String> response = client.get("status");
 ```
 
+## Runtime profiles
+
+When you already have a `MagicRuntime`, you can declare named HTTP/WebSocket
+profiles that rebuild automatically on config reload:
+
+```java
+MagicHttpClientProfile<ApiConfig> monitoring = MagicHttpClientProfile
+        .builder(runtime, "http.monitoring", ApiConfig.class)
+        .sections("monitoring")
+        .baseUrl(config -> config.monitoring.baseUrl)
+        .bearerAuth(config -> config.monitoring.token)
+        .build();
+
+MagicHttpClient client = monitoring.require();
+MagicHttpClient sameClient = runtime.requireNamedComponent("http.monitoring", MagicHttpClient.class);
+```
+
+```java
+MagicWebSocketClientProfile<ApiConfig> gateway = MagicWebSocketClientProfile
+        .builder(runtime, "ws.gateway", ApiConfig.class)
+        .sections("gateway")
+        .baseUrl(config -> config.gateway.baseUrl)
+        .bearerAuth(config -> config.gateway.token)
+        .subprotocols(config -> config.gateway.subprotocols)
+        .build();
+```
+
+This removes the usual `close old client -> build new client -> swap references`
+boilerplate from service reload paths.
+
 ## Smart methods
 
 Smart methods switch to async automatically on blocking-sensitive threads and

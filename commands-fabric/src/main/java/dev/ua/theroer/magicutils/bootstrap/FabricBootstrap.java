@@ -6,33 +6,41 @@ import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.platform.Platform;
-import dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider;
+import dev.ua.theroer.magicutils.platform.fabric.FabricPlatformProvider;
+import net.minecraft.server.MinecraftServer;
+import org.slf4j.LoggerFactory;
+
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
-import org.bukkit.plugin.java.JavaPlugin;
+import java.util.function.Supplier;
 
 /**
- * Bukkit-specific bootstrap helper for wiring MagicUtils in a plugin.
+ * Fabric-specific bootstrap helper for wiring MagicUtils services.
  */
-public final class BukkitBootstrap {
-    private BukkitBootstrap() {
+public final class FabricBootstrap {
+    private FabricBootstrap() {
     }
 
     /**
-     * Create a bootstrap builder for the given plugin instance.
+     * Creates a bootstrap builder for a Fabric mod.
      *
-     * @param plugin owning plugin instance
+     * @param modName logical mod name for logger/messages/commands
+     * @param serverSupplier server supplier used by the platform provider
      * @return bootstrap builder
      */
-    public static Builder forPlugin(JavaPlugin plugin) {
-        return new Builder(plugin);
+    public static Builder forMod(String modName, Supplier<MinecraftServer> serverSupplier) {
+        return new Builder(modName, serverSupplier);
     }
 
     /**
-     * Builder for wiring MagicUtils services on Bukkit.
+     * Builder for wiring MagicUtils services on Fabric.
      */
     public static final class Builder {
-        private final JavaPlugin plugin;
+        private final String modName;
+        private final Supplier<MinecraftServer> serverSupplier;
+        private org.slf4j.Logger slf4j;
+        private Path configDir;
         private Platform platform;
         private ConfigManager configManager;
         private Logger logger;
@@ -46,10 +54,12 @@ public final class BukkitBootstrap {
         private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
+        private int opLevel = 2;
         private Consumer<CommandRegistry> commandConfigurer;
 
-        private Builder(JavaPlugin plugin) {
-            this.plugin = Objects.requireNonNull(plugin, "plugin");
+        private Builder(String modName, Supplier<MinecraftServer> serverSupplier) {
+            this.modName = normalizeModName(modName);
+            this.serverSupplier = serverSupplier != null ? serverSupplier : () -> null;
         }
 
         /**
@@ -60,6 +70,28 @@ public final class BukkitBootstrap {
          */
         public Builder platform(Platform platform) {
             this.platform = platform;
+            return this;
+        }
+
+        /**
+         * Overrides the backing SLF4J logger.
+         *
+         * @param slf4j logger to use
+         * @return builder
+         */
+        public Builder slf4j(org.slf4j.Logger slf4j) {
+            this.slf4j = slf4j;
+            return this;
+        }
+
+        /**
+         * Overrides the config directory used by the platform adapter.
+         *
+         * @param configDir config directory
+         * @return builder
+         */
+        public Builder configDir(Path configDir) {
+            this.configDir = configDir;
             return this;
         }
 
@@ -99,7 +131,7 @@ public final class BukkitBootstrap {
         /**
          * Sets the default language code to initialize.
          *
-         * @param language language code (for example, "en")
+         * @param language language code
          * @return builder
          */
         public Builder language(String language) {
@@ -112,7 +144,7 @@ public final class BukkitBootstrap {
         /**
          * Toggles automatic language initialization.
          *
-         * @param initLanguage true to call LanguageManager.init
+         * @param initLanguage true to call {@link LanguageManager#init(String)}
          * @return builder
          */
         public Builder initLanguage(boolean initLanguage) {
@@ -123,7 +155,7 @@ public final class BukkitBootstrap {
         /**
          * Toggles binding the language manager to the logger.
          *
-         * @param bindLoggerLanguage true to set Logger language manager
+         * @param bindLoggerLanguage true to set the logger language manager
          * @return builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
@@ -132,9 +164,9 @@ public final class BukkitBootstrap {
         }
 
         /**
-         * Toggles setting the global Messages language manager.
+         * Toggles setting the global {@link Messages} language manager.
          *
-         * @param setMessagesManager true to call Messages.setLanguageManager
+         * @param setMessagesManager true to set the global manager
          * @return builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
@@ -143,9 +175,9 @@ public final class BukkitBootstrap {
         }
 
         /**
-         * Toggles registering Messages scope for the plugin.
+         * Toggles registering a scoped {@link Messages} manager for the mod.
          *
-         * @param registerMessages true to call Messages.register(pluginName)
+         * @param registerMessages true to register the mod scope
          * @return builder
          */
         public Builder registerMessages(boolean registerMessages) {
@@ -154,9 +186,9 @@ public final class BukkitBootstrap {
         }
 
         /**
-         * Toggles persisting MagicUtils default messages.
+         * Toggles adding MagicUtils default language entries.
          *
-         * @param addMagicUtilsMessages true to save MagicUtils defaults
+         * @param addMagicUtilsMessages true to add bundled defaults
          * @return builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
@@ -188,7 +220,7 @@ public final class BukkitBootstrap {
         /**
          * Overrides the permission prefix used by commands.
          *
-         * @param permissionPrefix permission prefix to use
+         * @param permissionPrefix permission prefix
          * @return builder
          */
         public Builder permissionPrefix(String permissionPrefix) {
@@ -197,7 +229,18 @@ public final class BukkitBootstrap {
         }
 
         /**
-         * Allows configuring commands after registry creation.
+         * Overrides the op level treated as operator by the command registry.
+         *
+         * @param opLevel op level
+         * @return builder
+         */
+        public Builder opLevel(int opLevel) {
+            this.opLevel = opLevel;
+            return this;
+        }
+
+        /**
+         * Allows additional command registry configuration after creation.
          *
          * @param commandConfigurer registry callback
          * @return builder
@@ -208,7 +251,7 @@ public final class BukkitBootstrap {
         }
 
         /**
-         * Builds the bootstrap result and wires requested services.
+         * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
          */
@@ -231,16 +274,15 @@ public final class BukkitBootstrap {
                     )
                     .languageManager(prepared.languageManager())
                     .manageConfigManager(configManager == null)
-                    .component(JavaPlugin.class, plugin)
                     .component(Logger.class, prepared.logger())
                     .build();
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
-                runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(plugin));
+                runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(modName));
             }
             if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(plugin.getName()));
+                runtime.onClose("messages.scope", () -> Messages.unregister(modName));
             }
             if (setMessagesManager) {
                 runtime.onClose("messages.default", () -> {
@@ -255,52 +297,57 @@ public final class BukkitBootstrap {
         }
 
         private Prepared prepare() {
-            Platform resolvedPlatform = platform != null ? platform : new BukkitPlatformProvider(plugin);
+            Platform resolvedPlatform = platform != null
+                    ? platform
+                    : new FabricPlatformProvider(serverSupplier,
+                    slf4j != null ? slf4j : LoggerFactory.getLogger(modName),
+                    configDir);
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);
             Logger resolvedLogger = logger != null
                     ? logger
-                    : new Logger(resolvedPlatform, plugin, resolvedConfigManager);
-
+                    : new Logger(resolvedPlatform, resolvedConfigManager, modName);
             LanguageManager resolvedLanguageManager = languageManager != null
                     ? languageManager
-                    : new LanguageManager(plugin, resolvedConfigManager);
+                    : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
             if (initLanguage) {
                 resolvedLanguageManager.init(language);
             }
-
             if (translations != null) {
                 translations.accept(resolvedLanguageManager);
             }
-
             if (addMagicUtilsMessages) {
                 resolvedLanguageManager.addMagicUtilsMessages();
             }
-
             if (registerMessages) {
-                Messages.register(plugin.getName(), resolvedLanguageManager);
+                Messages.register(modName, resolvedLanguageManager);
             }
-
             if (setMessagesManager) {
                 Messages.setLanguageManager(resolvedLanguageManager);
             }
-
             if (bindLoggerLanguage) {
                 resolvedLogger.setLanguageManager(resolvedLanguageManager);
             }
 
             CommandRegistry registry = null;
             if (enableCommands) {
-                String prefix = permissionPrefix != null ? permissionPrefix : plugin.getName();
-                registry = CommandRegistry.create(plugin, prefix, resolvedLogger);
+                String prefix = permissionPrefix != null ? permissionPrefix : modName;
+                registry = CommandRegistry.create(modName, prefix, resolvedLogger, opLevel);
                 if (commandConfigurer != null) {
                     commandConfigurer.accept(registry);
                 }
             }
 
             return new Prepared(resolvedPlatform, resolvedConfigManager, resolvedLogger, resolvedLanguageManager, registry);
+        }
+
+        private static String normalizeModName(String modName) {
+            if (modName == null || modName.isBlank()) {
+                throw new IllegalArgumentException("modName is blank");
+            }
+            return modName.trim();
         }
 
         private record Prepared(
