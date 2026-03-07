@@ -9,4 +9,6 @@ dependencies {
     compileOnly libs.jetbrains.annotations
     compileOnly libs.projectlombok.lombok
     annotationProcessor libs.projectlombok.lombok
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }

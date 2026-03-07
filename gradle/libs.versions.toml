@@ -17,6 +17,7 @@ placeholderapi = "2.11.6" # clip
 slf4j = "2.0.13"
 velocityApi = "3.1.1"
 junitJupiter = "5.9.2"
+junitPlatform = "1.9.2"
 mockito = "5.1.1"
 brigadier = "1.0.18"
 
@@ -54,6 +55,7 @@ neoforge = { module = "net.neoforged:neoforge" }
 
 # Testing
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junitJupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 
 [bundles]

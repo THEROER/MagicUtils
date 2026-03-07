@@ -18,4 +18,6 @@ dependencies {
 
     testImplementation libs.junit.jupiter
     testImplementation libs.mockito.core
+    testImplementation("io.papermc.paper:paper-api:${target.paper.get()}")
+    testRuntimeOnly libs.junit.platform.launcher
 }
