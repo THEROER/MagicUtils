@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.config.adapters;
 
 import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.World;
 
 /**
@@ -17,5 +18,6 @@ public final class AdaptersBootstrap {
     public static void registerDefaults() {
         ConfigAdapters.register(Component.class, new ComponentAdapter());
         ConfigAdapters.register(World.class, new WorldAdapter());
+        ConfigAdapters.register(Material.class, new MaterialAdapter());
     }
 }

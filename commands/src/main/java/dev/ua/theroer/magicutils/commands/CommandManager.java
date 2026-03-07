@@ -2109,6 +2109,20 @@ public class CommandManager<S> {
             }
         }
 
+        if (argument.getType().isEnum()) {
+            Object[] constants = argument.getType().getEnumConstants();
+            if (constants != null && constants.length > 0) {
+                List<String> variants = Arrays.stream(constants)
+                        .map(String::valueOf)
+                        .map(value -> value.toLowerCase(Locale.ROOT))
+                        .toList();
+                if (variants.size() <= 4) {
+                    return String.join("|", variants);
+                }
+                return (displayName != null ? displayName : typeName) + ":" + variants.get(0) + "|...";
+            }
+        }
+
         // Fallback to type-based naming
         switch (typeName) {
             case "player":
