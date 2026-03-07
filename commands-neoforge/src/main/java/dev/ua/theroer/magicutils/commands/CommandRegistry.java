@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import dev.ua.theroer.magicutils.commands.brigadier.BrigadierCommandRegistry;
+import dev.ua.theroer.magicutils.commands.brigadier.BrigadierCommandRegistry.BrigadierArgumentShape;
 import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
@@ -10,6 +11,9 @@ import dev.ua.theroer.magicutils.logger.PrefixedLoggerCore;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import dev.ua.theroer.magicutils.platform.neoforge.NeoForgeCommandAudience;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.DimensionArgument;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.lang.reflect.Method;
@@ -52,7 +56,30 @@ public final class CommandRegistry extends BrigadierCommandRegistry<CommandSourc
                     }
                     source.getServer().execute(task);
                 },
-                TaskSchedulers.shared());
+                TaskSchedulers.shared(),
+                registry -> registry.register(new BrigadierArgumentResolver<>() {
+                    @Override
+                    public BrigadierArgumentShape resolve(CommandArgument argument) {
+                        if (argument == null) {
+                            return null;
+                        }
+                        Class<?> type = argument.getType();
+                        if (type == ServerPlayer.class) {
+                            return BrigadierArgumentShape.nativeSuggestions(EntityArgument.player())
+                                    .withLiteralAlternative("@sender");
+                        }
+                        if (type == ServerLevel.class) {
+                            return BrigadierArgumentShape.nativeSuggestions(DimensionArgument.dimension())
+                                    .withLiteralAlternative("@current");
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public int priority() {
+                        return 100;
+                    }
+                }));
         this.opLevel = opLevel;
         registerMagicSenderAdapter(opLevel);
     }

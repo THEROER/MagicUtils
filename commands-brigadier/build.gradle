@@ -7,4 +7,7 @@ dependencies {
     api project(':commands')
     compileOnly libs.brigadier
     compileOnly libs.jetbrains.annotations
+    testImplementation libs.brigadier
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }

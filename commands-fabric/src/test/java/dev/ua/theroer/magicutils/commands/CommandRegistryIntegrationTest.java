@@ -1,8 +1,11 @@
 package dev.ua.theroer.magicutils.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.tree.ArgumentCommandNode;
+import com.mojang.brigadier.tree.CommandNode;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
+import dev.ua.theroer.magicutils.annotations.ParamName;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.Audience;
@@ -10,7 +13,9 @@ import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -93,10 +99,38 @@ class CommandRegistryIntegrationTest {
         }
     }
 
+    @Test
+    void registerUsesNativeBrigadierShapeForPlayerArguments() throws Exception {
+        try (TestHarness harness = new TestHarness(tempDir, "NativeMod", 4)) {
+            CommandDispatcher<ServerCommandSource> dispatcher = new CommandDispatcher<>();
+            CommandRegistry registry = harness.registry;
+
+            registry.registerCommand(dispatcher, new NativePlayerCommand());
+
+            CommandNode<ServerCommandSource> nativeRoot = dispatcher.getRoot().getChild("nativeplayer");
+            assertNotNull(nativeRoot);
+            assertNotNull(nativeRoot.getChild("@sender"));
+
+            ArgumentCommandNode<?, ?> player = assertInstanceOf(
+                    ArgumentCommandNode.class,
+                    nativeRoot.getChild("player")
+            );
+            assertInstanceOf(EntityArgumentType.class, player.getType());
+            assertNull(player.getCustomSuggestions());
+        }
+    }
+
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
         public CommandResult execute() {
             return CommandResult.success("ok");
+        }
+    }
+
+    @CommandInfo(name = "nativeplayer")
+    private static final class NativePlayerCommand extends MagicCommand {
+        public CommandResult execute(@ParamName("player") ServerPlayerEntity player) {
+            return CommandResult.success(player.getName().getString());
         }
     }
 

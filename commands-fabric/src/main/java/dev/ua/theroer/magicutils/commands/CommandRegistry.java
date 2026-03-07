@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.commands.brigadier.BrigadierCommandRegistry;
+import dev.ua.theroer.magicutils.commands.brigadier.BrigadierCommandRegistry.BrigadierArgumentShape;
 import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
@@ -10,8 +11,11 @@ import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
+import net.minecraft.command.argument.DimensionArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 
 import java.util.List;
 import java.util.Locale;
@@ -52,7 +56,30 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
                     }
                     source.getServer().execute(task);
                 },
-                TaskSchedulers.shared());
+                TaskSchedulers.shared(),
+                registry -> registry.register(new BrigadierArgumentResolver<>() {
+                    @Override
+                    public BrigadierArgumentShape resolve(CommandArgument argument) {
+                        if (argument == null) {
+                            return null;
+                        }
+                        Class<?> type = argument.getType();
+                        if (type == ServerPlayerEntity.class) {
+                            return BrigadierArgumentShape.nativeSuggestions(EntityArgumentType.player())
+                                    .withLiteralAlternative("@sender");
+                        }
+                        if (type == ServerWorld.class) {
+                            return BrigadierArgumentShape.nativeSuggestions(DimensionArgumentType.dimension())
+                                    .withLiteralAlternative("@current");
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public int priority() {
+                        return 100;
+                    }
+                }));
         this.opLevel = opLevel;
         registerMagicSenderAdapter(opLevel);
     }
@@ -135,6 +162,29 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
             defaultRegistry = registry;
         }
         return registry;
+    }
+
+    /**
+     * Removes the registry entry for a mod.
+     *
+     * @param modName mod name
+     */
+    public static void shutdown(String modName) {
+        if (modName == null) {
+            return;
+        }
+        CommandRegistry registry = REGISTRIES.remove(registryKey(modName));
+        if (registry != null && defaultRegistry == registry) {
+            defaultRegistry = null;
+        }
+    }
+
+    /**
+     * Clears all registry references.
+     */
+    public static void clearRegistries() {
+        REGISTRIES.clear();
+        defaultRegistry = null;
     }
 
     /**

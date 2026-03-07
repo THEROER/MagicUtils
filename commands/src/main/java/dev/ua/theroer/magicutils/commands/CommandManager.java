@@ -119,6 +119,50 @@ public class CommandManager<S> {
     }
 
     /**
+     * Returns the resolved command schema for the provided command label.
+     *
+     * @param name command name, alias, or namespaced label
+     * @return resolved schema or null when the command is not registered
+     */
+    @Nullable
+    public ResolvedCommandSchema describe(String name) {
+        if (name == null) {
+            return null;
+        }
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
+        if (command == null || info == null) {
+            return null;
+        }
+        return describe(command, info);
+    }
+
+    /**
+     * Returns the resolved command schema for a registered command instance.
+     *
+     * @param command command instance
+     * @param info resolved command info
+     * @return immutable resolved schema or null when the command is unknown
+     */
+    @Nullable
+    public ResolvedCommandSchema describe(MagicCommand command, CommandInfo info) {
+        if (command == null || info == null) {
+            return null;
+        }
+        CommandAction<S> directAction = getDirectAction(command, info);
+        SubCommandNode<S> subTree = getSubCommandTree(command, info);
+        return new ResolvedCommandSchema(
+                info.name(),
+                info.description(),
+                Arrays.asList(info.aliases()),
+                info.permission(),
+                info.permissionDefault(),
+                directAction != null ? toResolvedAction(directAction) : null,
+                toResolvedNode(subTree)
+        );
+    }
+
+    /**
      * Gets the direct execute method if it exists.
      * 
      * @param clazz the command class
@@ -268,6 +312,35 @@ public class CommandManager<S> {
         return false;
     }
 
+    private ResolvedCommandAction toResolvedAction(CommandAction<S> action) {
+        return new ResolvedCommandAction(
+                action.name(),
+                action.path(),
+                action.description(),
+                action.aliases(),
+                action.permission(),
+                action.permissionDefault(),
+                action.threading(),
+                action.arguments()
+        );
+    }
+
+    private ResolvedSubCommandNode toResolvedNode(SubCommandNode<S> node) {
+        if (node == null) {
+            return ResolvedSubCommandNode.root();
+        }
+        List<ResolvedSubCommandNode> children = new ArrayList<>();
+        for (SubCommandNode<S> child : node.children().values()) {
+            children.add(toResolvedNode(child));
+        }
+        return new ResolvedSubCommandNode(
+                node.name(),
+                node.aliases(),
+                children,
+                node.action() != null ? toResolvedAction(node.action()) : null
+        );
+    }
+
     private boolean pathEquals(List<String> left, List<String> right) {
         List<String> leftNorm = normalizePath(left);
         List<String> rightNorm = normalizePath(right);
@@ -384,6 +457,43 @@ public class CommandManager<S> {
         }
         String baseCommandName = info.name().toLowerCase(Locale.ROOT);
         return hasCommandPermission(command, info, sender, baseCommandName, targetSubName);
+    }
+
+    /**
+     * Checks whether the sender can access a resolved subcommand path or any executable child under it.
+     *
+     * @param name command label or alias
+     * @param sender sender handle
+     * @param pathSegments path tokens using either canonical names or aliases
+     * @return true if the path resolves to an accessible node
+     */
+    public boolean canAccessSubCommandPath(String name, S sender, List<String> pathSegments) {
+        if (name == null) {
+            return false;
+        }
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
+        if (command == null || info == null) {
+            return false;
+        }
+
+        String baseCommandName = info.name().toLowerCase(Locale.ROOT);
+        String targetSubName = (pathSegments != null && !pathSegments.isEmpty())
+                ? pathSegments.get(0).toLowerCase(Locale.ROOT)
+                : null;
+        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
+            return false;
+        }
+        if (pathSegments == null || pathSegments.isEmpty()) {
+            return true;
+        }
+
+        SubCommandNode<S> root = getSubCommandTree(command, info);
+        SubCommandNode<S> node = resolveNode(root, pathSegments);
+        if (node == null) {
+            return false;
+        }
+        return hasAccessibleAction(node, sender, baseCommandName);
     }
 
     private CommandResult executeInternal(String name, S sender, List<String> args, boolean bubbleErrors)

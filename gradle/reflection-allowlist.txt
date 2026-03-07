@@ -2,10 +2,10 @@
 # Each line format: <relative-path>:<line>:<marker>
 # Do not edit manually unless you are intentionally curating this list.
 
-commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:343:.getMethod(
-commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:356:.getMethod(
+commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:370:.getMethod(
+commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:383:.getMethod(
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/NeoForgeCommandPlatform.java:326:.getMethod(
-commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1751:.getMethod(
+commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1861:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:106:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:73:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:81:.getMethod(
