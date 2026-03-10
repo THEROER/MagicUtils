@@ -3,11 +3,10 @@
   <groupId>dev.ua.theroer</groupId>
   <artifactId>magicutils-velocity</artifactId>
   <versioning>
-    <latest>1.13.0</latest>
-    <release>1.13.0</release>
+    <latest>1.13.1-SNAPSHOT</latest>
     <versions>
-      <version>1.13.0</version>
+      <version>1.13.1-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20260304123116</lastUpdated>
+    <lastUpdated>20260310142507</lastUpdated>
   </versioning>
 </metadata>
