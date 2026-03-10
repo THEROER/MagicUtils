@@ -4,6 +4,7 @@ import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.proxy.Player;
@@ -12,6 +13,9 @@ import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
 import dev.ua.theroer.magicutils.platform.PlayerMessage;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageType;
@@ -44,6 +48,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     private static volatile PlatformLogger shutdownLogger;
 
     private final Map<UUID, Audience> audienceCache = new ConcurrentHashMap<>();
+    private final Collection<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
     private final Collection<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final ProxyServer proxy;
     private final Object plugin;
@@ -197,6 +202,16 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         return () -> playerMessageListeners.remove(listener);
     }
 
+    @Override
+    public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+        if (listener == null || proxy == null || plugin == null) {
+            return ListenerSubscription.noop();
+        }
+        registerEventListener();
+        playerLifecycleListeners.add(listener);
+        return () -> playerLifecycleListeners.remove(listener);
+    }
+
     private Audience wrap(Player player) {
         if (player == null) {
             return consoleAudience;
@@ -237,6 +252,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
         audienceCache.clear();
+        playerLifecycleListeners.clear();
         playerMessageListeners.clear();
         runShutdownHooks();
     }
@@ -248,10 +264,29 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
      */
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        if (!cacheAudiences || event == null || event.getPlayer() == null) {
+        if (event == null || event.getPlayer() == null) {
             return;
         }
-        audienceCache.remove(event.getPlayer().getUniqueId());
+        if (cacheAudiences) {
+            audienceCache.remove(event.getPlayer().getUniqueId());
+        }
+        publishPlayerLifecycle(new PlayerLifecycle(
+                event.getPlayer().getUniqueId(),
+                event.getPlayer().getUsername(),
+                PlayerLifecycleType.LEAVE
+        ));
+    }
+
+    @Subscribe
+    public void onPostLogin(PostLoginEvent event) {
+        if (event == null || event.getPlayer() == null) {
+            return;
+        }
+        publishPlayerLifecycle(new PlayerLifecycle(
+                event.getPlayer().getUniqueId(),
+                event.getPlayer().getUsername(),
+                PlayerLifecycleType.JOIN
+        ));
     }
 
     @Subscribe
@@ -296,6 +331,19 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
                 listener.onPlayerMessage(message);
             } catch (RuntimeException e) {
                 logger.warn("Failed to deliver player message listener", e);
+            }
+        }
+    }
+
+    private void publishPlayerLifecycle(PlayerLifecycle lifecycle) {
+        if (lifecycle == null || !lifecycle.isValid() || playerLifecycleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLifecycleListener listener : playerLifecycleListeners) {
+            try {
+                listener.onPlayerLifecycle(lifecycle);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to deliver player lifecycle listener", e);
             }
         }
     }

@@ -4,6 +4,9 @@ import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
 import dev.ua.theroer.magicutils.platform.PlayerMessage;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageType;
@@ -11,13 +14,16 @@ import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import dev.ua.theroer.magicutils.config.adapters.AdaptersBootstrap;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -33,13 +39,17 @@ import java.util.stream.Collectors;
  * Platform provider for Bukkit/Paper runtime.
  */
 public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+
     private final JavaPlugin plugin;
     private final PlatformLogger logger;
     private final Audience consoleAudience;
     private final BukkitScheduler scheduler;
     private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
+    private final List<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
     private final List<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean shutdownListenerRegistered = new AtomicBoolean(false);
+    private final AtomicBoolean playerLifecycleListenerRegistered = new AtomicBoolean(false);
     private final AtomicBoolean playerMessageListenerRegistered = new AtomicBoolean(false);
     private final TaskScheduler taskScheduler;
 
@@ -124,6 +134,16 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         return () -> playerMessageListeners.remove(listener);
     }
 
+    @Override
+    public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        playerLifecycleListeners.add(listener);
+        registerPlayerLifecycleHook();
+        return () -> playerLifecycleListeners.remove(listener);
+    }
+
     private Audience wrap(CommandSender sender) {
         return new BukkitAudienceWrapper(sender);
     }
@@ -134,14 +154,14 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         }
         Bukkit.getPluginManager().registerEvents(new Listener() {
             @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-            public void onChat(AsyncPlayerChatEvent event) {
+            public void onChat(AsyncChatEvent event) {
                 if (event == null || event.getPlayer() == null) {
                     return;
                 }
                 publishPlayerMessage(new PlayerMessage(
                         event.getPlayer().getUniqueId(),
                         event.getPlayer().getName(),
-                        event.getMessage(),
+                        PLAIN.serialize(event.message()),
                         PlayerMessageType.CHAT
                 ));
             }
@@ -161,6 +181,37 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         }, plugin);
     }
 
+    private void registerPlayerLifecycleHook() {
+        if (!playerLifecycleListenerRegistered.compareAndSet(false, true)) {
+            return;
+        }
+        Bukkit.getPluginManager().registerEvents(new Listener() {
+            @EventHandler(priority = EventPriority.MONITOR)
+            public void onJoin(PlayerJoinEvent event) {
+                if (event == null || event.getPlayer() == null) {
+                    return;
+                }
+                publishPlayerLifecycle(new PlayerLifecycle(
+                        event.getPlayer().getUniqueId(),
+                        event.getPlayer().getName(),
+                        PlayerLifecycleType.JOIN
+                ));
+            }
+
+            @EventHandler(priority = EventPriority.MONITOR)
+            public void onQuit(PlayerQuitEvent event) {
+                if (event == null || event.getPlayer() == null) {
+                    return;
+                }
+                publishPlayerLifecycle(new PlayerLifecycle(
+                        event.getPlayer().getUniqueId(),
+                        event.getPlayer().getName(),
+                        PlayerLifecycleType.LEAVE
+                ));
+            }
+        }, plugin);
+    }
+
     private void publishPlayerMessage(PlayerMessage message) {
         if (message == null || !message.isValid() || playerMessageListeners.isEmpty()) {
             return;
@@ -170,6 +221,19 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
                 listener.onPlayerMessage(message);
             } catch (RuntimeException e) {
                 logger.warn("Failed to deliver player message listener", e);
+            }
+        }
+    }
+
+    private void publishPlayerLifecycle(PlayerLifecycle lifecycle) {
+        if (lifecycle == null || !lifecycle.isValid() || playerLifecycleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLifecycleListener listener : playerLifecycleListeners) {
+            try {
+                listener.onPlayerLifecycle(lifecycle);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to deliver player lifecycle listener", e);
             }
         }
     }

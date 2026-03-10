@@ -76,4 +76,14 @@ public interface Platform {
     default ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
         return ListenerSubscription.noop();
     }
+
+    /**
+     * Subscribes to normalized player join/leave events when the platform supports it.
+     *
+     * @param listener lifecycle listener
+     * @return subscription handle, or a no-op subscription when unsupported
+     */
+    default ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+        return ListenerSubscription.noop();
+    }
 }
