@@ -36,11 +36,11 @@
         {
           "name": "magicutils-commands-brigadier-1.13.1-mc1.21.jar",
           "url": "magicutils-commands-brigadier-1.13.1-mc1.21.jar",
-          "size": 22302,
-          "sha512": "450e462f38a9c74a95b25a7864e9a55d80a3c6c3de1c1e3024c3828b1316e5c1a3556cc1f9862cdfe0f0a03babadfd4ad431754d7a384e688cf2ca095cc7e83d",
-          "sha256": "07d30f39e6365669d79d0cb46ddd38a31e248170f1f74c7f92cbf6caed945907",
-          "sha1": "89cee1a6dc8c784274c879e710696f763421875f",
-          "md5": "c791de82aef828cc832bdad3de9a7d06"
+          "size": 22275,
+          "sha512": "637779b72b225c8b850a2d1ad3f9d1417ca3bc79551b0248bb3328baee5796b4c864298d33c81fc213d639682c92122e74e92485ef1636c329b669c70b807b23",
+          "sha256": "9482ae47a37d2fdf6c378f3435037483a07d24d7e13cd9ebea25aac57b841504",
+          "sha1": "7fd0e7cf4349cefe3b3a82240916e0927c9f898a",
+          "md5": "743056a9418e9c107beb96842acaaa46"
         }
       ]
     },
@@ -66,11 +66,11 @@
         {
           "name": "magicutils-commands-brigadier-1.13.1-mc1.21.jar",
           "url": "magicutils-commands-brigadier-1.13.1-mc1.21.jar",
-          "size": 22302,
-          "sha512": "450e462f38a9c74a95b25a7864e9a55d80a3c6c3de1c1e3024c3828b1316e5c1a3556cc1f9862cdfe0f0a03babadfd4ad431754d7a384e688cf2ca095cc7e83d",
-          "sha256": "07d30f39e6365669d79d0cb46ddd38a31e248170f1f74c7f92cbf6caed945907",
-          "sha1": "89cee1a6dc8c784274c879e710696f763421875f",
-          "md5": "c791de82aef828cc832bdad3de9a7d06"
+          "size": 22275,
+          "sha512": "637779b72b225c8b850a2d1ad3f9d1417ca3bc79551b0248bb3328baee5796b4c864298d33c81fc213d639682c92122e74e92485ef1636c329b669c70b807b23",
+          "sha256": "9482ae47a37d2fdf6c378f3435037483a07d24d7e13cd9ebea25aac57b841504",
+          "sha1": "7fd0e7cf4349cefe3b3a82240916e0927c9f898a",
+          "md5": "743056a9418e9c107beb96842acaaa46"
         }
       ]
     },
@@ -86,11 +86,11 @@
         {
           "name": "magicutils-commands-brigadier-1.13.1-sources.jar",
           "url": "magicutils-commands-brigadier-1.13.1-sources.jar",
-          "size": 7888,
-          "sha512": "9667b9374c9d93b16754082510633c7ade160fe90100341cbab5ed7649c34c7e464073d90bfb5223ac1ddea5e79abce4f3a746979822e098dd4578251c89a550",
-          "sha256": "1f7bb3e0cab2b26005645fe9da1b53a1da9ea67c0c5eba513230b9fd0389e0e7",
-          "sha1": "8fffb7040f49e3b8155d9dde72e7271007a233e6",
-          "md5": "be565a02b80dbd881caf5b277479aed1"
+          "size": 7877,
+          "sha512": "917b949d668ac2cb4e335d0b61c61fd687420971fc2e457c08e64f497b199a23d9530fa501d5af0d2869f2ae6475b69314a1228010feb399de2b86e096a2f360",
+          "sha256": "ecdb49e6dedcd89c7edebdf549658b53b5fa0b9375c5df23b70732d402606e9a",
+          "sha1": "2e8d27ab8769d326169d31c1368d6793c92ed273",
+          "md5": "191bbea570ded279de44b591055abcfb"
         }
       ]
     },
@@ -106,11 +106,11 @@
         {
           "name": "magicutils-commands-brigadier-1.13.1-javadoc.jar",
           "url": "magicutils-commands-brigadier-1.13.1-javadoc.jar",
-          "size": 107279,
-          "sha512": "a992af7ac9c99ede55fdb2a53ecfab9d2e1e7e468a427320651cc8c9bda20e85506c2b00acd0c071cc7d35b808aba32926442677a89683072c34ed0002f3b6df",
-          "sha256": "f1d2a19de861c73185db2fb57a341322678ed30ca60a5cf3b267c0bc655577f2",
-          "sha1": "9777b0891dd1d159e5956a4aeeb203392012f22e",
-          "md5": "4f957e14c189d3941fb766f4c5fa47e5"
+          "size": 107307,
+          "sha512": "950b55e98498b6068efcaefcd7b85357490b32f17ee2f6d2757793b7cfad93ea63447017c0f8ca29a484c9e4caa5ef4a57c69edb88ff1f4a860f30e3c2481eb3",
+          "sha256": "0d496e6e543affe32244e6300ca72a9c1caf6b47913bc730ddbe1dc61b1bfab7",
+          "sha1": "a2817d5aa05eaf2b857c636d4b06f7bccc5ef0e0",
+          "md5": "1fbc9fd6e5ee1a6a49f944d992732941"
         }
       ]
     },
@@ -127,11 +127,11 @@
         {
           "name": "magicutils-commands-brigadier-1.13.1-all.jar",
           "url": "magicutils-commands-brigadier-1.13.1-all.jar",
-          "size": 3392871,
-          "sha512": "f8e06911435f5bb5ef88e6937c6c4d4e6ca8e029d6f2479594595f6eac1b81feefeea819baef067941eb58dcbcb8bd5e9d3340d7d7b0ea6584681b3e174021a1",
-          "sha256": "101d9699aa1d72ce0a2f3c465f67a4498f1bb3eb1c564159f5f1697bbe20bd49",
-          "sha1": "026df9b3ff68a1ce84515d3bb0781afdefa26a93",
-          "md5": "9cdc3ff1f3de192cb340142331018458"
+          "size": 3403282,
+          "sha512": "8f6265fb7b77133e33b7100bec72d9a64063a7a8fb14df1beb56affce2e8925614289cc704635f51a97bf9bfd87f0d27c4e1d27c302c3b8facfd4acbf4e702cf",
+          "sha256": "00364f38c7f89508120c8f5741c8234d09f9c5a07ea29c67761ec45fe7ccfe55",
+          "sha1": "fe133ecbe0c6371f32738be87ab89c660509de8f",
+          "md5": "2affbbb392a5a28e70c3618b8db02731"
         }
       ]
     }
