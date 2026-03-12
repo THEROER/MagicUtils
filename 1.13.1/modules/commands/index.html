@@ -1,0 +1,2173 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
+      
+      
+      
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/1.13.1/modules/commands/">
+      
+      
+        <link rel="prev" href="../logger-config/">
+      
+      
+        <link rel="next" href="../permissions/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Commands - MagicUtils</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#commands" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MagicUtils" class="md-header__button md-logo" aria-label="MagicUtils" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MagicUtils
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Commands
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/THEROER/MagicUtils" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    THEROER/MagicUtils
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
+          
+  
+  
+  Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../platforms/bukkit/" class="md-tabs__link">
+          
+  
+  
+  Platforms
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../recipes/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Recipes
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MagicUtils" class="md-nav__button md-logo" aria-label="MagicUtils" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MagicUtils
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/THEROER/MagicUtils" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    THEROER/MagicUtils
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modules
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Modules
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logger-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logger Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#registration-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registration Models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform Registration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Platform Registration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bukkitpaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bukkit/Paper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fabric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fabric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#velocity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Velocity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neoforge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeoForge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotation-based-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Annotation-Based Commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Annotation-Based Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Annotations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggestions-and-type-parsers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggestions And Type Parsers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commandresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CommandResult
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#help-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Help Output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Help Output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standalone-help-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone Help Command
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help-as-a-subcommand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Help As A Subcommand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#magicsender" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MagicSender
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#builder-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder API
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands-cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands Cheat Sheet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../http-client/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Advanced
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lang/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lang
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../placeholders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Placeholders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../placeholders-advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Placeholders Advanced
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Platforms
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Platforms
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/bukkit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bukkit/Paper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/fabric/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fabric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/velocity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Velocity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/neoforge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NeoForge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#registration-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registration Models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform Registration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Platform Registration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bukkitpaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bukkit/Paper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fabric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fabric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#velocity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Velocity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neoforge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeoForge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotation-based-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Annotation-Based Commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Annotation-Based Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Annotations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggestions-and-type-parsers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggestions And Type Parsers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commandresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CommandResult
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#help-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Help Output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Help Output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standalone-help-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone Help Command
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help-as-a-subcommand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Help As A Subcommand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#magicsender" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MagicSender
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#builder-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder API
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h1>
+<p>MagicUtils commands are annotation-first, but the runtime model is registry
+based. Each platform exposes a <code>CommandRegistry</code> that owns parsers,
+permissions, and command registration for that plugin or mod.</p>
+<p>See <a href="../commands-cheatsheet/">Commands Cheat Sheet</a> for a quick reference and
+<a href="../permissions/">Permissions</a> for node generation details.</p>
+<h2 id="registration-models">Registration Models<a class="headerlink" href="#registration-models" title="Permanent link">&para;</a></h2>
+<p>There are three common ways to obtain a registry:</p>
+<ol>
+<li>Bootstrap helper creates it for you.</li>
+<li><code>CommandRegistry.create(...)</code> returns an instance you keep explicitly.</li>
+<li>Legacy <code>CommandRegistry.initialize(...)</code> / <code>createDefault(...)</code> creates the
+   default registry for the current platform.</li>
+</ol>
+<p>For multi-plugin or multi-mod setups, prefer an explicit registry instance or
+the scoped static overloads. The no-arg <code>register(...)</code> methods operate on the
+default registry.</p>
+<h2 id="platform-registration">Platform Registration<a class="headerlink" href="#platform-registration" title="Permanent link">&para;</a></h2>
+<h3 id="bukkitpaper">Bukkit/Paper<a class="headerlink" href="#bukkitpaper" title="Permanent link">&para;</a></h3>
+<p>Bootstrap-first:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="p">.</span><span class="na">permissionPrefix</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">        </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="p">.</span><span class="na">configureCommands</span><span class="p">(</span><span class="n">registry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">()))</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+</code></pre></div>
+<p>Manual registry:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">CommandRegistry</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">());</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">AdminCommand</span><span class="p">());</span>
+</code></pre></div>
+<h3 id="fabric">Fabric<a class="headerlink" href="#fabric" title="Permanent link">&para;</a></h3>
+<p>Bootstrap-first:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">FabricBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FabricBootstrap</span><span class="p">.</span><span class="na">forMod</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">server</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="p">.</span><span class="na">permissionPrefix</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">CommandRegistrationCallback</span><span class="p">.</span><span class="na">EVENT</span><span class="p">.</span><span class="na">register</span><span class="p">((</span><span class="n">dispatcher</span><span class="p">,</span><span class="w"> </span><span class="n">registryAccess</span><span class="p">,</span><span class="w"> </span><span class="n">environment</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">magic</span><span class="p">.</span><span class="na">commandRegistry</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="n">magic</span><span class="p">.</span><span class="na">commandRegistry</span><span class="p">().</span><span class="na">registerCommand</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">());</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">});</span>
+</code></pre></div>
+<p>Manual registry:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">CommandRegistry</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">CommandRegistrationCallback</span><span class="p">.</span><span class="na">EVENT</span><span class="p">.</span><span class="na">register</span><span class="p">((</span><span class="n">dispatcher</span><span class="p">,</span><span class="w"> </span><span class="n">registryAccess</span><span class="p">,</span><span class="w"> </span><span class="n">environment</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="n">dispatcher</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">());</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">});</span>
+</code></pre></div>
+<h3 id="velocity">Velocity<a class="headerlink" href="#velocity" title="Permanent link">&para;</a></h3>
+<p>Bootstrap-first:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">VelocityBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">VelocityBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyPlugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataDirectory</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="p">.</span><span class="na">permissionPrefix</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p">.</span><span class="na">configureCommands</span><span class="p">(</span><span class="n">registry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">()))</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+</code></pre></div>
+<p>Manual registry:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">CommandRegistry</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">loggerCore</span><span class="p">);</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">());</span>
+</code></pre></div>
+<h3 id="neoforge">NeoForge<a class="headerlink" href="#neoforge" title="Permanent link">&para;</a></h3>
+<p>NeoForge currently uses the manual path:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">CommandRegistry</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">loggerCore</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nd">@SubscribeEvent</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onRegisterCommands</span><span class="p">(</span><span class="n">RegisterCommandsEvent</span><span class="w"> </span><span class="n">event</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="na">getDispatcher</span><span class="p">(),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">());</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>The second argument is always the permission prefix used when generating nodes.</p>
+<h2 id="annotation-based-commands">Annotation-Based Commands<a class="headerlink" href="#annotation-based-commands" title="Permanent link">&para;</a></h2>
+<p>Use <code>@CommandInfo</code> on the class and <code>@SubCommand</code> on methods. A method named
+<code>execute</code> without <code>@SubCommand</code> is treated as the root handler.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nd">@CommandInfo</span><span class="p">(</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">        </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;DonateMenu main command&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="n">aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;d&quot;</span><span class="p">},</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="n">permission</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate.use&quot;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="p">)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DonateCommand</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MagicCommand</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;Opened menu&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">    </span><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;give&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Give currency to a player&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">give</span><span class="p">(</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">            </span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">            </span><span class="nd">@ParamName</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span><span class="p">,</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">            </span><span class="nd">@Option</span><span class="p">(</span><span class="n">shortNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;a&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">longNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;amount&quot;</span><span class="p">})</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">amount</span><span class="p">,</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">            </span><span class="nd">@Option</span><span class="p">(</span><span class="n">shortNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;s&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">longNames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;silent&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">silent</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="n">silent</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Done&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="p">}</span>
+</code></pre></div>
+<p>Nested subcommands are supported via <code>path</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;npc&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;commands&quot;</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;add&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">addNpcCommand</span><span class="p">(...)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h3 id="common-annotations">Common Annotations<a class="headerlink" href="#common-annotations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>@ParamName</code> overrides argument names for help output.</li>
+<li><code>@OptionalArgument</code> or <code>@DefaultValue("...")</code> marks a parameter optional.</li>
+<li><code>@Greedy</code> captures the rest of the input.</li>
+<li><code>@Suggest("source")</code> adds completion hints.</li>
+<li><code>@Sender</code> injects the sender and hides it from help output.</li>
+<li><code>@Option(shortNames = {"a"}, longNames = {"amount"})</code> enables <code>-a 5</code> and
+  <code>--amount 5</code>. Set <code>flag = true</code> for toggles such as <code>-s</code> / <code>--silent</code>.</li>
+</ul>
+<p><code>@Sender</code> supports sender filtering via <code>AllowedSender</code>:</p>
+<ul>
+<li><code>ANY</code>, <code>PLAYER</code>, <code>CONSOLE</code></li>
+<li><code>BLOCK</code>, <code>MINECART</code>, <code>PROXIED</code>, <code>REMOTE</code></li>
+</ul>
+<p>Platform-specific sender types can also be injected directly:</p>
+<ul>
+<li>Bukkit: <code>CommandSender</code>, <code>Player</code></li>
+<li>Fabric: <code>ServerCommandSource</code>, <code>ServerPlayerEntity</code></li>
+<li>Velocity: <code>CommandSource</code>, <code>Player</code>, <code>ConsoleCommandSource</code></li>
+<li>NeoForge: <code>CommandSourceStack</code>, <code>ServerPlayer</code></li>
+</ul>
+<h2 id="suggestions-and-type-parsers">Suggestions And Type Parsers<a class="headerlink" href="#suggestions-and-type-parsers" title="Permanent link">&para;</a></h2>
+<p>Suggestions can come from:</p>
+<ul>
+<li>Built-in type parsers (players, worlds, enums, booleans).</li>
+<li>Special sources such as <code>@players</code>, <code>@worlds</code>, <code>@commands</code>.</li>
+<li>Inline lists: <code>@Suggest("{on,off,reset}")</code>.</li>
+<li>Methods on the command class: <code>@Suggest("getItems")</code>.</li>
+</ul>
+<p>Suggestion methods can be:</p>
+<ul>
+<li><code>String[] getItems()</code> or <code>List&lt;String&gt; getItems()</code></li>
+<li><code>getItems(Player player)</code></li>
+<li><code>getItems(ServerCommandSource sender)</code></li>
+<li><code>getItems(CommandSource sender)</code></li>
+</ul>
+<p>Built-in sources:</p>
+<ul>
+<li><code>@players</code>, <code>@player</code>, <code>@allplayers</code></li>
+<li><code>@offlineplayers</code> (Bukkit only)</li>
+<li><code>@worlds</code>, <code>@world</code></li>
+<li><code>@language_keys</code> (Bukkit only)</li>
+<li><code>@commands</code></li>
+<li><code>{a,b,c}</code> inline list syntax</li>
+</ul>
+<p>Custom parsers are registered on the registry's parser registry:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">registry</span><span class="p">.</span><span class="na">commandManager</span><span class="p">()</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">        </span><span class="p">.</span><span class="na">getTypeParserRegistry</span><span class="p">()</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">        </span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">MyTypeParser</span><span class="p">());</span>
+</code></pre></div>
+<h2 id="permissions">Permissions<a class="headerlink" href="#permissions" title="Permanent link">&para;</a></h2>
+<p>Permissions can be defined at three levels:</p>
+<ul>
+<li><code>@CommandInfo.permission</code></li>
+<li><code>@SubCommand.permission</code></li>
+<li><code>@Permission</code> on parameters</li>
+</ul>
+<p>Generated nodes use this shape when you do not provide explicit values:</p>
+<ul>
+<li>Command: <code>commands.&lt;command&gt;</code></li>
+<li>Subcommand: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;</code></li>
+<li>Argument: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;.argument.&lt;name&gt;</code></li>
+</ul>
+<p>These nodes are prefixed by the registry permission prefix. See
+<a href="../permissions/">Permissions</a> for the platform-specific behaviour.</p>
+<p><code>MagicPermissionDefault</code> controls the default access policy:</p>
+<ul>
+<li><code>TRUE</code></li>
+<li><code>OP</code></li>
+<li><code>NOT_OP</code></li>
+<li><code>FALSE</code></li>
+</ul>
+<h2 id="commandresult">CommandResult<a class="headerlink" href="#commandresult" title="Permanent link">&para;</a></h2>
+<p><code>CommandResult.success()</code> and <code>CommandResult.failure()</code> control whether MagicUtils
+sends feedback automatically.</p>
+<ul>
+<li><code>CommandResult.success()</code> means success with no reply text.</li>
+<li><code>CommandResult.success("Done")</code> sends a success reply.</li>
+<li><code>CommandResult.failure("No permission")</code> sends a failure reply.</li>
+</ul>
+<h2 id="threading">Threading<a class="headerlink" href="#threading" title="Permanent link">&para;</a></h2>
+<p>Commands run on the main thread by default. Use <code>CommandThreading.ASYNC</code> for
+IO-heavy or CPU-heavy work:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nd">@CommandInfo</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">threading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandThreading</span><span class="p">.</span><span class="na">ASYNC</span><span class="p">)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DonateCommand</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MagicCommand</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;done&quot;</span><span class="p">);</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="nd">@SubCommand</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;give&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">threading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandThreading</span><span class="p">.</span><span class="na">ASYNC</span><span class="p">)</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">give</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">}</span>
+</code></pre></div>
+<p>Builder equivalents:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">CommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;donate&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">        </span><span class="p">.</span><span class="na">threading</span><span class="p">(</span><span class="n">CommandThreading</span><span class="p">.</span><span class="na">ASYNC</span><span class="p">)</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">        </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;done&quot;</span><span class="p">))</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">SubCommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;give&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">        </span><span class="p">.</span><span class="na">threading</span><span class="p">(</span><span class="n">CommandThreading</span><span class="p">.</span><span class="na">ASYNC</span><span class="p">)</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">        </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+<p>Only mark commands as async when your code is thread-safe. When you need to
+touch platform APIs again, switch back to the main thread via
+<code>Platform.runOnMain(...)</code> or <code>Tasks.runOnMain(...)</code>.</p>
+<h2 id="help-output">Help Output<a class="headerlink" href="#help-output" title="Permanent link">&para;</a></h2>
+<p>The help renderer respects permissions and hides commands or arguments the
+sender cannot access. It is styled through <code>logger.{ext}</code> under the <code>help</code>
+section.</p>
+<h3 id="standalone-help-command">Standalone Help Command<a class="headerlink" href="#standalone-help-command" title="Permanent link">&para;</a></h3>
+<p>Bukkit and Fabric ship a ready-to-register <code>HelpCommand</code> wrapper:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
+</code></pre></div>
+<p>You can rename it at runtime:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">HelpCommand</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">)</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">        </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;donatehelp&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">        </span><span class="p">.</span><span class="na">addAlias</span><span class="p">(</span><span class="s">&quot;dhelp&quot;</span><span class="p">));</span>
+</code></pre></div>
+<h3 id="help-as-a-subcommand">Help As A Subcommand<a class="headerlink" href="#help-as-a-subcommand" title="Permanent link">&para;</a></h3>
+<p>Use <code>HelpCommandSupport</code> when you want help inside another command tree or on
+platforms that do not ship a dedicated wrapper:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">DonateCommand</span><span class="p">()</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">        </span><span class="p">.</span><span class="na">addSubCommand</span><span class="p">(</span><span class="n">HelpCommandSupport</span><span class="p">.</span><span class="na">createHelpSubCommand</span><span class="p">(</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">                </span><span class="s">&quot;help&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">                </span><span class="n">loggerCore</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">                </span><span class="n">registry</span><span class="p">::</span><span class="n">commandManager</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">        </span><span class="p">)));</span>
+</code></pre></div>
+<h2 id="magicsender">MagicSender<a class="headerlink" href="#magicsender" title="Permanent link">&para;</a></h2>
+<p><code>MagicSender</code> is the platform-neutral sender wrapper used throughout the
+command system:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicSender</span><span class="p">.</span><span class="na">wrap</span><span class="p">(</span><span class="n">rawSender</span><span class="p">);</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">MagicSender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="n">rawSender</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;my.permission&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="c1">// ...</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="p">}</span>
+</code></pre></div>
+<p>Use it when you want shared command logic across Bukkit, Fabric, Velocity, and
+NeoForge without branching on raw sender types.</p>
+<h2 id="builder-api">Builder API<a class="headerlink" href="#builder-api" title="Permanent link">&para;</a></h2>
+<p>Use the builder API when you need runtime composition:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">CommandSpec</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="w"> </span><span class="n">spec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;donate&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">        </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;DonateMenu main command&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">        </span><span class="p">.</span><span class="na">aliases</span><span class="p">(</span><span class="s">&quot;d&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">        </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;Opened menu&quot;</span><span class="p">))</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">        </span><span class="p">.</span><span class="na">subCommand</span><span class="p">(</span><span class="n">SubCommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;give&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">                </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Give currency&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">                </span><span class="p">.</span><span class="na">argument</span><span class="p">(</span><span class="n">CommandArgument</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Player</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">                </span><span class="p">.</span><span class="na">argument</span><span class="p">(</span><span class="n">CommandArgument</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">                </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">                </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="n">registry</span><span class="p">.</span><span class="na">registerSpec</span><span class="p">(</span><span class="n">spec</span><span class="p">);</span>
+</code></pre></div>
+<p>You can mix annotations with runtime overrides:</p>
+<ul>
+<li><code>withName(...)</code>, <code>addAlias(...)</code>, <code>removeAlias(...)</code></li>
+<li><code>addSubCommand(SubCommandSpec&lt;?&gt;)</code></li>
+<li><code>setExecute(...)</code></li>
+</ul>
+<p>Nested builder subcommands are supported as well:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">SubCommandSpec</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="w"> </span><span class="n">npcAdd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SubCommandSpec</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;add&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">        </span><span class="p">.</span><span class="na">path</span><span class="p">(</span><span class="s">&quot;npc&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;commands&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">        </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Add NPC command&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">        </span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="n">ctx</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">))</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.tabs.link", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
