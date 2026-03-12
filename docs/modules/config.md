@@ -3,7 +3,7 @@
 MagicUtils config maps files to POJOs using annotations while preserving user
 comments and unknown keys when saving.
 
-## Define a config
+## Define A Config
 
 ```java
 @ConfigFile("example.{ext}")
@@ -29,55 +29,84 @@ ConfigManager manager = new ConfigManager(platform);
 ExampleConfig cfg = manager.register(ExampleConfig.class);
 ```
 
-## Formats and selection
+If your config path contains placeholders such as `{lang}` or `{service}`, pass
+them during registration:
 
-- JSON/JSONC are available out of the box.
+```java
+ExampleConfig cfg = manager.register(ExampleConfig.class, Map.of("service", "gateway"));
+```
+
+## Formats And Selection
+
+- JSON / JSONC are available out of the box.
 - YAML requires `magicutils-config-yaml`.
 - TOML requires `magicutils-config-toml`.
 
-MagicUtils can choose a format based on file extension. If you use `{ext}` in
-`@ConfigFile`, it will follow the preferred format:
+If you use `{ext}` in `@ConfigFile`, MagicUtils chooses the extension from the
+current config format rules:
 
-- `example.format` next to the config (contents: `json`, `jsonc`, `yml`, `toml`).
-- `magicutils.format` in the root config directory (global default).
-- `-Dmagicutils.config.format=jsonc` or the `MAGICUTILS_CONFIG_FORMAT` env var.
+- `<config>.format` next to the config
+- `magicutils.format` in the root config directory
+- `-Dmagicutils.config.format=jsonc`
+- `MAGICUTILS_CONFIG_FORMAT`
 
-Fabric defaults to JSONC when YAML is not available.
+Fabric defaults to JSONC when no explicit format is selected.
 
 For advanced format selection and migrations, see
 [Config Advanced](config-advanced.md).
 
-## Reloading and hot watch
+## Reloading And Change Listeners
 
-Register change listeners:
+Register a listener for live updates:
 
 ```java
-manager.onChange(ExampleConfig.class, (config, sections) -> {
+ListenerSubscription subscription = manager.subscribeChanges(ExampleConfig.class, (config, sections) -> {
     // apply live updates
 });
 ```
 
-`@ConfigReloadable` restricts which sections may reload at runtime.
+`onChange(...)` is available as a convenience alias when you do not need the
+subscription handle.
 
-### Threading helpers
+`@ConfigReloadable` restricts which sections can reload at runtime.
 
-Reloading touches disk. Use async or smart helpers when running on
-blocking-sensitive threads:
+## Threading Helpers
+
+Reloading touches disk. Use async or smart helpers on blocking-sensitive
+threads:
 
 ```java
 manager.reloadAsync(cfg);
-manager.reloadAsync(ExampleConfig.class);
+manager.reloadAsync(ExampleConfig.class, "messages");
 manager.reloadAllAsync();
 
 manager.reloadSmart(cfg);
-manager.reloadSmart(ExampleConfig.class);
+manager.reloadSmart(ExampleConfig.class, "messages");
 manager.reloadAllSmart();
 ```
+
+## Runtime-Managed Config Services
+
+When you already have `MagicRuntime`, you can bind a config-backed resource and
+let MagicUtils rebuild it automatically on matching config reloads:
+
+```java
+MagicRuntimeConfigBinding<ExampleConfig, ReloadableService> binding = runtime.bindConfig(
+        "service.example",
+        ExampleConfig.class,
+        config -> new ReloadableService(config), // ReloadableService implements AutoCloseable
+        "messages"
+);
+
+ReloadableService service = binding.require();
+```
+
+The bound service is also exposed as a named runtime component.
 
 ## Migrations
 
 Config migrations are declared with `ConfigMigration` and tracked by the
-`config-version` key inside the file.
+`config-version` key inside the file:
 
 ```java
 manager.registerMigrations(ExampleConfig.class,
@@ -91,9 +120,9 @@ manager.registerMigrations(ExampleConfig.class,
 );
 ```
 
-## Custom value adapters
+## Custom Value Adapters
 
-Register custom serializers via `ConfigAdapters.register(...)`:
+Register serializers via `ConfigAdapters.register(...)`:
 
 ```java
 ConfigAdapters.register(Duration.class, new ConfigValueAdapter<>() {
@@ -104,6 +133,6 @@ ConfigAdapters.register(Duration.class, new ConfigValueAdapter<>() {
 
 ## Shutdown
 
-On Bukkit and Fabric, MagicUtils automatically stops the watcher when the
-server shuts down. For custom platforms, call `ConfigManager.shutdown()` during
-plugin shutdown.
+Bootstrap helpers and `MagicRuntime` can manage the config manager lifecycle
+for you. In manual setups, call `ConfigManager.shutdown()` during plugin or mod
+shutdown to stop file watchers cleanly.

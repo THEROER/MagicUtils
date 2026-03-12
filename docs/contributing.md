@@ -9,7 +9,8 @@
 ## Build the docs locally
 
 ```bash
-python -m pip install mkdocs-material mkdocs-macros-plugin mike
+python -m pip install -r requirements-docs.txt
+mkdocs build --strict
 mkdocs serve
 ```
 

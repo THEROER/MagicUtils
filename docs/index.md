@@ -1,35 +1,44 @@
 # MagicUtils
 
-MagicUtils is a modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge. It
-provides shared building blocks for configuration, localisation, commands,
-logging, placeholders, and platform adapters.
+MagicUtils is a modular toolkit for Bukkit/Paper, Fabric, Velocity, and
+NeoForge. It provides shared building blocks for configuration, localisation,
+commands, logging, placeholders, HTTP clients, and platform adapters.
 
 ## Highlights
 
+- Bootstrap-first setup for Bukkit, Fabric, and Velocity via
+  `BukkitBootstrap`, `FabricBootstrap`, and `VelocityBootstrap`.
+- `MagicRuntime` container for managed shutdown hooks, typed components, and
+  named runtime resources.
 - Config manager with JSON/JSONC, YAML, and TOML support plus migrations.
-- Annotation-first command framework with type parsers, options, and tab completion.
+- Annotation-first command framework with type parsers, options, and Brigadier
+  support where the platform supports it.
 - Adventure-based logger with rich formatting, sub-loggers, and help styling.
-- Language manager with MiniMessage, custom messages, and per-player overrides.
-- HttpClient wrapper with JSON mapping, retries, and multipart support.
-- Placeholder registry with Bukkit [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) bridge.
+- Language manager with MiniMessage, bundled messages, and per-player
+  overrides.
+- HTTP client wrapper with JSON mapping, retries, multipart uploads, and
+  runtime-bound profiles.
+- Placeholder registry with Bukkit PlaceholderAPI and Fabric placeholder
+  bridges.
 
-## Modules at a glance
+## Modules At A Glance
 
 | Layer | Artifacts | Notes |
 | --- | --- | --- |
-| Platform API | `magicutils-api` | `Platform`, `Audience`, and shared interfaces. |
-| Core stack | `magicutils-core` | Logger + commands + config + lang + placeholders. |
-| Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders`, `magicutils-http-client` | Mix and match. |
+| Platform API | `magicutils-api` | `Platform`, `Audience`, `TaskScheduler`, and shared interfaces. |
+| Core stack | `magicutils-core` | Shared runtime container plus core config/lang/logger/placeholder wiring. |
+| Feature modules | `magicutils-logger`, `magicutils-commands`, `magicutils-config`, `magicutils-lang`, `magicutils-placeholders`, `magicutils-http-client` | Mix and match for manual setups. |
 | Format helpers | `magicutils-config-yaml`, `magicutils-config-toml` | Enable extra config formats. |
-| Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge` | Wire MagicUtils to a runtime. |
-| Brigadier integrations | `magicutils-commands-brigadier`, `magicutils-commands-fabric`, `magicutils-commands-neoforge` | Brigadier-based command wiring for Fabric and NeoForge. |
-| Fabric extras | `magicutils-commands-fabric`, `magicutils-logger-fabric`, `magicutils-placeholders-fabric`, `magicutils-fabric-bundle` | Brigadier integration and jar-in-jar bundle. |
+| Platform adapters | `magicutils-bukkit`, `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge` | Wire MagicUtils to each runtime. |
+| Platform bundles | `magicutils-bukkit-bundle`, `magicutils-fabric-bundle` | Shared server-side installs for Bukkit/Paper and Fabric. |
+| Fabric integrations | `magicutils-commands-fabric`, `magicutils-logger-fabric`, `magicutils-placeholders-fabric` | Fabric-specific command, logger, and placeholder layers. |
+| Brigadier integrations | `magicutils-commands-brigadier`, `magicutils-commands-neoforge` | Shared Brigadier base and NeoForge command wiring. |
 
-## Quick start
+## Quick Start
 
 1. Add the GitHub Pages Maven repository.
-2. Add the dependency for your platform.
-3. Initialise the modules you need.
+2. Add one platform entry point.
+3. Wire the runtime through the recommended bootstrap helper.
 
 ```kotlin
 repositories {
@@ -41,10 +50,13 @@ repositories {
     ```kotlin
     dependencies {
         implementation("dev.ua.theroer:magicutils-bukkit:{{ magicutils_version }}")
-        // Optional format helpers
-        implementation("dev.ua.theroer:magicutils-config-yaml:{{ magicutils_version }}")
-        implementation("dev.ua.theroer:magicutils-config-toml:{{ magicutils_version }}")
     }
+    ```
+
+    ```java
+    BukkitBootstrap.RuntimeResult magic = BukkitBootstrap.forPlugin(this)
+            .enableCommands()
+            .buildRuntime();
     ```
 
 === "Fabric"
@@ -56,11 +68,10 @@ repositories {
     }
     ```
 
-=== "NeoForge"
-    ```kotlin
-    dependencies {
-        implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
-    }
+    ```java
+    FabricBootstrap.RuntimeResult magic = FabricBootstrap.forMod("mymod", () -> server)
+            .enableCommands()
+            .buildRuntime();
     ```
 
 === "Velocity"
@@ -70,8 +81,35 @@ repositories {
     }
     ```
 
-## Where to go next
+    ```java
+    VelocityBootstrap.RuntimeResult magic = VelocityBootstrap.forPlugin(proxy, this, "MyPlugin", dataDirectory)
+            .enableCommands()
+            .buildRuntime();
+    ```
 
-- Read the installation guide for platform-specific details and bundle options.
-- Jump into the module pages for deeper API examples and configs.
+=== "NeoForge"
+    ```kotlin
+    dependencies {
+        implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
+        implementation("dev.ua.theroer:magicutils-commands-neoforge:{{ magicutils_version }}")
+    }
+    ```
+
+    ```java
+    Platform platform = new NeoForgePlatformProvider();
+    ConfigManager configManager = new ConfigManager(platform);
+    LoggerCore logger = new LoggerCore(platform, configManager, this, "MyMod");
+    CommandRegistry commands = CommandRegistry.create("mymod", "mymod", logger);
+    ```
+
+`buildRuntime()` returns a managed `MagicRuntime` wrapper, so you can keep one
+runtime handle and close it cleanly on shutdown.
+
+## Where To Go Next
+
+- Read the installation guide for bundle options and modular setups.
+- Jump to Quickstart for end-to-end bootstrap examples per platform.
+- Read the Runtime guide for `MagicRuntime` patterns and lifecycle management.
+- Use the Migration guide when updating older code samples or plugins.
+- Use the module pages for deeper API examples and config details.
 - Use the version selector in the header to switch between releases.

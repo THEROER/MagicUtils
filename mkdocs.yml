@@ -1,5 +1,5 @@
 site_name: MagicUtils
-site_description: Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.
+site_description: Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.
 site_url: https://THEROER.github.io/MagicUtils/
 repo_name: THEROER/MagicUtils
 repo_url: https://github.com/THEROER/MagicUtils
@@ -59,6 +59,8 @@ nav:
   - Getting Started:
       - Installation: getting-started/installation.md
       - Quickstart: getting-started/quickstart.md
+      - Runtime: getting-started/runtime.md
+      - Migration Guide: getting-started/migration.md
       - Versioning: getting-started/versioning.md
   - Modules:
       - Overview: modules/overview.md

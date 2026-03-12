@@ -1,19 +1,30 @@
 # Permissions
 
-MagicUtils commands generate and check permission nodes automatically. You can
-override any node, control default access, and apply conditional checks for
-arguments.
+MagicUtils commands generate and evaluate permission nodes automatically. The
+registry prefix controls namespacing, while annotations control explicit nodes,
+defaults, and conditional argument checks.
 
-## Permission prefix
+## Permission Prefix
 
-Every `CommandRegistry.initialize(...)` call includes a permission prefix.
-MagicUtils prepends it to all generated nodes.
+Every command registry has a permission prefix. You set it either directly on
+the registry:
 
 ```java
-CommandRegistry.initialize(plugin, "donatemenu", logger);
+CommandRegistry registry = CommandRegistry.create(plugin, "donatemenu", logger);
 ```
 
-## Generated nodes
+or through the bootstrap helper:
+
+```java
+BukkitBootstrap.forPlugin(plugin)
+        .permissionPrefix("donatemenu")
+        .enableCommands()
+        .buildRuntime();
+```
+
+MagicUtils prepends that prefix to all generated nodes.
+
+## Generated Nodes
 
 When annotations omit explicit permission strings, MagicUtils builds defaults:
 
@@ -27,30 +38,65 @@ With prefix `donatemenu`:
 - `donatemenu.commands.donate.subcommand.give`
 - `donatemenu.commands.donate.subcommand.give.argument.player`
 
+## Default Access
+
+`MagicPermissionDefault` controls what happens when the permission node is not
+granted explicitly:
+
+- `TRUE` -> everyone
+- `OP` -> operators or elevated senders
+- `NOT_OP` -> non-operators / non-elevated senders
+- `FALSE` -> nobody
+
+Platform behaviour differs slightly:
+
+- Bukkit registers permission nodes with Bukkit's permission manager and uses
+  Bukkit permission defaults.
+- Fabric checks `fabric-permissions-api-v0` when available and falls back to
+  op-level checks.
+- NeoForge falls back to command-source permission level checks.
+- Velocity relies on the proxy's permission checks and uses the default policy
+  only when the node itself is absent.
+
 ## Wildcards
 
-On Bukkit, MagicUtils registers wildcard nodes for convenience:
+On Bukkit, MagicUtils also registers wildcard nodes:
 
 - `...commands.<command>.*`
 - `...commands.<command>.subcommand.*`
 
-These are registered alongside concrete nodes.
+Velocity also honours prefix-style wildcard checks such as `prefix.*` and
+`prefix<node>.*` when the proxy reports them as granted.
 
-## Default access
+## Explicit Permission Annotations
 
-`MagicPermissionDefault` controls who can execute when no explicit permission
-is granted:
+Use explicit nodes when you want stable names independent of the generated
+shape:
 
-- `TRUE` -> everyone
-- `OP` -> operators (default)
-- `NOT_OP` -> non-operators
-- `FALSE` -> nobody (explicit permission required)
+```java
+@CommandInfo(
+        name = "donate",
+        permission = "donatemenu.open",
+        permissionDefault = MagicPermissionDefault.TRUE
+)
+public final class DonateCommand extends MagicCommand {
+}
+```
 
-On Bukkit, MagicUtils registers the permission nodes with these defaults. On
-Fabric, MagicUtils checks `fabric-permissions-api` when available and falls
-back to op-level checks otherwise.
+Subcommands support the same fields:
 
-## Argument permissions
+```java
+@SubCommand(
+        name = "reload",
+        permission = "donatemenu.admin.reload",
+        permissionDefault = MagicPermissionDefault.OP
+)
+public CommandResult reload(@Sender MagicSender sender) {
+    return CommandResult.success("Reloaded");
+}
+```
+
+## Argument Permissions
 
 Use `@Permission` on parameters to gate argument usage:
 
@@ -63,25 +109,26 @@ public CommandResult grant(
 }
 ```
 
-You can override the permission node segment and whether `.argument.` is
-included:
+You can override the generated node segment:
 
 ```java
 @Permission(node = "target", includeArgumentSegment = false)
 ```
 
-## Conditional permission keywords
+## Conditional Permission Keywords
 
 - `self(arg)` / `other(arg)` / `anyother(arg)`
 - `not_null(arg)` / `exists(arg)`
 - `distinct(a,b)` / `all_distinct(a,b)`
 - `equals(a,b)` / `not_equals(a,b)`
 
-Use `compare = CompareMode.UUID/NAME/EQUALS/AUTO` to control comparison rules.
+Use `compare = CompareMode.UUID/NAME/EQUALS/AUTO` to control how values are
+compared.
 
-## Manual checks
+## Manual Checks
 
-`MagicSender` can be used to check permissions directly:
+`MagicSender` exposes direct permission checks when you need custom logic
+outside annotation processing:
 
 ```java
 MagicSender sender = MagicSender.wrap(rawSender);
@@ -89,3 +136,6 @@ if (MagicSender.hasPermission(rawSender, "donatemenu.commands.donate")) {
     // ...
 }
 ```
+
+You can also use the registry prefix when building related manual nodes so the
+manual and generated permissions stay in the same namespace.

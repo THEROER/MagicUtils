@@ -1,22 +1,40 @@
 # NeoForge
 
-NeoForge support includes platform wiring, config, logging, and Brigadier commands.
+NeoForge support currently uses the manual wiring path with
+`magicutils-neoforge` and the optional `magicutils-commands-neoforge` module.
+
+## Platform Wiring
 
 ```java
-Platform platform = new NeoForgePlatformProvider();
-ConfigManager configManager = new ConfigManager(platform);
-LoggerCore logger = new LoggerCore(platform, configManager, this, "MyMod");
-CommandRegistry.initialize("mymod", "mymod", logger);
-```
+public final class MyMod {
+    private static final String MOD_ID = "mymod";
 
-Register commands via `RegisterCommandsEvent` and the Brigadier dispatcher:
+    private final Platform platform;
+    private final ConfigManager configManager;
+    private final LoggerCore logger;
+    private final CommandRegistry commands;
 
-```java
-@SubscribeEvent
-public void onRegisterCommands(RegisterCommandsEvent event) {
-    CommandRegistry.register("mymod", event.getDispatcher(), new HelpCommand(logger));
+    public MyMod() {
+        platform = new NeoForgePlatformProvider();
+        configManager = new ConfigManager(platform);
+        logger = new LoggerCore(platform, configManager, this, "MyMod");
+        commands = CommandRegistry.create(MOD_ID, MOD_ID, logger);
+    }
+
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        commands.registerCommand(event.getDispatcher(), new ExampleCommand());
+    }
 }
 ```
 
-There is no NeoForge placeholder bridge yet. Use MagicUtils core placeholders
-directly where needed.
+If you need a different operator threshold, use
+`CommandRegistry.create(..., opLevel)`.
+
+## Notes
+
+- NeoForge uses `LoggerCore` directly instead of the Bukkit/Fabric `Logger`
+  wrapper.
+- There is no dedicated NeoForge bootstrap helper yet.
+- There is no NeoForge placeholder bridge yet. Use MagicUtils core
+  placeholders directly where needed.
