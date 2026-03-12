@@ -287,7 +287,7 @@ public final class CommandRegistry {
         if (spec == null) {
             return;
         }
-        registerCommand(new DynamicCommand(spec), extraAliases);
+        registerCommand(MagicCommand.fromSpec(spec), extraAliases);
     }
 
     public void registerSpec(CommandSpec<?> spec) {

@@ -1,7 +1,6 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
-import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 
@@ -78,6 +77,9 @@ public class CommandManager<S> {
      * @param info    the command info annotation
      */
     public void register(MagicCommand command, CommandInfo info) {
+        Objects.requireNonNull(command, "command");
+        Objects.requireNonNull(info, "info");
+        command.freeze();
         String name = info.name().toLowerCase();
         commands.put(name, command);
         commandInfos.put(name, info);
@@ -168,19 +170,8 @@ public class CommandManager<S> {
      * @param clazz the command class
      * @return the execute method or null if not found
      */
-    private Method findExecuteMethod(Class<?> clazz) {
-        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
-            for (Method method : current.getDeclaredMethods()) {
-                if (method.getName().equals("execute") && !method.isAnnotationPresent(SubCommand.class)) {
-                    return method;
-                }
-            }
-        }
-        return null;
-    }
-
     private Method getExecuteMethodCached(Class<?> clazz) {
-        return executeMethodCache.computeIfAbsent(clazz, this::findExecuteMethod);
+        return executeMethodCache.computeIfAbsent(clazz, MagicCommand::findExecuteMethod);
     }
 
     private List<MagicCommand.SubCommandInfo> getSubCommandInfoCached(Class<?> clazz) {

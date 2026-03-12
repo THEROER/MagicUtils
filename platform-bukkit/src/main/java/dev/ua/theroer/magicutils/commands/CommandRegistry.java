@@ -272,7 +272,7 @@ public class CommandRegistry {
     }
 
     /**
-     * Registers a single builder-defined command.
+     * Registers a single compatibility command spec.
      *
      * @param spec command spec to register
      */
@@ -537,7 +537,7 @@ public class CommandRegistry {
         if (spec == null) {
             return;
         }
-        registerCommand(new DynamicCommand(spec));
+        registerCommand(MagicCommand.fromSpec(spec));
     }
 
     private void generatePermissions(MagicCommand command, CommandInfo info) {

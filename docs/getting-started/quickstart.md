@@ -4,6 +4,13 @@ The recommended path is bootstrap-first: use the platform bootstrap helper when
 it exists, keep the returned runtime handle, and close it when the platform
 shuts down.
 
+If most of your logic lives directly in `magicutils-core`, keep the platform
+entrypoint thin and move the shared services behind `MagicRuntime`.
+
+That does not mean `common` should call `forPlugin(...)` or `forMod(...)`.
+Those bootstrap helpers stay in the platform module, which then hands the
+runtime into shared code.
+
 ## Bukkit/Paper
 
 ```java
@@ -150,15 +157,26 @@ services as typed components:
 MagicRuntime runtime = magic.runtime();
 ConfigManager configManager = runtime.requireComponent(ConfigManager.class);
 LoggerCore logger = runtime.requireComponent(LoggerCore.class);
+LanguageManager languages = runtime.findComponent(LanguageManager.class).orElse(null);
 ```
 
 Use named resources and config bindings when you want runtime-managed clients or
 other reloadable services.
 
+## Core / Common Logic
+
+If your plugin or mod is mostly shared logic plus a thin platform bootstrap,
+keep the common layer built around `MagicRuntime` and platform-agnostic
+services.
+
+See [Core / Common Logic](../platforms/core.md) for the recommended split
+between platform glue and shared code.
+
 ## Next Steps
 
 - Pick the modules you need from the Modules section.
 - Use the platform pages for more detailed bootstrap notes.
+- Use the Core / Common Logic page for shared/common module structure.
 - Read the Runtime guide for `MagicRuntime`, managed resources, and config bindings.
 - Use the Migration guide if you are moving from older manual wiring examples.
 - See the HTTP client page for `MagicRuntime`-bound profiles.

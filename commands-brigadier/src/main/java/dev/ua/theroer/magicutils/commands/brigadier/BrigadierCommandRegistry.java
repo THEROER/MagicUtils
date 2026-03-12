@@ -28,7 +28,6 @@ import dev.ua.theroer.magicutils.commands.CommandPlatform;
 import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.CommandSpec;
 import dev.ua.theroer.magicutils.commands.CommandThreading;
-import dev.ua.theroer.magicutils.commands.DynamicCommand;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
 import dev.ua.theroer.magicutils.commands.ResolvedCommandAction;
 import dev.ua.theroer.magicutils.commands.ResolvedCommandSchema;
@@ -48,7 +47,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -259,7 +257,6 @@ public class BrigadierCommandRegistry<S> {
     private final PrefixedLoggerCore logger;
     private final LoggerCore messageLogger;
     private final CommandManager<S> commandManager;
-    private final CommandPlatform<S> platform;
     private final String modName;
     private final String permissionPrefix;
     private final TaskScheduler scheduler;
@@ -353,7 +350,6 @@ public class BrigadierCommandRegistry<S> {
             }
         };
 
-        this.platform = platform;
         TypeParserRegistry<S> parserRegistry = TypeParserRegistry.createWithDefaults(commandLogger);
         if (parserRegistrar != null) {
             parserRegistrar.accept(parserRegistry);
@@ -454,7 +450,7 @@ public class BrigadierCommandRegistry<S> {
     }
 
     /**
-     * Registers a command spec by wrapping it into a dynamic command.
+     * Registers a compatibility command spec by converting it to a {@link MagicCommand}.
      *
      * @param dispatcher Brigadier dispatcher
      * @param spec command spec
@@ -463,7 +459,7 @@ public class BrigadierCommandRegistry<S> {
         if (spec == null) {
             return;
         }
-        registerCommand(dispatcher, new DynamicCommand(spec));
+        registerCommand(dispatcher, MagicCommand.fromSpec(spec));
     }
 
     private void registerCommandTree(CommandDispatcher<S> dispatcher, String label, ResolvedCommandSchema schema) {

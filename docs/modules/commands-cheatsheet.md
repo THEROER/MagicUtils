@@ -98,7 +98,7 @@ Allowed senders:
 ## Builder API Snippet
 
 ```java
-CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
+MagicCommand command = MagicCommand.<CommandSender>builder("donate")
         .description("Main command")
         .aliases("d")
         .threading(CommandThreading.ASYNC)
@@ -108,5 +108,15 @@ CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
                 .threading(CommandThreading.ASYNC)
                 .execute(ctx -> CommandResult.success("ok"))
                 .build())
+        .build();
+
+registry.registerCommand(command);
+```
+
+## Mount Existing Command Tree
+
+```java
+MagicCommand admin = MagicCommand.<CommandSender>builder("admin")
+        .mount("punish", new BanCommand())
         .build();
 ```

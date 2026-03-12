@@ -250,7 +250,7 @@ public final class DonateCommand extends MagicCommand {
 Builder equivalents:
 
 ```java
-CommandSpec.<CommandSender>builder("donate")
+MagicCommand.<CommandSender>builder("donate")
         .threading(CommandThreading.ASYNC)
         .execute(ctx -> CommandResult.success("done"))
         .build();
@@ -318,10 +318,11 @@ NeoForge without branching on raw sender types.
 
 ## Builder API
 
-Use the builder API when you need runtime composition:
+Use the builder API when you need runtime composition but still want a real
+`MagicCommand` instance:
 
 ```java
-CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
+MagicCommand donateCommand = MagicCommand.<CommandSender>builder("donate")
         .description("DonateMenu main command")
         .aliases("d")
         .execute(ctx -> CommandResult.success("Opened menu"))
@@ -333,7 +334,7 @@ CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
                 .build())
         .build();
 
-registry.registerSpec(spec);
+registry.registerCommand(donateCommand);
 ```
 
 You can mix annotations with runtime overrides:
@@ -341,6 +342,7 @@ You can mix annotations with runtime overrides:
 - `withName(...)`, `addAlias(...)`, `removeAlias(...)`
 - `addSubCommand(SubCommandSpec<?>)`
 - `setExecute(...)`
+- `mount(MagicCommand)` / `mount("route", existingCommand)`
 
 Nested builder subcommands are supported as well:
 
@@ -351,3 +353,55 @@ SubCommandSpec<CommandSender> npcAdd = SubCommandSpec.<CommandSender>builder("ad
         .execute(ctx -> CommandResult.success("ok"))
         .build();
 ```
+
+## Composing Existing Commands
+
+Already-authored annotation commands can be mounted under another command tree
+without rewriting them into `SubCommandSpec` form:
+
+```java
+MagicCommand adminCommand = MagicCommand.<CommandSender>builder("admin")
+        .mount("punish", new BanCommand())
+        .build();
+
+registry.registerCommand(adminCommand);
+```
+
+This is intentionally different from `withName("punish")`:
+
+- `withName(...)` mutates the authored command instance itself
+- `mount("punish", command)` keeps the source command identity intact and only
+  changes the route segment inside the parent tree
+
+Mounting snapshots the child command structure at mount time. That means:
+
+- changing the child name or aliases later does not rewrite the already-mounted
+  parent tree
+- the mounted command still executes against the original child instance
+- when you override the mounted route, root aliases from the child are not
+  exposed automatically
+
+## Mutation Lifecycle
+
+`MagicCommand` is mutable only during definition and composition:
+
+```java
+MagicCommand command = MagicCommand.<CommandSender>builder("donate")
+        .execute(ctx -> CommandResult.success("ok"))
+        .build()
+        .addAlias("d");
+```
+
+After `registry.registerCommand(...)` or `commandManager.register(...)`, the
+command is frozen. Later calls to:
+
+- `withName(...)`
+- `addAlias(...)`
+- `removeAlias(...)`
+- `addSubCommand(...)`
+- `setExecute(...)`
+- `mount(...)`
+
+throw `IllegalStateException`. If you still use `registerSpec(...)`, it remains
+supported as a compatibility path and is internally converted into the same
+`MagicCommand` runtime model.

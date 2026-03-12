@@ -104,7 +104,42 @@ Why prefer this:
 - fewer hidden globals
 - clearer ownership in multi-plugin or multi-mod setups
 
-## 3. Ad-Hoc Reload Logic -> `MagicRuntime` Bindings
+## 3. `CommandSpec.builder(...)` -> `MagicCommand.builder(...)`
+
+Older builder-based command code often produced a detached spec:
+
+```java
+CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
+        .execute(ctx -> CommandResult.success("ok"))
+        .build();
+
+registry.registerSpec(spec);
+```
+
+Preferred now:
+
+```java
+MagicCommand command = MagicCommand.<CommandSender>builder("donate")
+        .execute(ctx -> CommandResult.success("ok"))
+        .build();
+
+registry.registerCommand(command);
+```
+
+This matters because builder-authored commands are now real `MagicCommand`
+instances. They can use the same runtime adaptation API as annotation-based
+commands:
+
+- `withName(...)`
+- `addAlias(...)`
+- `addSubCommand(...)`
+- `setExecute(...)`
+- `mount(existingCommand)`
+
+`registerSpec(...)` still works for migration, but it is now the compatibility
+path rather than the primary one.
+
+## 4. Ad-Hoc Reload Logic -> `MagicRuntime` Bindings
 
 Older reload code often looked like this:
 

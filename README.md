@@ -92,13 +92,17 @@ dependencies {
 
 ## Quickstart
 
-Bootstrap helpers are the recommended entry points:
+Bootstrap helpers are the recommended platform entry points:
 
 - Bukkit/Paper: `BukkitBootstrap.forPlugin(this)`
 - Fabric: `FabricBootstrap.forMod("mymod", () -> server)`
 - Velocity: `VelocityBootstrap.forPlugin(proxy, this, "MyPlugin", dataDir)`
 - NeoForge: manual wiring with `NeoForgePlatformProvider` +
   `CommandRegistry.create(...)`
+
+If your project has a shared `common` module, let the platform layer create the
+runtime and pass `MagicRuntime` into the shared services instead of calling the
+bootstrap helpers from common code.
 
 `buildRuntime()` returns a managed `MagicRuntime` container with the platform,
 config manager, logger, language manager, and optional command registry.

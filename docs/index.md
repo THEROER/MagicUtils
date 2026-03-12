@@ -4,6 +4,10 @@ MagicUtils is a modular toolkit for Bukkit/Paper, Fabric, Velocity, and
 NeoForge. It provides shared building blocks for configuration, localisation,
 commands, logging, placeholders, HTTP clients, and platform adapters.
 
+The same stack also works well in multi-module projects where platform adapters
+only bootstrap `MagicRuntime` and the real feature logic lives in shared
+`common` modules.
+
 ## Highlights
 
 - Bootstrap-first setup for Bukkit, Fabric, and Velocity via
@@ -107,6 +111,8 @@ runtime handle and close it cleanly on shutdown.
 
 ## Where To Go Next
 
+- Read the Core / Common Logic page when your code lives mostly in
+  `magicutils-core`.
 - Read the installation guide for bundle options and modular setups.
 - Jump to Quickstart for end-to-end bootstrap examples per platform.
 - Read the Runtime guide for `MagicRuntime` patterns and lifecycle management.

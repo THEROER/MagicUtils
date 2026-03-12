@@ -76,6 +76,7 @@ nav:
       - Placeholders: modules/placeholders.md
       - Placeholders Advanced: modules/placeholders-advanced.md
   - Platforms:
+      - Core / Common Logic: platforms/core.md
       - Bukkit/Paper: platforms/bukkit.md
       - Fabric: platforms/fabric.md
       - Velocity: platforms/velocity.md
