@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
       
       
       
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/bukkit/" class="md-tabs__link">
+        <a href="../../platforms/core/" class="md-tabs__link">
           
   
   
@@ -565,6 +565,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../getting-started/runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../getting-started/versioning/" class="md-nav__link">
         
   
@@ -753,24 +809,63 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bukkitpaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bukkit/Paper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fabric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fabric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#velocity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Velocity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neoforge-custom-platforms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeoForge / Custom Platforms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prefixed-loggers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prefixed loggers
+        Basic Usage
       
     </span>
   </a>
@@ -781,7 +876,18 @@
   <a href="#log-builder" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Log builder
+        Log Builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prefixed-loggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefixed Loggers
       
     </span>
   </a>
@@ -792,7 +898,18 @@
   <a href="#prefix-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prefix modes
+        Prefix Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Integration
       
     </span>
   </a>
@@ -803,7 +920,7 @@
   <a href="#logger-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Logger configuration
+        Logger Configuration
       
     </span>
   </a>
@@ -811,10 +928,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#localisation-and-placeholders" class="md-nav__link">
+  <a href="#localisation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Localisation and placeholders
+        Localisation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#internal-and-external-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal And External Placeholders
       
     </span>
   </a>
@@ -1176,6 +1304,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../platforms/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../platforms/bukkit/" class="md-nav__link">
         
   
@@ -1431,24 +1587,63 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bukkitpaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bukkit/Paper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fabric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fabric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#velocity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Velocity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neoforge-custom-platforms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NeoForge / Custom Platforms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prefixed-loggers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prefixed loggers
+        Basic Usage
       
     </span>
   </a>
@@ -1459,7 +1654,18 @@
   <a href="#log-builder" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Log builder
+        Log Builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prefixed-loggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefixed Loggers
       
     </span>
   </a>
@@ -1470,7 +1676,18 @@
   <a href="#prefix-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prefix modes
+        Prefix Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Integration
       
     </span>
   </a>
@@ -1481,7 +1698,7 @@
   <a href="#logger-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Logger configuration
+        Logger Configuration
       
     </span>
   </a>
@@ -1489,10 +1706,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#localisation-and-placeholders" class="md-nav__link">
+  <a href="#localisation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Localisation and placeholders
+        Localisation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#internal-and-external-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal And External Placeholders
       
     </span>
   </a>
@@ -1520,77 +1748,122 @@
 
 
 <h1 id="logger">Logger<a class="headerlink" href="#logger" title="Permanent link">&para;</a></h1>
-<p>MagicUtils logger builds on Adventure components and provides a consistent
-API for console and chat output, with optional localisation and placeholders.</p>
+<p>MagicUtils logger builds on Adventure components and provides a consistent API
+for console and chat output, with optional localisation, internal placeholders,
+and external placeholder engines.</p>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
-<p>Use the platform adapter where available:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="n">plugin</span><span class="p">);</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
+<p>The recommended path is to obtain the logger from a bootstrap result or
+<code>MagicRuntime</code>.</p>
+<h3 id="bukkitpaper">Bukkit/Paper<a class="headerlink" href="#bukkitpaper" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">magic</span><span class="p">.</span><span class="na">logger</span><span class="p">();</span>
 </code></pre></div>
-<p>Fabric uses the same <code>Logger</code> class from <code>magicutils-logger-fabric</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FabricPlatformProvider</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
+<h3 id="fabric">Fabric<a class="headerlink" href="#fabric" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">FabricBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FabricBootstrap</span><span class="p">.</span><span class="na">forMod</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">server</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">magic</span><span class="p">.</span><span class="na">logger</span><span class="p">();</span>
 </code></pre></div>
-<p>For custom platforms (or NeoForge), use <code>LoggerCore</code> directly.</p>
-<h2 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">warn</span><span class="p">(</span><span class="s">&quot;Slow query detected&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">logger</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="s">&quot;Database unavailable&quot;</span><span class="p">);</span>
+<h3 id="velocity">Velocity<a class="headerlink" href="#velocity" title="Permanent link">&para;</a></h3>
+<p>Velocity bootstrap returns <code>LoggerCore</code> directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">VelocityBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">VelocityBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyPlugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataDirectory</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">LoggerCore</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">magic</span><span class="p">.</span><span class="na">logger</span><span class="p">();</span>
 </code></pre></div>
-<p>The logger accepts MiniMessage markup and can route to console, chat, or both.</p>
-<h2 id="prefixed-loggers">Prefixed loggers<a class="headerlink" href="#prefixed-loggers" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">PrefixedLogger</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">withPrefix</span><span class="p">(</span><span class="s">&quot;database&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[DB]&quot;</span><span class="p">);</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">db</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Connected&quot;</span><span class="p">);</span>
+<h3 id="neoforge-custom-platforms">NeoForge / Custom Platforms<a class="headerlink" href="#neoforge-custom-platforms" title="Permanent link">&para;</a></h3>
+<p>NeoForge and custom platforms typically wire <code>LoggerCore</code> manually:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NeoForgePlatformProvider</span><span class="p">();</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">LoggerCore</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">LoggerCore</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyMod&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>Each prefixed logger has its own entry under <code>sub-loggers</code> in <code>logger.yml</code>
-for enable/disable.</p>
-<h2 id="log-builder">Log builder<a class="headerlink" href="#log-builder" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">()</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="p">.</span><span class="na">toConsole</span><span class="p">()</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="p">.</span><span class="na">noPrefix</span><span class="p">()</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;yellow&gt;Reloaded&lt;/yellow&gt;&quot;</span><span class="p">);</span>
+<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;&lt;green&gt;Ready.&lt;/green&gt;&quot;</span><span class="p">);</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">warn</span><span class="p">(</span><span class="s">&quot;Slow query detected&quot;</span><span class="p">);</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">logger</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="s">&quot;Database unavailable&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>Use <code>target(LogTarget.CHAT/CONSOLE/BOTH)</code> and <code>to(audience)</code> for fine control.</p>
-<h2 id="prefix-modes">Prefix modes<a class="headerlink" href="#prefix-modes" title="Permanent link">&para;</a></h2>
-<p>Prefix rendering can be controlled via <code>PrefixMode</code>:</p>
+<p>The logger accepts MiniMessage markup and can target console, chat, or both.</p>
+<h2 id="log-builder">Log Builder<a class="headerlink" href="#log-builder" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">()</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">        </span><span class="p">.</span><span class="na">toConsole</span><span class="p">()</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">        </span><span class="p">.</span><span class="na">noPrefix</span><span class="p">()</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;&lt;yellow&gt;Reloaded&lt;/yellow&gt;&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>Use the builder when you want fine-grained control:</p>
+<ul>
+<li><code>target(LogTarget.CHAT | CONSOLE | BOTH)</code></li>
+<li><code>to(audience)</code></li>
+<li><code>toConsole()</code></li>
+<li><code>noPrefix()</code></li>
+</ul>
+<h2 id="prefixed-loggers">Prefixed Loggers<a class="headerlink" href="#prefixed-loggers" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">PrefixedLogger</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">withPrefix</span><span class="p">(</span><span class="s">&quot;database&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;[DB]&quot;</span><span class="p">);</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">db</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Connected&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>Each prefixed logger gets its own entry under <code>sub-loggers</code> in <code>logger.{ext}</code>
+for enable or disable toggles.</p>
+<h2 id="prefix-modes">Prefix Modes<a class="headerlink" href="#prefix-modes" title="Permanent link">&para;</a></h2>
+<p>Prefix rendering is controlled by <code>PrefixMode</code>:</p>
 <ul>
 <li><code>FULL</code> -&gt; full plugin/mod name</li>
 <li><code>SHORT</code> -&gt; short name from config</li>
-<li><code>CUSTOM</code> -&gt; <code>LoggerCore.setCustomPrefix(...)</code></li>
+<li><code>CUSTOM</code> -&gt; <code>setCustomPrefix(...)</code></li>
 <li><code>NONE</code> -&gt; no prefix</li>
 </ul>
-<h2 id="logger-configuration">Logger configuration<a class="headerlink" href="#logger-configuration" title="Permanent link">&para;</a></h2>
-<p><code>LoggerConfig</code> is stored as <code>logger.{ext}</code>. On Fabric it is placed under
-<code>config/&lt;modid&gt;/</code> by default (via <code>ConfigNamespaceProvider</code>).</p>
-<p>See <a href="../logger-config/">Logger Config</a> for a full key reference and examples.</p>
+<p><code>Logger</code> delegates these controls to the underlying <code>LoggerCore</code>.</p>
+<h2 id="runtime-integration">Runtime Integration<a class="headerlink" href="#runtime-integration" title="Permanent link">&para;</a></h2>
+<p>When you already have <code>MagicRuntime</code>, the logger is a shared typed component:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">MagicRuntime</span><span class="w"> </span><span class="n">runtime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">();</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">LoggerCore</span><span class="w"> </span><span class="n">loggerCore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">requireComponent</span><span class="p">(</span><span class="n">LoggerCore</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+</code></pre></div>
+<p>That makes it easy to pass the logger into reloadable services or register
+named runtime resources that log through the same config and placeholder setup.</p>
+<h2 id="logger-configuration">Logger Configuration<a class="headerlink" href="#logger-configuration" title="Permanent link">&para;</a></h2>
+<p><code>LoggerConfig</code> is stored as <code>logger.{ext}</code>.</p>
+<ul>
+<li>Bukkit: plugin config directory</li>
+<li>Fabric: <code>config/&lt;modid&gt;/</code> by default</li>
+<li>Velocity / custom platforms: resolved through the active <code>Platform</code></li>
+</ul>
+<p>See <a href="../logger-config/">Logger Config</a> for a full key reference.</p>
 <p>Key sections:</p>
 <ul>
-<li><code>prefix</code>: format and prefix mode.</li>
-<li><code>defaults</code>: max length, console/chat defaults.</li>
-<li><code>chat</code> / <code>console</code>: colors, gradients, separators.</li>
-<li><code>help</code>: help command styling.</li>
-<li><code>sub-loggers</code>: per-prefix toggles.</li>
+<li><code>prefix</code></li>
+<li><code>defaults</code></li>
+<li><code>chat</code> / <code>console</code></li>
+<li><code>help</code></li>
+<li><code>sub-loggers</code></li>
 </ul>
-<h2 id="localisation-and-placeholders">Localisation and placeholders<a class="headerlink" href="#localisation-and-placeholders" title="Permanent link">&para;</a></h2>
-<p>Attach a <code>LanguageManager</code> to enable auto-localisation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<h2 id="localisation">Localisation<a class="headerlink" href="#localisation" title="Permanent link">&para;</a></h2>
+<p>Attach a <code>LanguageManager</code> to enable <code>@key</code> lookups:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">setLanguageManager</span><span class="p">(</span><span class="n">languageManager</span><span class="p">);</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;@myplugin.ready&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>When a <code>LanguageManager</code> is attached, any message that starts with <code>@</code> is treated
-as a language key:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;@myplugin.ready&quot;</span><span class="p">);</span>
+<p>The logger resolves the key through the attached <code>LanguageManager</code> and then
+renders the result as MiniMessage.</p>
+<p>Bootstrap helpers bind the language manager automatically when language support
+is enabled.</p>
+<h2 id="internal-and-external-placeholders">Internal And External Placeholders<a class="headerlink" href="#internal-and-external-placeholders" title="Permanent link">&para;</a></h2>
+<p>Logger messages pass through both:</p>
+<ol>
+<li><code>MagicPlaceholders</code> for <code>{key}</code> and <code>{namespace:key}</code> tokens.</li>
+<li>Platform-specific external placeholder engines.</li>
+</ol>
+<p>Examples:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Balance: {economy:balance}&quot;</span><span class="p">);</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Hello {player}&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>The key is resolved via <code>LanguageManager</code> and then rendered as MiniMessage.</p>
-<p>Logger messages also pass through MagicPlaceholders. Use <code>{key}</code> to resolve
-placeholders from the logger namespace (based on the logger name), or
-<code>{namespace:key}</code> for explicit namespaces.</p>
-<p>On Bukkit, the logger automatically bridges MagicPlaceholders to
-<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> when it is
-installed. On Fabric, MagicPlaceholders are bridged to
-<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
-<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> when those mods
-are present.</p>
+<p>Platform integrations:</p>
+<ul>
+<li>Bukkit logger installs the PlaceholderAPI bridge and a Bukkit external
+  placeholder engine.</li>
+<li>Fabric logger installs Text Placeholder API / MiniPlaceholders / PB4 support
+  when those mods are present.</li>
+<li><code>LoggerCore</code> also supports a custom <code>ExternalPlaceholderEngine</code> for custom
+  platforms.</li>
+</ul>
 
 
 

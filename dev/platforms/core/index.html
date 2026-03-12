@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/config/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/platforms/core/">
       
       
-        <link rel="prev" href="../http-client/">
+        <link rel="prev" href="../../modules/placeholders-advanced/">
       
       
-        <link rel="next" href="../config-advanced/">
+        <link rel="next" href="../bukkit/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Config - MagicUtils</title>
+        <title>Core / Common Logic - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config" class="md-skip">
+        <a href="#core-common-logic" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config
+              Core / Common Logic
             
           </span>
         </div>
@@ -264,13 +264,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../overview/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../modules/overview/" class="md-tabs__link">
           
   
   
@@ -286,11 +284,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../platforms/core/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
           
   
   
@@ -653,31 +653,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -695,7 +690,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -713,7 +708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../../modules/overview/" class="md-nav__link">
         
   
   
@@ -741,7 +736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../logger/" class="md-nav__link">
+      <a href="../../modules/logger/" class="md-nav__link">
         
   
   
@@ -769,7 +764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../logger-config/" class="md-nav__link">
+      <a href="../../modules/logger-config/" class="md-nav__link">
         
   
   
@@ -797,7 +792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../commands/" class="md-nav__link">
+      <a href="../../modules/commands/" class="md-nav__link">
         
   
   
@@ -825,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../permissions/" class="md-nav__link">
+      <a href="../../modules/permissions/" class="md-nav__link">
         
   
   
@@ -853,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../commands-cheatsheet/" class="md-nav__link">
+      <a href="../../modules/commands-cheatsheet/" class="md-nav__link">
         
   
   
@@ -881,7 +876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../http-client/" class="md-nav__link">
+      <a href="../../modules/http-client/" class="md-nav__link">
         
   
   
@@ -906,37 +901,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Config
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../modules/config/" class="md-nav__link">
         
   
   
@@ -952,114 +920,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#define-a-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Define A Config
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#formats-and-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Formats And Selection
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reloading-and-change-listeners" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reloading And Change Listeners
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#threading-helpers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Threading Helpers
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#runtime-managed-config-services" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Runtime-Managed Config Services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#migrations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Migrations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-value-adapters" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Value Adapters
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#shutdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Shutdown
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1072,7 +932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config-advanced/" class="md-nav__link">
+      <a href="../../modules/config-advanced/" class="md-nav__link">
         
   
   
@@ -1100,7 +960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lang/" class="md-nav__link">
+      <a href="../../modules/lang/" class="md-nav__link">
         
   
   
@@ -1128,7 +988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../placeholders/" class="md-nav__link">
+      <a href="../../modules/placeholders/" class="md-nav__link">
         
   
   
@@ -1156,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../placeholders-advanced/" class="md-nav__link">
+      <a href="../../modules/placeholders-advanced/" class="md-nav__link">
         
   
   
@@ -1188,26 +1048,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -1225,7 +1090,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1240,10 +1105,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../platforms/core/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1259,6 +1151,114 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#typical-module-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typical Module Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-recommended-split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Recommended Split
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-code-should-depend-on-shared-abstractions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Code Should Depend On Shared Abstractions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wiring-shared-services-from-the-platform-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wiring Shared Services From The Platform Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-shared-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Shared Service
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-works-well-in-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Works Well In Common
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-should-stay-out-of-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Should Stay Out Of Common
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#if-you-really-need-a-custom-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If You Really Need A Custom Platform
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1271,7 +1271,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../platforms/bukkit/" class="md-nav__link">
+      <a href="../bukkit/" class="md-nav__link">
         
   
   
@@ -1299,7 +1299,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../platforms/fabric/" class="md-nav__link">
+      <a href="../fabric/" class="md-nav__link">
         
   
   
@@ -1327,7 +1327,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../platforms/velocity/" class="md-nav__link">
+      <a href="../velocity/" class="md-nav__link">
         
   
   
@@ -1355,7 +1355,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../platforms/neoforge/" class="md-nav__link">
+      <a href="../neoforge/" class="md-nav__link">
         
   
   
@@ -1518,10 +1518,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#define-a-config" class="md-nav__link">
+  <a href="#typical-module-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Define A Config
+        Typical Module Layout
       
     </span>
   </a>
@@ -1529,10 +1529,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#formats-and-selection" class="md-nav__link">
+  <a href="#the-recommended-split" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Formats And Selection
+        The Recommended Split
       
     </span>
   </a>
@@ -1540,10 +1540,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reloading-and-change-listeners" class="md-nav__link">
+  <a href="#common-code-should-depend-on-shared-abstractions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reloading And Change Listeners
+        Common Code Should Depend On Shared Abstractions
       
     </span>
   </a>
@@ -1551,10 +1551,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#threading-helpers" class="md-nav__link">
+  <a href="#wiring-shared-services-from-the-platform-layer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Threading Helpers
+        Wiring Shared Services From The Platform Layer
       
     </span>
   </a>
@@ -1562,10 +1562,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#runtime-managed-config-services" class="md-nav__link">
+  <a href="#example-shared-service" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Runtime-Managed Config Services
+        Example Shared Service
       
     </span>
   </a>
@@ -1573,10 +1573,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migrations" class="md-nav__link">
+  <a href="#what-works-well-in-common" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migrations
+        What Works Well In Common
       
     </span>
   </a>
@@ -1584,10 +1584,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-value-adapters" class="md-nav__link">
+  <a href="#what-should-stay-out-of-common" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Value Adapters
+        What Should Stay Out Of Common
       
     </span>
   </a>
@@ -1595,10 +1595,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shutdown" class="md-nav__link">
+  <a href="#if-you-really-need-a-custom-platform" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shutdown
+        If You Really Need A Custom Platform
       
     </span>
   </a>
@@ -1625,108 +1625,151 @@
   
 
 
-<h1 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h1>
-<p>MagicUtils config maps files to POJOs using annotations while preserving user
-comments and unknown keys when saving.</p>
-<h2 id="define-a-config">Define A Config<a class="headerlink" href="#define-a-config" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@ConfigFile</span><span class="p">(</span><span class="s">&quot;example.{ext}&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nd">@Comment</span><span class="p">(</span><span class="s">&quot;Example configuration&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nd">@ConfigReloadable</span><span class="p">(</span><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;messages&quot;</span><span class="p">})</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ExampleConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;enabled&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nd">@ConfigSection</span><span class="p">(</span><span class="s">&quot;messages&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Messages</span><span class="w"> </span><span class="n">messages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Messages</span><span class="p">();</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Messages</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;greeting&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="nd">@Comment</span><span class="p">(</span><span class="s">&quot;Greeting shown to players&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">greeting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span><span class="p">;</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">}</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">manager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ExampleConfig</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">manager</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-</code></pre></div>
-<p>If your config path contains placeholders such as <code>{lang}</code> or <code>{service}</code>, pass
-them during registration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ExampleConfig</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">manager</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;service&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;gateway&quot;</span><span class="p">));</span>
-</code></pre></div>
-<h2 id="formats-and-selection">Formats And Selection<a class="headerlink" href="#formats-and-selection" title="Permanent link">&para;</a></h2>
+<h1 id="core-common-logic">Core / Common Logic<a class="headerlink" href="#core-common-logic" title="Permanent link">&para;</a></h1>
+<p>Use this page when your plugin or mod has a thin platform entrypoint and most of
+the real logic lives in shared <code>common</code> or <code>core</code> code.</p>
+<p>That usually means:</p>
 <ul>
-<li>JSON / JSONC are available out of the box.</li>
-<li>YAML requires <code>magicutils-config-yaml</code>.</li>
-<li>TOML requires <code>magicutils-config-toml</code>.</li>
+<li>Bukkit/Fabric/Velocity/NeoForge only bootstrap the runtime</li>
+<li>config, lang, logger, HTTP, placeholders, and business logic live in common</li>
+<li>platform modules stay as adapters instead of owning the feature logic</li>
 </ul>
-<p>If you use <code>{ext}</code> in <code>@ConfigFile</code>, MagicUtils chooses the extension from the
-current config format rules:</p>
+<h2 id="typical-module-layout">Typical Module Layout<a class="headerlink" href="#typical-module-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my-plugin/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|- common/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|- bukkit/
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|- fabric/
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>`- velocity/
+</code></pre></div>
+<p>In this structure:</p>
 <ul>
-<li><code>&lt;config&gt;.format</code> next to the config</li>
-<li><code>magicutils.format</code> in the root config directory</li>
-<li><code>-Dmagicutils.config.format=jsonc</code></li>
-<li><code>MAGICUTILS_CONFIG_FORMAT</code></li>
+<li><code>bukkit/</code>, <code>fabric/</code>, and <code>velocity/</code> bootstrap MagicUtils for their runtime</li>
+<li><code>common/</code> receives <code>MagicRuntime</code> and owns the actual feature logic</li>
+<li>platform modules do not reimplement the same services three times</li>
 </ul>
-<p>Fabric defaults to JSONC when no explicit format is selected.</p>
-<p>For advanced format selection and migrations, see
-<a href="../config-advanced/">Config Advanced</a>.</p>
-<h2 id="reloading-and-change-listeners">Reloading And Change Listeners<a class="headerlink" href="#reloading-and-change-listeners" title="Permanent link">&para;</a></h2>
-<p>Register a listener for live updates:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ListenerSubscription</span><span class="w"> </span><span class="n">subscription</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">manager</span><span class="p">.</span><span class="na">subscribeChanges</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="w"> </span><span class="n">sections</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="c1">// apply live updates</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="p">});</span>
+<h2 id="the-recommended-split">The Recommended Split<a class="headerlink" href="#the-recommended-split" title="Permanent link">&para;</a></h2>
+<p>Keep these parts in the platform layer:</p>
+<ul>
+<li>bootstrap helpers such as <code>BukkitBootstrap</code>, <code>FabricBootstrap</code>,
+  <code>VelocityBootstrap</code></li>
+<li>platform event registration</li>
+<li>command registration against the platform dispatcher</li>
+<li>external placeholder bridge setup</li>
+<li>plugin or mod lifecycle entrypoints</li>
+</ul>
+<p>Keep these parts in <code>common</code> or other shared modules:</p>
+<ul>
+<li>services built on <code>MagicRuntime</code></li>
+<li>config models and reload logic</li>
+<li>logger and language driven messaging</li>
+<li>HTTP clients and runtime config bindings</li>
+<li>placeholder logic used by your own code</li>
+<li>business rules that should work across every platform</li>
+</ul>
+<h2 id="common-code-should-depend-on-shared-abstractions">Common Code Should Depend On Shared Abstractions<a class="headerlink" href="#common-code-should-depend-on-shared-abstractions" title="Permanent link">&para;</a></h2>
+<p>Inside common code, depend on <code>MagicRuntime</code> or the core services it exposes:</p>
+<ul>
+<li><code>Platform</code></li>
+<li><code>ConfigManager</code></li>
+<li><code>LoggerCore</code></li>
+<li><code>LanguageManager</code></li>
+<li>named runtime resources and config bindings</li>
+</ul>
+<p>This keeps the shared layer free from Bukkit, Fabric, Velocity, or NeoForge
+classes.</p>
+<h2 id="wiring-shared-services-from-the-platform-layer">Wiring Shared Services From The Platform Layer<a class="headerlink" href="#wiring-shared-services-from-the-platform-layer" title="Permanent link">&para;</a></h2>
+<p>The platform entrypoint should bootstrap MagicUtils and hand the runtime to your
+common services:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyPlugin</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">JavaPlugin</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="p">;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">CommonBootstrap</span><span class="w"> </span><span class="n">bootstrap</span><span class="p">;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onEnable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="k">this</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">                </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="n">bootstrap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CommonBootstrap</span><span class="p">(</span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">());</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="n">bootstrap</span><span class="p">.</span><span class="na">start</span><span class="p">();</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onDisable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">magic</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">            </span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">().</span><span class="na">close</span><span class="p">();</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">            </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="p">}</span>
 </code></pre></div>
-<p><code>onChange(...)</code> is available as a convenience alias when you do not need the
-subscription handle.</p>
-<p><code>@ConfigReloadable</code> restricts which sections can reload at runtime.</p>
-<h2 id="threading-helpers">Threading Helpers<a class="headerlink" href="#threading-helpers" title="Permanent link">&para;</a></h2>
-<p>Reloading touches disk. Use async or smart helpers on blocking-sensitive
-threads:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadAsync</span><span class="p">(</span><span class="n">cfg</span><span class="p">);</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadAsync</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="p">);</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadAllAsync</span><span class="p">();</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadSmart</span><span class="p">(</span><span class="n">cfg</span><span class="p">);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadSmart</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="p">);</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadAllSmart</span><span class="p">();</span>
+<p>The same structure works on Fabric, Velocity, and NeoForge: platform code
+creates the runtime, shared code consumes it.</p>
+<p><code>forPlugin(...)</code>, <code>forMod(...)</code>, and the other bootstrap helpers belong to the
+platform module only. <code>common</code> should consume the resulting runtime, not create
+it.</p>
+<h2 id="example-shared-service">Example Shared Service<a class="headerlink" href="#example-shared-service" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">CommonBootstrap</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">MagicRuntime</span><span class="w"> </span><span class="n">runtime</span><span class="p">;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">LoggerCore</span><span class="w"> </span><span class="n">logger</span><span class="p">;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">Optional</span><span class="o">&lt;</span><span class="n">LanguageManager</span><span class="o">&gt;</span><span class="w"> </span><span class="n">languages</span><span class="p">;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">CommonBootstrap</span><span class="p">(</span><span class="n">MagicRuntime</span><span class="w"> </span><span class="n">runtime</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">runtime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">configManager</span><span class="p">();</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">logger</span><span class="p">();</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">languages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">findComponent</span><span class="p">(</span><span class="n">LanguageManager</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Starting shared services&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="n">languages</span><span class="p">.</span><span class="na">ifPresent</span><span class="p">(</span><span class="n">manager</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Language manager is available&quot;</span><span class="p">));</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="n">runtime</span><span class="p">.</span><span class="na">bindConfig</span><span class="p">(</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">                </span><span class="s">&quot;http.backend&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">                </span><span class="n">BackendConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">                </span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">MagicHttpClient</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">runtime</span><span class="p">.</span><span class="na">platform</span><span class="p">(),</span><span class="w"> </span><span class="n">configManager</span><span class="p">)</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">                        </span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="n">config</span><span class="p">.</span><span class="na">baseUrl</span><span class="p">)</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">                        </span><span class="p">.</span><span class="na">build</span><span class="p">(),</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">                </span><span class="s">&quot;backend&quot;</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">        </span><span class="p">);</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="runtime-managed-config-services">Runtime-Managed Config Services<a class="headerlink" href="#runtime-managed-config-services" title="Permanent link">&para;</a></h2>
-<p>When you already have <code>MagicRuntime</code>, you can bind a config-backed resource and
-let MagicUtils rebuild it automatically on matching config reloads:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">MagicRuntimeConfigBinding</span><span class="o">&lt;</span><span class="n">ExampleConfig</span><span class="p">,</span><span class="w"> </span><span class="n">ReloadableService</span><span class="o">&gt;</span><span class="w"> </span><span class="n">binding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">bindConfig</span><span class="p">(</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">        </span><span class="s">&quot;service.example&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">        </span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ReloadableService</span><span class="p">(</span><span class="n">config</span><span class="p">),</span><span class="w"> </span><span class="c1">// ReloadableService implements AutoCloseable</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="s">&quot;messages&quot;</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">);</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">ReloadableService</span><span class="w"> </span><span class="n">service</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">binding</span><span class="p">.</span><span class="na">require</span><span class="p">();</span>
-</code></pre></div>
-<p>The bound service is also exposed as a named runtime component.</p>
-<h2 id="migrations">Migrations<a class="headerlink" href="#migrations" title="Permanent link">&para;</a></h2>
-<p>Config migrations are declared with <code>ConfigMigration</code> and tracked by the
-<code>config-version</code> key inside the file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">registerMigrations</span><span class="p">(</span><span class="n">ExampleConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigMigration</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">fromVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;0&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">toVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">migrate</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">root</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">                </span><span class="n">root</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">);</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">);</span>
-</code></pre></div>
-<h2 id="custom-value-adapters">Custom Value Adapters<a class="headerlink" href="#custom-value-adapters" title="Permanent link">&para;</a></h2>
-<p>Register serializers via <code>ConfigAdapters.register(...)</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">ConfigAdapters</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigValueAdapter</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Duration</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="n">Duration</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">});</span>
-</code></pre></div>
-<h2 id="shutdown">Shutdown<a class="headerlink" href="#shutdown" title="Permanent link">&para;</a></h2>
-<p>Bootstrap helpers and <code>MagicRuntime</code> can manage the config manager lifecycle
-for you. In manual setups, call <code>ConfigManager.shutdown()</code> during plugin or mod
-shutdown to stop file watchers cleanly.</p>
+<p>This is the typical multi-platform pattern: the shared layer receives one
+runtime from the adapter layer and builds everything else on top of it.</p>
+<h2 id="what-works-well-in-common">What Works Well In Common<a class="headerlink" href="#what-works-well-in-common" title="Permanent link">&para;</a></h2>
+<p>The <code>magicutils-core</code> path is especially good for:</p>
+<ul>
+<li><code>MagicRuntime</code></li>
+<li><code>ConfigManager</code></li>
+<li><code>LoggerCore</code></li>
+<li>optional <code>LanguageManager</code></li>
+<li>runtime-managed HTTP or WebSocket clients</li>
+<li>shared placeholder evaluation</li>
+<li>reloadable services built with <code>bindConfig(...)</code></li>
+</ul>
+<p>If your modules already target multiple platforms, this is usually where the
+majority of the code should live.</p>
+<h2 id="what-should-stay-out-of-common">What Should Stay Out Of Common<a class="headerlink" href="#what-should-stay-out-of-common" title="Permanent link">&para;</a></h2>
+<p>Try not to leak platform-specific APIs into the shared layer.</p>
+<p>Avoid putting these directly into <code>common</code>:</p>
+<ul>
+<li>Bukkit <code>JavaPlugin</code>, Fabric callbacks, Velocity annotations, NeoForge events</li>
+<li>platform command dispatcher registration</li>
+<li>direct calls to platform plugin managers or server APIs</li>
+<li>external bridge setup that only exists on one runtime</li>
+</ul>
+<p>Keep those in the platform module and pass only the shared abstractions
+downward.</p>
+<h2 id="if-you-really-need-a-custom-platform">If You Really Need A Custom Platform<a class="headerlink" href="#if-you-really-need-a-custom-platform" title="Permanent link">&para;</a></h2>
+<p>That is a separate case from normal <code>common</code> code.</p>
+<p>If you are actually building a new adapter around <code>Platform</code>,
+<code>ShutdownHookRegistrar</code>, or your own bootstrap path, use the Runtime guide and
+the platform API as the source of truth, but keep that adapter layer small and
+let the feature logic remain in shared services.</p>
 
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
       
       
       
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/bukkit/" class="md-tabs__link">
+        <a href="../../platforms/core/" class="md-tabs__link">
           
   
   
@@ -545,6 +545,62 @@
     
   
     Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
   
 
     
@@ -1000,7 +1056,7 @@
   <a href="#register-placeholders" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Register placeholders
+        Register Placeholders
       
     </span>
   </a>
@@ -1008,10 +1064,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resolve-placeholders" class="md-nav__link">
+  <a href="#resolve-and-render" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resolve placeholders
+        Resolve And Render
       
     </span>
   </a>
@@ -1019,10 +1075,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#render-placeholders-in-text" class="md-nav__link">
+  <a href="#resolution-order" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Render placeholders in text
+        Resolution Order
       
     </span>
   </a>
@@ -1033,7 +1089,7 @@
   <a href="#platform-bridges" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform bridges
+        Platform Bridges
       
     </span>
   </a>
@@ -1041,10 +1097,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
+  <a href="#registry-introspection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Notes
+        Registry Introspection
       
     </span>
   </a>
@@ -1146,6 +1202,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1404,7 +1488,7 @@
   <a href="#register-placeholders" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Register placeholders
+        Register Placeholders
       
     </span>
   </a>
@@ -1412,10 +1496,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resolve-placeholders" class="md-nav__link">
+  <a href="#resolve-and-render" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resolve placeholders
+        Resolve And Render
       
     </span>
   </a>
@@ -1423,10 +1507,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#render-placeholders-in-text" class="md-nav__link">
+  <a href="#resolution-order" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Render placeholders in text
+        Resolution Order
       
     </span>
   </a>
@@ -1437,7 +1521,7 @@
   <a href="#platform-bridges" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform bridges
+        Platform Bridges
       
     </span>
   </a>
@@ -1445,10 +1529,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
+  <a href="#registry-introspection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Notes
+        Registry Introspection
       
     </span>
   </a>
@@ -1476,11 +1560,14 @@
 
 
 <h1 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h1>
-<p>The placeholder module offers a shared registry and platform bridges to
-<a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> (Bukkit) and
-<a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> /
-<a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a> (Fabric).</p>
-<h2 id="register-placeholders">Register placeholders<a class="headerlink" href="#register-placeholders" title="Permanent link">&para;</a></h2>
+<p>The placeholder module offers a shared registry plus platform bridges for:</p>
+<ul>
+<li>Bukkit PlaceholderAPI</li>
+<li>Fabric PB4 Placeholder API</li>
+<li>Fabric Text Placeholder API</li>
+<li>Fabric MiniPlaceholders</li>
+</ul>
+<h2 id="register-placeholders">Register Placeholders<a class="headerlink" href="#register-placeholders" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">registerNamespace</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;MyPlugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;1.0.0&quot;</span><span class="p">);</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;online&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;42&quot;</span><span class="p">);</span>
@@ -1488,68 +1575,66 @@
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">arg</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">arg</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;0&quot;</span><span class="p">;</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">});</span>
 </code></pre></div>
-<h2 id="resolve-placeholders">Resolve placeholders<a class="headerlink" href="#resolve-placeholders" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;online&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">);</span>
+<p>Global placeholders are available without a namespace:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">registerGlobal</span><span class="p">(</span><span class="s">&quot;server&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;Example&quot;</span><span class="p">);</span>
 </code></pre></div>
-<h2 id="render-placeholders-in-text">Render placeholders in text<a class="headerlink" href="#render-placeholders-in-text" title="Permanent link">&para;</a></h2>
-<p>Use <code>{placeholder}</code> tokens to render text with the shared registry:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">PlaceholderContext</span><span class="w"> </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PlaceholderContext</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="na">audience</span><span class="p">(</span><span class="n">audience</span><span class="p">)</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">defaultNamespace</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">ownerKey</span><span class="p">(</span><span class="k">this</span><span class="p">)</span><span class="w"> </span><span class="c1">// optional local scope key</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p">.</span><span class="na">inline</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Steve&quot;</span><span class="p">))</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">String</span><span class="w"> </span><span class="n">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello {player}! Balance: {balance|bank}&quot;</span><span class="p">;</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">String</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">render</span><span class="p">(</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">);</span>
+<p>Local placeholders are scoped to an owner key:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">registerLocal</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;balance&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;42&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>Resolution order for <code>{key}</code>:</p>
-<ol>
-<li>Inline values from the context.</li>
-<li>Local placeholders registered for the <code>ownerKey</code>.</li>
-<li>Default namespace (<code>defaultNamespace:key</code>).</li>
-<li>Global placeholders.</li>
-</ol>
-<p>Namespaced tokens use <code>{namespace:key}</code> or <code>{namespace:key:arg}</code>. Unqualified
-tokens with <code>:</code> are not supported. Use the argument separator (default <code>|</code>)
-for <code>key|arg</code> instead.</p>
-<p>To change or disable the separator:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">PlaceholderContext</span><span class="w"> </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PlaceholderContext</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="p">.</span><span class="na">argumentSeparator</span><span class="p">(</span><span class="s">&quot;::&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// set your own</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<h2 id="resolve-and-render">Resolve And Render<a class="headerlink" href="#resolve-and-render" title="Permanent link">&para;</a></h2>
+<p>Resolve a single entry directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">resolve</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;online&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">);</span>
+</code></pre></div>
+<p>Render tokens inside text:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">PlaceholderContext</span><span class="w"> </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PlaceholderContext</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="p">.</span><span class="na">audience</span><span class="p">(</span><span class="n">audience</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p">.</span><span class="na">defaultNamespace</span><span class="p">(</span><span class="s">&quot;myplugin&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">.</span><span class="na">ownerKey</span><span class="p">(</span><span class="k">this</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p">.</span><span class="na">inline</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Steve&quot;</span><span class="p">))</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">String</span><span class="w"> </span><span class="n">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello {player}! Balance: {balance|bank}&quot;</span><span class="p">;</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">String</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">render</span><span class="p">(</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">);</span>
 </code></pre></div>
 <p>Convenience overloads:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">String</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">render</span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Hello {server}&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">String</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">render</span><span class="p">(</span><span class="n">audience</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Hello {server}&quot;</span><span class="p">);</span>
 </code></pre></div>
-<p>Resolvers receive:</p>
+<h2 id="resolution-order">Resolution Order<a class="headerlink" href="#resolution-order" title="Permanent link">&para;</a></h2>
+<p>For <code>{key}</code> tokens:</p>
+<ol>
+<li>Inline values from the context</li>
+<li>Local placeholders for the <code>ownerKey</code></li>
+<li>Default namespace (<code>defaultNamespace:key</code>)</li>
+<li>Global placeholders</li>
+</ol>
+<p>Namespaced tokens use <code>{namespace:key}</code> or <code>{namespace:key:arg}</code>. For local
+arguments in plain <code>{key}</code> form, use the argument separator (default <code>|</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">PlaceholderContext</span><span class="w"> </span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PlaceholderContext</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="p">.</span><span class="na">argumentSeparator</span><span class="p">(</span><span class="s">&quot;::&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+<h2 id="platform-bridges">Platform Bridges<a class="headerlink" href="#platform-bridges" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>Audience</code> when available (player context).</li>
-<li><code>arg</code> from <code>placeholder:key:arg</code> syntax (used by
-  <a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a>,
-  <a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a>,
-  <a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a>).</li>
-</ul>
-<h2 id="platform-bridges">Platform bridges<a class="headerlink" href="#platform-bridges" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Bukkit: placeholders are exposed to <a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> automatically when the
-  logger adapter is created.</li>
-<li>Fabric: placeholders are bridged to <a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> and
-  <a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a>
-  when those mods are present (optional integration).</li>
+<li>Bukkit: the bridge is installed when the Bukkit <code>Logger</code> adapter is created
+  or when Bukkit bootstrap wiring creates that logger for you.</li>
+<li>Fabric: the bridge is installed by the Fabric logger integration and registers
+  available placeholders with PB4 Placeholder API, Text Placeholder API, and
+  MiniPlaceholders when those mods are present.</li>
 </ul>
 <p>Supported Fabric mods:</p>
 <ul>
+<li><a href="https://placeholders.pb4.eu/">PB4 Placeholder API</a></li>
 <li><a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a></li>
 <li><a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a></li>
 </ul>
-<p>See <a href="../placeholders-advanced/">Placeholders Advanced</a> for metadata and listener
-details.</p>
-<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>MagicPlaceholders.namespaces()</code> and <code>entries()</code> provide registry snapshots.</li>
-<li><code>audienceFromUuid(UUID)</code> creates a lightweight audience wrapper for offline
-  resolution.</li>
-</ul>
+<h2 id="registry-introspection">Registry Introspection<a class="headerlink" href="#registry-introspection" title="Permanent link">&para;</a></h2>
+<p>Snapshots of the registry are available for tooling and debugging:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">namespaces</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">namespaces</span><span class="p">();</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">PlaceholderKey</span><span class="p">,</span><span class="w"> </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">PlaceholderResolver</span><span class="o">&gt;</span><span class="w"> </span><span class="n">entries</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="n">MagicPlaceholders</span><span class="p">.</span><span class="na">entries</span><span class="p">();</span>
+</code></pre></div>
+<p>See <a href="../placeholders-advanced/">Placeholders Advanced</a> for metadata, listeners,
+and debug hooks.</p>
 
 
 
