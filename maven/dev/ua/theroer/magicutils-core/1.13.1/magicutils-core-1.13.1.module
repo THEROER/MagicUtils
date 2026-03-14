@@ -197,11 +197,11 @@
         {
           "name": "magicutils-core-1.13.1-all.jar",
           "url": "magicutils-core-1.13.1-all.jar",
-          "size": 3402276,
-          "sha512": "ac542405acdac634f2dd87305cb7e2cf6df93e9d83e5935e8552280e56410530adf74732c1b2129d3b812983747dcbfb5e8d36d77f8a0a83561b84afd42b5aff",
-          "sha256": "5dc82287de036e43b15a487e7bce9d529ea494606c100a09abc12ae40be59cb9",
-          "sha1": "772c7d909a9813ec09bbd449907adc889c5bcbdf",
-          "md5": "875f93f924ab783f9e900119ac3e0898"
+          "size": 3405740,
+          "sha512": "2bcabdccb2083651da1ce89daf769fb5a8866c6ea7c62dea84398c860133cfa6895b10b9c026d0c4ba80c0fedb4290dd3b9a98e638b26323fbfebbb14c6324a3",
+          "sha256": "b40862a442aa0b52c559557a4945619b64df4e6cea1788418dbcf039ea322a4f",
+          "sha1": "20ce3c418e8077d4ca78f40698f0478dfa566db2",
+          "md5": "bb40b5e433f7fb8bb04bde51c78830fb"
         }
       ]
     }

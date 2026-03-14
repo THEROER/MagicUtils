@@ -36,11 +36,11 @@
         {
           "name": "magicutils-velocity-1.13.1-mc1.21.jar",
           "url": "magicutils-velocity-1.13.1-mc1.21.jar",
-          "size": 37790,
-          "sha512": "fb67e23de2e029a3b1857c3583c045cdf53dd501283678da5b2e0d38a6d1025dd2a944a29944f55420046c3afab6addf8596e85dd381bd05c86119ee8e60ce06",
-          "sha256": "77fcd84e7caf91eae1c2fd2812772804b94dcce2da6298724c006707a23840e0",
-          "sha1": "7ec96645308d185606fea9a60d7c4675a8f7debb",
-          "md5": "6a9f01c4b2d1d68fac2d241c6fa0e038"
+          "size": 37735,
+          "sha512": "2e025bc21422a6b4931e315a7fa52967e4f251168f1138b1d42039a6f0fd53077f3c4f144172f9e81903b9313126fede674f6fc35c11f38638c2d710a9029334",
+          "sha256": "5191a45f59c7da226e2d687db08d3da13ae83a55532c398fdab89726fb5ec875",
+          "sha1": "ed39ed3d489934da4f36cf362e92e113d475748c",
+          "md5": "b8236b519bba19e8c8ffc4afa29594e2"
         }
       ]
     },
@@ -66,11 +66,11 @@
         {
           "name": "magicutils-velocity-1.13.1-mc1.21.jar",
           "url": "magicutils-velocity-1.13.1-mc1.21.jar",
-          "size": 37790,
-          "sha512": "fb67e23de2e029a3b1857c3583c045cdf53dd501283678da5b2e0d38a6d1025dd2a944a29944f55420046c3afab6addf8596e85dd381bd05c86119ee8e60ce06",
-          "sha256": "77fcd84e7caf91eae1c2fd2812772804b94dcce2da6298724c006707a23840e0",
-          "sha1": "7ec96645308d185606fea9a60d7c4675a8f7debb",
-          "md5": "6a9f01c4b2d1d68fac2d241c6fa0e038"
+          "size": 37735,
+          "sha512": "2e025bc21422a6b4931e315a7fa52967e4f251168f1138b1d42039a6f0fd53077f3c4f144172f9e81903b9313126fede674f6fc35c11f38638c2d710a9029334",
+          "sha256": "5191a45f59c7da226e2d687db08d3da13ae83a55532c398fdab89726fb5ec875",
+          "sha1": "ed39ed3d489934da4f36cf362e92e113d475748c",
+          "md5": "b8236b519bba19e8c8ffc4afa29594e2"
         }
       ]
     },
@@ -86,11 +86,11 @@
         {
           "name": "magicutils-velocity-1.13.1-sources.jar",
           "url": "magicutils-velocity-1.13.1-sources.jar",
-          "size": 14472,
-          "sha512": "2c6e73d3c64772955ed93d62fae444e3963a952259b23d3bd4d04cc67594718b1521b8ad349653c6061a63ebc9e3f27b79a9757c3a3f339492e6cc01903ae2b2",
-          "sha256": "78b9c23df836a9a30ee9dd3990ac44fd159b8d3108496a2ff529746ad2b5e119",
-          "sha1": "140937875c79a420cc3ef9e26f4a88395f90c6f0",
-          "md5": "0eae995590fde4b68119536a42336d6c"
+          "size": 14462,
+          "sha512": "21babaf90f154ea93600c91c5e5a50c4d96decd50d78d60b208a2736fb4cc5568d8413ef53dac19777210c91c273c42d233eb4c0904c4ddd948dfc5eee0959e1",
+          "sha256": "42e96486f667fab3176ead16cb1cad3556c524992fa6c844de59237021b2ee11",
+          "sha1": "359f9a182eaa0ce86569ba95aab224bce87c1cb2",
+          "md5": "dc7ed239578ac344c8a692d68e6b965e"
         }
       ]
     },
@@ -127,11 +127,11 @@
         {
           "name": "magicutils-velocity-1.13.1-all.jar",
           "url": "magicutils-velocity-1.13.1-all.jar",
-          "size": 3439247,
-          "sha512": "e736ce9e43f1d1e82aaa613247288f8999a8b351d4837e98961d7fb4daee95eaa68bf5c1398f2510a07bba143236a8721fc04248c4adba9d708088bb84299f1c",
-          "sha256": "f040ed85c9a6a71fb2f0603a763f6fd9ec1ea14bce1e7abed0893662140a00d6",
-          "sha1": "84eea40a98872a3080f32a911b445f2e0a3e2ffa",
-          "md5": "5666cdf008593857cb4da4c634c2e5b5"
+          "size": 3442656,
+          "sha512": "18e0403aa74afef73d964e2063debc8f9237566c4a7463c0f6fcef834252fd09d61307040ffc6885df967c58c57803d681ac79f3d4291a1cbb1a12036b781a41",
+          "sha256": "e9b6b2479d11e67e0afdd1b120f26458f69e3d9e7665fb2a5ce5cf31ea77a63d",
+          "sha1": "c2bc7b6f827c671a59b9bd022eb74822ebbada65",
+          "md5": "6187dfd5e65461459ed742b96dbaffe1"
         }
       ]
     }

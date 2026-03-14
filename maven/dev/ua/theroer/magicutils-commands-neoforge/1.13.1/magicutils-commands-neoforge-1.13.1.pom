@@ -24,5 +24,11 @@
       <version>1.13.1</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>net.kyori</groupId>
+      <artifactId>adventure-text-serializer-plain</artifactId>
+      <version>4.24.0</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 </project>
