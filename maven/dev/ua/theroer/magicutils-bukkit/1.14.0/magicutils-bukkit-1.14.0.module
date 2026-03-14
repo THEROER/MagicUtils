@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-bukkit",
+    "version": "1.14.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.14.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-bukkit-1.14.0-mc1.21.jar",
+          "url": "magicutils-bukkit-1.14.0-mc1.21.jar",
+          "size": 121230,
+          "sha512": "241127a0ec428bfc7b9773f98185911ce76fde5765906e6859510269798f80511f818ed32186997232c2b9422e090ef168d17567d82d37fb196eeddaf5c8df09",
+          "sha256": "976b288f870c871ed2415919035c617dd951259e02b03f9571dfbe34a7dec9ca",
+          "sha1": "da1d2cb9b744a7333fbc4815622d65ba9962b7bc",
+          "md5": "0da5fe428a216736dd7639a2f8ac4a24"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.14.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-bukkit-1.14.0-mc1.21.jar",
+          "url": "magicutils-bukkit-1.14.0-mc1.21.jar",
+          "size": 121230,
+          "sha512": "241127a0ec428bfc7b9773f98185911ce76fde5765906e6859510269798f80511f818ed32186997232c2b9422e090ef168d17567d82d37fb196eeddaf5c8df09",
+          "sha256": "976b288f870c871ed2415919035c617dd951259e02b03f9571dfbe34a7dec9ca",
+          "sha1": "da1d2cb9b744a7333fbc4815622d65ba9962b7bc",
+          "md5": "0da5fe428a216736dd7639a2f8ac4a24"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-bukkit-1.14.0-sources.jar",
+          "url": "magicutils-bukkit-1.14.0-sources.jar",
+          "size": 52423,
+          "sha512": "8ab2f2246b046c0e7c09aa08aaa4c2865a1cf65fdb25fb9ced1a61c3271761a3094a2c424cfc84461d1c68f1143fd55c0a0e58774dd081c781a000cacbb81372",
+          "sha256": "6a1a5f3950897a3671fa7a7cff269925e45c7de3861179386cefafbcf79f83ec",
+          "sha1": "7f0f24ac666ddb9927a82421f51872eb0a20a8fb",
+          "md5": "0f9c8780418dfbd8acf41c16fbdf31e0"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-bukkit-1.14.0-javadoc.jar",
+          "url": "magicutils-bukkit-1.14.0-javadoc.jar",
+          "size": 266127,
+          "sha512": "bfe58c68ebe60c5f9037d467ca83886cf7cf0fc315a4bf3af3649e8a4b78d1301859aa0929cc1f9b287e94af38a8d74a0ed1cf8d25bb5ffc8d5019a86304830b",
+          "sha256": "04a5e6ab881d59bdf1bf89dd0bd9c6ef5816ac5cceea2298f55c46df352612f2",
+          "sha1": "bd6d6f05e0da51f5af9caaf7d2c1a7c08abbc08e",
+          "md5": "0ec47ee7de23b2a021378c0c1964091f"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-bukkit-1.14.0-all.jar",
+          "url": "magicutils-bukkit-1.14.0-all.jar",
+          "size": 3526060,
+          "sha512": "5009c407bc48b9552042bdc9f03c3caad128280950c34deaf985a85a0f1382f68ebdbae5b20603c830847eb66cde46bdba474d10471203614c36bb1fac304a5c",
+          "sha256": "820c8ba9abd016ac5cb85043dd0e49e205e4e8149877967c9dc200ef6762d778",
+          "sha1": "0203143ec561a9a5c8d6163a44c1c38ab86d30e6",
+          "md5": "c977d02cb9e37ff41e4895419b8d82ee"
+        }
+      ]
+    }
+  ]
+}
