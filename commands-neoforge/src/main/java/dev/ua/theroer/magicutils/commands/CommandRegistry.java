@@ -159,6 +159,21 @@ public final class CommandRegistry extends BrigadierCommandRegistry<CommandSourc
     }
 
     /**
+     * Removes the registry entry for a mod.
+     *
+     * @param modId mod id
+     */
+    public static void shutdown(String modId) {
+        if (modId == null) {
+            return;
+        }
+        CommandRegistry registry = REGISTRIES.remove(registryKey(modId));
+        if (registry != null && defaultRegistry == registry) {
+            defaultRegistry = null;
+        }
+    }
+
+    /**
      * Returns the registry instance by mod id.
      *
      * @param modId mod id

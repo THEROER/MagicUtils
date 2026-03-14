@@ -744,9 +744,10 @@ public class CommandManager<S> {
                 if (optionValue == null) {
                     continue;
                 }
-                result[i] = convertArgument(optionValue, argument.getType(), sender);
+                TypeParseResult<Object> parsedOption = convertArgumentDetailed(optionValue, argument.getType(), sender);
+                result[i] = parsedOption.value();
                 filled[i] = true;
-                if (result[i] == null && !argument.isOptional()) {
+                if (parsedOption.isInvalid()) {
                     logger.debug("Failed to convert option value for argument " + argument.getName()
                             + " from value: " + optionValue);
                     return null;
@@ -862,20 +863,25 @@ public class CommandManager<S> {
                 }
             }
 
-            result[i] = convertArgument(value, argument.getType(), sender);
+            TypeParseResult<Object> parsedArgument = convertArgumentDetailed(value, argument.getType(), sender);
+            result[i] = parsedArgument.value();
             logger.debug("Parsed argument " + i + " (" + argument.getName() + "): " + result[i]
                     + " (type: " + (result[i] != null ? result[i].getClass().getSimpleName() : "null") + ")");
 
-            // If optional argument failed to convert, do not consume the user arg; let next parameter try it
-            if (providedByUser && result[i] == null && argument.isOptional()) {
-                userArgIndex = Math.max(0, userArgIndex - 1);
-                logger.debug("Conversion failed for optional argument " + argument.getName()
-                        + ", reusing value for next parameter");
-                continue;
+            if (providedByUser && parsedArgument.isInvalid()) {
+                if (argument.isOptional() && canLaterArgumentConsume(arguments, i + 1, value, sender)) {
+                    userArgIndex = Math.max(0, userArgIndex - 1);
+                    logger.debug("Conversion failed for optional argument " + argument.getName()
+                            + ", reusing value for next parameter");
+                    continue;
+                }
+                logger.debug("Failed to convert argument " + i + " (" + argument.getName()
+                        + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
+                return null;
             }
 
             // Check if conversion failed
-            if (value != null && result[i] == null && !argument.isOptional()) {
+            if (value != null && parsedArgument.isInvalid() && !argument.isOptional()) {
                 logger.debug("Failed to convert argument " + i + " (" + argument.getName()
                         + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
                 return null;
@@ -924,24 +930,40 @@ public class CommandManager<S> {
         return false;
     }
 
+    private boolean canLaterArgumentConsume(List<CommandArgument> arguments, int startIndex, String value, S sender) {
+        if (value == null) {
+            return false;
+        }
+        for (int i = startIndex; i < arguments.size(); i++) {
+            CommandArgument argument = arguments.get(i);
+            if (argument == null || isSenderArgument(argument) || argument.isFlag()) {
+                continue;
+            }
+            if (argument.isGreedy()) {
+                if (argument.getType().equals(String.class)) {
+                    return true;
+                }
+                TypeParseResult<Object> parsed = convertArgumentDetailed(value, argument.getType(), sender);
+                return parsed.isSuccess() || argumentHasSuggestion(argument, value, sender);
+            }
+            if (isArgumentMatch(argument, value, sender)) {
+                return true;
+            }
+            if (!argument.isOptional() && argument.getDefaultValue() == null) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     private Object convertArgument(String value, Class<?> type, S sender) {
+        return convertArgumentDetailed(value, type, sender).value();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private TypeParseResult<Object> convertArgumentDetailed(String value, Class<?> type, S sender) {
         logger.debug("Converting argument: '" + value + "' to type: " + type.getSimpleName());
-
-        // Use the argument parser registry to convert the argument
-        Object result = typeParserRegistry.parse(value, type, sender);
-
-        if (result != null || value == null) {
-            return result;
-        }
-
-        // Fallback: only return raw value for String targets; otherwise treat as unparsed
-        if (type.equals(String.class)) {
-            logger.debug("No parser found for type " + type.getSimpleName() + ", returning string value");
-            return value;
-        }
-
-        logger.debug("No parser found for type " + type.getSimpleName() + ", returning null");
-        return null;
+        return (TypeParseResult<Object>) typeParserRegistry.parseDetailed(value, (Class) type, sender);
     }
 
     /**
@@ -2175,7 +2197,14 @@ public class CommandManager<S> {
             usage.append(" ").append(subCommandName);
         }
         appendArgumentsToUsage(usage, arguments, false);
-        return usage.toString();
+        return escapeMiniMessage(usage.toString());
+    }
+
+    private static String escapeMiniMessage(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        return text.replace("\\", "\\\\").replace("<", "\\<").replace(">", "\\>");
     }
 
     /**

@@ -61,6 +61,38 @@ Velocity commands register directly with the proxy command manager.
 - Use `asyncExecutor(...)` when you want to override the default async executor
   used by the command layer.
 
+## Bootstrap Options
+
+`VelocityBootstrap.Builder` supports additional configuration beyond the basics:
+
+| Method | Description |
+| --- | --- |
+| `slf4j(logger)` | Bind SLF4J logger for console output. |
+| `enableCommands()` | Create a `CommandRegistry` during bootstrap. |
+| `permissionPrefix(prefix)` | Set the permission node prefix for commands. |
+| `asyncExecutor(executor)` | Override the async executor used by the command layer. |
+| `configureCommands(consumer)` | Register commands during bootstrap. |
+| `initLanguage(boolean)` | Enable/disable language manager initialization. |
+| `bindLoggerLanguage(boolean)` | Bind the language manager to the logger. |
+| `setMessagesManager(boolean)` | Set the global `Messages` language manager. |
+| `registerMessages(boolean)` | Register the plugin's messages scope. |
+| `addMagicUtilsMessages(boolean)` | Register built-in MagicUtils messages. |
+| `translations(consumer)` | Configure additional translations. |
+
+## Player Events
+
+Velocity supports the platform-agnostic player lifecycle and message events:
+
+```java
+platform.subscribePlayerLifecycle(event -> {
+    if (event.type() == PlayerLifecycleType.JOIN) {
+        logger.info(event.playerName() + " connected");
+    }
+});
+```
+
+See [Core / Common Logic](core.md#player-events) for the full event API.
+
 ## Notes
 
 - `Platform.runOnMain(...)` executes immediately because Velocity has no main

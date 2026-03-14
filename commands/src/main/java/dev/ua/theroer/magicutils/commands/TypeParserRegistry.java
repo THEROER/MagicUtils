@@ -92,27 +92,64 @@ public class TypeParserRegistry<S> {
     @Nullable
     @SuppressWarnings("unchecked")
     public <T> T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull S sender) {
+        TypeParseResult<T> result = parseDetailed(value, targetType, sender);
+        if (result.isSuccess() || result.isMissing()) {
+            return result.value();
+        }
+        return null;
+    }
+
+    /**
+     * Parses a value to the specified type using registered parsers and returns a detailed outcome.
+     *
+     * @param <T> the type to parse to
+     * @param value the string value to parse
+     * @param targetType the target class type
+     * @param sender the command sender for context
+     * @return detailed parse result
+     */
+    @NotNull
+    @SuppressWarnings("unchecked")
+    public <T> TypeParseResult<T> parseDetailed(@Nullable String value, @NotNull Class<T> targetType,
+            @NotNull S sender) {
         logger.debug("Parsing value: '" + value + "' to type: " + targetType.getSimpleName());
+        boolean sawCompatibleParser = false;
+        boolean sawInvalid = false;
 
         for (TypeParser<S, ?> parser : parsers) {
             if (parser.canParse(targetType)) {
+                sawCompatibleParser = true;
                 logger.debug("Using parser: " + parser.getClass().getSimpleName());
                 try {
                     @SuppressWarnings("rawtypes")
-                    Object result = ((TypeParser) parser).parse(value, targetType, sender);
-                    if (result != null || value == null) {
+                    TypeParseResult<T> result = ((TypeParser) parser).parseDetailed(value, targetType, sender);
+                    if (result.isSuccess()) {
                         logger.debug("Successfully parsed to: "
-                                + (result != null ? result.getClass().getSimpleName() + "=" + result : "null"));
-                        return (T) result;
+                                + result.value().getClass().getSimpleName() + "=" + result.value());
+                        return result;
                     }
+                    if (result.isMissing()) {
+                        logger.debug("Input is missing for type: " + targetType.getSimpleName());
+                        return result;
+                    }
+                    sawInvalid = true;
                 } catch (Exception e) {
+                    sawInvalid = true;
                     logger.debug("Parser " + parser.getClass().getSimpleName() + " failed: " + e.getMessage());
                 }
             }
         }
 
+        if (value == null) {
+            logger.debug("Input is missing for type: " + targetType.getSimpleName());
+            return TypeParseResult.missing();
+        }
+        if (sawCompatibleParser || sawInvalid) {
+            logger.debug("Compatible parser rejected value for type: " + targetType.getSimpleName());
+            return TypeParseResult.invalid();
+        }
         logger.debug("No suitable parser found for type: " + targetType.getSimpleName());
-        return null;
+        return TypeParseResult.invalid();
     }
 
     /**

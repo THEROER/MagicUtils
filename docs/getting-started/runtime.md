@@ -46,6 +46,20 @@ CommandRegistry commands = runtime.findComponent(CommandRegistry.class).orElse(n
 Use `findComponent(...)` when the component is optional and
 `requireComponent(...)` when its absence is a bug.
 
+## Typed Components
+
+Register and replace typed components at runtime:
+
+```java
+runtime.putComponent(MyService.class, new MyService());
+
+MyService service = runtime.requireComponent(MyService.class);
+Optional<MyService> opt = runtime.findComponent(MyService.class);
+```
+
+`findComponent(...)` also matches assignable types, so requesting an interface
+will find a registered implementation.
+
 ## Named Components
 
 `MagicRuntime` also exposes a named registry for dynamic resources:
@@ -54,6 +68,13 @@ Use `findComponent(...)` when the component is optional and
 runtime.putNamedComponent("service.cache", cacheClient);
 
 CacheClient cache = runtime.requireNamedComponent("service.cache", CacheClient.class);
+Optional<CacheClient> opt = runtime.findNamedComponent("service.cache", CacheClient.class);
+```
+
+Remove a named component when it is no longer needed:
+
+```java
+runtime.removeNamedComponent("service.cache");
 ```
 
 Named components are especially useful for:

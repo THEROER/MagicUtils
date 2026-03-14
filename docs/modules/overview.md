@@ -11,9 +11,9 @@ currently uses manual wiring with the platform adapter plus command module.
 
 | Module | Artifact | Notes |
 | --- | --- | --- |
-| Platform API | `magicutils-api` | `Platform`, `Audience`, `TaskScheduler`, and shared interfaces. |
-| Core | `magicutils-core` | Shared runtime container plus core config/lang/logger/placeholder wiring. |
-| HTTP client | `magicutils-http-client` | HttpClient wrapper with JSON, retries, multipart, and runtime profiles. |
+| Platform API | `magicutils-api` | `Platform`, `Audience`, `TaskScheduler`, player lifecycle/message events, and shared interfaces. |
+| Core | `magicutils-core` | Shared runtime container (`MagicRuntime`), reflective access helpers, plus core config/lang/logger/placeholder wiring. |
+| HTTP client | `magicutils-http-client` | HTTP and WebSocket client wrappers with JSON, retries, multipart, and runtime profiles. |
 | Config | `magicutils-config` | JSON/JSONC config engine, migrations, comments. |
 | Config YAML | `magicutils-config-yaml` | Adds YAML support via Jackson. |
 | Config TOML | `magicutils-config-toml` | Adds TOML support via Jackson. |

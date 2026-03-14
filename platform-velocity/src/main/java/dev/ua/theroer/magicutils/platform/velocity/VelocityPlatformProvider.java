@@ -223,10 +223,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     }
 
     private Audience resolveConsoleAudience(ProxyServer proxy, Logger slf4j) {
-        if (proxy == null) {
-            return new VelocityConsoleAudience(slf4j);
-        }
-        return new VelocityAudience(proxy.getConsoleCommandSource());
+        return new VelocityConsoleAudience(slf4j);
     }
 
     private void warnInlineMainFallback() {

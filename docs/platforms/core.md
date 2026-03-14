@@ -146,6 +146,51 @@ The `magicutils-core` path is especially good for:
 If your modules already target multiple platforms, this is usually where the
 majority of the code should live.
 
+## Player Events
+
+`Platform` provides normalized player lifecycle and message events that work
+across all platforms without importing Bukkit, Fabric, or Velocity types.
+
+### Player Lifecycle
+
+Subscribe to join/leave events:
+
+```java
+ListenerSubscription sub = platform.subscribePlayerLifecycle(event -> {
+    if (event.type() == PlayerLifecycleType.JOIN) {
+        logger.info(event.playerName() + " joined");
+    }
+});
+```
+
+`PlayerLifecycle` contains:
+
+- `playerId()` — player UUID (when available)
+- `playerName()` — display/login name
+- `type()` — `JOIN` or `LEAVE`
+
+### Player Messages
+
+Subscribe to chat messages and commands:
+
+```java
+ListenerSubscription sub = platform.subscribePlayerMessages(event -> {
+    if (event.type() == PlayerMessageType.CHAT) {
+        logger.info(event.playerName() + ": " + event.message());
+    }
+});
+```
+
+`PlayerMessage` contains:
+
+- `playerId()` — player UUID (when available)
+- `playerName()` — display/login name
+- `message()` — raw chat content or command line
+- `type()` — `CHAT` or `COMMAND`
+
+Both subscriptions return `ListenerSubscription` which can be closed to
+unsubscribe. Both records expose `isValid()` for null-safety checks.
+
 ## What Should Stay Out Of Common
 
 Try not to leak platform-specific APIs into the shared layer.

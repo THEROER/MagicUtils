@@ -88,6 +88,57 @@ Useful properties of this pattern:
 - `binding.close()` removes the named runtime component and stops listening for
   config changes
 
+## Validation And Constraints
+
+### `@MinValue` / `@MaxValue`
+
+Clamp numeric config values to a safe range on load:
+
+```java
+@ConfigValue("interval_seconds")
+@MinValue(5)
+@MaxValue(3600)
+private int intervalSeconds = 30;
+```
+
+Out-of-range values are silently clamped. Set `warn = false` to suppress the
+log message.
+
+### `@SaveTo`
+
+Store a field in a separate file:
+
+```java
+@ConfigValue("secrets")
+@SaveTo("secrets.{ext}")
+private Secrets secrets = new Secrets();
+```
+
+### `@ConfigSerializable`
+
+Enable a class for use inside config lists or maps:
+
+```java
+@ConfigSerializable
+public class ServerEntry {
+    @ConfigValue("name")
+    private String name = "";
+}
+```
+
+### `@ListProcessor`
+
+Apply per-item validation when loading lists:
+
+```java
+@ConfigValue("entries")
+@ListProcessor(EntryProcessor.class)
+private List<ServerEntry> entries = new ArrayList<>();
+```
+
+The processor implements `ListItemProcessor<T>` and returns `ProcessResult.ok()`,
+`ProcessResult.modified(value)`, or `ProcessResult.replaceWithDefault()`.
+
 ## Hot Reload
 
 Mark reloadable sections and listen for updates:

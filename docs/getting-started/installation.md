@@ -138,7 +138,7 @@ You can also add a dependency in your `fabric.mod.json`:
 ```json
 {
   "depends": {
-    "magicutils-fabric-bundle": ">=1.10.0"
+    "magicutils-fabric-bundle": ">={{ magicutils_version }}"
   }
 }
 ```

@@ -1,0 +1,74 @@
+package dev.ua.theroer.magicutils.logger;
+
+import dev.ua.theroer.magicutils.Logger;
+import net.minecraft.server.level.ServerPlayer;
+
+import java.util.Collection;
+
+/**
+ * NeoForge logger instance with custom prefix.
+ */
+@LogMethods(staticMethods = false, audienceType = "net.minecraft.server.level.ServerPlayer")
+public class PrefixedLogger extends PrefixedLoggerMethods implements PrefixedLoggerAdapter<ServerPlayer, LogBuilder> {
+    private final Logger logger;
+    private final PrefixedLoggerCore core;
+
+    public PrefixedLogger(Logger logger, PrefixedLoggerCore core) {
+        this.logger = logger;
+        this.core = core;
+    }
+
+    @Override
+    public PrefixedLoggerCore getCore() {
+        return core;
+    }
+
+    @Override
+    public LoggerAdapter<ServerPlayer, ?> getLoggerAdapter() {
+        return logger;
+    }
+
+    @Override
+    public LogBuilder buildLogBuilder(LogLevel level) {
+        return new PrefixedLogBuilder(level);
+    }
+
+    @Override
+    public void send(LogLevel level, Object message) {
+        PrefixedLoggerAdapter.super.send(level, message);
+    }
+
+    @Override
+    public void send(LogLevel level, Object message, ServerPlayer player) {
+        PrefixedLoggerAdapter.super.send(level, message, player);
+    }
+
+    @Override
+    public void send(LogLevel level, Object message, ServerPlayer player, boolean all) {
+        PrefixedLoggerAdapter.super.send(level, message, player, all);
+    }
+
+    @Override
+    public void sendToConsole(LogLevel level, Object message) {
+        PrefixedLoggerAdapter.super.sendToConsole(level, message);
+    }
+
+    @Override
+    public void sendToPlayers(LogLevel level, Object message, Collection<? extends ServerPlayer> players) {
+        PrefixedLoggerAdapter.super.sendToPlayers(level, message, players);
+    }
+
+    private class PrefixedLogBuilder extends LogBuilder {
+        PrefixedLogBuilder(LogLevel level) {
+            super(logger, level);
+        }
+
+        @Override
+        public void send(Object message, Object... placeholders) {
+            if (!core.isEnabled()) {
+                return;
+            }
+            super.send(core.formatMessage(message), placeholders);
+        }
+    }
+}

@@ -104,6 +104,80 @@ MultipartBody body = MultipartBody.builder()
 client.postMultipart("upload", body);
 ```
 
+## WebSocket client
+
+`MagicWebSocketClient` wraps `java.net.http.WebSocket` with the same builder
+pattern and config integration as the HTTP client.
+
+### Basic usage
+
+```java
+MagicWebSocketClient wsClient = MagicWebSocketClient.builder(platform, configManager)
+        .baseUrl("wss://api.example.com/ws")
+        .header("Authorization", "Bearer token")
+        .subprotocols(List.of("v1"))
+        .build();
+
+CompletableFuture<WebSocket> ws = wsClient.connectAsync("/events", myListener);
+```
+
+### Builder options
+
+The builder supports the same options as `MagicHttpClient.Builder`:
+
+- `baseUrl(...)` — base URL prepended to connect paths
+- `header(...)` / `headers(...)` — default headers
+- `userAgent(...)` — User-Agent header
+- `connectTimeout(...)` — connection timeout
+- `followRedirects(...)` — redirect policy
+- `subprotocols(...)` — WebSocket subprotocol list
+- `logger(...)` — platform logger for connection diagnostics
+- `config(...)` / `logging(...)` — shared `HttpClientConfig` settings
+- `mapper(...)` — custom Jackson `ObjectMapper`
+
+### Connect methods
+
+| Method | Description |
+| --- | --- |
+| `connect(path, listener)` | Synchronous connect (blocks). |
+| `connectAsync(path, listener)` | Returns `CompletableFuture<WebSocket>`. |
+| `connectSmart(path, listener)` | Async on blocking-sensitive threads, sync otherwise. |
+
+### Runtime profiles
+
+Use `MagicWebSocketClientProfile` for config-aware WebSocket clients that
+rebuild on config reload:
+
+```java
+MagicWebSocketClientProfile<ApiConfig> gateway = MagicWebSocketClientProfile
+        .builder(runtime, "ws.gateway", ApiConfig.class)
+        .sections("gateway")
+        .baseUrl(config -> config.gateway.wsUrl)
+        .bearerAuth(config -> config.gateway.token)
+        .subprotocols(config -> config.gateway.subprotocols)
+        .build();
+
+MagicWebSocketClient client = gateway.require();
+```
+
+### Cleanup
+
+Call `wsClient.close()` to release resources. When using runtime profiles, the
+profile handles cleanup automatically on config reload and runtime shutdown.
+
+## Async method variants
+
+Every convenience method on `MagicHttpClient` has three variants:
+
+| Suffix | Behaviour |
+| --- | --- |
+| _(none)_ | Synchronous. Throws on blocking-sensitive threads. |
+| `...Async(...)` | Returns `CompletableFuture`. Always non-blocking. |
+| `...Smart(...)` | Sync when safe, async when on a blocking-sensitive thread. |
+
+Available methods: `get`, `getJson`, `post`, `postJson`, `postMultipart`,
+`send`.
+
 ## Notes
 
 - Retries apply to the convenience methods (`get`, `post`, `postJson`, etc.).

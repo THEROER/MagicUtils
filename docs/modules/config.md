@@ -120,6 +120,108 @@ manager.registerMigrations(ExampleConfig.class,
 );
 ```
 
+## Validation Annotations
+
+### `@MinValue` / `@MaxValue`
+
+Clamp numeric fields to a safe range. Values outside the range are automatically
+adjusted when the config is loaded. A warning is logged by default.
+
+```java
+@ConfigValue("retry_interval")
+@MinValue(5)
+@Comment("Retry interval in seconds (minimum: 5)")
+private int retryInterval = 10;
+
+@ConfigValue("max_players")
+@MaxValue(100)
+@Comment("Maximum players (maximum: 100)")
+private int maxPlayers = 20;
+```
+
+Supported types: `byte`, `short`, `int`, `long`, `float`, `double` and their
+wrapper types.
+
+Set `warn = false` to suppress the clamping log message:
+
+```java
+@MinValue(value = 0, warn = false)
+```
+
+### `@DefaultValue`
+
+Provides a default string value for a config field when the key is missing from
+the file:
+
+```java
+@ConfigValue("channel")
+@DefaultValue("stable")
+private String channel;
+```
+
+For dynamic defaults, implement `DefaultValueProvider<T>` and reference it:
+
+```java
+@ConfigValue("name")
+@DefaultValue(provider = MyDefaultProvider.class)
+private String name;
+```
+
+## Serializable Types
+
+### `@ConfigSerializable`
+
+Marks a class so it can be used in config lists and maps:
+
+```java
+@ConfigSerializable
+public class ServerEntry {
+    @ConfigValue("name")
+    private String name = "";
+
+    @ConfigValue("port")
+    private int port = 25565;
+}
+```
+
+Use `includeNulls = true` to serialize null fields explicitly.
+
+### `@SaveTo`
+
+Redirects a field to a different file:
+
+```java
+@ConfigValue("secrets")
+@SaveTo("secrets.{ext}")
+private Secrets secrets = new Secrets();
+```
+
+The path is relative to the plugin data folder.
+
+### `@ListProcessor`
+
+Applies per-item validation or transformation when loading list fields:
+
+```java
+@ConfigValue("servers")
+@ListProcessor(ServerListProcessor.class)
+private List<ServerEntry> servers = new ArrayList<>();
+```
+
+The processor implements `ListItemProcessor<T>`:
+
+```java
+public class ServerListProcessor implements ListItemProcessor<ServerEntry> {
+    @Override
+    public ProcessResult<ServerEntry> process(ServerEntry item, int index) {
+        if (item.name == null || item.name.isBlank()) {
+            return ProcessResult.replaceWithDefault();
+        }
+        return ProcessResult.ok(item);
+    }
+}
+```
+
 ## Custom Value Adapters
 
 Register serializers via `ConfigAdapters.register(...)`:

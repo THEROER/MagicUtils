@@ -22,6 +22,10 @@ only bootstrap `MagicRuntime` and the real feature logic lives in shared
   overrides.
 - HTTP client wrapper with JSON mapping, retries, multipart uploads, and
   runtime-bound profiles.
+- WebSocket client with the same builder pattern, config integration, and
+  runtime profiles.
+- Platform-agnostic player lifecycle and message events.
+- Config validation annotations (`@MinValue`, `@MaxValue`, `@ConfigSerializable`).
 - Placeholder registry with Bukkit PlaceholderAPI and Fabric placeholder
   bridges.
 
