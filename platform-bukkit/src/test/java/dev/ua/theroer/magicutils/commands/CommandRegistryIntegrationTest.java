@@ -125,10 +125,31 @@ class CommandRegistryIntegrationTest {
         }
     }
 
+    @Test
+    void bukkitWrapperReturnsTrueWhenCommandHandlesFailureResult() throws Exception {
+        try (TestHarness harness = new TestHarness(tempDir, "TestPlugin")) {
+            CommandRegistry.register(new FailingCommand());
+
+            Command command = harness.commandMap.getCommand("failing");
+            assertInstanceOf(BukkitCommandWrapper.class, command);
+
+            boolean handled = command.execute(commandSender(Set.of()), "failing", new String[0]);
+
+            assertTrue(handled);
+        }
+    }
+
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
         public CommandResult execute(@Permission(node = "secret") String secret) {
             return CommandResult.success(secret);
+        }
+    }
+
+    @CommandInfo(name = "failing")
+    private static final class FailingCommand extends MagicCommand {
+        public CommandResult execute() {
+            return CommandResult.failure(false);
         }
     }
 

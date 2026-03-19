@@ -105,7 +105,9 @@ public class BukkitCommandWrapper extends Command {
 
             CommandResult result = commandManager.execute(commandLabel, sender, argList);
             sendResult(sender, result);
-            return result.isSuccess();
+            // Returning false makes Bukkit emit plugin usage text, even when the
+            // command already handled the failure and chose its own response.
+            return true;
         } catch (Exception e) {
             messageLogger.error("Error executing command " + commandLabel + ": " + e.getMessage());
             if (sender instanceof Player) {
