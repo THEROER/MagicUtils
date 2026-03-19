@@ -67,7 +67,16 @@ public class PrefixedLoggerCore {
         if (!enabled) {
             return;
         }
-        logger.send(level, formatMessage(message), audience, audiences, target, broadcast, placeholders);
+        logger.send(
+                level,
+                formatMessage(message),
+                audience,
+                audiences,
+                target,
+                broadcast,
+                new ConsoleMessageMetadata(level, null, name, prefix),
+                placeholders
+        );
     }
 
     /**
@@ -139,11 +148,25 @@ public class PrefixedLoggerCore {
         }
 
         @Override
-        public void send(Object message, Object... placeholders) {
+        protected void performSend(Object message, Object... placeholders) {
             if (!enabled) {
                 return;
             }
-            super.send(formatMessage(message), placeholders);
+            LogTarget finalTarget = getTarget() != null ? getTarget() : logger.getDefaultTarget();
+            Collection<? extends Audience> audienceRecipients = null;
+            if (!getRecipients().isEmpty()) {
+                audienceRecipients = getRecipients();
+            }
+            logger.send(
+                    level,
+                    formatMessage(message),
+                    getAudience(),
+                    audienceRecipients,
+                    finalTarget,
+                    isBroadcast(),
+                    new ConsoleMessageMetadata(level, null, name, prefix),
+                    placeholders
+            );
         }
     }
 }

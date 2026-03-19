@@ -1,10 +1,11 @@
 package dev.ua.theroer.magicutils.platform.fabric;
 
 import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
 import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
 import dev.ua.theroer.magicutils.logger.LogLevel;
-import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -15,7 +16,7 @@ import org.slf4j.Logger;
 /**
  * Console audience that logs through PlatformLogger.
  */
-public final class FabricConsoleAudience implements Audience {
+public final class FabricConsoleAudience implements StructuredConsoleAudience {
     private static final ANSIComponentSerializer ANSI = ANSIComponentSerializer.ansi();
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
@@ -63,6 +64,25 @@ public final class FabricConsoleAudience implements Audience {
     }
 
     @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || metadata == null) {
+            return;
+        }
+        Component stripped = ComponentPrefixStripper.stripPrefix(component, metadata.mainPrefixText());
+        stripped = ComponentPrefixStripper.stripPrefix(stripped, metadata.subLoggerPrefix());
+        if (baseLoggerName == null) {
+            if (logger != null) {
+                logWithPlatformLogger(logger, metadata.level(), PlainTextComponentSerializer.plainText().serialize(stripped));
+            }
+            return;
+        }
+        String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
+        Logger slf4j = LoggerFactory.getLogger(loggerName);
+        String rendered = ANSI.serialize(stripped);
+        logWithLevel(slf4j, metadata.level(), rendered);
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
         // Console has unrestricted access by design.
         return true;
@@ -107,6 +127,23 @@ public final class FabricConsoleAudience implements Audience {
                 }
             }
             case SUCCESS, INFO -> slf4j.info(message);
+        }
+    }
+
+    private void logWithPlatformLogger(PlatformLogger platformLogger, LogLevel level, String message) {
+        if (platformLogger == null) {
+            return;
+        }
+        if (level == null) {
+            platformLogger.info(message);
+            return;
+        }
+        switch (level) {
+            case WARN -> platformLogger.warn(message);
+            case ERROR -> platformLogger.error(message);
+            case DEBUG -> platformLogger.debug(message);
+            case TRACE -> platformLogger.debug(message);
+            case SUCCESS, INFO -> platformLogger.info(message);
         }
     }
 

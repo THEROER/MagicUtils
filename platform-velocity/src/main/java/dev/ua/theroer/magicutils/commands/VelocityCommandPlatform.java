@@ -73,7 +73,6 @@ final class VelocityCommandPlatform implements CommandPlatform<CommandSource> {
         if (node == null || node.isBlank()) {
             return;
         }
-        logger.debug("Velocity permission node used: " + node + " (default " + defaultValue + ")");
     }
 
     @Override

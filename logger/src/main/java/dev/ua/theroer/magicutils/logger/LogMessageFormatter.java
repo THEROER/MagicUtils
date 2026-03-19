@@ -44,7 +44,19 @@ public final class LogMessageFormatter {
             @Nullable Audience directAudience,
             @Nullable Collection<? extends Audience> audienceCollection,
             Object... placeholdersArgs) {
+        return formatDetailed(logger, message, level, target, prefixOverride, directAudience, audienceCollection,
+                placeholdersArgs).component();
+    }
 
+    static FormattedMessage formatDetailed(
+            LoggerCore logger,
+            Object message,
+            LogLevel level,
+            LogTarget target,
+            @Nullable PrefixMode prefixOverride,
+            @Nullable Audience directAudience,
+            @Nullable Collection<? extends Audience> audienceCollection,
+            Object... placeholdersArgs) {
         String content = stringify(logger, message);
         Object[] args = placeholdersArgs != null ? placeholdersArgs : new Object[0];
         Audience targetAudience = resolveTargetAudience(directAudience, audienceCollection, args);
@@ -97,7 +109,7 @@ public final class LogMessageFormatter {
         if ((target == LogTarget.CONSOLE || target == LogTarget.BOTH) && logger.isConsoleStripFormatting()) {
             component = Component.text(PlainTextComponentSerializer.plainText().serialize(component));
         }
-        return component;
+        return new FormattedMessage(component, prefixRender.text());
     }
 
     private static String stringify(LoggerCore logger, Object message) {
@@ -232,6 +244,9 @@ public final class LogMessageFormatter {
     }
 
     private record PrefixRender(String text, boolean useGradient) {
+    }
+
+    static record FormattedMessage(Component component, String prefixText) {
     }
 
     private static String buildPrefix(LoggerCore logger, LogLevel level, PrefixMode mode) {

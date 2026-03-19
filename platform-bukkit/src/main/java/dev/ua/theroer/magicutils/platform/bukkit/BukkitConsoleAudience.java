@@ -1,9 +1,10 @@
 package dev.ua.theroer.magicutils.platform.bukkit;
 
 import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
 import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
 import dev.ua.theroer.magicutils.logger.LogLevel;
-import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
 /**
  * Console audience that routes messages through a JUL logger with proper levels.
  */
-public final class BukkitConsoleAudience implements Audience {
+public final class BukkitConsoleAudience implements StructuredConsoleAudience {
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private static final ComponentLoggerSupport COMPONENT_LOGGER = ComponentLoggerSupport.load();
     private static final AnsiSerializerSupport ANSI = AnsiSerializerSupport.load();
@@ -55,6 +56,22 @@ public final class BukkitConsoleAudience implements Audience {
         Logger logger = resolveLogger(loggerName);
         String rendered = renderForConsole(stripped, parsed.message());
         logWithLevel(logger, parsed.level(), rendered);
+    }
+
+    @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || metadata == null) {
+            return;
+        }
+        Component stripped = ComponentPrefixStripper.stripPrefix(component, metadata.mainPrefixText());
+        stripped = ComponentPrefixStripper.stripPrefix(stripped, metadata.subLoggerPrefix());
+        String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
+        if (logWithComponentLogger(loggerName, metadata.level(), stripped)) {
+            return;
+        }
+        Logger logger = resolveLogger(loggerName);
+        String rendered = renderForConsole(stripped, PlainTextComponentSerializer.plainText().serialize(stripped));
+        logWithLevel(logger, metadata.level(), rendered);
     }
 
     @Override

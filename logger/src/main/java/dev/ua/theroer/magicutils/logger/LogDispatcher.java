@@ -61,6 +61,23 @@ public final class LogDispatcher {
      * @param target LogTarget describing where to deliver
      */
     public static void deliver(Platform platform, Component component, Collection<Audience> recipients, LogTarget target) {
+        deliver(platform, component, recipients, target, null);
+    }
+
+    /**
+     * Sends the component to console and/or chat in a thread-safe way.
+     *
+     * @param platform platform adapter
+     * @param component message component to send
+     * @param recipients resolved chat recipients (ignored for console-only)
+     * @param target LogTarget describing where to deliver
+     * @param consoleMetadata structured console metadata when available
+     */
+    public static void deliver(Platform platform,
+                               Component component,
+                               Collection<Audience> recipients,
+                               LogTarget target,
+                               ConsoleMessageMetadata consoleMetadata) {
         if (platform == null) {
             return;
         }
@@ -68,7 +85,11 @@ public final class LogDispatcher {
         if (target == LogTarget.CONSOLE || target == LogTarget.BOTH) {
             Audience console = platform.console();
             if (console != null) {
-                console.send(component);
+                if (console instanceof StructuredConsoleAudience structured && consoleMetadata != null) {
+                    structured.sendConsole(component, consoleMetadata);
+                } else {
+                    console.send(component);
+                }
             }
         }
 

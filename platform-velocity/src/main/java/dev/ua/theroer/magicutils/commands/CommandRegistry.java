@@ -6,6 +6,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.logger.PrefixedLoggerCore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +26,7 @@ public final class CommandRegistry {
 
     private final ProxyServer proxy;
     private final Object plugin;
-    private final LoggerCore logger;
+    private final PrefixedLoggerCore logger;
     private final String permissionPrefix;
     private final CommandManager<CommandSource> commandManager;
     private final Executor asyncExecutor;
@@ -46,7 +47,7 @@ public final class CommandRegistry {
         }
         this.proxy = proxy;
         this.plugin = plugin;
-        this.logger = loggerCore;
+        this.logger = loggerCore.withPrefix("Commands", "[Commands]");
         this.permissionPrefix = permissionPrefix != null ? permissionPrefix : "";
         this.asyncExecutor = asyncExecutor != null
                 ? asyncExecutor
@@ -55,22 +56,22 @@ public final class CommandRegistry {
         CommandLogger commandLogger = new CommandLogger() {
             @Override
             public void debug(String message) {
-                logger.debug(message);
+                logger.debug().send(message);
             }
 
             @Override
             public void info(String message) {
-                logger.info(message);
+                logger.info().send(message);
             }
 
             @Override
             public void warn(String message) {
-                logger.warn(message);
+                logger.warn().send(message);
             }
 
             @Override
             public void error(String message) {
-                logger.error(message);
+                logger.error().send(message);
             }
         };
 
@@ -84,7 +85,7 @@ public final class CommandRegistry {
         );
 
         registerMagicSenderAdapter();
-        logger.debug("Velocity command registry initialized successfully");
+        logger.debug().send("Velocity command registry initialized successfully");
     }
 
     public static void initialize(ProxyServer proxy,
@@ -275,7 +276,7 @@ public final class CommandRegistry {
             }
             CommandMeta meta = proxy.getCommandManager().metaBuilder(label).build();
             proxy.getCommandManager().register(meta, wrapper);
-            logger.debug("Velocity command alias registered: " + label + " -> " + info.name());
+            logger.debug().send("Velocity command alias registered: " + label + " -> " + info.name());
         }
     }
 

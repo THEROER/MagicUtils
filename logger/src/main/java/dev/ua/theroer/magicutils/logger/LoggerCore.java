@@ -417,9 +417,32 @@ public class LoggerCore extends LoggerCoreMethods {
                      LogTarget target,
                      boolean broadcast,
                      Object... placeholders) {
-        Component component = parseMessage(message, level, target, audience, audiences, placeholders);
+        send(level, message, audience, audiences, target, broadcast, null, placeholders);
+    }
+
+    void send(LogLevel level,
+              Object message,
+              @Nullable Audience audience,
+              @Nullable Collection<? extends Audience> audiences,
+              LogTarget target,
+              boolean broadcast,
+              @Nullable ConsoleMessageMetadata consoleMetadata,
+              Object... placeholders) {
+        LogMessageFormatter.FormattedMessage formatted = LogMessageFormatter.formatDetailed(
+                this,
+                message,
+                level,
+                target,
+                null,
+                audience,
+                audiences,
+                placeholders
+        );
         Collection<Audience> recipients = LogDispatcher.determineRecipients(audience, audiences, broadcast, target, platform);
-        LogDispatcher.deliver(platform, component, recipients, target);
+        ConsoleMessageMetadata resolvedMetadata = consoleMetadata != null
+                ? consoleMetadata.withMainPrefixText(formatted.prefixText())
+                : new ConsoleMessageMetadata(level, formatted.prefixText(), null, null);
+        LogDispatcher.deliver(platform, formatted.component(), recipients, target, resolvedMetadata);
     }
 
     @Override

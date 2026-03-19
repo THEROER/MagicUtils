@@ -1,8 +1,10 @@
 package dev.ua.theroer.magicutils.platform.velocity;
 
+import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
 import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
 import dev.ua.theroer.magicutils.logger.LogLevel;
-import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.Logger;
@@ -14,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Console audience that routes messages through an SLF4J logger with proper levels.
  */
-final class VelocityConsoleAudience implements Audience {
+final class VelocityConsoleAudience implements StructuredConsoleAudience {
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     private final Logger baseLogger;
@@ -36,6 +38,18 @@ final class VelocityConsoleAudience implements Audience {
         String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
         Logger logger = resolveLogger(loggerName);
         logWithLevel(logger, parsed.level(), parsed.message());
+    }
+
+    @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || metadata == null) {
+            return;
+        }
+        Component stripped = ComponentPrefixStripper.stripPrefix(component, metadata.mainPrefixText());
+        stripped = ComponentPrefixStripper.stripPrefix(stripped, metadata.subLoggerPrefix());
+        String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
+        Logger logger = resolveLogger(loggerName);
+        logWithLevel(logger, metadata.level(), PLAIN.serialize(stripped));
     }
 
     @Override

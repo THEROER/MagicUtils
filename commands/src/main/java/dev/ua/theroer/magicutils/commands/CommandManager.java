@@ -538,7 +538,6 @@ public class CommandManager<S> {
         if (hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
             return true;
         }
-        logger.debug("Permission denied for " + platform.getName(sender) + " on permission: " + commandPermission);
         return false;
     }
 
@@ -613,7 +612,6 @@ public class CommandManager<S> {
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, targetSubCommand.permissionDefault())
                 && !hasArgumentPermissionOverride(normalizedCommandName, subCommandName, sender)) {
-            logger.debug("Permission denied for subcommand " + subCommandName + " on permission: " + subPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 

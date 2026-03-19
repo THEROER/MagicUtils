@@ -9,6 +9,7 @@ import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
 import dev.ua.theroer.magicutils.placeholders.PlaceholderContext;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -25,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LoggerCoreTest {
@@ -71,6 +73,37 @@ class LoggerCoreTest {
         }
     }
 
+    @Test
+    void structuredConsoleAudienceKeepsLevelAndSubLoggerWithoutPlainTextParsing() {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LoggerCore core = new LoggerCore(platform, configManager, new Object(), "TestPlugin");
+            core.setConsolePrefixMode(PrefixMode.NONE);
+
+            core.debug().send("plain debug");
+
+            ConsoleDelivery debugDelivery = platform.consoleAudience.lastDelivery();
+            assertNotNull(debugDelivery);
+            assertEquals(LogLevel.DEBUG, debugDelivery.metadata().level());
+            assertEquals("[TP DEBUG]", debugDelivery.metadata().mainPrefixText());
+            assertTrue(PlainTextComponentSerializer.plainText().serialize(debugDelivery.component())
+                    .endsWith("plain debug"));
+
+            PrefixedLoggerCore commands = core.withPrefix("Commands", "[Commands]");
+            commands.debug().send("permission check");
+
+            ConsoleDelivery commandDelivery = platform.consoleAudience.lastDelivery();
+            assertNotNull(commandDelivery);
+            assertEquals(LogLevel.DEBUG, commandDelivery.metadata().level());
+            assertEquals("Commands", commandDelivery.metadata().subLoggerName());
+            assertEquals("[Commands]", commandDelivery.metadata().subLoggerPrefix());
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
     private static void setDebugPlaceholders(LoggerCore core, boolean enabled) throws Exception {
         Field field = core.getConfig().getClass().getDeclaredField("debugPlaceholders");
         field.setAccessible(true);
@@ -84,6 +117,7 @@ class LoggerCoreTest {
     private static final class TestPlatform implements Platform, ConfigFormatProvider {
         private final Path configDir;
         private final CapturingLogger logger = new CapturingLogger();
+        private final CapturingConsoleAudience consoleAudience = new CapturingConsoleAudience();
         private final TaskScheduler scheduler = new DirectTaskScheduler();
 
         private TestPlatform(Path configDir) {
@@ -102,7 +136,7 @@ class LoggerCoreTest {
 
         @Override
         public Audience console() {
-            return NoOpAudience.INSTANCE;
+            return consoleAudience;
         }
 
         @Override
@@ -134,6 +168,26 @@ class LoggerCoreTest {
 
         private void shutdown() {
             scheduler.shutdown();
+        }
+    }
+
+    private record ConsoleDelivery(Component component, ConsoleMessageMetadata metadata) {
+    }
+
+    private static final class CapturingConsoleAudience implements StructuredConsoleAudience {
+        private final List<ConsoleDelivery> deliveries = new ArrayList<>();
+
+        @Override
+        public void send(Component component) {
+        }
+
+        @Override
+        public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+            deliveries.add(new ConsoleDelivery(component, metadata));
+        }
+
+        private ConsoleDelivery lastDelivery() {
+            return deliveries.isEmpty() ? null : deliveries.get(deliveries.size() - 1);
         }
     }
 
