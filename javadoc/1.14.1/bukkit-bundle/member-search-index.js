@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"dev.ua.theroer.magicutils.bukkit","c":"MagicUtilsBukkitBundlePlugin","l":"MagicUtilsBukkitBundlePlugin()","u":"%3Cinit%3E()"},{"p":"dev.ua.theroer.magicutils.bukkit","c":"MagicUtilsBukkitBundlePlugin","l":"onEnable()"}];updateSearchResults();
