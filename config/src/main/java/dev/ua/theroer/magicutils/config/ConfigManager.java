@@ -10,6 +10,7 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.Tasks;
+import dev.ua.theroer.magicutils.platform.ThreadContext;
 import lombok.Getter;
 
 import java.io.File;
@@ -1866,7 +1867,14 @@ public class ConfigManager {
     }
 
     private boolean isBlockingSensitiveThread() {
-        return platform != null && platform.threadContext().isBlockingSensitive();
+        if (platform == null) {
+            return false;
+        }
+        ThreadContext context = platform.threadContext();
+        if (context == ThreadContext.UNKNOWN) {
+            return platform.isMainThread();
+        }
+        return context.isBlockingSensitive();
     }
 
     /**
