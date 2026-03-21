@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-placeholders",
+    "version": "1.14.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-api",
+          "version": {
+            "requires": "1.14.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-placeholders-1.14.2-mc1.21.jar",
+          "url": "magicutils-placeholders-1.14.2-mc1.21.jar",
+          "size": 17878,
+          "sha512": "b8679491cdc6b17d9935d38ad0b298ce34b39b24094b16eec4c8ec0635c753a6eb5e38718b0883c30e4e848f2f888f33c147a248a33f26a38a83b0030b55f103",
+          "sha256": "6c1dc7ff5f1ff079d6c6b026264f7292a7a00989a51eb58e07d67003518218f3",
+          "sha1": "6649bf2f40467f7799a433af9059b4428433adf1",
+          "md5": "524dda5ccdf2326c924df7af710b7b6b"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-api",
+          "version": {
+            "requires": "1.14.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-placeholders-1.14.2-mc1.21.jar",
+          "url": "magicutils-placeholders-1.14.2-mc1.21.jar",
+          "size": 17878,
+          "sha512": "b8679491cdc6b17d9935d38ad0b298ce34b39b24094b16eec4c8ec0635c753a6eb5e38718b0883c30e4e848f2f888f33c147a248a33f26a38a83b0030b55f103",
+          "sha256": "6c1dc7ff5f1ff079d6c6b026264f7292a7a00989a51eb58e07d67003518218f3",
+          "sha1": "6649bf2f40467f7799a433af9059b4428433adf1",
+          "md5": "524dda5ccdf2326c924df7af710b7b6b"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-placeholders-1.14.2-sources.jar",
+          "url": "magicutils-placeholders-1.14.2-sources.jar",
+          "size": 7220,
+          "sha512": "d52672c9582c3615d637a862969743f0b54df38cb40eec83875b109d0e4bb8eefb791873a871987c1a1700a091e9ad25e038c2b3033213f3c431a2d28a439bad",
+          "sha256": "0ff146823abceafc2e16334ede87ffb6b0447df8f56ea96472e2f2fca1947555",
+          "sha1": "f5395d4d6b7014572e4e8220fa817dc34684e4e5",
+          "md5": "879eaf009bef39939d7f9e734c70023a"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-placeholders-1.14.2-javadoc.jar",
+          "url": "magicutils-placeholders-1.14.2-javadoc.jar",
+          "size": 122286,
+          "sha512": "653c6c78f33610b36708d7aead2e733fa22016f4b80b045ddb13357641948cb8798df191c17edfaf93d949e3ac50092052d8aabb028ebac3a1dc055094ef6534",
+          "sha256": "d1ec4c4e8a91d5bf472214597a0af7f4d5efd5cd6295608dbaeefa9a13955039",
+          "sha1": "2922e5f39d9302ed0728aa91a27e19c5be00ae19",
+          "md5": "b5095725b4dbc91d63a6d19c50bb3c45"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-placeholders-1.14.2-all.jar",
+          "url": "magicutils-placeholders-1.14.2-all.jar",
+          "size": 522822,
+          "sha512": "5b4fa77aedd3316f2b0cc8b422dd07b40d75c094cbee0db879bb759d6d6d2a0a74aa7ae066b21d1e2476060d2171488b8f282bdb5034e83f091ae94fb3c50881",
+          "sha256": "545e5ad6e264d69c006cc0cb2fe8c5f6afb1382f2e16d39bd7ecf6483f03b4ed",
+          "sha1": "fae5cb1e09ae2f1dd609aa6e401890b12b446fda",
+          "md5": "1ad5d46fc12fd02aa0e503f49a27179d"
+        }
+      ]
+    }
+  ]
+}
