@@ -127,11 +127,11 @@
         {
           "name": "magicutils-commands-brigadier-1.14.3-all.jar",
           "url": "magicutils-commands-brigadier-1.14.3-all.jar",
-          "size": 3410856,
-          "sha512": "e0b2210a5338ab5d4149f87fed9511f56134759638644473e46875f3ee67b240c051a0d6bb5322f75e7c629fd40f6415a03b45c5ca8f920b4570782be39b1cd4",
-          "sha256": "2621f623a5ccc42054358a254ee0821c326ae981f96e8dc7ef41fd128afc12a0",
-          "sha1": "80ac4c5c8fa2e9cada64d9d7355469a589ccec9c",
-          "md5": "9de5e0e8351008c74a5005c398b0f308"
+          "size": 3410854,
+          "sha512": "e76505e61d845af9bf1677eb2570d27d196afcd19261a57c838f0d92054c893e31f43b3dcba78478478206eabda833967c4167f9321820d22a6de449efbf96fb",
+          "sha256": "460b494234600b6abdbed325dfcdc1411eb4f05380600b6c5738ee823c7ce4a1",
+          "sha1": "b5c969bf68aa0a2abd518871600fd161385d669e",
+          "md5": "f24bb1c46ef8e6ef0fb554b899a1749c"
         }
       ]
     }

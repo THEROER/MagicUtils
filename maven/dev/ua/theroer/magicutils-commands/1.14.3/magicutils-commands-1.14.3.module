@@ -127,11 +127,11 @@
         {
           "name": "magicutils-commands-1.14.3-all.jar",
           "url": "magicutils-commands-1.14.3-all.jar",
-          "size": 3389278,
-          "sha512": "863614fc014d15035887db460ee435d304d62c64239713780d406e42e1e8b4acee5aa4049be8363fd6deb9905ce8b31e4c4412d9131bec994291c325b1504dbe",
-          "sha256": "64c35c306c9c6e34acc2d6d18e6a249e555da0a3246f13a9a3281e7388b0ed06",
-          "sha1": "3f8fc8b3908724a30effdd810e304e8a022e2882",
-          "md5": "e1aae37f8c2f03d25ec6d6d6df3132ee"
+          "size": 3389276,
+          "sha512": "2ed7d7c3860208ed823ef8c8f9adb8c3a51aa2c39e67449dacf8c5b8ec9a2541d645d96ba183a799867c60ac84e12179706424cfaf51eeaf9c0c1797b7276a06",
+          "sha256": "a4457273a5ce79b3a10bbf86c5b5736b123cce52f8070da0181a38446f75ad95",
+          "sha1": "a060bf24ef83f4163156db76304279cc12e95d76",
+          "md5": "02d9153430728b460553ccbbbaa6e0f6"
         }
       ]
     }

@@ -43,11 +43,11 @@
         {
           "name": "magicutils-commands-neoforge-1.14.3-mc1.21.jar",
           "url": "magicutils-commands-neoforge-1.14.3-mc1.21.jar",
-          "size": 48301,
-          "sha512": "8e1658b26357bd6636e09d97af40579dd787290bf87c24b9a683e89459aea0fc4c8d78f084b4328e941a10521bc565a2c7dc90b876b28f81beeea38de1bebe43",
-          "sha256": "65442fb920071379dabacf8b06adba87b0593ad9c1a410c87d171b7d8ed60fd3",
-          "sha1": "5849a1874294a526337ea4bbdddc9daeb76368a1",
-          "md5": "a0cfff3724cff0baa92c46dddadf689e"
+          "size": 48291,
+          "sha512": "6875d4871d224c2016c436fe19875243f2647aa56d0daaddaa4ef5c824b3031bd54889b13e0080dc81d234227efbad289360e0f46cd2f64a2c8a49de2d03251d",
+          "sha256": "febb35e6830f63810318ff9777e3fcec1e0483c84893e6b9334c5019f84012ae",
+          "sha1": "3850a0949c0e88e2afa76de18d9fd72119c80def",
+          "md5": "324330c2dad77a091b526ea58d1e402b"
         }
       ]
     },
@@ -87,11 +87,11 @@
         {
           "name": "magicutils-commands-neoforge-1.14.3-mc1.21.jar",
           "url": "magicutils-commands-neoforge-1.14.3-mc1.21.jar",
-          "size": 48301,
-          "sha512": "8e1658b26357bd6636e09d97af40579dd787290bf87c24b9a683e89459aea0fc4c8d78f084b4328e941a10521bc565a2c7dc90b876b28f81beeea38de1bebe43",
-          "sha256": "65442fb920071379dabacf8b06adba87b0593ad9c1a410c87d171b7d8ed60fd3",
-          "sha1": "5849a1874294a526337ea4bbdddc9daeb76368a1",
-          "md5": "a0cfff3724cff0baa92c46dddadf689e"
+          "size": 48291,
+          "sha512": "6875d4871d224c2016c436fe19875243f2647aa56d0daaddaa4ef5c824b3031bd54889b13e0080dc81d234227efbad289360e0f46cd2f64a2c8a49de2d03251d",
+          "sha256": "febb35e6830f63810318ff9777e3fcec1e0483c84893e6b9334c5019f84012ae",
+          "sha1": "3850a0949c0e88e2afa76de18d9fd72119c80def",
+          "md5": "324330c2dad77a091b526ea58d1e402b"
         }
       ]
     },
@@ -148,11 +148,11 @@
         {
           "name": "magicutils-commands-neoforge-1.14.3-all.jar",
           "url": "magicutils-commands-neoforge-1.14.3-all.jar",
-          "size": 40418907,
-          "sha512": "edc3e1aa8c5d61a111baf2286585c5e45db8c6ca25e03e575e5f19177797c235e56532187e9f02f4b300046d2c85f3e5eca16d3276aa719348e4c05bc44b0689",
-          "sha256": "7df0970f2fc260df481936e11e3f14581aa2df1af2a83cc5b05266b22e0c82ca",
-          "sha1": "14ce0bb67ea9a24aa136951004efe9514104595e",
-          "md5": "e51ad500d5e959801c02b29bfcceaad9"
+          "size": 40418895,
+          "sha512": "f97d8e29103817942023d2a8ce1d664169c4253977ef2b75924114522e73ced3cc99e3f1fdc957585582002293ae33d48b97dcf2968d58dc225adf7f657c1dab",
+          "sha256": "32c0cdcf5e59e12ac65d92e25dcce2819226a858707f59e174f7a768a53ca927",
+          "sha1": "7b6a56efabf3a715b16c610ce41fc479e9f50edb",
+          "md5": "601cb7993ff0723b23950e3859796da6"
         }
       ]
     }
