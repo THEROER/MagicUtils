@@ -151,6 +151,17 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         }
 
         @Override
+        public @Nullable String address() {
+            if (sender != null && sender.getPlayer() != null
+                    && sender.getPlayer().networkHandler != null
+                    && sender.getPlayer().networkHandler.getConnectionAddress() != null) {
+                return sender.getPlayer().networkHandler.getConnectionAddress().toString()
+                        .replace("/", "").split(":")[0];
+            }
+            return null;
+        }
+
+        @Override
         public Object handle() {
             return sender;
         }

@@ -207,6 +207,14 @@ final class VelocityCommandPlatform implements CommandPlatform<CommandSource> {
         }
 
         @Override
+        public @Nullable String address() {
+            if (source instanceof Player player && player.getRemoteAddress() != null) {
+                return player.getRemoteAddress().getAddress().getHostAddress();
+            }
+            return null;
+        }
+
+        @Override
         public Object handle() {
             return source;
         }

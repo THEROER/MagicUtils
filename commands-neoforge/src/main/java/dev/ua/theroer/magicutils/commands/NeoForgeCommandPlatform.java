@@ -159,6 +159,17 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         }
 
         @Override
+        public @Nullable String address() {
+            if (sender != null && sender.getPlayer() != null
+                    && sender.getPlayer().connection != null
+                    && sender.getPlayer().connection.getRemoteAddress() != null) {
+                return sender.getPlayer().connection.getRemoteAddress().toString()
+                        .replace("/", "").split(":")[0];
+            }
+            return null;
+        }
+
+        @Override
         public Object handle() {
             return sender;
         }

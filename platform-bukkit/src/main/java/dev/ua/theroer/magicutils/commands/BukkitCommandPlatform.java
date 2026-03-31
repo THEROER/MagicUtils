@@ -184,6 +184,14 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
         }
 
         @Override
+        public @Nullable String address() {
+            if (sender instanceof org.bukkit.entity.Player player && player.getAddress() != null) {
+                return player.getAddress().getAddress().getHostAddress();
+            }
+            return null;
+        }
+
+        @Override
         public Object handle() {
             return sender;
         }

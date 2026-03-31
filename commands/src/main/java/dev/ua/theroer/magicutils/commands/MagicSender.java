@@ -61,6 +61,15 @@ public interface MagicSender {
     boolean hasPermission(String permission);
 
     /**
+     * IP address of the sender, if available.
+     *
+     * @return IP address string or null
+     */
+    default @Nullable String address() {
+        return null;
+    }
+
+    /**
      * Raw platform sender handle.
      *
      * @return underlying sender object
