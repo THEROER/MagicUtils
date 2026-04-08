@@ -3,11 +3,11 @@
   <groupId>dev.ua.theroer</groupId>
   <artifactId>magicutils-commands-fabric</artifactId>
   <versioning>
-    <latest>1.14.3</latest>
-    <release>1.14.3</release>
+    <latest>1.14.4</latest>
+    <release>1.14.4</release>
     <versions>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
     </versions>
-    <lastUpdated>20260331230204</lastUpdated>
+    <lastUpdated>20260408195511</lastUpdated>
   </versioning>
 </metadata>
