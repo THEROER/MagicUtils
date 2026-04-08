@@ -48,7 +48,12 @@ class MessagesTest {
             assertSame(defaultManager, Messages.getLanguageManager());
             assertSame(scopedManager, Messages.getLanguageManager("plugina"));
             assertEquals("default:sample.key", Messages.getRaw("sample.key"));
+            assertEquals("default:escaped:sample.key", Messages.getRawEscaped("sample.key", "name", "<value>"));
             assertEquals("scoped:sample.key", Messages.view(" PLUGINA ").getRaw("sample.key"));
+            assertEquals(
+                    "scoped:escaped:sample.key",
+                    Messages.view(" PLUGINA ").getRawEscaped("sample.key", "name", "<value>")
+            );
         }
     }
 
@@ -64,6 +69,39 @@ class MessagesTest {
             assertNull(Messages.getLanguageManager("default"));
             assertEquals("missing.key", Messages.getRaw("missing.key"));
             assertEquals("missing.key", Messages.view("default").getRaw("missing.key"));
+        }
+    }
+
+    @Test
+    void scopedViewsResolveEscapedAudienceAndPlaceholderCalls() throws Exception {
+        try (TestLanguageManager defaultManager = TestLanguageManager.create(
+                tempDir.resolve("default"), "default", "en");
+             TestLanguageManager scopedManager = TestLanguageManager.create(
+                     tempDir.resolve("scoped"), "scoped", "uk")) {
+            Messages.setLanguageManager(defaultManager);
+            Messages.register("verified", scopedManager);
+
+            Audience audience = NoOpAudience.INSTANCE;
+
+            assertEquals(
+                    "scoped:escaped:sample.key",
+                    Messages.view("verified").getRawEscaped(audience, "sample.key", "name", "<value>")
+            );
+            assertEquals(
+                    "scoped:escaped:sample.key",
+                    Messages.view("verified").getRawEscaped("sample.key", Map.of("name", "<value>"))
+            );
+        }
+    }
+
+    @Test
+    void scopedViewFallsBackToRawKeyWhenScopeIsMissing() throws Exception {
+        try (TestLanguageManager defaultManager = TestLanguageManager.create(
+                tempDir.resolve("default"), "default", "en")) {
+            Messages.setLanguageManager(defaultManager);
+
+            assertEquals("unknown.key", Messages.view("missing").getRawEscaped("unknown.key", "name", "value"));
+            assertEquals("unknown.key", Messages.view("missing").getRawEscaped(NoOpAudience.INSTANCE, "unknown.key"));
         }
     }
 
@@ -138,12 +176,12 @@ class MessagesTest {
 
         @Override
         public String getMessageEscaped(String key, Map<String, String> placeholders) {
-            return prefix + ":" + key;
+            return prefix + ":escaped:" + key;
         }
 
         @Override
         public String getMessageEscaped(String key, String... replacements) {
-            return prefix + ":" + key;
+            return prefix + ":escaped:" + key;
         }
 
         @Override
@@ -168,12 +206,12 @@ class MessagesTest {
 
         @Override
         public String getMessageForAudienceEscaped(Audience audience, String key, Map<String, String> placeholders) {
-            return prefix + ":" + key;
+            return prefix + ":escaped:" + key;
         }
 
         @Override
         public String getMessageForAudienceEscaped(Audience audience, String key, String... replacements) {
-            return prefix + ":" + key;
+            return prefix + ":escaped:" + key;
         }
 
         @Override

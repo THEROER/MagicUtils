@@ -91,6 +91,18 @@ public final class MessagesView {
     }
 
     /**
+     * Resolve a raw string with named placeholders escaped for MiniMessage parsing.
+     *
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved string with escaped placeholder values
+     */
+    public String getRawEscaped(String key, Map<String, String> placeholders) {
+        LanguageManager resolved = resolveManager();
+        return resolved != null ? resolved.getMessageEscaped(key, placeholders) : key;
+    }
+
+    /**
      * Resolve a raw string respecting sender language if available.
      *
      * @param sender audience or player-like object
@@ -127,6 +139,27 @@ public final class MessagesView {
             return resolved.getMessageForLanguage(resolved.getPlayerLanguage(id), key, replacements);
         }
         return getRaw(key, replacements);
+    }
+
+    /**
+     * Resolve a raw string with replacements respecting sender language if available,
+     * escaping replacement values for MiniMessage parsing.
+     *
+     * @param sender audience or player-like object
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved string with escaped replacement values
+     */
+    public String getRawEscaped(Object sender, String key, String... replacements) {
+        if (sender instanceof Audience audience) {
+            return getRawEscaped(audience, key, replacements);
+        }
+        UUID id = extractUuid(sender);
+        LanguageManager resolved = resolveManager();
+        if (resolved != null && id != null) {
+            return resolved.getMessageForLanguageEscaped(resolved.getPlayerLanguage(id), key, replacements);
+        }
+        return getRawEscaped(key, replacements);
     }
 
     private static UUID extractUuid(Object obj) {
@@ -189,6 +222,50 @@ public final class MessagesView {
             return key;
         }
         return resolved.getMessageForAudience(audience, key, placeholders);
+    }
+
+    /**
+     * Resolve a raw string with positional replacements escaped for MiniMessage parsing.
+     *
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved string with escaped replacement values
+     */
+    public String getRawEscaped(String key, String... replacements) {
+        LanguageManager resolved = resolveManager();
+        return resolved != null ? resolved.getMessageEscaped(key, replacements) : key;
+    }
+
+    /**
+     * Resolve a raw string for an audience with escaped replacement values for MiniMessage parsing.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @param replacements placeholder/value pairs
+     * @return resolved string with escaped replacement values
+     */
+    public String getRawEscaped(Audience audience, String key, String... replacements) {
+        LanguageManager resolved = resolveManager();
+        if (resolved == null) {
+            return key;
+        }
+        return resolved.getMessageForAudienceEscaped(audience, key, replacements);
+    }
+
+    /**
+     * Resolve a raw string for an audience with escaped placeholder values for MiniMessage parsing.
+     *
+     * @param audience target audience
+     * @param key message key
+     * @param placeholders placeholder map
+     * @return resolved string with escaped placeholder values
+     */
+    public String getRawEscaped(Audience audience, String key, Map<String, String> placeholders) {
+        LanguageManager resolved = resolveManager();
+        if (resolved == null) {
+            return key;
+        }
+        return resolved.getMessageForAudienceEscaped(audience, key, placeholders);
     }
 
     /**

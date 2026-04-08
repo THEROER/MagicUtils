@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.lang;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
@@ -11,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LanguageManagerTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @TempDir
     Path tempDir;
@@ -56,6 +60,105 @@ class LanguageManagerTest {
 
             assertTrue(result);
             assertEquals("uk", manager.getCurrentLanguage());
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void registerTranslationsAppliesToAlreadyLoadedLanguage() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+
+            manager.registerTranslations("en", Map.of(
+                    "plugin.welcome", "<green>Hello</green>"
+            ));
+
+            assertEquals("<green>Hello</green>", manager.getMessage("plugin.welcome"));
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void registerTranslationsAppliesToLanguageLoadedLater() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+
+            manager.registerTranslations(Map.of(
+                    "uk", Map.of("plugin.welcome", "<green>Привіт</green>")
+            ));
+
+            assertTrue(manager.loadLanguage("uk"));
+            assertEquals("<green>Привіт</green>", manager.getMessageForLanguage("uk", "plugin.welcome"));
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void registerTranslationsDoesNotOverrideExistingCustomMessage() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+            manager.putCustomMessage("en", "plugin.welcome", "custom");
+
+            manager.registerTranslations("en", Map.of(
+                    "plugin.welcome", "default"
+            ));
+
+            assertEquals("custom", manager.getMessage("plugin.welcome"));
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void registerTranslationsPersistsGeneratedLanguageFiles() throws Exception {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.registerTranslations(Map.of(
+                    "en", Map.of("plugin.welcome", "<green>Hello</green>"),
+                    "uk", Map.of("plugin.welcome", "<green>Привіт</green>")
+            ));
+            manager.init("en");
+            assertTrue(manager.loadLanguage("uk"));
+
+            Path englishFile = tempDir.resolve("lang/en.json");
+            Path ukrainianFile = tempDir.resolve("lang/uk.json");
+
+            assertTrue(Files.exists(englishFile));
+            assertTrue(Files.exists(ukrainianFile));
+            assertEquals(
+                    "<green>Hello</green>",
+                    OBJECT_MAPPER.readTree(Files.readString(englishFile))
+                            .path("messages")
+                            .path("plugin")
+                            .path("welcome")
+                            .asText()
+            );
+            assertEquals(
+                    "<green>Привіт</green>",
+                    OBJECT_MAPPER.readTree(Files.readString(ukrainianFile))
+                            .path("messages")
+                            .path("plugin")
+                            .path("welcome")
+                            .asText()
+            );
         } finally {
             configManager.shutdown();
             platform.shutdown();

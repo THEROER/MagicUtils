@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class LanguageManager {
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, String>> registeredTranslations = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([^{}]+)}");
@@ -116,7 +118,16 @@ public class LanguageManager {
             placeholders.put("lang", languageCode);
 
             LanguageConfig config = configManager.register(LanguageConfig.class, placeholders);
-            initializeLanguageDefaults(config, languageCode, existed);
+            boolean changed = initializeLanguageDefaults(config, languageCode, existed);
+            changed |= applyRegisteredTranslations(config, languageCode);
+
+            if (changed) {
+                try {
+                    configManager.save(config);
+                } catch (Exception e) {
+                    logger.warn("Failed to save language defaults for: " + languageCode, e);
+                }
+            }
 
             loadedLanguages.put(languageCode, config);
 
@@ -147,19 +158,39 @@ public class LanguageManager {
                 .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
     }
 
-    private void initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
+    private boolean initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
         Map<String, Map<String, String>> translations = createTranslations(languageCode);
         if (translations.isEmpty()) {
-            return;
+            return false;
         }
         if (!existed) {
             config.applyTranslations(translations, true);
-            try {
-                configManager.save(config);
-            } catch (Exception e) {
-                logger.warn("Failed to save language defaults for: " + languageCode, e);
-            }
+            return true;
         }
+        return false;
+    }
+
+    private boolean applyRegisteredTranslations(LanguageConfig config, String languageCode) {
+        if (config == null || languageCode == null || languageCode.isBlank()) {
+            return false;
+        }
+        Map<String, String> translations = registeredTranslations.get(languageCode);
+        if (translations == null || translations.isEmpty()) {
+            return false;
+        }
+
+        boolean changed = false;
+        Map<String, String> customMessages = config.getCustomMessages();
+        for (Map.Entry<String, String> entry : translations.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key == null || key.isBlank() || value == null || customMessages.containsKey(key)) {
+                continue;
+            }
+            customMessages.put(key, value);
+            changed = true;
+        }
+        return changed;
     }
 
     private void loadFallbackLanguage(String languageCode) {
@@ -242,6 +273,66 @@ public class LanguageManager {
             configManager.save(cfg);
         } catch (Exception e) {
             logger.warn("Failed to save custom message '" + key + "' for language " + code, e);
+        }
+    }
+
+    /**
+     * Register bundled plugin translations for multiple languages.
+     * Registered values are merged into already-loaded languages immediately and
+     * applied automatically to any language loaded later.
+     *
+     * Existing custom message values are preserved to avoid overwriting user
+     * overrides from disk.
+     *
+     * @param translationsByLanguage language -> (message key -> message text)
+     */
+    public void registerTranslations(Map<String, Map<String, String>> translationsByLanguage) {
+        if (translationsByLanguage == null || translationsByLanguage.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Map<String, String>> entry : translationsByLanguage.entrySet()) {
+            registerTranslations(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Register bundled plugin translations for a single language.
+     * Registered values are merged into already-loaded languages immediately and
+     * applied automatically to any language loaded later.
+     *
+     * Existing custom message values are preserved to avoid overwriting user
+     * overrides from disk.
+     *
+     * @param languageCode language code to attach translations to
+     * @param translations message key -> message text
+     */
+    public void registerTranslations(String languageCode, Map<String, String> translations) {
+        if (languageCode == null || languageCode.isBlank() || translations == null || translations.isEmpty()) {
+            return;
+        }
+
+        String normalizedLanguage = languageCode.trim();
+        Map<String, String> normalizedTranslations = normalizeTranslations(translations);
+        if (normalizedTranslations.isEmpty()) {
+            return;
+        }
+
+        registeredTranslations.compute(normalizedLanguage, (ignored, existing) -> {
+            Map<String, String> merged = new LinkedHashMap<>();
+            if (existing != null && !existing.isEmpty()) {
+                merged.putAll(existing);
+            }
+            merged.putAll(normalizedTranslations);
+            return merged;
+        });
+
+        LanguageConfig config = loadedLanguages.get(normalizedLanguage);
+        if (config != null && applyRegisteredTranslations(config, normalizedLanguage)) {
+            try {
+                configManager.save(config);
+            } catch (Exception e) {
+                logger.warn("Failed to save registered translations for: " + normalizedLanguage, e);
+            }
         }
     }
 
@@ -973,6 +1064,21 @@ public class LanguageManager {
             result = result.replace(placeholder, value);
         }
         return result;
+    }
+
+    private Map<String, String> normalizeTranslations(Map<String, String> translations) {
+        LinkedHashMap<String, String> normalized = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : translations.entrySet()) {
+            if (entry == null || entry.getKey() == null || entry.getValue() == null) {
+                continue;
+            }
+            String key = entry.getKey().trim();
+            if (key.isEmpty()) {
+                continue;
+            }
+            normalized.put(key, entry.getValue());
+        }
+        return normalized;
     }
 
     private Map<String, Map<String, String>> createTranslations(String languageCode) {
