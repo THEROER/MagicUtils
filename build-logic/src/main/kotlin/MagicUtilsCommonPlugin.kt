@@ -8,6 +8,7 @@ class MagicUtilsCommonPlugin : Plugin<Project> {
                 "platform-api" to "magicutils-api",
                 "platform-neoforge" to "magicutils-neoforge",
                 "platform-bukkit" to "magicutils-bukkit",
+                "platform-bungee" to "magicutils-bungee",
                 "platform-velocity" to "magicutils-velocity",
                 "platform-fabric" to "magicutils-fabric",
                 "core" to "magicutils-core",

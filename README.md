@@ -1,6 +1,6 @@
 # MagicUtils
 
-Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge. It provides
+Modular toolkit for Bukkit/Paper, BungeeCord, Fabric, Velocity, and NeoForge. It provides
 shared building blocks for configuration, localisation, commands, logging,
 placeholders, HTTP clients, and platform adapters.
 
@@ -72,6 +72,14 @@ dependencies {
 }
 ```
 
+### BungeeCord
+
+```kotlin
+dependencies {
+    implementation("dev.ua.theroer:magicutils-bungee:<version>")
+}
+```
+
 ## Modules At A Glance
 
 - Platform API: `magicutils-api`
@@ -81,8 +89,8 @@ dependencies {
   `magicutils-http-client`
 - Config format helpers: `magicutils-config-yaml`,
   `magicutils-config-toml`
-- Platform adapters: `magicutils-bukkit`, `magicutils-fabric`,
-  `magicutils-velocity`, `magicutils-neoforge`
+- Platform adapters: `magicutils-bukkit`, `magicutils-bungee`,
+  `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge`
 - Platform bundles: `magicutils-bukkit-bundle`,
   `magicutils-fabric-bundle`
 - Fabric integrations: `magicutils-commands-fabric`,
@@ -95,6 +103,7 @@ dependencies {
 Bootstrap helpers are the recommended platform entry points:
 
 - Bukkit/Paper: `BukkitBootstrap.forPlugin(this)`
+- BungeeCord: `BungeeBootstrap.forPlugin(this, "MyPlugin")`
 - Fabric: `FabricBootstrap.forMod("mymod", () -> server)`
 - Velocity: `VelocityBootstrap.forPlugin(proxy, this, "MyPlugin", dataDir)`
 - NeoForge: manual wiring with `NeoForgePlatformProvider` +
