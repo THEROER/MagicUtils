@@ -1,0 +1,188 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-logger",
+    "version": "1.16.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.16.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-lang",
+          "version": {
+            "requires": "1.16.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-placeholders",
+          "version": {
+            "requires": "1.16.0"
+          }
+        },
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-minimessage",
+          "version": {
+            "requires": "4.24.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-logger-1.16.0-mc1.21.jar",
+          "url": "magicutils-logger-1.16.0-mc1.21.jar",
+          "size": 81984,
+          "sha512": "818fa7b3aa6d85d316c30d2462692d50215c8a03d00229a0befe3d10f3dc18a140b1a65efc2411ede3b3eccf4ab9094df3de6ad6f5493f1a7f6db3a6c4167fbe",
+          "sha256": "370f1440b56b39a8a8e6767d5cda2d1243d320ac203db60c4becfd9f6fc4f97a",
+          "sha1": "8ad60bf8a0e3288b8df80940ceaee91de8edb18c",
+          "md5": "4152b8a9921791d5d6b8d773d2a4bfc0"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-serializer-plain",
+          "version": {
+            "requires": "4.24.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.16.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-lang",
+          "version": {
+            "requires": "1.16.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-placeholders",
+          "version": {
+            "requires": "1.16.0"
+          }
+        },
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-minimessage",
+          "version": {
+            "requires": "4.24.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-logger-1.16.0-mc1.21.jar",
+          "url": "magicutils-logger-1.16.0-mc1.21.jar",
+          "size": 81984,
+          "sha512": "818fa7b3aa6d85d316c30d2462692d50215c8a03d00229a0befe3d10f3dc18a140b1a65efc2411ede3b3eccf4ab9094df3de6ad6f5493f1a7f6db3a6c4167fbe",
+          "sha256": "370f1440b56b39a8a8e6767d5cda2d1243d320ac203db60c4becfd9f6fc4f97a",
+          "sha1": "8ad60bf8a0e3288b8df80940ceaee91de8edb18c",
+          "md5": "4152b8a9921791d5d6b8d773d2a4bfc0"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.16.0-sources.jar",
+          "url": "magicutils-logger-1.16.0-sources.jar",
+          "size": 37091,
+          "sha512": "8fb4a19d76381a526d932c9496f1c2e11566f367e6e3e10f31e8bde1e3f29f03fcebc5991844f6316d69a68e2abc9e8f5b00fb38ad8e263623bc6111c0a9fea7",
+          "sha256": "924c540b4f11a948cee8a3c6186710886480da705a214dcd0fc961a467a5a808",
+          "sha1": "4d92c8aeb01ad38dc3f24fab076822459ab481be",
+          "md5": "cacf8cfedd506cda721c6e33934f32a3"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.16.0-javadoc.jar",
+          "url": "magicutils-logger-1.16.0-javadoc.jar",
+          "size": 210328,
+          "sha512": "562ef7a1431b06c0d098ad49e9d28e506cd0ee0588d8c5b86b30b0bf3ac87bcf4ec117d42b7b470f0b1ee3d933c72cde75ba252154fcf79cd6783f1415847a50",
+          "sha256": "19d822885fc6741380e1e9ac2efadb2df1ca1be0f496b1e7adefbbb3eb6a317b",
+          "sha1": "26b8382e6cc05b906e51748d70e1bdebe00fb509",
+          "md5": "a667d0a872510b4bf1afb74e16282b93"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.16.0-all.jar",
+          "url": "magicutils-logger-1.16.0-all.jar",
+          "size": 3221609,
+          "sha512": "8436b7a1aaf315d155c7edc8bb3520c76855e46271a7dd8664a10997f0159959b8b84e2191890ce9b3045948acaa93e546b217e623560b4cd7f74f2474f1f37f",
+          "sha256": "4ca62fb32b64904a7e0c470ce5ed172c4e89cd96d503b9898909f404d02fd3ee",
+          "sha1": "ddd7520c3ee39b37b630168dff7b4dfcc9ff1080",
+          "md5": "4ef19ce4eaa46ed386ab9cbcba0b9b20"
+        }
+      ]
+    }
+  ]
+}
