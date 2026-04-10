@@ -7,6 +7,8 @@ import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
+import dev.ua.theroer.magicutils.platform.bukkit.FoliaPlatformProvider;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -255,7 +257,11 @@ public final class BukkitBootstrap {
         }
 
         private Prepared prepare() {
-            Platform resolvedPlatform = platform != null ? platform : new BukkitPlatformProvider(plugin);
+            Platform resolvedPlatform = platform != null
+                    ? platform
+                    : BukkitThreading.isFoliaRuntime()
+                    ? new FoliaPlatformProvider(plugin)
+                    : new BukkitPlatformProvider(plugin);
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);

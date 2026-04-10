@@ -11,6 +11,7 @@ import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -135,11 +136,11 @@ public class BukkitCommandWrapper extends Command {
                 result = CommandResult.failure(InternalMessages.CMD_INTERNAL_ERROR.get());
             }
             CommandResult finalResult = result;
-            runOnMain(() -> sendResult(sender, finalResult));
+            runOnMain(sender, () -> sendResult(sender, finalResult));
         });
     }
 
-    private void runOnMain(Runnable task) {
+    private void runOnMain(CommandSender sender, Runnable task) {
         if (task == null) {
             return;
         }
@@ -147,7 +148,7 @@ public class BukkitCommandWrapper extends Command {
             task.run();
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, task);
+        BukkitThreading.runForSender(plugin, sender, task);
     }
 
     private void sendResult(CommandSender sender, CommandResult result) {

@@ -13,6 +13,7 @@ import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -24,7 +25,13 @@ import java.util.stream.Collectors;
  * Bukkit-specific platform hooks for the command engine.
  */
 public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
+    private final JavaPlugin plugin;
     private final CommandLogger logger;
+
+    public BukkitCommandPlatform(JavaPlugin plugin, CommandLogger logger) {
+        this.plugin = plugin;
+        this.logger = logger != null ? logger : CommandLogger.noop();
+    }
 
     /**
      * Creates a Bukkit platform wrapper.
@@ -32,7 +39,7 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
      * @param logger command logger
      */
     public BukkitCommandPlatform(CommandLogger logger) {
-        this.logger = logger != null ? logger : CommandLogger.noop();
+        this(null, logger);
     }
 
     /**
@@ -42,10 +49,14 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
      * @return wrapped sender or null if unavailable
      */
     public static @Nullable MagicSender wrapMagicSender(CommandSender sender) {
+        return wrapMagicSender(sender, null);
+    }
+
+    public static @Nullable MagicSender wrapMagicSender(CommandSender sender, @Nullable JavaPlugin plugin) {
         if (sender == null) {
             return null;
         }
-        return new BukkitMagicSender(sender);
+        return new BukkitMagicSender(sender, plugin);
     }
 
     @Override
@@ -111,7 +122,7 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
             return effective;
         }
         if (targetType.equals(MagicSender.class)) {
-            return new BukkitMagicSender(effective);
+            return new BukkitMagicSender(effective, plugin);
         }
         if (targetType.equals(ProxiedCommandSender.class)) {
             if (sender instanceof ProxiedCommandSender p) {
@@ -160,9 +171,9 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
         private final CommandSender sender;
         private final Audience audience;
 
-        private BukkitMagicSender(CommandSender sender) {
+        private BukkitMagicSender(CommandSender sender, @Nullable JavaPlugin plugin) {
             this.sender = sender;
-            this.audience = new BukkitAudienceWrapper(sender);
+            this.audience = new BukkitAudienceWrapper(plugin, sender);
         }
 
         @Override

@@ -24,6 +24,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
+
 /**
  * Advanced GUI system with MiniMessage support and convenience methods.
  */
@@ -693,7 +695,7 @@ public class MagicGui {
                         }
                         // Schedule onChange callback
                         if (plugin != null && plugin.isEnabled() && policy.onChange() != null) {
-                            Bukkit.getScheduler().runTask(plugin, () -> {
+                            BukkitThreading.runEntity(plugin, owner, () -> {
                                 policy.onChange().accept(inventory.getItem(slot));
                             });
                         }
@@ -737,7 +739,7 @@ public class MagicGui {
                         }
                         // Schedule onChange callback
                         if (plugin != null && plugin.isEnabled() && policy.onChange() != null) {
-                            Bukkit.getScheduler().runTask(plugin, () -> {
+                            BukkitThreading.runEntity(plugin, owner, () -> {
                                 policy.onChange().accept(inventory.getItem(slot));
                             });
                         }
@@ -794,7 +796,7 @@ public class MagicGui {
 
         // Schedule post-action updates
         if (plugin != null && plugin.isEnabled()) {
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            BukkitThreading.runEntity(plugin, owner, () -> {
                 ItemStack finalItem = inventory.getItem(slot);
 
                 // Restore placeholder if needed

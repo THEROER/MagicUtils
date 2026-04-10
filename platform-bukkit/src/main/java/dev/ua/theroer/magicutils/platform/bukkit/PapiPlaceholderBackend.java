@@ -13,9 +13,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class PapiPlaceholderBackend implements BukkitPlaceholderBackend {
+    private final JavaPlugin plugin;
     private final Map<String, MagicUtilsExpansion> expansions = new ConcurrentHashMap<>();
 
     PapiPlaceholderBackend(JavaPlugin plugin) {
+        this.plugin = plugin;
     }
 
     @Override
@@ -108,7 +110,7 @@ final class PapiPlaceholderBackend implements BukkitPlaceholderBackend {
             if (player != null) {
                 UUID uuid = player.getUniqueId();
                 if (player instanceof Player online) {
-                    audience = new BukkitAudienceWrapper(online);
+                    audience = new BukkitAudienceWrapper(plugin, online);
                 } else if (uuid != null) {
                     audience = MagicPlaceholders.audienceFromUuid(uuid);
                 }

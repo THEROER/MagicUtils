@@ -145,7 +145,7 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
     }
 
     private Audience wrap(CommandSender sender) {
-        return new BukkitAudienceWrapper(sender);
+        return new BukkitAudienceWrapper(plugin, sender);
     }
 
     private void registerPlayerMessageHook() {

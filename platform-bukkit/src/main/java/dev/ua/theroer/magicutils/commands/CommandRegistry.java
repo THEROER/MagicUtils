@@ -81,7 +81,7 @@ public class CommandRegistry {
             }
         };
 
-        this.platform = new BukkitCommandPlatform(commandLogger);
+        this.platform = new BukkitCommandPlatform(plugin, commandLogger);
 
         TypeParserRegistry<CommandSender> parserRegistry = TypeParserRegistry.createWithDefaults(commandLogger);
         parserRegistry.register(new PlayerTypeParser(logger));
@@ -762,7 +762,10 @@ public class CommandRegistry {
 
             @Override
             public MagicSender wrap(Object sender) {
-                return BukkitCommandPlatform.wrapMagicSender((CommandSender) sender);
+                return BukkitCommandPlatform.wrapMagicSender(
+                        (CommandSender) sender,
+                        requireDefault().plugin
+                );
             }
         });
     }
