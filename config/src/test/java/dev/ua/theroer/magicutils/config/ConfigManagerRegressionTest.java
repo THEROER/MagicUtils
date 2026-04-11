@@ -16,11 +16,16 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -144,6 +149,46 @@ class ConfigManagerRegressionTest {
         }
     }
 
+    @Test
+    void reloadRetriesTransientConcurrentModificationForMaps() throws IOException {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager manager = new ConfigManager(platform);
+        try {
+            RetryMapConfig config = manager.register(RetryMapConfig.class);
+            config.messages = new FailOnceMap<>(Map.of("hello", "world"));
+
+            Files.writeString(tempDir.resolve("retry-map.json"),
+                    "{\n  \"messages\" : null\n}\n");
+
+            manager.reload(config);
+
+            assertEquals(Map.of("hello", "world"), config.messages);
+        } finally {
+            manager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void reloadRetriesTransientConcurrentModificationForLists() throws IOException {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager manager = new ConfigManager(platform);
+        try {
+            RetryListConfig config = manager.register(RetryListConfig.class);
+            config.items = new FailOnceList<>(List.of("one", "two"));
+
+            Files.writeString(tempDir.resolve("retry-list.json"),
+                    "{\n  \"items\" : null\n}\n");
+
+            manager.reload(config);
+
+            assertEquals(List.of("one", "two"), config.items);
+        } finally {
+            manager.shutdown();
+            platform.shutdown();
+        }
+    }
+
     private static class BaseConfig {
         @ConfigValue("base")
         String base = "base-default";
@@ -185,6 +230,79 @@ class ConfigManagerRegressionTest {
     static final class PlainChangeConfig {
         @ConfigValue("value")
         String value = "plain-default";
+    }
+
+    @ConfigFile("retry-map.json")
+    static final class RetryMapConfig {
+        @ConfigValue("messages")
+        Map<String, String> messages = new LinkedHashMap<>(Map.of("default", "value"));
+    }
+
+    @ConfigFile("retry-list.json")
+    static final class RetryListConfig {
+        @ConfigValue("items")
+        List<String> items = new ArrayList<>(List.of("default"));
+    }
+
+    private static final class FailOnceMap<K, V> extends LinkedHashMap<K, V> {
+        private static final long serialVersionUID = 1L;
+        private final AtomicInteger remainingFailures = new AtomicInteger(1);
+
+        private FailOnceMap(Map<? extends K, ? extends V> source) {
+            super(source);
+        }
+
+        @Override
+        public void forEach(java.util.function.BiConsumer<? super K, ? super V> action) {
+            if (remainingFailures.getAndDecrement() > 0) {
+                throw new ConcurrentModificationException("transient map iteration failure");
+            }
+            super.forEach(action);
+        }
+
+        @Override
+        public Set<Map.Entry<K, V>> entrySet() {
+            Set<Map.Entry<K, V>> delegate = super.entrySet();
+            return new AbstractSet<>() {
+                @Override
+                public Iterator<Map.Entry<K, V>> iterator() {
+                    if (remainingFailures.getAndDecrement() > 0) {
+                        throw new ConcurrentModificationException("transient map entrySet failure");
+                    }
+                    return delegate.iterator();
+                }
+
+                @Override
+                public int size() {
+                    return delegate.size();
+                }
+            };
+        }
+    }
+
+    private static final class FailOnceList<E> extends ArrayList<E> {
+        private static final long serialVersionUID = 1L;
+        private final AtomicInteger remainingFailures = new AtomicInteger(1);
+
+        private FailOnceList(List<? extends E> source) {
+            super(source);
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            if (remainingFailures.getAndDecrement() > 0) {
+                throw new ConcurrentModificationException("transient list iteration failure");
+            }
+            return super.iterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            if (remainingFailures.getAndDecrement() > 0) {
+                throw new ConcurrentModificationException("transient list snapshot failure");
+            }
+            return super.toArray();
+        }
     }
 
     private static final class TestPlatform implements Platform {

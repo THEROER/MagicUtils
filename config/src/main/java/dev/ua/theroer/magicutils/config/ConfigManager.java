@@ -83,6 +83,7 @@ public class ConfigManager {
     private static final String GLOBAL_FORMAT_ENV = "MAGICUTILS_CONFIG_FORMAT";
     private static final String DEFAULT_EXTENSION = "yml";
     private static final List<String> SUPPORTED_EXTENSIONS = List.of("jsonc", "json", "yml", "yaml", "toml");
+    private static final int CLONE_SNAPSHOT_RETRY_LIMIT = 8;
 
     /**
      * Creates a new ConfigManager for the provided platform.
@@ -903,18 +904,36 @@ public class ConfigManager {
     @SuppressWarnings("unchecked")
     private Object cloneIfNeeded(Object value) {
         if (value instanceof List<?>) {
+            List<?> snapshot = snapshotWithRetry(() -> new ArrayList<>((List<?>) value));
             List<Object> copy = new ArrayList<>();
-            for (Object item : (List<Object>) value) {
+            for (Object item : (List<Object>) snapshot) {
                 copy.add(cloneIfNeeded(item));
             }
             return copy;
         }
         if (value instanceof Map<?, ?>) {
+            Map<?, ?> snapshot = snapshotWithRetry(() -> new LinkedHashMap<>((Map<?, ?>) value));
             Map<Object, Object> copy = new LinkedHashMap<>();
-            ((Map<?, ?>) value).forEach((key, val) -> copy.put(key, cloneIfNeeded(val)));
+            snapshot.forEach((key, val) -> copy.put(key, cloneIfNeeded(val)));
             return copy;
         }
         return value;
+    }
+
+    private <T> T snapshotWithRetry(Supplier<T> supplier) {
+        ConcurrentModificationException lastFailure = null;
+        for (int attempt = 0; attempt < CLONE_SNAPSHOT_RETRY_LIMIT; attempt++) {
+            try {
+                return supplier.get();
+            } catch (ConcurrentModificationException failure) {
+                lastFailure = failure;
+                Thread.yield();
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
+        throw new IllegalStateException("Failed to snapshot mutable config value");
     }
 
     private Object getPrimitiveDefault(Class<?> type) {
