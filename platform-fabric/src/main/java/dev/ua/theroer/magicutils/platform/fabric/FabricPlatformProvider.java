@@ -238,7 +238,10 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
                         return null;
                     }
                     String content = extractMessageContent(args[0]);
-                    ServerPlayerEntity sender = ReflectiveAccess.cast(args[1], ServerPlayerEntity.class).orElse(null);
+                    final ServerPlayerEntity[] senderHolder = new ServerPlayerEntity[1];
+                    ReflectiveAccess.cast(args[1], ServerPlayerEntity.class)
+                            .ifPresent(value -> senderHolder[0] = value);
+                    ServerPlayerEntity sender = senderHolder[0];
                     publishPlayerMessage(sender, content, PlayerMessageType.CHAT);
                     return null;
                 }
@@ -252,10 +255,12 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
                     }
                     String content = extractMessageContent(args[0]);
                     Object source = args[1];
-                    ServerPlayerEntity sender = ReflectiveAccess.publicMethod(source.getClass(), "getPlayer")
+                    final ServerPlayerEntity[] senderHolder = new ServerPlayerEntity[1];
+                    ReflectiveAccess.publicMethod(source.getClass(), "getPlayer")
                             .flatMap(getPlayer -> ReflectiveAccess.invoke(getPlayer, source))
                             .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
-                            .orElse(null);
+                            .ifPresent(value -> senderHolder[0] = value);
+                    ServerPlayerEntity sender = senderHolder[0];
                     publishPlayerMessage(sender, content, PlayerMessageType.COMMAND);
                     return null;
                 }
@@ -405,17 +410,20 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         if (handler == null) {
             return null;
         }
-        ServerPlayerEntity player = ReflectiveAccess.publicMethod(handler.getClass(), "getPlayer")
+        final ServerPlayerEntity[] playerHolder = new ServerPlayerEntity[1];
+        ReflectiveAccess.publicMethod(handler.getClass(), "getPlayer")
                 .flatMap(method -> ReflectiveAccess.invoke(method, handler))
                 .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
-                .orElse(null);
-        if (player != null) {
-            return player;
+                .ifPresent(value -> playerHolder[0] = value);
+        if (playerHolder[0] != null) {
+            return playerHolder[0];
         }
-        return ReflectiveAccess.publicField(handler.getClass(), "player")
+        final ServerPlayerEntity[] fieldHolder = new ServerPlayerEntity[1];
+        ReflectiveAccess.publicField(handler.getClass(), "player")
                 .flatMap(field -> ReflectiveAccess.readField(field, handler))
                 .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
-                .orElse(null);
+                .ifPresent(value -> fieldHolder[0] = value);
+        return fieldHolder[0];
     }
 
     private static String extractMessageContent(Object signedMessage) {

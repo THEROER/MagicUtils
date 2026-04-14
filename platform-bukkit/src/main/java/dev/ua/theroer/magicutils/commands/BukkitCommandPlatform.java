@@ -16,10 +16,6 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Bukkit-specific platform hooks for the command engine.
@@ -28,6 +24,12 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
     private final JavaPlugin plugin;
     private final CommandLogger logger;
 
+    /**
+     * Creates a Bukkit platform wrapper.
+     *
+     * @param plugin plugin instance
+     * @param logger command logger
+     */
     public BukkitCommandPlatform(JavaPlugin plugin, CommandLogger logger) {
         this.plugin = plugin;
         this.logger = logger != null ? logger : CommandLogger.noop();
@@ -52,6 +54,13 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
         return wrapMagicSender(sender, null);
     }
 
+    /**
+     * Wraps a Bukkit sender into {@link MagicSender} with a specific plugin context.
+     *
+     * @param sender Bukkit sender
+     * @param plugin plugin instance
+     * @return wrapped sender or null if unavailable
+     */
     public static @Nullable MagicSender wrapMagicSender(CommandSender sender, @Nullable JavaPlugin plugin) {
         if (sender == null) {
             return null;
@@ -259,50 +268,21 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
     }
 
     private boolean isAllowedSender(AllowedSender[] allowed, AllowedSender calleeKind, boolean proxied) {
-        if (allowed == null || allowed.length == 0) {
+        if (isAllowedSender(allowed, calleeKind)) {
             return true;
         }
-        for (AllowedSender a : allowed) {
-            if (a == AllowedSender.ANY) {
-                return true;
-            }
-            if (a == calleeKind) {
-                return true;
-            }
-            if (a == AllowedSender.PROXIED && proxied) {
-                return true;
+        if (proxied) {
+            for (AllowedSender a : allowed) {
+                if (a == AllowedSender.PROXIED) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    private String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
-        Set<AllowedSender> required = new LinkedHashSet<>();
-        if (allowed != null) {
-            required.addAll(Arrays.asList(allowed));
-        }
-        required.remove(AllowedSender.ANY);
-
-        if (required.isEmpty()) {
-            AllowedSender inferred = inferSenderFromType(targetType);
-            if (inferred != AllowedSender.ANY) {
-                required.add(inferred);
-            }
-        }
-
-        if (required.isEmpty()) {
-            return "This command cannot be used by this sender";
-        }
-
-        String messageBody = required.stream()
-                .map(this::describeSender)
-                .distinct()
-                .collect(Collectors.joining(" or "));
-
-        return "This command can only be used by " + messageBody;
-    }
-
-    private AllowedSender inferSenderFromType(Class<?> type) {
+    @Override
+    public AllowedSender inferSenderFromType(Class<?> type) {
         if (type.equals(Player.class)) {
             return AllowedSender.PLAYER;
         }
@@ -322,18 +302,6 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
             return AllowedSender.PROXIED;
         }
         return AllowedSender.ANY;
-    }
-
-    private String describeSender(AllowedSender sender) {
-        return switch (sender) {
-            case PLAYER -> "players";
-            case CONSOLE -> "console";
-            case BLOCK -> "command blocks";
-            case MINECART -> "command minecarts";
-            case PROXIED -> "proxied senders";
-            case REMOTE -> "remote console";
-            default -> "valid senders";
-        };
     }
 
     private PermissionDefault toBukkitDefault(MagicPermissionDefault defaultValue) {

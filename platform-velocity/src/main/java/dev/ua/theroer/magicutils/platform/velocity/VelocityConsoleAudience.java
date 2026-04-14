@@ -1,12 +1,10 @@
 package dev.ua.theroer.magicutils.platform.velocity;
 
-import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
 import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
 import dev.ua.theroer.magicutils.logger.LogLevel;
 import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Console audience that routes messages through an SLF4J logger with proper levels.
  */
 final class VelocityConsoleAudience implements StructuredConsoleAudience {
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     private final Logger baseLogger;
     private final String baseLoggerName;
@@ -33,11 +30,7 @@ final class VelocityConsoleAudience implements StructuredConsoleAudience {
         if (component == null) {
             return;
         }
-        String plain = PLAIN.serialize(component);
-        ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-        String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
-        Logger logger = resolveLogger(loggerName);
-        logWithLevel(logger, parsed.level(), parsed.message());
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
     }
 
     @Override
@@ -45,11 +38,9 @@ final class VelocityConsoleAudience implements StructuredConsoleAudience {
         if (component == null || metadata == null) {
             return;
         }
-        Component stripped = ComponentPrefixStripper.stripPrefix(component, metadata.mainPrefixText());
-        stripped = ComponentPrefixStripper.stripPrefix(stripped, metadata.subLoggerPrefix());
         String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
         Logger logger = resolveLogger(loggerName);
-        logWithLevel(logger, metadata.level(), PLAIN.serialize(stripped));
+        logWithLevel(logger, metadata.level(), ConsoleColorSerializer.serialize(component));
     }
 
     @Override

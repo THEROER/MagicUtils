@@ -285,6 +285,27 @@ public class ConfigManager {
         return loadConfig(instance, metadata, Collections.emptySet());
     }
 
+    /**
+     * Loads a config with one retry on ConcurrentModificationException.
+     * <p>
+     * If a user-supplied Map/List in the config instance throws CME during the first
+     * iteration (a transient state, e.g. another thread mutating it), retry once —
+     * the second attempt typically succeeds because the new document load replaces
+     * the field values before iteration is needed again.
+     */
+    private <T> LoadResult loadConfigWithRetry(T instance, ConfigMetadata metadata, Set<String> sections) throws Exception {
+        try {
+            return loadConfig(instance, metadata, sections);
+        } catch (java.util.ConcurrentModificationException firstCme) {
+            try {
+                return loadConfig(instance, metadata, sections);
+            } catch (java.util.ConcurrentModificationException secondCme) {
+                secondCme.addSuppressed(firstCme);
+                throw secondCme;
+            }
+        }
+    }
+
     private <T> LoadResult loadConfig(T instance, ConfigMetadata metadata, Set<String> sections) throws Exception {
         File configFile = metadata.resolveFile(platform.configDir());
         boolean created = false;
@@ -456,10 +477,6 @@ public class ConfigManager {
                 }
             }
         }
-    }
-
-    private void processFields(Object instance, ConfigDocument document, Class<?> clazz) throws Exception {
-        processFields(instance, document, clazz, "", Collections.emptySet());
     }
 
     private void processFields(Object instance, ConfigDocument document, Class<?> clazz,
@@ -1573,7 +1590,6 @@ public class ConfigManager {
      * @param configClass config type to monitor
      * @param listener callback receiving updated instance and changed sections
      */
-    @SuppressWarnings("unchecked")
     public <T> void onChange(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
         subscribeChanges(configClass, listener);
     }
@@ -1726,7 +1742,10 @@ public class ConfigManager {
         synchronized (entry.monitor) {
             try {
                 long beforeReload = entry.file.exists() ? entry.file.lastModified() : -1L;
-                LoadResult loadResult = loadConfig(entry.instance, entry.metadata, sections);
+                // Always mutate in-place: the instance reference returned from register()
+                // is part of the public contract — consumers hold it and expect getter
+                // calls to see live data without re-fetching.
+                LoadResult loadResult = loadConfigWithRetry(entry.instance, entry.metadata, sections);
                 entry.schemaVersion = loadResult.schemaVersion();
 
                 entry.lastModified.set(beforeReload);

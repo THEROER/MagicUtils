@@ -61,20 +61,22 @@ public final class LogDispatcher {
      * @param target LogTarget describing where to deliver
      */
     public static void deliver(Platform platform, Component component, Collection<Audience> recipients, LogTarget target) {
-        deliver(platform, component, recipients, target, null);
+        deliver(platform, component, component, recipients, target, null);
     }
 
     /**
      * Sends the component to console and/or chat in a thread-safe way.
      *
      * @param platform platform adapter
-     * @param component message component to send
+     * @param chatComponent component for chat delivery (includes prefixes)
+     * @param consoleComponent component for console delivery (no prefixes — logger name carries that)
      * @param recipients resolved chat recipients (ignored for console-only)
      * @param target LogTarget describing where to deliver
      * @param consoleMetadata structured console metadata when available
      */
     public static void deliver(Platform platform,
-                               Component component,
+                               Component chatComponent,
+                               Component consoleComponent,
                                Collection<Audience> recipients,
                                LogTarget target,
                                ConsoleMessageMetadata consoleMetadata) {
@@ -86,9 +88,9 @@ public final class LogDispatcher {
             Audience console = platform.console();
             if (console != null) {
                 if (console instanceof StructuredConsoleAudience structured && consoleMetadata != null) {
-                    structured.sendConsole(component, consoleMetadata);
+                    structured.sendConsole(consoleComponent, consoleMetadata);
                 } else {
-                    console.send(component);
+                    console.send(chatComponent);
                 }
             }
         }
@@ -97,7 +99,7 @@ public final class LogDispatcher {
             if (recipients == null || recipients.isEmpty()) {
                 return;
             }
-            Runnable deliver = () -> recipients.forEach(a -> a.send(component));
+            Runnable deliver = () -> recipients.forEach(a -> a.send(chatComponent));
             if (platform.isMainThread()) {
                 deliver.run();
             } else {

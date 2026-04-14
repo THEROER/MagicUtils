@@ -950,65 +950,142 @@ public abstract class MagicCommand {
             this.delegate = CommandSpec.builder(name);
         }
 
+        /**
+         * Sets the command description.
+         *
+         * @param description description text
+         * @return this builder
+         */
         public Builder<S> description(String description) {
             delegate.description(description);
             return this;
         }
 
+        /**
+         * Sets the command aliases.
+         *
+         * @param aliases list of aliases
+         * @return this builder
+         */
         public Builder<S> aliases(String... aliases) {
             delegate.aliases(aliases);
             return this;
         }
 
+        /**
+         * Sets the required permission node.
+         *
+         * @param permission permission node
+         * @return this builder
+         */
         public Builder<S> permission(String permission) {
             delegate.permission(permission);
             return this;
         }
 
+        /**
+         * Sets the default permission state.
+         *
+         * @param permissionDefault default permission
+         * @return this builder
+         */
         public Builder<S> permissionDefault(MagicPermissionDefault permissionDefault) {
             delegate.permissionDefault(permissionDefault);
             return this;
         }
 
+        /**
+         * Sets the execution threading mode.
+         *
+         * @param threading execution threading mode
+         * @return this builder
+         */
         public Builder<S> threading(CommandThreading threading) {
             delegate.threading(threading);
             return this;
         }
 
+        /**
+         * Adds a command argument.
+         *
+         * @param argument command argument
+         * @return this builder
+         */
         public Builder<S> argument(CommandArgument argument) {
             delegate.argument(argument);
             return this;
         }
 
+        /**
+         * Sets the list of command arguments.
+         *
+         * @param arguments list of arguments
+         * @return this builder
+         */
         public Builder<S> arguments(List<CommandArgument> arguments) {
             delegate.arguments(arguments);
             return this;
         }
 
+        /**
+         * Sets the command executor.
+         *
+         * @param executor command executor
+         * @return this builder
+         */
         public Builder<S> execute(CommandExecutor<S> executor) {
             delegate.execute(executor);
             return this;
         }
 
+        /**
+         * Adds a subcommand.
+         *
+         * @param subCommand subcommand specification
+         * @return this builder
+         */
         public Builder<S> subCommand(SubCommandSpec<S> subCommand) {
             delegate.subCommand(subCommand);
             return this;
         }
 
+        /**
+         * Mounts another MagicCommand to this command.
+         *
+         * @param command command to mount
+         * @return this builder
+         */
         public Builder<S> mount(MagicCommand command) {
             mountedCommands.add(new MountedCommand(null, command));
             return this;
         }
 
+        /**
+         * Mounts another MagicCommand to a specific sub-path.
+         *
+         * @param route sub-path route
+         * @param command command to mount
+         * @return this builder
+         */
         public Builder<S> mount(String route, MagicCommand command) {
             mountedCommands.add(new MountedCommand(route, command));
             return this;
         }
 
+        /**
+         * Builds the command specification.
+         *
+         * @return command specification
+         */
         public CommandSpec<S> buildSpec() {
             return delegate.build();
         }
 
+        /**
+         * Builds the MagicCommand instance.
+         *
+         * @return MagicCommand instance
+         */
         public MagicCommand build() {
             MagicCommand command = fromSpec(buildSpec());
             for (MountedCommand mountedCommand : mountedCommands) {

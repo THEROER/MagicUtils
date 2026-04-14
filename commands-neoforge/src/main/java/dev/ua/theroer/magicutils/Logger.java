@@ -1,8 +1,8 @@
 package dev.ua.theroer.magicutils;
 
 import dev.ua.theroer.magicutils.config.ConfigManager;
-import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import dev.ua.theroer.magicutils.logger.LogBuilder;
 import dev.ua.theroer.magicutils.logger.LogLevel;
 import dev.ua.theroer.magicutils.logger.LogMethods;
@@ -75,74 +75,136 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
         this(platform, manager, null, null);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public LoggerCore getCore() {
         return core;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, PrefixedLogger> getPrefixedLoggers() {
         return prefixedLoggers;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PrefixedLogger buildPrefixedLogger(PrefixedLoggerCore core) {
         return new PrefixedLogger(this, core);
     }
 
+    /**
+     * Creates a log builder with INFO level.
+     *
+     * @return log builder
+     */
     public LogBuilder log() {
         return new LogBuilder(this, LogLevel.INFO);
     }
 
+    /**
+     * Creates a log builder without mod prefix.
+     *
+     * @return log builder
+     */
     public LogBuilder noPrefix() {
         return new LogBuilder(this, LogLevel.INFO).noPrefix();
     }
 
+    /**
+     * Creates a log builder with INFO level.
+     *
+     * @return log builder
+     */
     public LogBuilder info() {
         return new LogBuilder(this, LogLevel.INFO);
     }
 
+    /**
+     * Creates a log builder with WARN level.
+     *
+     * @return log builder
+     */
     public LogBuilder warn() {
         return new LogBuilder(this, LogLevel.WARN);
     }
 
+    /**
+     * Creates a log builder with ERROR level.
+     *
+     * @return log builder
+     */
     public LogBuilder error() {
         return new LogBuilder(this, LogLevel.ERROR);
     }
 
+    /**
+     * Creates a log builder with DEBUG level.
+     *
+     * @return log builder
+     */
     public LogBuilder debug() {
         return new LogBuilder(this, LogLevel.DEBUG);
     }
 
+    /**
+     * Creates a log builder with SUCCESS level.
+     *
+     * @return log builder
+     */
     public LogBuilder success() {
         return new LogBuilder(this, LogLevel.SUCCESS);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void send(LogLevel level, Object message) {
         send(level, message, null, null, getDefaultTarget(), false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void send(LogLevel level, Object message, ServerPlayer player) {
         send(level, message, player, null, LogTarget.CHAT, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void send(LogLevel level, Object message, ServerPlayer player, boolean all) {
         send(level, message, player, null, getDefaultTarget(), all);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void sendToConsole(LogLevel level, Object message) {
         send(level, message, null, null, LogTarget.CONSOLE, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void sendToPlayers(LogLevel level, Object message, Collection<? extends ServerPlayer> players) {
         send(level, message, null, players, LogTarget.CHAT, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Audience wrapAudience(ServerPlayer player) {
         return player != null ? new NeoForgePlayerAudience(player) : null;
@@ -198,7 +260,7 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
     /**
      * Console audience that routes messages through SLF4J with proper log levels.
      */
-    private static final class NeoForgeConsoleAudienceLogger implements Audience {
+    private static final class NeoForgeConsoleAudienceLogger implements StructuredConsoleAudience {
         private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
         private final PlatformLogger logger;
@@ -214,19 +276,23 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
             if (component == null) {
                 return;
             }
-            String plain = PLAIN.serialize(component);
+            sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
+        }
+
+        @Override
+        public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+            if (component == null || metadata == null) {
+                return;
+            }
             if (baseLoggerName == null) {
                 if (logger != null) {
-                    logger.info(plain);
+                    logWithPlatformLogger(logger, metadata.level(), PLAIN.serialize(component));
                 }
                 return;
             }
-            ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-            Component stripped = ComponentPrefixStripper.stripPrefix(component, parsed.prefixText());
-            String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
+            String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
             org.slf4j.Logger slf4j = LoggerFactory.getLogger(loggerName);
-            String rendered = PLAIN.serialize(stripped);
-            logWithLevel(slf4j, parsed.level(), rendered);
+            logWithLevel(slf4j, metadata.level(), PLAIN.serialize(component));
         }
 
         @Override
@@ -239,6 +305,22 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
                 return baseName;
             }
             return baseName + "-" + subLogger.trim().replaceAll("\\s+", "-");
+        }
+
+        private void logWithPlatformLogger(PlatformLogger platformLogger, LogLevel level, String message) {
+            if (platformLogger == null) {
+                return;
+            }
+            if (level == null) {
+                platformLogger.info(message);
+                return;
+            }
+            switch (level) {
+                case WARN -> platformLogger.warn(message);
+                case ERROR -> platformLogger.error(message);
+                case DEBUG, TRACE -> platformLogger.debug(message);
+                case SUCCESS, INFO -> platformLogger.info(message);
+            }
         }
 
         private void logWithLevel(org.slf4j.Logger slf4j, LogLevel level, String message) {

@@ -11,7 +11,6 @@ import net.minecraft.server.MinecraftServer;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -62,36 +61,78 @@ public final class NeoForgeBootstrap {
             this.serverSupplier = serverSupplier != null ? serverSupplier : () -> null;
         }
 
+        /**
+         * Sets the platform provider.
+         *
+         * @param platform platform provider
+         * @return this builder
+         */
         public Builder platform(Platform platform) {
             this.platform = platform;
             return this;
         }
 
+        /**
+         * Sets the SLF4J logger.
+         *
+         * @param slf4j SLF4J logger
+         * @return this builder
+         */
         public Builder slf4j(org.slf4j.Logger slf4j) {
             this.slf4j = slf4j;
             return this;
         }
 
+        /**
+         * Sets the custom configuration directory.
+         *
+         * @param configDir config directory path
+         * @return this builder
+         */
         public Builder configDir(Path configDir) {
             this.configDir = configDir;
             return this;
         }
 
+        /**
+         * Sets the custom configuration manager.
+         *
+         * @param configManager config manager
+         * @return this builder
+         */
         public Builder configManager(ConfigManager configManager) {
             this.configManager = configManager;
             return this;
         }
 
+        /**
+         * Sets the custom logger instance.
+         *
+         * @param logger logger instance
+         * @return this builder
+         */
         public Builder logger(Logger logger) {
             this.logger = logger;
             return this;
         }
 
+        /**
+         * Sets the custom language manager.
+         *
+         * @param languageManager language manager
+         * @return this builder
+         */
         public Builder languageManager(LanguageManager languageManager) {
             this.languageManager = languageManager;
             return this;
         }
 
+        /**
+         * Sets the default language.
+         *
+         * @param language language code
+         * @return this builder
+         */
         public Builder language(String language) {
             if (language != null && !language.isBlank()) {
                 this.language = language;
@@ -99,51 +140,110 @@ public final class NeoForgeBootstrap {
             return this;
         }
 
+        /**
+         * Sets whether to initialize the language manager.
+         *
+         * @param initLanguage true to initialize
+         * @return this builder
+         */
         public Builder initLanguage(boolean initLanguage) {
             this.initLanguage = initLanguage;
             return this;
         }
 
+        /**
+         * Sets whether to bind the logger to the language manager.
+         *
+         * @param bindLoggerLanguage true to bind
+         * @return this builder
+         */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
             this.bindLoggerLanguage = bindLoggerLanguage;
             return this;
         }
 
+        /**
+         * Sets whether to set the global messages manager.
+         *
+         * @param setMessagesManager true to set
+         * @return this builder
+         */
         public Builder setMessagesManager(boolean setMessagesManager) {
             this.setMessagesManager = setMessagesManager;
             return this;
         }
 
+        /**
+         * Sets whether to register messages for the mod.
+         *
+         * @param registerMessages true to register
+         * @return this builder
+         */
         public Builder registerMessages(boolean registerMessages) {
             this.registerMessages = registerMessages;
             return this;
         }
 
+        /**
+         * Sets whether to add default MagicUtils messages.
+         *
+         * @param addMagicUtilsMessages true to add
+         * @return this builder
+         */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
             this.addMagicUtilsMessages = addMagicUtilsMessages;
             return this;
         }
 
+        /**
+         * Sets the translations configurer.
+         *
+         * @param translations translations configurer
+         * @return this builder
+         */
         public Builder translations(Consumer<LanguageManager> translations) {
             this.translations = translations;
             return this;
         }
 
+        /**
+         * Enables command support.
+         *
+         * @return this builder
+         */
         public Builder enableCommands() {
             this.enableCommands = true;
             return this;
         }
 
+        /**
+         * Sets the permission prefix for commands.
+         *
+         * @param permissionPrefix permission prefix
+         * @return this builder
+         */
         public Builder permissionPrefix(String permissionPrefix) {
             this.permissionPrefix = permissionPrefix;
             return this;
         }
 
+        /**
+         * Sets the default OP level for command permissions.
+         *
+         * @param opLevel OP level (0-4)
+         * @return this builder
+         */
         public Builder opLevel(int opLevel) {
             this.opLevel = opLevel;
             return this;
         }
 
+        /**
+         * Sets the command registry configurer.
+         *
+         * @param commandConfigurer command configurer
+         * @return this builder
+         */
         public Builder configureCommands(Consumer<CommandRegistry> commandConfigurer) {
             this.commandConfigurer = commandConfigurer;
             return this;
@@ -296,6 +396,11 @@ public final class NeoForgeBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+        /**
+         * Converts this runtime result to a simple result.
+         *
+         * @return bootstrap result
+         */
         public Result result() {
             return new Result(platform, configManager, logger, languageManager, commandRegistry);
         }

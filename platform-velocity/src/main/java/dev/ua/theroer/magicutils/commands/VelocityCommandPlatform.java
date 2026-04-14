@@ -136,19 +136,8 @@ final class VelocityCommandPlatform implements CommandPlatform<CommandSource> {
         return AllowedSender.ANY;
     }
 
-    private boolean isAllowedSender(AllowedSender[] allowed, AllowedSender senderKind) {
-        if (allowed == null || allowed.length == 0) {
-            return true;
-        }
-        for (AllowedSender item : allowed) {
-            if (item == AllowedSender.ANY || item == senderKind) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
+    @Override
+    public String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
         String expected = targetType != null ? targetType.getSimpleName() : "unknown";
         if (allowed == null || allowed.length == 0) {
             return "Sender type mismatch. Expected: " + expected;

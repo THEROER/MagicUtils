@@ -18,8 +18,8 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.common")
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val moduleNameMap = project.extensions.extraProperties.get("moduleNameMap") as? Map<*, *>
+        val moduleName = moduleNameMap?.get(project.name) as? String ?: project.name
 
         with(project) {
 
@@ -93,6 +93,11 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
 
             bundleLibProjects.forEach { dep ->
                 project.dependencies.add("bundleShadow", project(dep.path))
+            }
+            bundleShadedProjects.forEach { dep ->
+                val depProject = project(dep.path)
+                val depDependency = project.dependencies.add("bundleShadow", depProject) as org.gradle.api.artifacts.ProjectDependency
+                depDependency.targetConfiguration = "shadedElements"
             }
             bundleNamedProjects.forEach { dep ->
                 val depProject = project(dep.path)

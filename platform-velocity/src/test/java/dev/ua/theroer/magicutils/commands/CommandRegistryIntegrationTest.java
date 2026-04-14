@@ -103,6 +103,7 @@ class CommandRegistryIntegrationTest {
 
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute() {
             return CommandResult.success("ok");
         }

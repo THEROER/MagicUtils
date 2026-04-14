@@ -127,6 +127,7 @@ class BrigadierCommandRegistryTest {
 
     @CommandInfo(name = "demo", threading = CommandThreading.MAIN)
     private static final class DemoCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("target") String target,
                                      @OptionalArgument @ParamName("seconds") Integer seconds) {
             return CommandResult.success(target + ":" + seconds);
@@ -146,6 +147,7 @@ class BrigadierCommandRegistryTest {
 
     @CommandInfo(name = "flags")
     private static final class FlagOptionCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@Option(longNames = {"force"}, flag = true) boolean force,
                                      @ParamName("target") String target) {
             return CommandResult.success(target + ":" + force);
@@ -154,6 +156,7 @@ class BrigadierCommandRegistryTest {
 
     @CommandInfo(name = "opts")
     private static final class ValueOptionCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@Option(shortNames = {"a"}, longNames = {"amount"}) Integer amount,
                                      @ParamName("target") String target) {
             return CommandResult.success(target + ":" + amount);
@@ -162,6 +165,7 @@ class BrigadierCommandRegistryTest {
 
     @CommandInfo(name = "aliasdemo")
     private static final class LiteralAliasCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("target") String target) {
             return CommandResult.success(target);
         }

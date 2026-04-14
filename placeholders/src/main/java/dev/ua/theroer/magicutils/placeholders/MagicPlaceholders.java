@@ -162,6 +162,9 @@ public final class MagicPlaceholders {
 
     private static final Map<PlaceholderKey, PlaceholderResolver> PLACEHOLDERS = new ConcurrentHashMap<>();
     private static final Map<String, PlaceholderResolver> GLOBAL_PLACEHOLDERS = new ConcurrentHashMap<>();
+    // Thread-safe: synchronizedMap guards all single-key operations (get, computeIfAbsent, remove).
+    // No iteration over LOCAL_PLACEHOLDERS occurs — only point lookups. Inner maps are ConcurrentHashMap.
+    // WeakHashMap allows automatic cleanup when owner objects are garbage collected.
     private static final Map<Object, Map<String, PlaceholderResolver>> LOCAL_PLACEHOLDERS =
             Collections.synchronizedMap(new WeakHashMap<>());
     private static final Map<String, NamespaceMeta> NAMESPACES = new ConcurrentHashMap<>();

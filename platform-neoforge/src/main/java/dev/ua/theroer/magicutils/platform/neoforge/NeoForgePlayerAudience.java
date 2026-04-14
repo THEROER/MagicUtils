@@ -4,6 +4,7 @@ import dev.ua.theroer.magicutils.platform.Audience;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -35,7 +36,7 @@ public final class NeoForgePlayerAudience implements Audience {
         if (player == null || component == null) {
             return;
         }
-        net.minecraft.network.chat.Component nativeComponent = NeoForgeComponentSerializer.toNative(component);
+        net.minecraft.network.chat.Component nativeComponent = Objects.requireNonNull(NeoForgeComponentSerializer.toNative(component), "nativeComponent");
         player.sendSystemMessage(nativeComponent);
     }
 

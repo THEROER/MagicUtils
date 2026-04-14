@@ -34,19 +34,6 @@ public class PrefixedLoggerCore {
     }
 
     /**
-     * Applies prefix formatting to a message.
-     *
-     * @param message original message
-     * @return formatted message
-     */
-    public Object formatMessage(Object message) {
-        if (message instanceof String) {
-            return prefix + " " + message;
-        }
-        return message;
-    }
-
-    /**
      * Sends a message using the prefixed logger.
      *
      * @param level log level
@@ -69,12 +56,14 @@ public class PrefixedLoggerCore {
         }
         logger.send(
                 level,
-                formatMessage(message),
+                message,
                 audience,
                 audiences,
                 target,
                 broadcast,
-                new ConsoleMessageMetadata(level, null, name, prefix),
+                new ConsoleMessageMetadata(level, name),
+                prefix,
+                null,
                 placeholders
         );
     }
@@ -159,12 +148,14 @@ public class PrefixedLoggerCore {
             }
             logger.send(
                     level,
-                    formatMessage(message),
+                    message,
                     getAudience(),
                     audienceRecipients,
                     finalTarget,
                     isBroadcast(),
-                    new ConsoleMessageMetadata(level, null, name, prefix),
+                    new ConsoleMessageMetadata(level, name),
+                    prefix,
+                    getPrefixOverride(),
                     placeholders
             );
         }

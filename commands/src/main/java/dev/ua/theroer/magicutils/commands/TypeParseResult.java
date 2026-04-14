@@ -16,8 +16,11 @@ public record TypeParseResult<T>(@NotNull Status status, @Nullable T value) {
      * Detailed parsing states.
      */
     public enum Status {
+        /** Argument parsed successfully. */
         SUCCESS,
+        /** Argument was not provided in the input. */
         MISSING,
+        /** Argument was provided but failed validation or parsing. */
         INVALID
     }
 

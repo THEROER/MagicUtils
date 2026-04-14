@@ -3,7 +3,6 @@ package dev.ua.theroer.magicutils.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.commands.brigadier.BrigadierCommandRegistry;
-import dev.ua.theroer.magicutils.commands.brigadier.BrigadierCommandRegistry.BrigadierArgumentShape;
 import dev.ua.theroer.magicutils.commands.parsers.PlayerTypeParser;
 import dev.ua.theroer.magicutils.commands.parsers.WorldTypeParser;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
@@ -17,7 +16,6 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

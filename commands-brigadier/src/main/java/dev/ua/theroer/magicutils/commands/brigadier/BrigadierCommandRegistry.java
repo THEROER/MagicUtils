@@ -132,30 +132,69 @@ public class BrigadierCommandRegistry<S> {
             }
         }
 
+        /**
+         * Creates a shape from a standard Brigadier argument type.
+         *
+         * @param argumentType Brigadier argument type
+         * @return argument shape
+         */
         public static BrigadierArgumentShape of(ArgumentType<?> argumentType) {
             return new BrigadierArgumentShape(argumentType, false, List.of());
         }
 
+        /**
+         * Creates a shape that uses native Brigadier suggestions for this argument.
+         *
+         * @param argumentType Brigadier argument type
+         * @return argument shape
+         */
         public static BrigadierArgumentShape nativeSuggestions(ArgumentType<?> argumentType) {
             return new BrigadierArgumentShape(argumentType, true, List.of());
         }
 
+        /**
+         * Returns the underlying Brigadier argument type.
+         *
+         * @return argument type
+         */
         public ArgumentType<?> argumentType() {
             return argumentType;
         }
 
+        /**
+         * Returns whether to use native suggestions.
+         *
+         * @return true for native suggestions
+         */
         public boolean useNativeSuggestions() {
             return useNativeSuggestions;
         }
 
+        /**
+         * Returns the list of literal alternatives for this argument.
+         *
+         * @return literal alternatives
+         */
         public List<String> literalAlternatives() {
             return literalAlternatives;
         }
 
+        /**
+         * Returns a new shape with an added literal alternative.
+         *
+         * @param literal literal value
+         * @return new shape
+         */
         public BrigadierArgumentShape withLiteralAlternative(String literal) {
             return withLiteralAlternatives(List.of(literal));
         }
 
+        /**
+         * Returns a new shape with added literal alternatives.
+         *
+         * @param literals literal values
+         * @return new shape
+         */
         public BrigadierArgumentShape withLiteralAlternatives(String... literals) {
             if (literals == null || literals.length == 0) {
                 return this;
@@ -163,6 +202,12 @@ public class BrigadierCommandRegistry<S> {
             return withLiteralAlternatives(Arrays.asList(literals));
         }
 
+        /**
+         * Returns a new shape with added literal alternatives.
+         *
+         * @param literals literal values
+         * @return new shape
+         */
         public BrigadierArgumentShape withLiteralAlternatives(List<String> literals) {
             if (literals == null || literals.isEmpty()) {
                 return this;
@@ -185,10 +230,18 @@ public class BrigadierCommandRegistry<S> {
     public static final class BrigadierArgumentRegistry<S> {
         private final List<BrigadierArgumentResolver<S>> resolvers = new CopyOnWriteArrayList<>();
 
+        /**
+         * Creates a new Brigadier argument registry with default resolvers.
+         */
         public BrigadierArgumentRegistry() {
             registerDefaultResolvers();
         }
 
+        /**
+         * Registers a custom argument resolver.
+         *
+         * @param resolver argument resolver
+         */
         public void register(BrigadierArgumentResolver<S> resolver) {
             if (resolver == null) {
                 return;
@@ -197,6 +250,12 @@ public class BrigadierCommandRegistry<S> {
             resolvers.sort((left, right) -> Integer.compare(right.priority(), left.priority()));
         }
 
+        /**
+         * Resolves a Brigadier shape for a command argument.
+         *
+         * @param argument command argument metadata
+         * @return argument shape
+         */
         public BrigadierArgumentShape resolve(CommandArgument argument) {
             for (BrigadierArgumentResolver<S> resolver : resolvers) {
                 BrigadierArgumentShape shape = resolver.resolve(argument);

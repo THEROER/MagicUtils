@@ -71,11 +71,27 @@ public class PrefixedLogger extends PrefixedLoggerMethods implements PrefixedLog
         }
 
         @Override
-        public void send(Object message, Object... placeholders) {
+        protected void performSend(Object message, Object... placeholders) {
             if (!core.isEnabled()) {
                 return;
             }
-            super.send(core.formatMessage(message), placeholders);
+            LogTarget finalTarget = getTarget() != null ? getTarget() : logger.getCore().getDefaultTarget();
+            Collection<? extends dev.ua.theroer.magicutils.platform.Audience> audienceRecipients = null;
+            if (!getRecipients().isEmpty()) {
+                audienceRecipients = getRecipients();
+            }
+            logger.getCore().send(
+                    level,
+                    message,
+                    getAudience(),
+                    audienceRecipients,
+                    finalTarget,
+                    isBroadcast(),
+                    new ConsoleMessageMetadata(level, core.getName()),
+                    core.getPrefix(),
+                    getPrefixOverride(),
+                    placeholders
+            );
         }
     }
 }

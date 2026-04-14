@@ -113,21 +113,33 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         this(proxy, LoggerFactory.getLogger("MagicUtils-Velocity"), DEFAULT_CONFIG_DIR, null);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Path configDir() {
         return configDir;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PlatformLogger logger() {
         return logger;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Audience console() {
         return consoleAudience;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Collection<Audience> onlinePlayers() {
         if (proxy == null) {
@@ -138,6 +150,9 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void runOnMain(Runnable task) {
         if (task == null) {
@@ -151,21 +166,33 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         proxy.getScheduler().buildTask(plugin, task).schedule();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isMainThread() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ThreadContext threadContext() {
         return ThreadContext.UNKNOWN;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TaskScheduler scheduler() {
         return taskScheduler;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void registerShutdownHook(Runnable hook) {
         if (hook == null) {
@@ -184,6 +211,9 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void unregisterShutdownHook(Runnable hook) {
         if (hook == null) {
@@ -192,6 +222,9 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         SHUTDOWN_HOOKS.remove(hook);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
         if (listener == null || proxy == null || plugin == null) {
@@ -202,6 +235,9 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         return () -> playerMessageListeners.remove(listener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
         if (listener == null || proxy == null || plugin == null) {
@@ -274,6 +310,11 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         ));
     }
 
+    /**
+     * Handles player post-login event.
+     *
+     * @param event post-login event
+     */
     @Subscribe
     public void onPostLogin(PostLoginEvent event) {
         if (event == null || event.getPlayer() == null) {
@@ -286,6 +327,11 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         ));
     }
 
+    /**
+     * Handles player chat event.
+     *
+     * @param event player chat event
+     */
     @Subscribe
     public void onPlayerChat(PlayerChatEvent event) {
         if (event == null || event.getPlayer() == null || playerMessageListeners.isEmpty()) {
@@ -299,6 +345,11 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         ));
     }
 
+    /**
+     * Handles command execute event.
+     *
+     * @param event command execute event
+     */
     @Subscribe(order = PostOrder.LAST)
     public void onCommandExecute(CommandExecuteEvent event) {
         if (event == null || playerMessageListeners.isEmpty() || !event.getResult().isAllowed()) {

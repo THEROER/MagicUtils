@@ -49,20 +49,6 @@ public class LoggerCore extends LoggerCoreMethods {
     @Getter @Setter
     private LanguageManager languageManager;
 
-    @Getter @Setter
-    private PrefixMode chatPrefixMode = PrefixMode.FULL;
-    @Getter @Setter
-    private PrefixMode consolePrefixMode = PrefixMode.SHORT;
-    @Getter @Setter
-    private String customPrefix = "[UAP]";
-
-    @Getter @Setter
-    private LogTarget defaultTarget = LogTarget.BOTH;
-    @Getter @Setter
-    private boolean consoleStripFormatting = false;
-    @Getter @Setter
-    private boolean consoleUseGradient = false;
-
     @Getter
     private final MiniMessage miniMessage = MiniMessage.builder().strict(false).build();
     private final Map<String, PrefixedLoggerCore> prefixedLoggers = new ConcurrentHashMap<>();
@@ -101,10 +87,7 @@ public class LoggerCore extends LoggerCoreMethods {
         loadConfiguration();
         configManager.save(LoggerConfig.class);
 
-        configManager.onChange(LoggerConfig.class, (cfg, sections) -> {
-            config = cfg;
-            loadConfiguration();
-        });
+        configManager.onChange(LoggerConfig.class, (cfg, sections) -> loadConfiguration());
     }
 
     /**
@@ -428,26 +411,40 @@ public class LoggerCore extends LoggerCoreMethods {
               boolean broadcast,
               @Nullable ConsoleMessageMetadata consoleMetadata,
               Object... placeholders) {
+        send(level, message, audience, audiences, target, broadcast, consoleMetadata, null, null, placeholders);
+    }
+
+    void send(LogLevel level,
+              Object message,
+              @Nullable Audience audience,
+              @Nullable Collection<? extends Audience> audiences,
+              LogTarget target,
+              boolean broadcast,
+              @Nullable ConsoleMessageMetadata consoleMetadata,
+              @Nullable String subLoggerPrefix,
+              @Nullable PrefixMode prefixOverride,
+              Object... placeholders) {
         LogMessageFormatter.FormattedMessage formatted = LogMessageFormatter.formatDetailed(
                 this,
                 message,
                 level,
                 target,
-                null,
+                prefixOverride,
+                subLoggerPrefix,
                 audience,
                 audiences,
                 placeholders
         );
         Collection<Audience> recipients = LogDispatcher.determineRecipients(audience, audiences, broadcast, target, platform);
         ConsoleMessageMetadata resolvedMetadata = consoleMetadata != null
-                ? consoleMetadata.withMainPrefixText(formatted.prefixText())
-                : new ConsoleMessageMetadata(level, formatted.prefixText(), null, null);
-        LogDispatcher.deliver(platform, formatted.component(), recipients, target, resolvedMetadata);
+                ? consoleMetadata
+                : new ConsoleMessageMetadata(level, null);
+        LogDispatcher.deliver(platform, formatted.chatComponent(), formatted.consoleComponent(), recipients, target, resolvedMetadata);
     }
 
     @Override
     protected void send(LogLevel level, Object message) {
-        send(level, message, null, null, defaultTarget, false);
+        send(level, message, null, null, getDefaultTarget(), false);
     }
 
     @Override
@@ -457,7 +454,7 @@ public class LoggerCore extends LoggerCoreMethods {
 
     @Override
     protected void send(LogLevel level, Object message, Audience player, boolean all) {
-        send(level, message, player, null, defaultTarget, all);
+        send(level, message, player, null, getDefaultTarget(), all);
     }
 
     @Override
@@ -486,26 +483,64 @@ public class LoggerCore extends LoggerCoreMethods {
         return cfg.resolveColors(level, forConsole);
     }
 
+    /**
+     * Returns the chat prefix mode from the active configuration.
+     *
+     * @return chat prefix mode
+     */
+    public PrefixMode getChatPrefixMode() {
+        return config != null ? config.getChatPrefixMode() : PrefixMode.FULL;
+    }
+
+    /**
+     * Returns the console prefix mode from the active configuration.
+     *
+     * @return console prefix mode
+     */
+    public PrefixMode getConsolePrefixMode() {
+        return config != null ? config.getConsolePrefixMode() : PrefixMode.SHORT;
+    }
+
+    /**
+     * Returns the custom prefix text from the active configuration.
+     *
+     * @return custom prefix string
+     */
+    public String getCustomPrefix() {
+        return config != null ? config.getCustomPrefix() : "[UAP]";
+    }
+
+    /**
+     * Returns the default log target from the active configuration.
+     *
+     * @return default log target
+     */
+    public LogTarget getDefaultTarget() {
+        return config != null ? config.getDefaultTarget() : LogTarget.BOTH;
+    }
+
+    /**
+     * Returns whether console formatting should be stripped from messages.
+     *
+     * @return true if console formatting is stripped
+     */
+    public boolean isConsoleStripFormatting() {
+        return config != null && config.isConsoleStripFormatting();
+    }
+
+    /**
+     * Returns whether console messages should use gradient coloring.
+     *
+     * @return true if console gradient is enabled
+     */
+    public boolean isConsoleUseGradient() {
+        return config != null && config.isConsoleUseGradient();
+    }
+
     private void loadConfiguration() {
         if (config == null) {
             return;
         }
-
-        if (config.getPrefix() != null) {
-            chatPrefixMode = config.getChatPrefixMode();
-            consolePrefixMode = config.getConsolePrefixMode();
-            customPrefix = config.getPrefix().getCustom();
-            consoleUseGradient = config.getPrefix().isUseGradientConsole();
-        }
-
-        if (config.getDefaults() != null) {
-            defaultTarget = config.getDefaultTarget();
-        }
-
-        if (config.getConsole() != null) {
-            consoleStripFormatting = config.getConsole().isStripFormatting();
-        }
-
         loadSubLoggers();
         updatePlaceholderDebug();
     }

@@ -109,6 +109,7 @@ class MagicCommandCompositionTest {
         private String lastTarget;
         private String lastTempTarget;
 
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("target") String target) {
             this.lastTarget = target;
             return CommandResult.success(target);

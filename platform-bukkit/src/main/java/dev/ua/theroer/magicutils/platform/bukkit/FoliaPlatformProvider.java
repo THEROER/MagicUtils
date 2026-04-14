@@ -13,10 +13,18 @@ import java.util.Collection;
 import java.util.Objects;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Platform provider for Folia (region-based Bukkit).
+ */
 public final class FoliaPlatformProvider implements Platform, ShutdownHookRegistrar {
     private final JavaPlugin plugin;
     private final BukkitPlatformProvider delegate;
 
+    /**
+     * Creates a new Folia platform provider.
+     *
+     * @param plugin the plugin instance
+     */
     public FoliaPlatformProvider(JavaPlugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.delegate = new BukkitPlatformProvider(plugin);

@@ -90,7 +90,6 @@ public class TypeParserRegistry<S> {
      * @return the parsed object or null if no suitable parser found
      */
     @Nullable
-    @SuppressWarnings("unchecked")
     public <T> T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull S sender) {
         TypeParseResult<T> result = parseDetailed(value, targetType, sender);
         if (result.isSuccess() || result.isMissing()) {

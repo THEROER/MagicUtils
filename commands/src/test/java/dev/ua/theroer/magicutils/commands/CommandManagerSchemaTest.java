@@ -11,7 +11,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CommandManagerSchemaTest {
 
@@ -55,6 +54,7 @@ class CommandManagerSchemaTest {
 
     @CommandInfo(name = "demo", aliases = {"d"})
     private static final class DemoCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("target") String target) {
             return CommandResult.success(target);
         }
@@ -99,6 +99,7 @@ class CommandManagerSchemaTest {
             this.name = name;
         }
 
+        @SuppressWarnings("unused")
         private TestSender grant(String permission) {
             permissions.add(permission);
             return this;

@@ -1,15 +1,16 @@
 package dev.ua.theroer.magicutils.platform.fabric;
 
-import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
+import dev.ua.theroer.magicutils.logger.LogLevel;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 /**
  * Plain console audience that logs serialized text through PlatformLogger.
  */
-final class FabricPlainConsoleAudience implements Audience {
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+final class FabricPlainConsoleAudience implements StructuredConsoleAudience {
 
     private final PlatformLogger logger;
 
@@ -22,7 +23,25 @@ final class FabricPlainConsoleAudience implements Audience {
         if (component == null || logger == null) {
             return;
         }
-        logger.info(PLAIN.serialize(component));
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
+    }
+
+    @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || logger == null) {
+            return;
+        }
+        String rendered = ConsoleColorSerializer.serialize(component);
+        if (metadata == null || metadata.level() == null) {
+            logger.info(rendered);
+            return;
+        }
+        switch (metadata.level()) {
+            case WARN -> logger.warn(rendered);
+            case ERROR -> logger.error(rendered);
+            case DEBUG, TRACE -> logger.debug(rendered);
+            case SUCCESS, INFO -> logger.info(rendered);
+        }
     }
 
     @Override

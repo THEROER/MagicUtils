@@ -5,6 +5,9 @@ package dev.ua.theroer.magicutils.platform;
  */
 @FunctionalInterface
 public interface ListenerSubscription extends AutoCloseable {
+    /**
+     * A no-op listener subscription that does nothing when closed.
+     */
     ListenerSubscription NOOP = () -> {
     };
 

@@ -1,14 +1,12 @@
 package dev.ua.theroer.magicutils.platform.fabric;
 
-import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
 import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
 import dev.ua.theroer.magicutils.logger.LogLevel;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.LoggerFactory;
 
 import org.slf4j.Logger;
@@ -18,7 +16,6 @@ import org.slf4j.Logger;
  */
 public final class FabricConsoleAudience implements StructuredConsoleAudience {
     private static final ANSIComponentSerializer ANSI = ANSIComponentSerializer.ansi();
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     private final PlatformLogger logger;
     private final String baseLoggerName;
@@ -48,19 +45,7 @@ public final class FabricConsoleAudience implements StructuredConsoleAudience {
         if (component == null) {
             return;
         }
-        String plain = PLAIN.serialize(component);
-        if (baseLoggerName == null) {
-            if (logger != null) {
-                logger.info(plain);
-            }
-            return;
-        }
-        ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-        Component stripped = ComponentPrefixStripper.stripPrefix(component, parsed.prefixText());
-        String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
-        Logger slf4j = LoggerFactory.getLogger(loggerName);
-        String rendered = ANSI.serialize(stripped);
-        logWithLevel(slf4j, parsed.level(), rendered);
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
     }
 
     @Override
@@ -68,17 +53,15 @@ public final class FabricConsoleAudience implements StructuredConsoleAudience {
         if (component == null || metadata == null) {
             return;
         }
-        Component stripped = ComponentPrefixStripper.stripPrefix(component, metadata.mainPrefixText());
-        stripped = ComponentPrefixStripper.stripPrefix(stripped, metadata.subLoggerPrefix());
         if (baseLoggerName == null) {
             if (logger != null) {
-                logWithPlatformLogger(logger, metadata.level(), PlainTextComponentSerializer.plainText().serialize(stripped));
+                logWithPlatformLogger(logger, metadata.level(), ConsoleColorSerializer.serialize(component));
             }
             return;
         }
         String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
         Logger slf4j = LoggerFactory.getLogger(loggerName);
-        String rendered = ANSI.serialize(stripped);
+        String rendered = ANSI.serialize(component);
         logWithLevel(slf4j, metadata.level(), rendered);
     }
 

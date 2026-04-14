@@ -14,6 +14,14 @@ public final class ResolvedSubCommandNode {
     private final List<ResolvedSubCommandNode> children;
     private final ResolvedCommandAction action;
 
+    /**
+     * Creates a new resolved subcommand node.
+     *
+     * @param name subcommand name
+     * @param aliases subcommand aliases
+     * @param children list of child subcommand nodes
+     * @param action executable action for this node (can be null)
+     */
     public ResolvedSubCommandNode(String name,
                                   List<String> aliases,
                                   List<ResolvedSubCommandNode> children,
@@ -24,22 +32,47 @@ public final class ResolvedSubCommandNode {
         this.action = action;
     }
 
+    /**
+     * Returns an empty root node.
+     *
+     * @return empty root
+     */
     public static ResolvedSubCommandNode root() {
         return ROOT;
     }
 
+    /**
+     * Returns the subcommand name.
+     *
+     * @return subcommand name
+     */
     public String name() {
         return name;
     }
 
+    /**
+     * Returns the subcommand aliases.
+     *
+     * @return list of aliases
+     */
     public List<String> aliases() {
         return Collections.unmodifiableList(aliases);
     }
 
+    /**
+     * Returns the child subcommand nodes.
+     *
+     * @return child nodes
+     */
     public List<ResolvedSubCommandNode> children() {
         return Collections.unmodifiableList(children);
     }
 
+    /**
+     * Returns the executable action for this node.
+     *
+     * @return executable action or null
+     */
     public ResolvedCommandAction action() {
         return action;
     }

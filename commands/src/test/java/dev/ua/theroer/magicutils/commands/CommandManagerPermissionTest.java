@@ -84,6 +84,7 @@ class CommandManagerPermissionTest {
         private boolean executed;
         private String lastSecret;
 
+        @SuppressWarnings("unused")
         public CommandResult execute(@Permission(node = "secret") String secret) {
             this.executed = true;
             this.lastSecret = secret;

@@ -4,20 +4,12 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Structured console metadata used to preserve logger routing without parsing plain text.
+ * 
+ * @param level the log level of the message
+ * @param subLoggerName the name of the sub-logger, or null for the root logger
  */
 public record ConsoleMessageMetadata(
         LogLevel level,
-        @Nullable String mainPrefixText,
-        @Nullable String subLoggerName,
-        @Nullable String subLoggerPrefix
+        @Nullable String subLoggerName
 ) {
-    /**
-     * Returns a copy with the resolved main logger prefix text.
-     *
-     * @param prefixText rendered primary prefix
-     * @return updated metadata
-     */
-    public ConsoleMessageMetadata withMainPrefixText(@Nullable String prefixText) {
-        return new ConsoleMessageMetadata(level, prefixText, subLoggerName, subLoggerPrefix);
-    }
 }

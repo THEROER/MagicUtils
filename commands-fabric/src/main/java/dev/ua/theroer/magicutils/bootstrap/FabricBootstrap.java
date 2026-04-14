@@ -11,7 +11,6 @@ import net.minecraft.server.MinecraftServer;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 

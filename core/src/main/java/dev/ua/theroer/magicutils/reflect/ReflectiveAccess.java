@@ -17,6 +17,12 @@ public final class ReflectiveAccess {
     private ReflectiveAccess() {
     }
 
+    /**
+     * Attempts to load a class by its fully qualified name.
+     *
+     * @param className the name of the class to load
+     * @return an Optional containing the class if found, otherwise empty
+     */
     public static Optional<Class<?>> loadClass(String className) {
         if (className == null || className.isBlank()) {
             return Optional.empty();
@@ -28,6 +34,13 @@ public final class ReflectiveAccess {
         }
     }
 
+    /**
+     * Attempts to load the first available class from a list of names.
+     * Useful for handling different environment-specific class names (e.g., Yarn vs Mojang mappings).
+     *
+     * @param classNames list of class names to try
+     * @return an Optional containing the first successfully loaded class, otherwise empty
+     */
     public static Optional<Class<?>> loadFirstAvailable(String... classNames) {
         if (classNames == null || classNames.length == 0) {
             return Optional.empty();
@@ -41,6 +54,15 @@ public final class ReflectiveAccess {
         return Optional.empty();
     }
 
+    /**
+     * Attempts to find a public method in the given type.
+     * The method is automatically made accessible.
+     *
+     * @param type the class to search in
+     * @param name the name of the method
+     * @param parameterTypes the parameter types of the method
+     * @return an Optional containing the method if found, otherwise empty
+     */
     public static Optional<Method> publicMethod(Class<?> type, String name, Class<?>... parameterTypes) {
         if (type == null || name == null || name.isBlank()) {
             return Optional.empty();
@@ -54,6 +76,13 @@ public final class ReflectiveAccess {
         }
     }
 
+    /**
+     * Finds the first public method in the given type that matches the predicate.
+     *
+     * @param type the class to search in
+     * @param predicate the condition to match
+     * @return an Optional containing the first matching method, otherwise empty
+     */
     public static Optional<Method> firstMethod(
             Class<?> type,
             Predicate<Method> predicate
@@ -71,6 +100,14 @@ public final class ReflectiveAccess {
         return Optional.empty();
     }
 
+    /**
+     * Attempts to find a public field in the given type by its name.
+     * The field is automatically made accessible.
+     *
+     * @param type the class to search in
+     * @param name the name of the field
+     * @return an Optional containing the field if found, otherwise empty
+     */
     public static Optional<Field> publicField(Class<?> type, String name) {
         if (type == null || name == null || name.isBlank()) {
             return Optional.empty();
@@ -84,6 +121,13 @@ public final class ReflectiveAccess {
         }
     }
 
+    /**
+     * Finds the first public static field in the given type that matches the predicate.
+     *
+     * @param type the class to search in
+     * @param predicate the condition to match
+     * @return an Optional containing the first matching field, otherwise empty
+     */
     public static Optional<Field> firstPublicStaticField(
             Class<?> type,
             Predicate<Field> predicate
@@ -105,6 +149,13 @@ public final class ReflectiveAccess {
         return Optional.empty();
     }
 
+    /**
+     * Reads the value of a field from a target object.
+     *
+     * @param field the field to read
+     * @param target the object instance (null for static fields)
+     * @return an Optional containing the field value if read successfully, otherwise empty
+     */
     public static Optional<Object> readField(Field field, Object target) {
         if (field == null) {
             return Optional.empty();
@@ -116,6 +167,14 @@ public final class ReflectiveAccess {
         }
     }
 
+    /**
+     * Invokes a method on a target object with the given arguments.
+     *
+     * @param method the method to invoke
+     * @param target the object instance (null for static methods)
+     * @param args the arguments for the invocation
+     * @return an Optional containing the invocation result if successful, otherwise empty
+     */
     public static Optional<Object> invoke(Method method, Object target, Object... args) {
         if (method == null) {
             return Optional.empty();
@@ -127,6 +186,15 @@ public final class ReflectiveAccess {
         }
     }
 
+    /**
+     * Casts an object to the expected type safely.
+     * Handles primitive-to-wrapper conversions.
+     *
+     * @param value the object to cast
+     * @param expectedType the class to cast to
+     * @param <T> the target type
+     * @return an Optional containing the casted value if successful, otherwise empty
+     */
     public static <T> Optional<T> cast(Object value, Class<T> expectedType) {
         if (value == null || expectedType == null) {
             return Optional.empty();
@@ -140,6 +208,14 @@ public final class ReflectiveAccess {
         return Optional.of(castValue);
     }
 
+    /**
+     * Creates a predicate to match a method signature.
+     *
+     * @param name the method name (null to ignore)
+     * @param returnType the return type (null to ignore)
+     * @param params the parameter types
+     * @return a predicate for method matching
+     */
     public static Predicate<Method> signature(
             String name,
             Class<?> returnType,

@@ -122,6 +122,7 @@ class CommandRegistryIntegrationTest {
 
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute() {
             return CommandResult.success("ok");
         }
@@ -129,6 +130,7 @@ class CommandRegistryIntegrationTest {
 
     @CommandInfo(name = "nativeplayer")
     private static final class NativePlayerCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("player") ServerPlayerEntity player) {
             return CommandResult.success(player.getName().getString());
         }
@@ -212,6 +214,7 @@ class CommandRegistryIntegrationTest {
         return logger;
     }
 
+    @SuppressWarnings("deprecation")
     private static void putObject(sun.misc.Unsafe unsafe,
                                   Class<?> type,
                                   Object target,

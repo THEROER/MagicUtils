@@ -23,6 +23,12 @@ public final class LegacyTextSerializerAdapter implements TextSerializationAdapt
     private final Method toJsonTreeMethod;
     private final String resolvedClassName;
 
+    /**
+     * Creates a new instance of LegacyTextSerializerAdapter.
+     * Searches for Text serializer classes and reflective methods for JSON conversion.
+     * 
+     * @throws IllegalStateException if the serializer class or methods are not found
+     */
     public LegacyTextSerializerAdapter() {
         Class<?> serializerClass = ReflectiveAccess.loadFirstAvailable(SERIALIZER_CLASS_NAMES)
                 .orElseThrow(() -> new IllegalStateException("Legacy Text serializer class not found"));

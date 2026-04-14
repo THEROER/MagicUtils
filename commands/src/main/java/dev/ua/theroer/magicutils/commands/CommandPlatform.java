@@ -2,6 +2,11 @@ package dev.ua.theroer.magicutils.commands;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * Platform hooks required by the command engine.
  *
@@ -104,5 +109,85 @@ public interface CommandPlatform<S> {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns a human-readable description of the given sender kind.
+     *
+     * @param sender sender kind
+     * @return description
+     */
+    default String describeSender(AllowedSender sender) {
+        return switch (sender) {
+            case PLAYER -> "players";
+            case CONSOLE -> "console";
+            case BLOCK -> "command blocks";
+            case MINECART -> "command minecarts";
+            case PROXIED -> "proxied senders";
+            case REMOTE -> "remote console";
+            default -> "valid senders";
+        };
+    }
+
+    /**
+     * Checks if the caller's sender kind is in the allowed list.
+     *
+     * @param allowed allowed sender kinds (null/empty means all)
+     * @param calleeKind the caller's sender kind
+     * @return true if allowed
+     */
+    default boolean isAllowedSender(AllowedSender[] allowed, AllowedSender calleeKind) {
+        if (allowed == null || allowed.length == 0) {
+            return true;
+        }
+        for (AllowedSender a : allowed) {
+            if (a == AllowedSender.ANY || a == calleeKind) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Infers the expected sender kind from a parameter type.
+     *
+     * @param type parameter type
+     * @return inferred sender kind or {@link AllowedSender#ANY}
+     */
+    default AllowedSender inferSenderFromType(Class<?> type) {
+        return AllowedSender.ANY;
+    }
+
+    /**
+     * Builds a human-readable error message when the sender doesn't match.
+     *
+     * @param targetType the expected parameter type
+     * @param allowed allowed sender kinds
+     * @return error message
+     */
+    default String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
+        Set<AllowedSender> required = new LinkedHashSet<>();
+        if (allowed != null) {
+            required.addAll(Arrays.asList(allowed));
+        }
+        required.remove(AllowedSender.ANY);
+
+        if (required.isEmpty()) {
+            AllowedSender inferred = inferSenderFromType(targetType);
+            if (inferred != AllowedSender.ANY) {
+                required.add(inferred);
+            }
+        }
+
+        if (required.isEmpty()) {
+            return "This command cannot be used by this sender";
+        }
+
+        String messageBody = required.stream()
+                .map(this::describeSender)
+                .distinct()
+                .collect(Collectors.joining(" or "));
+
+        return "This command can only be used by " + messageBody;
     }
 }

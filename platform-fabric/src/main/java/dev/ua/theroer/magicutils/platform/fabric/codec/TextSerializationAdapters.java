@@ -5,10 +5,21 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utility class for detecting and creating appropriate {@link TextSerializationAdapter} instances.
+ */
 public final class TextSerializationAdapters {
     private TextSerializationAdapters() {
     }
 
+    /**
+     * Detects the best available text serialization adapter for the current environment.
+     * Tries modern {@link YarnTextCodecsAdapter} first, then falls back to {@link LegacyTextSerializerAdapter}.
+     *
+     * @param logger the logger to report detection progress and errors (can be null)
+     * @return a working {@link TextSerializationAdapter}
+     * @throws IllegalStateException if no supported serializer is found
+     */
     public static TextSerializationAdapter detect(Logger logger) {
         List<String> attempts = new ArrayList<>();
         try {

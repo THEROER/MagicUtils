@@ -112,21 +112,33 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         this(proxy, proxy != null ? proxy.getLogger() : null, DEFAULT_CONFIG_DIR, null);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Path configDir() {
         return configDir;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PlatformLogger logger() {
         return logger;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Audience console() {
         return consoleAudience;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Collection<Audience> onlinePlayers() {
         if (proxy == null) {
@@ -137,6 +149,9 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void runOnMain(Runnable task) {
         if (task == null) {
@@ -150,21 +165,33 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         proxy.getScheduler().schedule(plugin, task, 0L, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isMainThread() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ThreadContext threadContext() {
         return ThreadContext.UNKNOWN;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TaskScheduler scheduler() {
         return taskScheduler;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void registerShutdownHook(Runnable hook) {
         if (hook == null) {
@@ -180,6 +207,9 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void unregisterShutdownHook(Runnable hook) {
         if (hook == null) {
@@ -188,6 +218,9 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         SHUTDOWN_HOOKS.remove(hook);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
         if (listener == null || proxy == null || plugin == null) {
@@ -198,6 +231,9 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         return () -> playerMessageListeners.remove(listener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
         if (listener == null || proxy == null || plugin == null) {
@@ -208,6 +244,11 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         return () -> playerLifecycleListeners.remove(listener);
     }
 
+    /**
+     * Handles player post-login event.
+     *
+     * @param event Bungee event
+     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPostLogin(PostLoginEvent event) {
         if (event == null || event.getPlayer() == null) {
@@ -220,6 +261,11 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         ));
     }
 
+    /**
+     * Handles player disconnect event.
+     *
+     * @param event Bungee event
+     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDisconnect(PlayerDisconnectEvent event) {
         if (event == null || event.getPlayer() == null) {
@@ -235,6 +281,11 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         ));
     }
 
+    /**
+     * Handles player chat/command event.
+     *
+     * @param event Bungee event
+     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(ChatEvent event) {
         if (event == null || event.isCancelled() || playerMessageListeners.isEmpty()) {

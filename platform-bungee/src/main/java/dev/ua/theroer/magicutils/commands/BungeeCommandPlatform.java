@@ -24,7 +24,7 @@ final class BungeeCommandPlatform implements CommandPlatform<CommandSender> {
         if (source == null) {
             return null;
         }
-        return new BungeeMagicSender(source, proxy);
+        return new BungeeMagicSender(source);
     }
 
     @Override
@@ -87,7 +87,7 @@ final class BungeeCommandPlatform implements CommandPlatform<CommandSender> {
             return sender;
         }
         if (targetType.equals(MagicSender.class)) {
-            return new BungeeMagicSender(sender, proxy);
+            return new BungeeMagicSender(sender);
         }
         if (targetType.equals(ProxiedPlayer.class)) {
             if (sender instanceof ProxiedPlayer player) {
@@ -128,15 +128,14 @@ final class BungeeCommandPlatform implements CommandPlatform<CommandSender> {
     }
 
     private boolean isAllowedSender(AllowedSender[] allowed, AllowedSender senderKind, boolean proxied) {
-        if (allowed == null || allowed.length == 0) {
+        if (isAllowedSender(allowed, senderKind)) {
             return true;
         }
-        for (AllowedSender item : allowed) {
-            if (item == AllowedSender.ANY || item == senderKind) {
-                return true;
-            }
-            if (item == AllowedSender.PROXIED && proxied) {
-                return true;
+        if (proxied) {
+            for (AllowedSender a : allowed) {
+                if (a == AllowedSender.PROXIED) {
+                    return true;
+                }
             }
         }
         return false;
@@ -152,7 +151,8 @@ final class BungeeCommandPlatform implements CommandPlatform<CommandSender> {
         return !(sender instanceof ProxiedPlayer);
     }
 
-    private String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
+    @Override
+    public String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
         String expected = targetType != null ? targetType.getSimpleName() : "unknown";
         if (allowed == null || allowed.length == 0) {
             return "Sender type mismatch. Expected: " + expected;
@@ -171,12 +171,10 @@ final class BungeeCommandPlatform implements CommandPlatform<CommandSender> {
 
     private static final class BungeeMagicSender implements MagicSender {
         private final CommandSender source;
-        private final ProxyServer proxy;
         private final Audience audience;
 
-        private BungeeMagicSender(CommandSender source, ProxyServer proxy) {
+        private BungeeMagicSender(CommandSender source) {
             this.source = source;
-            this.proxy = proxy;
             this.audience = new BungeeSourceAudience(source);
         }
 

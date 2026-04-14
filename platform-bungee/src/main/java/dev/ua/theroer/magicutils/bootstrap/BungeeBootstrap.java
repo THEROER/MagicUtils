@@ -66,36 +66,78 @@ public final class BungeeBootstrap {
             this.dataDirectory = plugin.getDataFolder() != null ? plugin.getDataFolder().toPath() : null;
         }
 
+        /**
+         * Sets the custom platform implementation.
+         *
+         * @param platform platform implementation
+         * @return this builder
+         */
         public Builder platform(Platform platform) {
             this.platform = platform;
             return this;
         }
 
+        /**
+         * Sets the custom data directory.
+         *
+         * @param dataDirectory data directory path
+         * @return this builder
+         */
         public Builder dataDirectory(Path dataDirectory) {
             this.dataDirectory = dataDirectory;
             return this;
         }
 
+        /**
+         * Sets the backing JUL logger.
+         *
+         * @param jul logger instance
+         * @return this builder
+         */
         public Builder logger(Logger jul) {
             this.jul = jul;
             return this;
         }
 
+        /**
+         * Sets the custom configuration manager.
+         *
+         * @param configManager configuration manager
+         * @return this builder
+         */
         public Builder configManager(ConfigManager configManager) {
             this.configManager = configManager;
             return this;
         }
 
+        /**
+         * Sets the custom logger core.
+         *
+         * @param logger logger core
+         * @return this builder
+         */
         public Builder loggerCore(LoggerCore logger) {
             this.logger = logger;
             return this;
         }
 
+        /**
+         * Sets the custom language manager.
+         *
+         * @param languageManager language manager
+         * @return this builder
+         */
         public Builder languageManager(LanguageManager languageManager) {
             this.languageManager = languageManager;
             return this;
         }
 
+        /**
+         * Sets the default language.
+         *
+         * @param language language code (e.g., "en")
+         * @return this builder
+         */
         public Builder language(String language) {
             if (language != null && !language.isBlank()) {
                 this.language = language;
@@ -103,61 +145,130 @@ public final class BungeeBootstrap {
             return this;
         }
 
+        /**
+         * Sets whether to initialize the language manager.
+         *
+         * @param initLanguage true to initialize
+         * @return this builder
+         */
         public Builder initLanguage(boolean initLanguage) {
             this.initLanguage = initLanguage;
             return this;
         }
 
+        /**
+         * Sets whether to bind the logger to the language manager.
+         *
+         * @param bindLoggerLanguage true to bind
+         * @return this builder
+         */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
             this.bindLoggerLanguage = bindLoggerLanguage;
             return this;
         }
 
+        /**
+         * Sets whether to set the global messages manager.
+         *
+         * @param setMessagesManager true to set
+         * @return this builder
+         */
         public Builder setMessagesManager(boolean setMessagesManager) {
             this.setMessagesManager = setMessagesManager;
             return this;
         }
 
+        /**
+         * Sets whether to register messages for the plugin.
+         *
+         * @param registerMessages true to register
+         * @return this builder
+         */
         public Builder registerMessages(boolean registerMessages) {
             this.registerMessages = registerMessages;
             return this;
         }
 
+        /**
+         * Sets whether to add default MagicUtils messages.
+         *
+         * @param addMagicUtilsMessages true to add
+         * @return this builder
+         */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
             this.addMagicUtilsMessages = addMagicUtilsMessages;
             return this;
         }
 
+        /**
+         * Sets the translations consumer for additional language setup.
+         *
+         * @param translations translations configurer
+         * @return this builder
+         */
         public Builder translations(Consumer<LanguageManager> translations) {
             this.translations = translations;
             return this;
         }
 
+        /**
+         * Enables command support for the plugin.
+         *
+         * @return this builder
+         */
         public Builder enableCommands() {
             this.enableCommands = true;
             return this;
         }
 
+        /**
+         * Sets the permission prefix for registered commands.
+         *
+         * @param permissionPrefix permission prefix
+         * @return this builder
+         */
         public Builder permissionPrefix(String permissionPrefix) {
             this.permissionPrefix = permissionPrefix;
             return this;
         }
 
+        /**
+         * Sets the async executor for commands.
+         *
+         * @param asyncExecutor async executor
+         * @return this builder
+         */
         public Builder asyncExecutor(Executor asyncExecutor) {
             this.asyncExecutor = asyncExecutor;
             return this;
         }
 
+        /**
+         * Sets the command registry configurer.
+         *
+         * @param commandConfigurer command configurer
+         * @return this builder
+         */
         public Builder configureCommands(Consumer<CommandRegistry> commandConfigurer) {
             this.commandConfigurer = commandConfigurer;
             return this;
         }
 
+        /**
+         * Builds the bootstrap result.
+         *
+         * @return bootstrap result
+         */
         public Result build() {
             RuntimeResult runtimeResult = buildRuntime();
             return runtimeResult.result();
         }
 
+        /**
+         * Builds the bootstrap result and starts the runtime.
+         *
+         * @return runtime result
+         */
         public RuntimeResult buildRuntime() {
             Prepared prepared = prepare();
             MagicRuntime runtime = MagicRuntime.builder(
@@ -252,6 +363,15 @@ public final class BungeeBootstrap {
         }
     }
 
+    /**
+     * Result of Bungee bootstrap.
+     *
+     * @param platform platform provider
+     * @param configManager configuration manager
+     * @param logger logger core
+     * @param languageManager language manager
+     * @param commandRegistry command registry (nullable if disabled)
+     */
     public record Result(
             Platform platform,
             ConfigManager configManager,
@@ -261,6 +381,16 @@ public final class BungeeBootstrap {
     ) {
     }
 
+    /**
+     * Result of Bungee bootstrap including the runtime instance.
+     *
+     * @param runtime magic runtime instance
+     * @param platform platform provider
+     * @param configManager configuration manager
+     * @param logger logger core
+     * @param languageManager language manager
+     * @param commandRegistry command registry (nullable if disabled)
+     */
     public record RuntimeResult(
             MagicRuntime runtime,
             Platform platform,
@@ -269,6 +399,11 @@ public final class BungeeBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+        /**
+         * Converts this runtime result to a simple result.
+         *
+         * @return bootstrap result
+         */
         public Result result() {
             return new Result(platform, configManager, logger, languageManager, commandRegistry);
         }

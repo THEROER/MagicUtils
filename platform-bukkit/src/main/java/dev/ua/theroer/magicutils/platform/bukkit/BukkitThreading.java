@@ -7,6 +7,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Utility for handling cross-platform threading between standard Bukkit and Folia.
+ */
 public final class BukkitThreading {
     private static final boolean FOLIA = detectFolia();
     private static final Method BUKKIT_GET_GLOBAL_REGION_SCHEDULER = resolveBukkitMethod(
@@ -35,10 +38,21 @@ public final class BukkitThreading {
     private BukkitThreading() {
     }
 
+    /**
+     * Checks if the current runtime is Folia (region-based threading).
+     *
+     * @return true if Folia, false otherwise
+     */
     public static boolean isFoliaRuntime() {
         return FOLIA;
     }
 
+    /**
+     * Runs a task on the global main thread (or global region in Folia).
+     *
+     * @param plugin plugin instance
+     * @param task task to run
+     */
     public static void runGlobal(JavaPlugin plugin, Runnable task) {
         if (plugin == null || task == null) {
             return;
@@ -61,6 +75,14 @@ public final class BukkitThreading {
         );
     }
 
+    /**
+     * Runs a task on the region owning the given entity.
+     * Falls back to global region if Folia is not present or entity is null.
+     *
+     * @param plugin plugin instance
+     * @param entity entity to use for region targeting
+     * @param task task to run
+     */
     public static void runEntity(JavaPlugin plugin, Entity entity, Runnable task) {
         if (plugin == null || task == null) {
             return;
@@ -92,6 +114,13 @@ public final class BukkitThreading {
         runGlobal(plugin, task);
     }
 
+    /**
+     * Runs a task for the given command sender, targeting their region if they are an entity.
+     *
+     * @param plugin plugin instance
+     * @param sender sender to target
+     * @param task task to run
+     */
     public static void runForSender(JavaPlugin plugin, CommandSender sender, Runnable task) {
         if (sender instanceof Entity entity) {
             runEntity(plugin, entity, task);
@@ -100,6 +129,13 @@ public final class BukkitThreading {
         runGlobal(plugin, task);
     }
 
+    /**
+     * Checks if the given entity is owned by the current region.
+     * Always returns true on standard Bukkit if on the primary thread.
+     *
+     * @param entity entity to check
+     * @return true if owned by current region
+     */
     public static boolean isOwnedByCurrentRegion(Entity entity) {
         if (entity == null) {
             return false;

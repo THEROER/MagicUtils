@@ -141,6 +141,7 @@ class CommandRegistryIntegrationTest {
 
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute(@Permission(node = "secret") String secret) {
             return CommandResult.success(secret);
         }
@@ -148,6 +149,7 @@ class CommandRegistryIntegrationTest {
 
     @CommandInfo(name = "failing")
     private static final class FailingCommand extends MagicCommand {
+        @SuppressWarnings("unused")
         public CommandResult execute() {
             return CommandResult.failure(false);
         }

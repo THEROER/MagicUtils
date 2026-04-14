@@ -376,6 +376,7 @@ public final class MagicWebSocketClient implements AutoCloseable {
         private PlatformLogger logger;
         private HttpClientConfig config;
         private HttpClientConfig.LoggingSettings logging;
+        @SuppressWarnings("unused")
         private ObjectMapper mapper;
         private String baseUrl;
         private String userAgent;

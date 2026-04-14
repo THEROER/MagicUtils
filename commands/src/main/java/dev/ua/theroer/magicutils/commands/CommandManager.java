@@ -1397,7 +1397,7 @@ public class CommandManager<S> {
                 // Flags are options, not positional arguments, handled elsewhere
                 continue;
             } else {
-                userInputArguments.add(new ArgumentInfo(i, arg));
+                userInputArguments.add(new ArgumentInfo(arg));
             }
         }
 
@@ -1516,13 +1516,10 @@ public class CommandManager<S> {
     }
 
 
-    // Helper class to track argument info with original indices
     private static class ArgumentInfo {
-        final int originalIndex;
         final CommandArgument argument;
 
-        ArgumentInfo(int originalIndex, CommandArgument argument) {
-            this.originalIndex = originalIndex;
+        ArgumentInfo(CommandArgument argument) {
             this.argument = argument;
         }
     }

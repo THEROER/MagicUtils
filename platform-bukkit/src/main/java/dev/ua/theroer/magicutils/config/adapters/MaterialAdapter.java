@@ -10,6 +10,12 @@ import java.util.Locale;
  * Supports both namespaced keys (minecraft:shears) and enum names (SHEARS).
  */
 public final class MaterialAdapter implements ConfigValueAdapter<Material> {
+    /**
+     * Creates a new instance of MaterialAdapter.
+     */
+    public MaterialAdapter() {
+    }
+
     @Override
     public Material deserialize(Object value) {
         if (value == null) {

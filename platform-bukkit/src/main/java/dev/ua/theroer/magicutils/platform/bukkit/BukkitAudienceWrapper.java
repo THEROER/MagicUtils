@@ -26,6 +26,12 @@ public class BukkitAudienceWrapper implements Audience {
         this(null, sender);
     }
 
+    /**
+     * Wrap a {@link CommandSender} as an {@link Audience} with a specific plugin context.
+     *
+     * @param plugin plugin instance for threading context (can be null for sync-only)
+     * @param sender Bukkit command sender to wrap
+     */
     public BukkitAudienceWrapper(JavaPlugin plugin, CommandSender sender) {
         this.plugin = plugin;
         this.sender = sender;

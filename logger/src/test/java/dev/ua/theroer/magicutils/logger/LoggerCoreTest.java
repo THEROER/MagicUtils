@@ -74,21 +74,23 @@ class LoggerCoreTest {
     }
 
     @Test
-    void structuredConsoleAudienceKeepsLevelAndSubLoggerWithoutPlainTextParsing() {
+    void structuredConsoleAudienceKeepsLevelAndSubLoggerWithoutPlainTextParsing() throws Exception {
         TestPlatform platform = new TestPlatform(tempDir);
         ConfigManager configManager = new ConfigManager(platform);
         try {
             LoggerCore core = new LoggerCore(platform, configManager, new Object(), "TestPlugin");
-            core.setConsolePrefixMode(PrefixMode.NONE);
+            setConsolePrefixModeNone(core);
 
             core.debug().send("plain debug");
 
             ConsoleDelivery debugDelivery = platform.consoleAudience.lastDelivery();
             assertNotNull(debugDelivery);
             assertEquals(LogLevel.DEBUG, debugDelivery.metadata().level());
-            assertEquals("[TP DEBUG]", debugDelivery.metadata().mainPrefixText());
-            assertTrue(PlainTextComponentSerializer.plainText().serialize(debugDelivery.component())
-                    .endsWith("plain debug"));
+            // Console component should contain the message without prefix
+            String debugText = PlainTextComponentSerializer.plainText().serialize(debugDelivery.component());
+            assertTrue(debugText.contains("plain debug"));
+            // Console component should NOT contain prefix text
+            assertTrue(!debugText.contains("[TP"), "Console component should not contain prefix");
 
             PrefixedLoggerCore commands = core.withPrefix("Commands", "[Commands]");
             commands.debug().send("permission check");
@@ -97,7 +99,10 @@ class LoggerCoreTest {
             assertNotNull(commandDelivery);
             assertEquals(LogLevel.DEBUG, commandDelivery.metadata().level());
             assertEquals("Commands", commandDelivery.metadata().subLoggerName());
-            assertEquals("[Commands]", commandDelivery.metadata().subLoggerPrefix());
+            // Console component should contain only the message, no prefix
+            String cmdText = PlainTextComponentSerializer.plainText().serialize(commandDelivery.component());
+            assertTrue(cmdText.contains("permission check"));
+            assertTrue(!cmdText.contains("[Commands]"), "Console component should not contain sub-logger prefix");
         } finally {
             configManager.shutdown();
             platform.shutdown();
@@ -112,6 +117,15 @@ class LoggerCoreTest {
         Method method = LoggerCore.class.getDeclaredMethod("loadConfiguration");
         method.setAccessible(true);
         method.invoke(core);
+    }
+
+    private static void setConsolePrefixModeNone(LoggerCore core) throws Exception {
+        Field prefixField = core.getConfig().getClass().getDeclaredField("prefix");
+        prefixField.setAccessible(true);
+        Object prefixSettings = prefixField.get(core.getConfig());
+        Field consoleModeField = prefixSettings.getClass().getDeclaredField("consoleMode");
+        consoleModeField.setAccessible(true);
+        consoleModeField.set(prefixSettings, PrefixMode.NONE.name());
     }
 
     private static final class TestPlatform implements Platform, ConfigFormatProvider {
@@ -257,11 +271,4 @@ class LoggerCoreTest {
         }
     }
 
-    private enum NoOpAudience implements Audience {
-        INSTANCE;
-
-        @Override
-        public void send(Component component) {
-        }
-    }
 }

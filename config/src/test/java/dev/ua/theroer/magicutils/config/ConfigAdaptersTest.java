@@ -4,8 +4,6 @@ import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;

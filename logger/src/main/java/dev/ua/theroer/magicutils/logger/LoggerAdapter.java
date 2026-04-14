@@ -128,30 +128,12 @@ public interface LoggerAdapter<P, L> {
     }
 
     /**
-     * Sets chat prefix mode.
-     *
-     * @param mode prefix mode
-     */
-    default void setChatPrefixMode(PrefixMode mode) {
-        getCore().setChatPrefixMode(mode);
-    }
-
-    /**
      * Returns console prefix mode.
      *
      * @return console prefix mode
      */
     default PrefixMode getConsolePrefixMode() {
         return getCore().getConsolePrefixMode();
-    }
-
-    /**
-     * Sets console prefix mode.
-     *
-     * @param mode prefix mode
-     */
-    default void setConsolePrefixMode(PrefixMode mode) {
-        getCore().setConsolePrefixMode(mode);
     }
 
     /**
@@ -164,30 +146,12 @@ public interface LoggerAdapter<P, L> {
     }
 
     /**
-     * Sets custom prefix override.
-     *
-     * @param customPrefix prefix string
-     */
-    default void setCustomPrefix(String customPrefix) {
-        getCore().setCustomPrefix(customPrefix);
-    }
-
-    /**
      * Returns the default log target.
      *
      * @return default target
      */
     default LogTarget getDefaultTarget() {
         return getCore().getDefaultTarget();
-    }
-
-    /**
-     * Sets the default log target.
-     *
-     * @param target target
-     */
-    default void setDefaultTarget(LogTarget target) {
-        getCore().setDefaultTarget(target);
     }
 
     /**
@@ -200,30 +164,12 @@ public interface LoggerAdapter<P, L> {
     }
 
     /**
-     * Sets whether console formatting is stripped.
-     *
-     * @param consoleStripFormatting true to strip formatting
-     */
-    default void setConsoleStripFormatting(boolean consoleStripFormatting) {
-        getCore().setConsoleStripFormatting(consoleStripFormatting);
-    }
-
-    /**
      * Returns whether console gradients are enabled.
      *
      * @return true if gradients are enabled
      */
     default boolean isConsoleUseGradient() {
         return getCore().isConsoleUseGradient();
-    }
-
-    /**
-     * Sets whether console gradients are enabled.
-     *
-     * @param consoleUseGradient true to enable gradients
-     */
-    default void setConsoleUseGradient(boolean consoleUseGradient) {
-        getCore().setConsoleUseGradient(consoleUseGradient);
     }
 
     /**

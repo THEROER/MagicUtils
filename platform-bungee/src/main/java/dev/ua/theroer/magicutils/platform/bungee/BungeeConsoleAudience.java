@@ -1,12 +1,10 @@
 package dev.ua.theroer.magicutils.platform.bungee;
 
-import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
 import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
 import dev.ua.theroer.magicutils.logger.LogLevel;
 import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +15,6 @@ import java.util.logging.Logger;
  * JUL-backed console audience for BungeeCord.
  */
 final class BungeeConsoleAudience implements StructuredConsoleAudience {
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     private final Logger baseLogger;
     private final String baseLoggerName;
@@ -35,10 +32,7 @@ final class BungeeConsoleAudience implements StructuredConsoleAudience {
         if (component == null) {
             return;
         }
-        String plain = PLAIN.serialize(component);
-        ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-        String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
-        logWithLevel(resolveLogger(loggerName), parsed.level(), parsed.message());
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
     }
 
     @Override
@@ -46,10 +40,8 @@ final class BungeeConsoleAudience implements StructuredConsoleAudience {
         if (component == null || metadata == null) {
             return;
         }
-        Component stripped = ComponentPrefixStripper.stripPrefix(component, metadata.mainPrefixText());
-        stripped = ComponentPrefixStripper.stripPrefix(stripped, metadata.subLoggerPrefix());
         String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
-        logWithLevel(resolveLogger(loggerName), metadata.level(), PLAIN.serialize(stripped));
+        logWithLevel(resolveLogger(loggerName), metadata.level(), ConsoleColorSerializer.serialize(component));
     }
 
     @Override

@@ -27,6 +27,12 @@ public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
     private final Method encodeStartMethod;
     private final String resolvedClassName;
 
+    /**
+     * Creates a new instance of YarnTextCodecsAdapter.
+     * Reflectively locates and accesses the modern TextCodecs.CODEC.
+     *
+     * @throws IllegalStateException if the codec class or its fields/methods are not found
+     */
     public YarnTextCodecsAdapter() {
         Class<?> codecClass = ReflectiveAccess.loadFirstAvailable(CODEC_CLASS_NAMES)
                 .orElseThrow(() -> new IllegalStateException("TextCodecs class not found"));
@@ -73,7 +79,6 @@ public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
         if (text == null) {
             return null;
         }
-        @SuppressWarnings("unchecked")
         DynamicOps<JsonElement> ops = registries != null
                 ? (DynamicOps<JsonElement>) RegistryOps.of(JsonOps.INSTANCE, registries)
                 : JsonOps.INSTANCE;

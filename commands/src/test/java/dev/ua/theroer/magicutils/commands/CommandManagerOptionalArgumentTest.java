@@ -75,6 +75,7 @@ class CommandManagerOptionalArgumentTest {
         private boolean executed;
         private DemoAction lastAction;
 
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("action") @OptionalArgument DemoAction action) {
             this.executed = true;
             this.lastAction = action;
@@ -88,6 +89,7 @@ class CommandManagerOptionalArgumentTest {
         private DemoAction lastAction;
         private String lastTarget;
 
+        @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("action") @OptionalArgument DemoAction action,
                                      @ParamName("target") String target) {
             this.executed = true;

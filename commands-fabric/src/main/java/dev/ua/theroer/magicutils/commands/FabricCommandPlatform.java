@@ -10,11 +10,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Fabric-specific platform hooks for the command engine.
@@ -350,48 +346,8 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         return AllowedSender.CONSOLE;
     }
 
-    private boolean isAllowedSender(AllowedSender[] allowed, AllowedSender calleeKind) {
-        if (allowed == null || allowed.length == 0) {
-            return true;
-        }
-        for (AllowedSender a : allowed) {
-            if (a == AllowedSender.ANY) {
-                return true;
-            }
-            if (a == calleeKind) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
-        Set<AllowedSender> required = new LinkedHashSet<>();
-        if (allowed != null) {
-            required.addAll(Arrays.asList(allowed));
-        }
-        required.remove(AllowedSender.ANY);
-
-        if (required.isEmpty()) {
-            AllowedSender inferred = inferSenderFromType(targetType);
-            if (inferred != AllowedSender.ANY) {
-                required.add(inferred);
-            }
-        }
-
-        if (required.isEmpty()) {
-            return "This command cannot be used by this sender";
-        }
-
-        String messageBody = required.stream()
-                .map(this::describeSender)
-                .distinct()
-                .collect(Collectors.joining(" or "));
-
-        return "This command can only be used by " + messageBody;
-    }
-
-    private AllowedSender inferSenderFromType(Class<?> type) {
+    @Override
+    public AllowedSender inferSenderFromType(Class<?> type) {
         if (type.equals(ServerPlayerEntity.class)) {
             return AllowedSender.PLAYER;
         }
@@ -408,15 +364,4 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         return AllowedSender.ANY;
     }
 
-    private String describeSender(AllowedSender sender) {
-        return switch (sender) {
-            case PLAYER -> "players";
-            case CONSOLE -> "console";
-            case BLOCK -> "command blocks";
-            case MINECART -> "command minecarts";
-            case PROXIED -> "proxied senders";
-            case REMOTE -> "remote console";
-            default -> "valid senders";
-        };
-    }
 }
