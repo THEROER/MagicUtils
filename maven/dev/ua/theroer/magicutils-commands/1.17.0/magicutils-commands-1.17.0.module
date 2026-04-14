@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-commands",
+    "version": "1.17.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-logger",
+          "version": {
+            "requires": "1.17.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-commands-1.17.0-mc1.21.jar",
+          "url": "magicutils-commands-1.17.0-mc1.21.jar",
+          "size": 173615,
+          "sha512": "e28982dd15835889fc248396bbf116412bafb5ad2a7d02aa070b6250f802a5329d9c8e0d3b3cb46d4a409c29a9a80d7654c05422d2260c00205d93aef0b423bf",
+          "sha256": "989f5c6c507c4da794a7d6eb369d6696bd3a3638effc53b8758718a74cbc246a",
+          "sha1": "2a7b08657d128b05fa3e69601d7d475a097a2428",
+          "md5": "06bee9b12282713229f5140c96536b29"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-logger",
+          "version": {
+            "requires": "1.17.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-commands-1.17.0-mc1.21.jar",
+          "url": "magicutils-commands-1.17.0-mc1.21.jar",
+          "size": 173615,
+          "sha512": "e28982dd15835889fc248396bbf116412bafb5ad2a7d02aa070b6250f802a5329d9c8e0d3b3cb46d4a409c29a9a80d7654c05422d2260c00205d93aef0b423bf",
+          "sha256": "989f5c6c507c4da794a7d6eb369d6696bd3a3638effc53b8758718a74cbc246a",
+          "sha1": "2a7b08657d128b05fa3e69601d7d475a097a2428",
+          "md5": "06bee9b12282713229f5140c96536b29"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-1.17.0-sources.jar",
+          "url": "magicutils-commands-1.17.0-sources.jar",
+          "size": 76165,
+          "sha512": "1871aaafe2dd58804ff53b0a11296c40d1a8ea20f919826709e0636d6b2951827921349d5d7ce73e3220784bee2faea26478c4bfe525aecbf5290af49e2c5bc8",
+          "sha256": "d38d85ba3482e82a7778d4a8de4c7d36d6b740ce2bcf8a6ec7361440a0f1b993",
+          "sha1": "d660f1b9a951e69c94a0b8b4acdf9e0a52bc2993",
+          "md5": "62efcf8600dba600f59bc3bbdc0f4683"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-1.17.0-javadoc.jar",
+          "url": "magicutils-commands-1.17.0-javadoc.jar",
+          "size": 295159,
+          "sha512": "0c58cfd8277352f2fad5adbcec90babf20e9b8be858cdf08b52ce8b19300e7cfa16c3002be64ba7af65ce76aed641d48ad521242a8d4eb04c6b5072acb5b546e",
+          "sha256": "bbe869922ba7b659341f6dc1658422b7cb3d2e7215d803e43e20701f1e46c7f2",
+          "sha1": "f0620c769a56c7cd1303f50381bbe5d20e193008",
+          "md5": "1e0798fc2ccf27de98690ac9c94b0c39"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-1.17.0-all.jar",
+          "url": "magicutils-commands-1.17.0-all.jar",
+          "size": 3392198,
+          "sha512": "fbaa03ee4efa0ae8544ccfb47716ef4d131a8307bb407ba98c4d41f9704c0620595058bfb99b7166dd5df0831f05dadcc81ea6a6fd4b0ecf72bbdbc974c494b6",
+          "sha256": "ff7ae737f9df3d13e77015a108d7c43775a5debaeff1052d96415e12e21acd45",
+          "sha1": "eb4afcf8f62416485bb8df8c5c29f90e5d0e4b83",
+          "md5": "fbfa5adf1c1421b910a019235eca7a62"
+        }
+      ]
+    }
+  ]
+}
