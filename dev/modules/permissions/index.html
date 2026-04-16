@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
       
       
       
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/core/" class="md-tabs__link">
+        <a href="../../platforms/bukkit/" class="md-tabs__link">
           
   
   
@@ -545,62 +545,6 @@
     
   
     Quickstart
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/runtime/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Runtime
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/migration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migration Guide
   
 
     
@@ -888,7 +832,7 @@
   <a href="#permission-prefix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Permission Prefix
+        Permission prefix
       
     </span>
   </a>
@@ -899,18 +843,7 @@
   <a href="#generated-nodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Nodes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#default-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Default Access
+        Generated nodes
       
     </span>
   </a>
@@ -929,10 +862,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#explicit-permission-annotations" class="md-nav__link">
+  <a href="#default-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Explicit Permission Annotations
+        Default access
       
     </span>
   </a>
@@ -943,7 +876,7 @@
   <a href="#argument-permissions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Argument Permissions
+        Argument permissions
       
     </span>
   </a>
@@ -954,7 +887,7 @@
   <a href="#conditional-permission-keywords" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Conditional Permission Keywords
+        Conditional permission keywords
       
     </span>
   </a>
@@ -965,7 +898,7 @@
   <a href="#manual-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Manual Checks
+        Manual checks
       
     </span>
   </a>
@@ -1243,34 +1176,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../platforms/core/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Core / Common Logic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../platforms/bukkit/" class="md-nav__link">
         
   
@@ -1521,7 +1426,7 @@
   <a href="#permission-prefix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Permission Prefix
+        Permission prefix
       
     </span>
   </a>
@@ -1532,18 +1437,7 @@
   <a href="#generated-nodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Nodes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#default-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Default Access
+        Generated nodes
       
     </span>
   </a>
@@ -1562,10 +1456,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#explicit-permission-annotations" class="md-nav__link">
+  <a href="#default-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Explicit Permission Annotations
+        Default access
       
     </span>
   </a>
@@ -1576,7 +1470,7 @@
   <a href="#argument-permissions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Argument Permissions
+        Argument permissions
       
     </span>
   </a>
@@ -1587,7 +1481,7 @@
   <a href="#conditional-permission-keywords" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Conditional Permission Keywords
+        Conditional permission keywords
       
     </span>
   </a>
@@ -1598,7 +1492,7 @@
   <a href="#manual-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Manual Checks
+        Manual checks
       
     </span>
   </a>
@@ -1626,22 +1520,15 @@
 
 
 <h1 id="permissions">Permissions<a class="headerlink" href="#permissions" title="Permanent link">&para;</a></h1>
-<p>MagicUtils commands generate and evaluate permission nodes automatically. The
-registry prefix controls namespacing, while annotations control explicit nodes,
-defaults, and conditional argument checks.</p>
-<h2 id="permission-prefix">Permission Prefix<a class="headerlink" href="#permission-prefix" title="Permanent link">&para;</a></h2>
-<p>Every command registry has a permission prefix. You set it either directly on
-the registry:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">CommandRegistry</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<p>MagicUtils commands generate and check permission nodes automatically. You can
+override any node, control default access, and apply conditional checks for
+arguments.</p>
+<h2 id="permission-prefix">Permission prefix<a class="headerlink" href="#permission-prefix" title="Permanent link">&para;</a></h2>
+<p>Every <code>CommandRegistry.initialize(...)</code> call includes a permission prefix.
+MagicUtils prepends it to all generated nodes.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">initialize</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
 </code></pre></div>
-<p>or through the bootstrap helper:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="p">)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="p">.</span><span class="na">permissionPrefix</span><span class="p">(</span><span class="s">&quot;donatemenu&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
-</code></pre></div>
-<p>MagicUtils prepends that prefix to all generated nodes.</p>
-<h2 id="generated-nodes">Generated Nodes<a class="headerlink" href="#generated-nodes" title="Permanent link">&para;</a></h2>
+<h2 id="generated-nodes">Generated nodes<a class="headerlink" href="#generated-nodes" title="Permanent link">&para;</a></h2>
 <p>When annotations omit explicit permission strings, MagicUtils builds defaults:</p>
 <ul>
 <li>Command: <code>commands.&lt;command&gt;</code></li>
@@ -1654,85 +1541,53 @@ the registry:</p>
 <li><code>donatemenu.commands.donate.subcommand.give</code></li>
 <li><code>donatemenu.commands.donate.subcommand.give.argument.player</code></li>
 </ul>
-<h2 id="default-access">Default Access<a class="headerlink" href="#default-access" title="Permanent link">&para;</a></h2>
-<p><code>MagicPermissionDefault</code> controls what happens when the permission node is not
-granted explicitly:</p>
-<ul>
-<li><code>TRUE</code> -&gt; everyone</li>
-<li><code>OP</code> -&gt; operators or elevated senders</li>
-<li><code>NOT_OP</code> -&gt; non-operators / non-elevated senders</li>
-<li><code>FALSE</code> -&gt; nobody</li>
-</ul>
-<p>Platform behaviour differs slightly:</p>
-<ul>
-<li>Bukkit registers permission nodes with Bukkit's permission manager and uses
-  Bukkit permission defaults.</li>
-<li>Fabric checks <code>fabric-permissions-api-v0</code> when available and falls back to
-  op-level checks.</li>
-<li>NeoForge falls back to command-source permission level checks.</li>
-<li>Velocity relies on the proxy's permission checks and uses the default policy
-  only when the node itself is absent.</li>
-</ul>
 <h2 id="wildcards">Wildcards<a class="headerlink" href="#wildcards" title="Permanent link">&para;</a></h2>
-<p>On Bukkit, MagicUtils also registers wildcard nodes:</p>
+<p>On Bukkit, MagicUtils registers wildcard nodes for convenience:</p>
 <ul>
 <li><code>...commands.&lt;command&gt;.*</code></li>
 <li><code>...commands.&lt;command&gt;.subcommand.*</code></li>
 </ul>
-<p>Velocity also honours prefix-style wildcard checks such as <code>prefix.*</code> and
-<code>prefix&lt;node&gt;.*</code> when the proxy reports them as granted.</p>
-<h2 id="explicit-permission-annotations">Explicit Permission Annotations<a class="headerlink" href="#explicit-permission-annotations" title="Permanent link">&para;</a></h2>
-<p>Use explicit nodes when you want stable names independent of the generated
-shape:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@CommandInfo</span><span class="p">(</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="n">permission</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donatemenu.open&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="n">permissionDefault</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPermissionDefault</span><span class="p">.</span><span class="na">TRUE</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DonateCommand</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MagicCommand</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}</span>
-</code></pre></div>
-<p>Subcommands support the same fields:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nd">@SubCommand</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;reload&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="n">permission</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donatemenu.admin.reload&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">permissionDefault</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPermissionDefault</span><span class="p">.</span><span class="na">OP</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">)</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">reload</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;Reloaded&quot;</span><span class="p">);</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="argument-permissions">Argument Permissions<a class="headerlink" href="#argument-permissions" title="Permanent link">&para;</a></h2>
+<p>These are registered alongside concrete nodes.</p>
+<h2 id="default-access">Default access<a class="headerlink" href="#default-access" title="Permanent link">&para;</a></h2>
+<p><code>MagicPermissionDefault</code> controls who can execute when no explicit permission
+is granted:</p>
+<ul>
+<li><code>TRUE</code> -&gt; everyone</li>
+<li><code>OP</code> -&gt; operators (default)</li>
+<li><code>NOT_OP</code> -&gt; non-operators</li>
+<li><code>FALSE</code> -&gt; nobody (explicit permission required)</li>
+</ul>
+<p>On Bukkit, MagicUtils registers the permission nodes with these defaults. On
+Fabric, MagicUtils checks <code>fabric-permissions-api</code> when available and falls
+back to op-level checks otherwise.</p>
+<h2 id="argument-permissions">Argument permissions<a class="headerlink" href="#argument-permissions" title="Permanent link">&para;</a></h2>
 <p>Use <code>@Permission</code> on parameters to gate argument usage:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">grant</span><span class="p">(</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nd">@Permission</span><span class="p">(</span><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;other(player)&quot;</span><span class="p">)</span><span class="w"> </span><span class="nd">@ParamName</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">grant</span><span class="p">(</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nd">@Permission</span><span class="p">(</span><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;other(player)&quot;</span><span class="p">)</span><span class="w"> </span><span class="nd">@ParamName</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
 </code></pre></div>
-<p>You can override the generated node segment:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@Permission</span><span class="p">(</span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">includeArgumentSegment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<p>You can override the permission node segment and whether <code>.argument.</code> is
+included:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@Permission</span><span class="p">(</span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">includeArgumentSegment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="conditional-permission-keywords">Conditional Permission Keywords<a class="headerlink" href="#conditional-permission-keywords" title="Permanent link">&para;</a></h2>
+<h2 id="conditional-permission-keywords">Conditional permission keywords<a class="headerlink" href="#conditional-permission-keywords" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>self(arg)</code> / <code>other(arg)</code> / <code>anyother(arg)</code></li>
 <li><code>not_null(arg)</code> / <code>exists(arg)</code></li>
 <li><code>distinct(a,b)</code> / <code>all_distinct(a,b)</code></li>
 <li><code>equals(a,b)</code> / <code>not_equals(a,b)</code></li>
 </ul>
-<p>Use <code>compare = CompareMode.UUID/NAME/EQUALS/AUTO</code> to control how values are
-compared.</p>
-<h2 id="manual-checks">Manual Checks<a class="headerlink" href="#manual-checks" title="Permanent link">&para;</a></h2>
-<p><code>MagicSender</code> exposes direct permission checks when you need custom logic
-outside annotation processing:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicSender</span><span class="p">.</span><span class="na">wrap</span><span class="p">(</span><span class="n">rawSender</span><span class="p">);</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">MagicSender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="n">rawSender</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu.commands.donate&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="c1">// ...</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
+<p>Use <code>compare = CompareMode.UUID/NAME/EQUALS/AUTO</code> to control comparison rules.</p>
+<h2 id="manual-checks">Manual checks<a class="headerlink" href="#manual-checks" title="Permanent link">&para;</a></h2>
+<p><code>MagicSender</code> can be used to check permissions directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicSender</span><span class="p">.</span><span class="na">wrap</span><span class="p">(</span><span class="n">rawSender</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">MagicSender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="n">rawSender</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu.commands.donate&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="c1">// ...</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
 </code></pre></div>
-<p>You can also use the registry prefix when building related manual nodes so the
-manual and generated permissions stay in the same namespace.</p>
 
 
 

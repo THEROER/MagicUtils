@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
       
       
       
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/core/" class="md-tabs__link">
+        <a href="../../platforms/bukkit/" class="md-tabs__link">
           
   
   
@@ -565,62 +565,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/runtime/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Runtime
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../getting-started/migration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migration Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../getting-started/versioning/" class="md-nav__link">
         
   
@@ -776,7 +720,7 @@
   <a href="#core-modules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Core Modules
+        Core modules
       
     </span>
   </a>
@@ -787,7 +731,7 @@
   <a href="#platform-adapters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform Adapters
+        Platform adapters
       
     </span>
   </a>
@@ -798,7 +742,7 @@
   <a href="#brigadier-integrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Brigadier Integrations
+        Brigadier integrations
       
     </span>
   </a>
@@ -809,7 +753,7 @@
   <a href="#fabric-integrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fabric Integrations
+        Fabric integrations
       
     </span>
   </a>
@@ -1199,34 +1143,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../platforms/core/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Core / Common Logic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../platforms/bukkit/" class="md-nav__link">
         
   
@@ -1477,7 +1393,7 @@
   <a href="#core-modules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Core Modules
+        Core modules
       
     </span>
   </a>
@@ -1488,7 +1404,7 @@
   <a href="#platform-adapters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform Adapters
+        Platform adapters
       
     </span>
   </a>
@@ -1499,7 +1415,7 @@
   <a href="#brigadier-integrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Brigadier Integrations
+        Brigadier integrations
       
     </span>
   </a>
@@ -1510,7 +1426,7 @@
   <a href="#fabric-integrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fabric Integrations
+        Fabric integrations
       
     </span>
   </a>
@@ -1537,13 +1453,11 @@
   
 
 
-<h1 id="module-overview">Module Overview<a class="headerlink" href="#module-overview" title="Permanent link">&para;</a></h1>
+<h1 id="module-overview">Module overview<a class="headerlink" href="#module-overview" title="Permanent link">&para;</a></h1>
 <p>MagicUtils is split into focused artifacts so you can depend on only what you
-need. The platform adapters wire the shared modules to Bukkit/Paper, Fabric,
-Velocity, or NeoForge.</p>
-<p>Bootstrap helpers are available on Bukkit, Fabric, and Velocity. NeoForge
-currently uses manual wiring with the platform adapter plus command module.</p>
-<h2 id="core-modules">Core Modules<a class="headerlink" href="#core-modules" title="Permanent link">&para;</a></h2>
+need. The platform adapters wire the core modules to Bukkit/Paper, Fabric, or
+NeoForge.</p>
+<h2 id="core-modules">Core modules<a class="headerlink" href="#core-modules" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1561,12 +1475,12 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 <tr>
 <td>Core</td>
 <td><code>magicutils-core</code></td>
-<td>Shared runtime container plus core config/lang/logger/placeholder wiring.</td>
+<td>Config + lang + commands + logger + placeholders.</td>
 </tr>
 <tr>
 <td>HTTP client</td>
 <td><code>magicutils-http-client</code></td>
-<td>HttpClient wrapper with JSON, retries, multipart, and runtime profiles.</td>
+<td>HttpClient wrapper with JSON + retries.</td>
 </tr>
 <tr>
 <td>Config</td>
@@ -1606,11 +1520,11 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 <tr>
 <td>Processor</td>
 <td><code>magicutils-processor</code></td>
-<td>Annotation processor used by internal tooling.</td>
+<td>Annotation processor (internal tooling).</td>
 </tr>
 </tbody>
 </table>
-<h2 id="platform-adapters">Platform Adapters<a class="headerlink" href="#platform-adapters" title="Permanent link">&para;</a></h2>
+<h2 id="platform-adapters">Platform adapters<a class="headerlink" href="#platform-adapters" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1623,31 +1537,31 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 <tr>
 <td>Bukkit/Paper</td>
 <td><code>magicutils-bukkit</code></td>
-<td>Includes the shared stack and exposes <code>BukkitBootstrap</code>.</td>
+<td>Includes core modules + Bukkit integrations.</td>
 </tr>
 <tr>
 <td>Bukkit bundle</td>
 <td><code>magicutils-bukkit-bundle</code></td>
-<td>Shared Bukkit/Paper plugin bundle for server installs.</td>
+<td>Shared Bukkit/Paper plugin bundle.</td>
 </tr>
 <tr>
 <td>Fabric</td>
 <td><code>magicutils-fabric</code></td>
-<td>Platform API adapter for Fabric modular setups.</td>
+<td>Platform API adapter for Fabric.</td>
 </tr>
 <tr>
 <td>Velocity</td>
 <td><code>magicutils-velocity</code></td>
-<td>Platform adapter plus config/logger/lang/commands for Velocity.</td>
+<td>Minimal platform adapter for Velocity.</td>
 </tr>
 <tr>
 <td>NeoForge</td>
 <td><code>magicutils-neoforge</code></td>
-<td>Platform API adapter for NeoForge manual setups.</td>
+<td>Platform API adapter for NeoForge.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="brigadier-integrations">Brigadier Integrations<a class="headerlink" href="#brigadier-integrations" title="Permanent link">&para;</a></h2>
+<h2 id="brigadier-integrations">Brigadier integrations<a class="headerlink" href="#brigadier-integrations" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1660,7 +1574,7 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 <tr>
 <td>Brigadier base</td>
 <td><code>magicutils-commands-brigadier</code></td>
-<td>Shared Brigadier command registry base.</td>
+<td>Shared Brigadier command registry.</td>
 </tr>
 <tr>
 <td>Commands (NeoForge)</td>
@@ -1669,7 +1583,7 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="fabric-integrations">Fabric Integrations<a class="headerlink" href="#fabric-integrations" title="Permanent link">&para;</a></h2>
+<h2 id="fabric-integrations">Fabric integrations<a class="headerlink" href="#fabric-integrations" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1687,7 +1601,7 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 <tr>
 <td>Commands (Fabric)</td>
 <td><code>magicutils-commands-fabric</code></td>
-<td>Brigadier integration plus <code>FabricBootstrap</code>.</td>
+<td>Brigadier integration for Fabric.</td>
 </tr>
 <tr>
 <td>Placeholders (Fabric)</td>
@@ -1697,11 +1611,11 @@ currently uses manual wiring with the platform adapter plus command module.</p>
 <tr>
 <td>Fabric bundle</td>
 <td><code>magicutils-fabric-bundle</code></td>
-<td>Jar-in-jar distribution for shared server installs.</td>
+<td>Jar-in-jar distribution for servers.</td>
 </tr>
 </tbody>
 </table>
-<p>Use the per-module pages for API details, examples, and configuration options.</p>
+<p>Use the per-module pages for API details and examples.</p>
 
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
       
       
       
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -288,7 +288,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../platforms/core/" class="md-tabs__link">
+        <a href="../platforms/bukkit/" class="md-tabs__link">
           
   
   
@@ -545,62 +545,6 @@
     
   
     Quickstart
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../getting-started/runtime/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Runtime
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../getting-started/migration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migration Guide
   
 
     
@@ -1103,34 +1047,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../platforms/core/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Core / Common Logic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../platforms/bukkit/" class="md-nav__link">
         
   
@@ -1419,54 +1335,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#which-artifact-should-i-use" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Which artifact should I use?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#permissions-on-fabric" class="md-nav__link">
     <span class="md-ellipsis">
       
         Permissions on Fabric
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#do-i-need-to-call-magicruntimeclose" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Do I need to call magic.runtime().close()?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-do-fabric-commands-still-register-in-commandregistrationcallback" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why do Fabric commands still register in CommandRegistrationCallback?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#logger-or-loggercore" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logger or LoggerCore?
       
     </span>
   </a>
@@ -1601,54 +1473,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#which-artifact-should-i-use" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Which artifact should I use?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#permissions-on-fabric" class="md-nav__link">
     <span class="md-ellipsis">
       
         Permissions on Fabric
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#do-i-need-to-call-magicruntimeclose" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Do I need to call magic.runtime().close()?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-do-fabric-commands-still-register-in-commandregistrationcallback" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why do Fabric commands still register in CommandRegistrationCallback?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#logger-or-loggercore" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logger or LoggerCore?
       
     </span>
   </a>
@@ -1713,38 +1541,13 @@ or add the required Adventure modules explicitly.</p>
 installed:</p>
 <ul>
 <li>Bukkit: <a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a></li>
-<li>Fabric: <a href="https://placeholders.pb4.eu/">PB4 Placeholder API</a></li>
 <li>Fabric: <a href="https://modrinth.com/mod/placeholder-api">Text Placeholder API</a> or
   <a href="https://modrinth.com/mod/miniplaceholders">MiniPlaceholders</a></li>
 </ul>
-<h2 id="which-artifact-should-i-use">Which artifact should I use?<a class="headerlink" href="#which-artifact-should-i-use" title="Permanent link">&para;</a></h2>
-<p>For most users:</p>
-<ul>
-<li>Bukkit/Paper plugin: <code>magicutils-bukkit</code></li>
-<li>Fabric mod: <code>magicutils-fabric-bundle</code></li>
-<li>Velocity plugin: <code>magicutils-velocity</code></li>
-<li>NeoForge mod: <code>magicutils-neoforge</code> plus <code>magicutils-commands-neoforge</code></li>
-</ul>
-<p>Use the modular artifacts only when you intentionally want custom wiring.</p>
 <h2 id="permissions-on-fabric">Permissions on Fabric<a class="headerlink" href="#permissions-on-fabric" title="Permanent link">&para;</a></h2>
 <p>Without <code>fabric-permissions-api</code>, MagicUtils falls back to op-level checks.
 Install the permissions API (and a permissions plugin like LuckPerms) to get
 full permission support.</p>
-<h2 id="do-i-need-to-call-magicruntimeclose">Do I need to call <code>magic.runtime().close()</code>?<a class="headerlink" href="#do-i-need-to-call-magicruntimeclose" title="Permanent link">&para;</a></h2>
-<p>Yes, if you built your services through <code>buildRuntime()</code> and your platform has a
-clear shutdown phase. Closing the runtime unregisters hooks, closes managed
-resources, and shuts down the config manager when it owns it.</p>
-<h2 id="why-do-fabric-commands-still-register-in-commandregistrationcallback">Why do Fabric commands still register in <code>CommandRegistrationCallback</code>?<a class="headerlink" href="#why-do-fabric-commands-still-register-in-commandregistrationcallback" title="Permanent link">&para;</a></h2>
-<p>Because Brigadier registration still belongs to Fabric's command callback.
-<code>FabricBootstrap</code> prepares the shared services and command registry, but the
-dispatcher itself only exists inside the event callback.</p>
-<h2 id="logger-or-loggercore"><code>Logger</code> or <code>LoggerCore</code>?<a class="headerlink" href="#logger-or-loggercore" title="Permanent link">&para;</a></h2>
-<p>Use:</p>
-<ul>
-<li><code>Logger</code> on Bukkit and Fabric</li>
-<li><code>LoggerCore</code> on Velocity, NeoForge, and custom platforms</li>
-</ul>
-<p>Bootstrap helpers return the correct logger type for each platform.</p>
 <h2 id="config-watcher-warnings">Config watcher warnings<a class="headerlink" href="#config-watcher-warnings" title="Permanent link">&para;</a></h2>
 <p>If you see <code>Failed to register config watcher</code> / <code>inotify</code> warnings, your OS
 file watch limit is too low. MagicUtils disables realtime reload in this
