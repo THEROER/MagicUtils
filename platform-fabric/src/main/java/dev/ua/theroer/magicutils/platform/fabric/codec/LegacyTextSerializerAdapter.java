@@ -14,6 +14,7 @@ import net.minecraft.network.chat.Component;
  */
 public final class LegacyTextSerializerAdapter implements TextSerializationAdapter {
     private static final String[] SERIALIZER_CLASS_NAMES = {
+            "net.minecraft.network.chat.Component$Serializer",
             "net.minecraft.text.Text$Serializer",
             "net.minecraft.class_2561$class_2562"
     };

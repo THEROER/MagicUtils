@@ -31,7 +31,7 @@ public final class TextSerializationAdapters {
         } catch (RuntimeException error) {
             attempts.add("TextCodecs adapter failed: " + error.getMessage());
             if (logger != null) {
-                logger.warn("TextCodecs adapter unavailable: {}", error.toString());
+                logger.debug("TextCodecs adapter unavailable: {}", describe(error));
             }
         }
 
@@ -44,16 +44,26 @@ public final class TextSerializationAdapters {
         } catch (RuntimeException error) {
             attempts.add("Legacy serializer adapter failed: " + error.getMessage());
             if (logger != null) {
-                logger.warn("Legacy serializer adapter unavailable: {}", error.toString());
+                logger.debug("Legacy serializer adapter unavailable: {}", describe(error));
             }
         }
 
         String msg = "No supported Fabric text serializer found. "
                 + "MagicUtils plain mode is disabled. "
-                + "Checked TextCodecs and legacy Text$Serializer paths.";
+                + "Checked codec-based and legacy serializer paths.";
         if (logger != null) {
             logger.error("{} Attempts: {}", msg, attempts);
         }
         throw new IllegalStateException(msg + " Attempts: " + attempts);
+    }
+
+    private static String describe(RuntimeException error) {
+        if (error == null) {
+            return "unknown error";
+        }
+        String message = error.getMessage();
+        return message != null && !message.isBlank()
+                ? message
+                : error.getClass().getName();
     }
 }

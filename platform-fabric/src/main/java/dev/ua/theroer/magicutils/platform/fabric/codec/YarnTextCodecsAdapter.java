@@ -13,10 +13,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryOps;
 
 /**
- * Strict adapter for modern Fabric/Yarn where TextCodecs codec exists.
+ * Strict adapter for modern Fabric runtimes where a codec-based component serializer exists.
  */
 public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
     private static final String[] CODEC_CLASS_NAMES = {
+            "net.minecraft.network.chat.ComponentSerialization",
             "net.minecraft.text.TextCodecs",
             "net.minecraft.class_8824"
     };
