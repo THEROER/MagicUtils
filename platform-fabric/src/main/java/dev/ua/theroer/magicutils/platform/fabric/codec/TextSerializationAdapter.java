@@ -1,10 +1,9 @@
 package dev.ua.theroer.magicutils.platform.fabric.codec;
 
 import com.google.gson.JsonElement;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.text.Text;
-
 import java.util.function.Consumer;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.network.chat.Component;
 
 /**
  * Adapter for Minecraft Text serialization and deserialization.
@@ -18,7 +17,7 @@ public interface TextSerializationAdapter {
      * @param onError a consumer to handle errors during decoding
      * @return the decoded Text object, or null if input is null
      */
-    Text decode(JsonElement tree, Consumer<String> onError);
+    Component decode(JsonElement tree, Consumer<String> onError);
 
     /**
      * Encodes a Minecraft Text object into a JSON element.
@@ -27,7 +26,7 @@ public interface TextSerializationAdapter {
      * @param registries the registry wrapper lookup for context-aware encoding (can be null)
      * @return the encoded JSON element, or null if input is null
      */
-    JsonElement encode(Text text, RegistryWrapper.WrapperLookup registries);
+    JsonElement encode(Component text, HolderLookup.Provider registries);
 
     /**
      * Gets the name of the adapter or the underlying mechanism.

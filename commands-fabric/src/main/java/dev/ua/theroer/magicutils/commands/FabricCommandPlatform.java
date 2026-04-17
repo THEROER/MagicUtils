@@ -2,11 +2,11 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
+import dev.ua.theroer.magicutils.platform.fabric.FabricPermissionBridge;
 import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
@@ -15,7 +15,11 @@ import java.util.Locale;
 /**
  * Fabric-specific platform hooks for the command engine.
  */
-public class FabricCommandPlatform implements CommandPlatform<ServerCommandSource> {
+public class FabricCommandPlatform implements CommandPlatform<CommandSourceStack> {
+    private static final String MODERN_MINECART_COMMAND_BLOCK_CLASS =
+            "net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock";
+    private static final String LEGACY_MINECART_COMMAND_BLOCK_CLASS =
+            "net.minecraft.world.entity.vehicle.MinecartCommandBlock";
     private final int opLevel;
 
     /**
@@ -41,7 +45,7 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
      * @param opLevel op-level fallback for permissions
      * @return wrapped sender or null if unavailable
      */
-    public static @Nullable MagicSender wrapMagicSender(ServerCommandSource sender, int opLevel) {
+    public static @Nullable MagicSender wrapMagicSender(CommandSourceStack sender, int opLevel) {
         if (sender == null) {
             return null;
         }
@@ -50,33 +54,33 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
 
     @Override
     public Class<?> senderType() {
-        return ServerCommandSource.class;
+        return CommandSourceStack.class;
     }
 
     @Override
     public Class<?> playerType() {
-        return ServerPlayerEntity.class;
+        return ServerPlayer.class;
     }
 
     @Override
-    public @Nullable Object getPlayerSender(ServerCommandSource sender) {
+    public @Nullable Object getPlayerSender(CommandSourceStack sender) {
         return getPlayerSafe(sender);
     }
 
     @Override
-    public String getName(ServerCommandSource sender) {
-        return sender != null ? sender.getName() : "unknown";
+    public String getName(CommandSourceStack sender) {
+        return sender != null ? sender.getTextName() : "unknown";
     }
 
     @Override
-    public boolean hasPermission(ServerCommandSource sender, String permission, MagicPermissionDefault defaultValue) {
+    public boolean hasPermission(CommandSourceStack sender, String permission, MagicPermissionDefault defaultValue) {
         if (permission == null || permission.isEmpty()) {
             return true;
         }
         if (sender == null) {
             return false;
         }
-        return FabricPermissionBridge.check(sender, permission, defaultValue, opLevel);
+        return FabricPermissionDefaults.check(sender, permission, defaultValue, opLevel);
     }
 
     @Override
@@ -85,7 +89,7 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
     }
 
     @Override
-    public Object resolveSenderArgument(ServerCommandSource sender, CommandArgument argument)
+    public Object resolveSenderArgument(CommandSourceStack sender, CommandArgument argument)
             throws SenderMismatchException {
         AllowedSender[] allowed = argument.getAllowedSenders();
         AllowedSender senderKind = classifySender(sender);
@@ -94,14 +98,14 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         }
 
         Class<?> targetType = argument.getType();
-        if (targetType.equals(ServerCommandSource.class)) {
+        if (targetType.equals(CommandSourceStack.class)) {
             return sender;
         }
         if (targetType.equals(MagicSender.class)) {
             return new FabricMagicSender(sender, opLevel);
         }
-        if (targetType.equals(ServerPlayerEntity.class)) {
-            ServerPlayerEntity player = getPlayerSafe(sender);
+        if (targetType.equals(ServerPlayer.class)) {
+            ServerPlayer player = getPlayerSafe(sender);
             if (player != null) {
                 return player;
             }
@@ -121,11 +125,11 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
     }
 
     private static final class FabricMagicSender implements MagicSender {
-        private final ServerCommandSource sender;
+        private final CommandSourceStack sender;
         private final Audience audience;
         private final int opLevel;
 
-        private FabricMagicSender(ServerCommandSource sender, int opLevel) {
+        private FabricMagicSender(CommandSourceStack sender, int opLevel) {
             this.sender = sender;
             this.opLevel = opLevel;
             this.audience = new FabricCommandAudience(sender, false);
@@ -138,20 +142,20 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
 
         @Override
         public String name() {
-            return sender != null ? sender.getName() : "unknown";
+            return sender != null ? sender.getTextName() : "unknown";
         }
 
         @Override
         public boolean hasPermission(String permission) {
-            return FabricPermissionBridge.check(sender, permission, opLevel);
+            return FabricPermissionDefaults.check(sender, permission, opLevel);
         }
 
         @Override
         public @Nullable String address() {
             if (sender != null && sender.getPlayer() != null
-                    && sender.getPlayer().networkHandler != null
-                    && sender.getPlayer().networkHandler.getConnectionAddress() != null) {
-                return sender.getPlayer().networkHandler.getConnectionAddress().toString()
+                    && sender.getPlayer().connection != null
+                    && sender.getPlayer().connection.getRemoteAddress() != null) {
+                return sender.getPlayer().connection.getRemoteAddress().toString()
                         .replace("/", "").split(":")[0];
             }
             return null;
@@ -163,39 +167,27 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         }
     }
 
-    private static final class FabricPermissionBridge {
+    private static final class FabricPermissionDefaults {
         private static final String PERMISSIONS_CLASS = "me.lucko.fabric.api.permissions.v0.Permissions";
         private static final Method CHECK_BOOLEAN;
         private static final Method CHECK_INT;
         private static final Method CHECK_SIMPLE;
-        private static final Method HAS_PERMISSION_LEVEL;
 
         static {
             Class<?> permissions = ReflectiveAccess.loadClass(PERMISSIONS_CLASS).orElse(null);
             CHECK_BOOLEAN = permissions != null ? findMethod(permissions, boolean.class) : null;
             CHECK_INT = permissions != null ? findMethod(permissions, int.class) : null;
             CHECK_SIMPLE = permissions != null ? findMethod(permissions, null) : null;
-            HAS_PERMISSION_LEVEL = resolvePermissionLevelMethod();
         }
 
-        private FabricPermissionBridge() {
+        private FabricPermissionDefaults() {
         }
 
-        static boolean check(ServerCommandSource sender, String permission, int opLevel) {
-            if (permission == null || permission.isEmpty()) {
-                return true;
-            }
-            if (sender == null) {
-                return false;
-            }
-            Boolean result = tryInvoke(sender, permission, null, opLevel);
-            if (result != null) {
-                return result;
-            }
-            return hasPermissionLevel(sender, opLevel);
+        static boolean check(CommandSourceStack sender, String permission, int opLevel) {
+            return FabricPermissionBridge.hasPermission(sender, permission, opLevel);
         }
 
-        static boolean check(ServerCommandSource sender, String permission, MagicPermissionDefault defaultValue,
+        static boolean check(CommandSourceStack sender, String permission, MagicPermissionDefault defaultValue,
                              int opLevel) {
             if (permission == null || permission.isEmpty()) {
                 return true;
@@ -210,7 +202,7 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             return fallback(sender, defaultValue, opLevel);
         }
 
-        private static Boolean tryInvoke(ServerCommandSource sender, String permission,
+        private static Boolean tryInvoke(CommandSourceStack sender, String permission,
                                          MagicPermissionDefault defaultValue, int opLevel) {
             if (CHECK_BOOLEAN != null) {
                 try {
@@ -238,13 +230,13 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             return null;
         }
 
-        private static boolean fallback(ServerCommandSource sender, MagicPermissionDefault defaultValue, int opLevel) {
+        private static boolean fallback(CommandSourceStack sender, MagicPermissionDefault defaultValue, int opLevel) {
             MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
             return switch (effective) {
                 case TRUE -> true;
                 case FALSE -> false;
-                case NOT_OP -> !hasPermissionLevel(sender, opLevel);
-                case OP -> hasPermissionLevel(sender, opLevel);
+                case NOT_OP -> !FabricPermissionBridge.hasCommandLevel(sender, opLevel);
+                case OP -> FabricPermissionBridge.hasCommandLevel(sender, opLevel);
             };
         }
 
@@ -258,20 +250,6 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             };
         }
 
-        private static boolean hasPermissionLevel(ServerCommandSource sender, int opLevel) {
-            if (sender == null) {
-                return false;
-            }
-            if (HAS_PERMISSION_LEVEL != null) {
-                try {
-                    Object res = ReflectiveAccess.invoke(HAS_PERMISSION_LEVEL, sender, opLevel).orElse(Boolean.FALSE);
-                    return res instanceof Boolean value && value;
-                } catch (RuntimeException ignored) {
-                }
-            }
-            return false;
-        }
-
         private static Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
             for (Method method : permissionsClass.getMethods()) {
                 if (!method.getName().equals("check")) {
@@ -280,49 +258,21 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
                 Class<?>[] params = method.getParameterTypes();
                 if (defaultType == null) {
                     if (params.length == 2 && params[1] == String.class
-                            && params[0].isAssignableFrom(ServerCommandSource.class)) {
+                            && params[0].isAssignableFrom(CommandSourceStack.class)) {
                         return method;
                     }
                 } else {
                     if (params.length == 3 && params[1] == String.class && params[2] == defaultType
-                            && params[0].isAssignableFrom(ServerCommandSource.class)) {
+                            && params[0].isAssignableFrom(CommandSourceStack.class)) {
                         return method;
                     }
                 }
             }
             return null;
         }
-
-        private static Method resolvePermissionLevelMethod() {
-            Method direct = ReflectiveAccess.publicMethod(
-                    ServerCommandSource.class,
-                    "hasPermissionLevel",
-                    int.class
-            ).orElse(null);
-            if (direct != null) {
-                return direct;
-            }
-            Method candidate = null;
-            for (Method method : ServerCommandSource.class.getMethods()) {
-                if (method.getParameterCount() != 1 || method.getParameterTypes()[0] != int.class) {
-                    continue;
-                }
-                if (method.getReturnType() != boolean.class) {
-                    continue;
-                }
-                if (candidate != null) {
-                    return null;
-                }
-                candidate = method;
-            }
-            if (candidate != null) {
-                candidate.setAccessible(true);
-            }
-            return candidate;
-        }
     }
 
-    private ServerPlayerEntity getPlayerSafe(ServerCommandSource sender) {
+    private ServerPlayer getPlayerSafe(CommandSourceStack sender) {
         if (sender == null) {
             return null;
         }
@@ -333,13 +283,13 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
         }
     }
 
-    private AllowedSender classifySender(ServerCommandSource sender) {
+    private AllowedSender classifySender(CommandSourceStack sender) {
         if (getPlayerSafe(sender) != null) {
             return AllowedSender.PLAYER;
         }
 
         Entity entity = sender != null ? sender.getEntity() : null;
-        if (entity instanceof CommandBlockMinecartEntity) {
+        if (isMinecartCommandBlock(entity)) {
             return AllowedSender.MINECART;
         }
 
@@ -348,10 +298,10 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
 
     @Override
     public AllowedSender inferSenderFromType(Class<?> type) {
-        if (type.equals(ServerPlayerEntity.class)) {
+        if (type.equals(ServerPlayer.class)) {
             return AllowedSender.PLAYER;
         }
-        if (type.equals(CommandBlockMinecartEntity.class)) {
+        if (isMinecartCommandBlockType(type)) {
             return AllowedSender.MINECART;
         }
         String name = type.getSimpleName().toLowerCase(Locale.ROOT);
@@ -362,6 +312,19 @@ public class FabricCommandPlatform implements CommandPlatform<ServerCommandSourc
             return AllowedSender.MINECART;
         }
         return AllowedSender.ANY;
+    }
+
+    private static boolean isMinecartCommandBlock(Entity entity) {
+        return entity != null && isMinecartCommandBlockType(entity.getClass());
+    }
+
+    private static boolean isMinecartCommandBlockType(Class<?> type) {
+        if (type == null) {
+            return false;
+        }
+        String name = type.getName();
+        return MODERN_MINECART_COMMAND_BLOCK_CLASS.equals(name)
+                || LEGACY_MINECART_COMMAND_BLOCK_CLASS.equals(name);
     }
 
 }

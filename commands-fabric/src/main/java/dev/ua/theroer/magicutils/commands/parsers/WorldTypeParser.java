@@ -2,21 +2,22 @@ package dev.ua.theroer.magicutils.commands.parsers;
 
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import dev.ua.theroer.magicutils.logger.PrefixedLogger;
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Type parser for ServerWorld arguments with @current support.
+ * Type parser for ServerLevel arguments with @current support.
  */
-public class WorldTypeParser implements TypeParser<ServerCommandSource, ServerWorld> {
+public class WorldTypeParser implements TypeParser<CommandSourceStack, ServerLevel> {
     private final PrefixedLogger logger;
 
     /** Default constructor. */
@@ -35,23 +36,24 @@ public class WorldTypeParser implements TypeParser<ServerCommandSource, ServerWo
 
     @Override
     public boolean canParse(@NotNull Class<?> type) {
-        return type == ServerWorld.class;
+        return type == ServerLevel.class;
     }
 
     @Override
     @Nullable
-    public ServerWorld parse(@Nullable String value,
-            @NotNull Class<ServerWorld> targetType,
-            @NotNull ServerCommandSource sender) {
+    public ServerLevel parse(@Nullable String value,
+            @NotNull Class<ServerLevel> targetType,
+            @NotNull CommandSourceStack sender) {
         if (value == null) {
             return null;
         }
 
         if ("@current".equals(value)) {
-            ServerWorld world = sender.getWorld();
+            ServerLevel world = sender.getLevel();
             if (world != null) {
+                String identifier = dimensionId(world);
                 if (logger != null) {
-                    logger.debug("Resolving @current to world: " + world.getRegistryKey().getValue());
+                    logger.debug("Resolving @current to world: " + identifier);
                 }
                 return world;
             }
@@ -62,12 +64,13 @@ public class WorldTypeParser implements TypeParser<ServerCommandSource, ServerWo
             return null;
         }
         String normalized = value.trim();
-        for (ServerWorld world : server.getWorlds()) {
-            Identifier id = world.getRegistryKey().getValue();
-            if (id.toString().equalsIgnoreCase(normalized)
-                    || id.getPath().equalsIgnoreCase(normalized)) {
+        for (ServerLevel world : server.getAllLevels()) {
+            String identifier = dimensionId(world);
+            String path = identifierPath(identifier);
+            if (identifier.equalsIgnoreCase(normalized)
+                    || path.equalsIgnoreCase(normalized)) {
                 if (logger != null) {
-                    logger.debug("World lookup for '" + value + "': " + id);
+                    logger.debug("World lookup for '" + value + "': " + identifier);
                 }
                 return world;
             }
@@ -80,15 +83,14 @@ public class WorldTypeParser implements TypeParser<ServerCommandSource, ServerWo
 
     @Override
     @NotNull
-    public List<String> getSuggestions(@NotNull ServerCommandSource sender) {
+    public List<String> getSuggestions(@NotNull CommandSourceStack sender) {
         List<String> result = new ArrayList<>();
         MinecraftServer server = sender.getServer();
         if (server == null) {
             return result;
         }
-        for (ServerWorld world : server.getWorlds()) {
-            Identifier id = world.getRegistryKey().getValue();
-            result.add(id.getPath());
+        for (ServerLevel world : server.getAllLevels()) {
+            result.add(identifierPath(dimensionId(world)));
         }
         if (getPlayerSafe(sender) != null) {
             result.add("@current");
@@ -106,11 +108,34 @@ public class WorldTypeParser implements TypeParser<ServerCommandSource, ServerWo
         return 50;
     }
 
-    private ServerPlayerEntity getPlayerSafe(ServerCommandSource sender) {
+    private ServerPlayer getPlayerSafe(CommandSourceStack sender) {
         try {
             return sender.getPlayer();
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private static String dimensionId(ServerLevel world) {
+        if (world == null) {
+            return "";
+        }
+        Object dimension = world.dimension();
+        if (dimension == null) {
+            return "";
+        }
+        Method accessor = ReflectiveAccess.publicMethod(dimension.getClass(), "identifier")
+                .or(() -> ReflectiveAccess.publicMethod(dimension.getClass(), "location"))
+                .orElse(null);
+        Object identifier = accessor != null ? ReflectiveAccess.invoke(accessor, dimension).orElse(null) : null;
+        return identifier != null ? identifier.toString() : "";
+    }
+
+    private static String identifierPath(String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            return "";
+        }
+        int separator = identifier.indexOf(':');
+        return separator >= 0 ? identifier.substring(separator + 1) : identifier;
     }
 }

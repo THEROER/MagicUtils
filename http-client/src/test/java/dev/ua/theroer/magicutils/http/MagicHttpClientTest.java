@@ -145,7 +145,6 @@ class MagicHttpClientTest {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public void close() {
             closed.set(true);
         }

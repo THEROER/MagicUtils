@@ -219,6 +219,9 @@ public class Messages {
 
     private static UUID extractUuid(Object obj) {
         if (obj == null) return null;
+        if (obj instanceof Audience audience) {
+            return audience.id();
+        }
         try {
             Method m = obj.getClass().getMethod("getUniqueId");
             Object res = m.invoke(obj);

@@ -18,6 +18,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.common")
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
+        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
         val moduleNameMap = project.extensions.extraProperties.get("moduleNameMap") as? Map<*, *>
         val moduleName = moduleNameMap?.get(project.name) as? String ?: project.name
 
@@ -62,7 +63,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
             )
 
             project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")
-            project.dependencies.add("mappings", "net.fabricmc:yarn:${magicutilsTarget.yarn.get()}:v2")
+            project.dependencies.add("mappings", loom.officialMojangMappings())
             project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
 
             project.dependencies.add("include", "net.kyori:adventure-api:4.24.0")

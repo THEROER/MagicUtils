@@ -5,6 +5,7 @@ import java.io.File
 import java.util.Properties
 
 abstract class MagicUtilsTargetExtension {
+    abstract val name: Property<String>
     abstract val minecraft: Property<String>
     abstract val java: Property<Int>
     abstract val yarn: Property<String>
@@ -37,6 +38,7 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
                 "mc$rawTargetName"
             }
 
+            extension.name.set(targetName)
             extension.minecraft.set(properties.getProperty("$targetName.minecraft"))
             extension.java.set(properties.getProperty("$targetName.java")?.toInt())
             extension.yarn.set(properties.getProperty("$targetName.yarn"))
@@ -46,6 +48,7 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
             extension.paper.set(properties.getProperty("$targetName.paper"))
             extension.neoforge.set(properties.getProperty("$targetName.neoforge"))
 
+            project.extensions.extraProperties.set("magicutilsTargetName", targetName)
             project.extensions.extraProperties.set("magicutilsTarget", extension)
         }
     }

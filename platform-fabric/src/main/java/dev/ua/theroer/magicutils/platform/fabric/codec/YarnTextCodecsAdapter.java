@@ -5,13 +5,12 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
-import net.minecraft.registry.RegistryOps;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.text.Text;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.RegistryOps;
 
 /**
  * Strict adapter for modern Fabric/Yarn where TextCodecs codec exists.
@@ -55,14 +54,14 @@ public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
     }
 
     @Override
-    public Text decode(JsonElement tree, Consumer<String> onError) {
+    public Component decode(JsonElement tree, Consumer<String> onError) {
         if (tree == null) {
             return null;
         }
-        DataResult<Text> result;
+        DataResult<Component> result;
         try {
             @SuppressWarnings("unchecked")
-            DataResult<Text> parsed = (DataResult<Text>) parseMethod.invoke(codec, JsonOps.INSTANCE, tree);
+            DataResult<Component> parsed = (DataResult<Component>) parseMethod.invoke(codec, JsonOps.INSTANCE, tree);
             result = parsed;
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Failed to parse Text via codec " + resolvedClassName, error);
@@ -75,12 +74,12 @@ public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
     }
 
     @Override
-    public JsonElement encode(Text text, RegistryWrapper.WrapperLookup registries) {
+    public JsonElement encode(Component text, HolderLookup.Provider registries) {
         if (text == null) {
             return null;
         }
         DynamicOps<JsonElement> ops = registries != null
-                ? (DynamicOps<JsonElement>) RegistryOps.of(JsonOps.INSTANCE, registries)
+                ? (DynamicOps<JsonElement>) RegistryOps.create(JsonOps.INSTANCE, registries)
                 : JsonOps.INSTANCE;
         DataResult<JsonElement> result;
         try {

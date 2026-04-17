@@ -13,9 +13,9 @@ import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerPlayer;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class CommandRegistryIntegrationTest {
     @Test
     void registerAddsBaseAliasAndNamespacedLiteralsToDispatcher() throws Exception {
         try (TestHarness harness = new TestHarness(tempDir, "TestMod", 4)) {
-            CommandDispatcher<ServerCommandSource> dispatcher = new CommandDispatcher<>();
+            CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
 
             CommandRegistry.register(dispatcher, new DemoCommand());
 
@@ -71,7 +71,7 @@ class CommandRegistryIntegrationTest {
     @Test
     void namedRegistryLookupIsCaseInsensitiveAndRequiresInitialization() throws Exception {
         try (TestHarness harness = new TestHarness(tempDir, "FancyMod", 3)) {
-            CommandDispatcher<ServerCommandSource> dispatcher = new CommandDispatcher<>();
+            CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
             assertNotNull(harness.registry);
 
             CommandRegistry.register("FANCYMOD", dispatcher, new DemoCommand());
@@ -87,7 +87,7 @@ class CommandRegistryIntegrationTest {
         assertFalse(CommandRegistry.isInitialized());
         assertNull(CommandRegistry.getCommandManager());
         assertThrows(IllegalStateException.class,
-                () -> CommandRegistry.register(new CommandDispatcher<ServerCommandSource>(), new DemoCommand()));
+                () -> CommandRegistry.register(new CommandDispatcher<CommandSourceStack>(), new DemoCommand()));
     }
 
     @Test
@@ -102,12 +102,12 @@ class CommandRegistryIntegrationTest {
     @Test
     void registerUsesNativeBrigadierShapeForPlayerArguments() throws Exception {
         try (TestHarness harness = new TestHarness(tempDir, "NativeMod", 4)) {
-            CommandDispatcher<ServerCommandSource> dispatcher = new CommandDispatcher<>();
+            CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
             CommandRegistry registry = harness.registry;
 
             registry.registerCommand(dispatcher, new NativePlayerCommand());
 
-            CommandNode<ServerCommandSource> nativeRoot = dispatcher.getRoot().getChild("nativeplayer");
+            CommandNode<CommandSourceStack> nativeRoot = dispatcher.getRoot().getChild("nativeplayer");
             assertNotNull(nativeRoot);
             assertNotNull(nativeRoot.getChild("@sender"));
 
@@ -115,7 +115,7 @@ class CommandRegistryIntegrationTest {
                     ArgumentCommandNode.class,
                     nativeRoot.getChild("player")
             );
-            assertInstanceOf(EntityArgumentType.class, player.getType());
+            assertInstanceOf(EntityArgument.class, player.getType());
             assertNull(player.getCustomSuggestions());
         }
     }
@@ -131,7 +131,7 @@ class CommandRegistryIntegrationTest {
     @CommandInfo(name = "nativeplayer")
     private static final class NativePlayerCommand extends MagicCommand {
         @SuppressWarnings("unused")
-        public CommandResult execute(@ParamName("player") ServerPlayerEntity player) {
+        public CommandResult execute(@ParamName("player") ServerPlayer player) {
             return CommandResult.success(player.getName().getString());
         }
     }
@@ -169,7 +169,7 @@ class CommandRegistryIntegrationTest {
         }
     }
 
-    private static void assertLiteralPresent(CommandDispatcher<ServerCommandSource> dispatcher, String label) {
+    private static void assertLiteralPresent(CommandDispatcher<CommandSourceStack> dispatcher, String label) {
         assertNotNull(dispatcher.getRoot().getChild(label), "Missing literal: " + label);
     }
 

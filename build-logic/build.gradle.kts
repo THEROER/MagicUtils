@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 plugins {
     kotlin("jvm") version "2.2.0"
     `java-gradle-plugin`
@@ -18,6 +21,18 @@ dependencies {
    implementation("com.gradleup.shadow:shadow-gradle-plugin:${project.property("shadowVersion")}")
 
     implementation("fabric-loom:fabric-loom.gradle.plugin:${project.property("fabricLoomVersion")}")
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(21)
 }
 
 gradlePlugin {

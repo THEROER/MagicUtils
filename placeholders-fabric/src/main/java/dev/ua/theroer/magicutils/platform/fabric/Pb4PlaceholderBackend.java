@@ -6,17 +6,19 @@ import dev.ua.theroer.magicutils.logger.MessageParser;
 import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
 import dev.ua.theroer.magicutils.platform.Audience;
 import eu.pb4.placeholders.api.PlaceholderContext;
+import eu.pb4.placeholders.api.PlaceholderHandler;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
 import net.kyori.adventure.text.Component;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
+import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
     private static final int MAX_LOG_VALUE = 256;
+    private static final Method REGISTER_METHOD = resolveMethod("register", PlaceholderHandler.class);
+    private static final Method REMOVE_METHOD = resolveMethod("remove");
     private final Set<MagicPlaceholders.PlaceholderKey> registered = ConcurrentHashMap.newKeySet();
     private final LoggerCore logger;
 
@@ -40,8 +42,17 @@ final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
         if (key == null || !registered.add(key)) {
             return;
         }
-        Identifier identifier = Identifier.of(key.namespace(), key.key());
-        Placeholders.register(identifier, (ctx, arg) -> resolve(key, ctx, arg));
+        Object identifier = FabricIdentifierBridge.create(key.namespace(), key.key());
+        if (identifier == null || REGISTER_METHOD == null) {
+            registered.remove(key);
+            return;
+        }
+        ReflectiveAccess.invoke(
+                REGISTER_METHOD,
+                null,
+                identifier,
+                (PlaceholderHandler) (ctx, arg) -> resolve(key, ctx, arg)
+        );
     }
 
     @Override
@@ -50,7 +61,11 @@ final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
             return;
         }
         registered.remove(key);
-        Placeholders.remove(Identifier.of(key.namespace(), key.key()));
+        Object identifier = FabricIdentifierBridge.create(key.namespace(), key.key());
+        if (identifier == null || REMOVE_METHOD == null) {
+            return;
+        }
+        ReflectiveAccess.invoke(REMOVE_METHOD, null, identifier);
     }
 
     @Override
@@ -62,7 +77,7 @@ final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
         String value = MagicPlaceholders.resolve(key.namespace(), key.key(), audience, arg);
         if (value == null || value.isEmpty()) {
             logDebug(key, arg, audience, value, Component.empty(), DefaultSettings.Pb4Mode.COMPONENT);
-            return PlaceholderResult.value(Text.empty());
+            return PlaceholderResult.value(net.minecraft.network.chat.Component.empty());
         }
         DefaultSettings.Pb4Mode mode = DefaultSettings.Pb4Mode.COMPONENT;
         if (logger != null && logger.getConfig() != null) {
@@ -73,7 +88,7 @@ final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
         }
         if (mode == DefaultSettings.Pb4Mode.RAW) {
             logDebug(key, arg, audience, value, null, mode);
-            return PlaceholderResult.value(Text.literal(value));
+            return PlaceholderResult.value(net.minecraft.network.chat.Component.literal(value));
         }
         Component parsed = MessageParser.parseSmart(value);
         logDebug(key, arg, audience, value, parsed, mode);
@@ -120,6 +135,17 @@ final class Pb4PlaceholderBackend implements FabricPlaceholderBackend {
             return normalized.substring(0, MAX_LOG_VALUE) + "...(" + normalized.length() + ")";
         }
         return normalized;
+    }
+
+    private static Method resolveMethod(String name, Class<?>... trailingTypes) {
+        Class<?> identifierType = FabricIdentifierBridge.type();
+        if (identifierType == null) {
+            return null;
+        }
+        Class<?>[] parameterTypes = new Class<?>[trailingTypes.length + 1];
+        parameterTypes[0] = identifierType;
+        System.arraycopy(trailingTypes, 0, parameterTypes, 1, trailingTypes.length);
+        return ReflectiveAccess.publicMethod(Placeholders.class, name, parameterTypes).orElse(null);
     }
 
 }

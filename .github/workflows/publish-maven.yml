@@ -22,7 +22,8 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - uses: actions/setup-java@v5
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -30,10 +31,54 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v3
 
-      - name: Publish to local gh-pages folder
+      - name: Publish default target to local gh-pages folder
         run: |
           chmod +x ./gradlew
           ./gradlew clean publish --rerun-tasks -Ppublish_repo=$GITHUB_WORKSPACE/maven -Pskip_shadow_publish=true
+          ./gradlew --stop
+
+      - uses: actions/setup-java@v5
+        name: Set up Java 17
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Publish mc1201 target to local gh-pages folder
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean publish --rerun-tasks \
+            -Ppublish_repo=$GITHUB_WORKSPACE/maven \
+            -Pskip_shadow_publish=true \
+            -Ptarget=mc1201 \
+            -Ppublish_target_suffix=true
+
+      - uses: actions/setup-java@v5
+        name: Set up Java 25
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'gradle'
+
+      - name: Publish mc2611 Bukkit/common target to local gh-pages folder
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --rerun-tasks \
+            :platform-api:publish \
+            :core:publish \
+            :config:publish \
+            :lang:publish \
+            :logger:publish \
+            :commands:publish \
+            :placeholders:publish \
+            :http-client:publish \
+            :config-yaml:publish \
+            :platform-bukkit:publish \
+            :bukkit-bundle:publish \
+            -Ppublish_repo=$GITHUB_WORKSPACE/maven \
+            -Pskip_shadow_publish=true \
+            -Ptarget=mc2611 \
+            -Ppublish_target_suffix=true
 
       - name: Generate Maven index
         run: |

@@ -21,12 +21,13 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
         shadowRuntimeClasspath.isCanBeConsumed = false
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
+        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
         val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
         val moduleName = getModuleName(project.name)
 
         with(project) {
             project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")
-            project.dependencies.add("mappings", loomMappingsString(magicutilsTarget.yarn.get()))
+            project.dependencies.add("mappings", loom.officialMojangMappings())
             project.dependencies.add("modCompileOnly", "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
             project.dependencies.add("modCompileOnly", "eu.pb4:placeholder-api:${magicutilsTarget.pb4_placeholder_api.get()}")
             project.dependencies.add("modCompileOnly", "io.github.miniplaceholders:miniplaceholders-api:${magicutilsTarget.miniplaceholders_api.get()}")
@@ -70,9 +71,5 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
                 }
             }
         }
-    }
-
-    private fun loomMappingsString(yarnVersion: String): String {
-        return "net.fabricmc:yarn:$yarnVersion:v2"
     }
 }

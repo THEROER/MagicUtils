@@ -25,19 +25,18 @@ import dev.ua.theroer.magicutils.platform.fabric.FabricComponentSerializer;
 import dev.ua.theroer.magicutils.platform.fabric.FabricConsoleAudience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricExternalPlaceholderEngine;
 import dev.ua.theroer.magicutils.platform.fabric.FabricPlaceholderRegistrar;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Fabric logger adapter backed by {@link LoggerCore}.
  */
-@LogMethods(staticMethods = false, audienceType = "net.minecraft.server.network.ServerPlayerEntity")
-public final class Logger extends LoggerMethods implements LoggerAdapter<ServerPlayerEntity, PrefixedLogger> {
+@LogMethods(staticMethods = false, audienceType = "net.minecraft.server.level.ServerPlayer")
+public final class Logger extends LoggerMethods implements LoggerAdapter<ServerPlayer, PrefixedLogger> {
     private final LoggerCore core;
     private final Map<String, PrefixedLogger> prefixedLoggers = new HashMap<>();
 
@@ -172,12 +171,12 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
     }
 
     @Override
-    protected void send(LogLevel level, Object message, ServerPlayerEntity player) {
+    protected void send(LogLevel level, Object message, ServerPlayer player) {
         send(level, message, player, null, LogTarget.CHAT, false);
     }
 
     @Override
-    protected void send(LogLevel level, Object message, ServerPlayerEntity player, boolean all) {
+    protected void send(LogLevel level, Object message, ServerPlayer player, boolean all) {
         send(level, message, player, null, getDefaultTarget(), all);
     }
 
@@ -187,12 +186,12 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
     }
 
     @Override
-    protected void sendToPlayers(LogLevel level, Object message, java.util.Collection<? extends ServerPlayerEntity> players) {
+    protected void sendToPlayers(LogLevel level, Object message, java.util.Collection<? extends ServerPlayer> players) {
         send(level, message, null, players, LogTarget.CHAT, false);
     }
 
     @Override
-    public Audience wrapAudience(ServerPlayerEntity player) {
+    public Audience wrapAudience(ServerPlayer player) {
         return player != null ? new FabricAudience(player) : null;
     }
 
@@ -202,7 +201,7 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
      * @param source command source
      * @return wrapped audience or null
      */
-    public Audience wrapAudience(ServerCommandSource source) {
+    public Audience wrapAudience(CommandSourceStack source) {
         return source != null ? new FabricCommandAudience(source, false) : null;
     }
 
@@ -213,7 +212,7 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
      * @param broadcastToOps whether to broadcast to ops
      * @return wrapped audience or null
      */
-    public Audience wrapAudience(ServerCommandSource source, boolean broadcastToOps) {
+    public Audience wrapAudience(CommandSourceStack source, boolean broadcastToOps) {
         return source != null ? new FabricCommandAudience(source, broadcastToOps) : null;
     }
 
@@ -223,7 +222,7 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
      * @param source command source
      * @return wrapped audience or null
      */
-    public Audience wrapErrorAudience(ServerCommandSource source) {
+    public Audience wrapErrorAudience(CommandSourceStack source) {
         return source != null ? new FabricCommandAudience(source, false, FabricCommandAudience.Mode.ERROR) : null;
     }
 

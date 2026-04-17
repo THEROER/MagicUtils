@@ -8,8 +8,7 @@ import dev.ua.theroer.magicutils.utils.MsgFmt;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.text.Text;
+import net.minecraft.core.HolderLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,23 +43,23 @@ public final class FabricComponentSerializer {
         return maxJsonLength;
     }
 
-    public static Text toNative(Component component) {
+    public static net.minecraft.network.chat.Component toNative(Component component) {
         return toNative(component, null);
     }
 
-    public static Text nativeParseSmart(String input) {
+    public static net.minecraft.network.chat.Component nativeParseSmart(String input) {
         if (input == null || input.isEmpty()) {
-            return Text.empty();
+            return net.minecraft.network.chat.Component.empty();
         }
         return toNative(MessageParser.parseSmart(input));
     }
 
-    public static Text nativeParseSmart(String template, Map<String, ?> values) {
+    public static net.minecraft.network.chat.Component nativeParseSmart(String template, Map<String, ?> values) {
         String formatted = values != null ? MsgFmt.apply(template, values) : template;
         return nativeParseSmart(formatted);
     }
 
-    public static List<Text> nativeParseSmartList(List<String> lines) {
+    public static List<net.minecraft.network.chat.Component> nativeParseSmartList(List<String> lines) {
         if (lines == null || lines.isEmpty()) {
             return List.of();
         }
@@ -69,14 +68,14 @@ public final class FabricComponentSerializer {
                 .toList();
     }
 
-    public static Text toNative(Component component, Consumer<String> onError) {
+    public static net.minecraft.network.chat.Component toNative(Component component, Consumer<String> onError) {
         if (component == null) {
-            return Text.empty();
+            return net.minecraft.network.chat.Component.empty();
         }
 
         try {
             JsonElement tree = GSON.serializeToTree(component);
-            Text decoded = decodeText(tree, onError);
+            net.minecraft.network.chat.Component decoded = decodeText(tree, onError);
             if (decoded != null) {
                 return decoded;
             }
@@ -86,14 +85,14 @@ public final class FabricComponentSerializer {
             }
         }
 
-        return Text.literal(PLAIN.serialize(component));
+        return net.minecraft.network.chat.Component.literal(PLAIN.serialize(component));
     }
 
-    public static Component toAdventure(Text text) {
+    public static Component toAdventure(net.minecraft.network.chat.Component text) {
         return toAdventure(text, null);
     }
 
-    public static Component toAdventure(Text text, RegistryWrapper.WrapperLookup registries) {
+    public static Component toAdventure(net.minecraft.network.chat.Component text, HolderLookup.Provider registries) {
         if (text == null) {
             return Component.empty();
         }
@@ -113,24 +112,24 @@ public final class FabricComponentSerializer {
         return component == null ? "" : PLAIN.serialize(component);
     }
 
-    public static Supplier<Text> fbLazyMemoized(Component component) {
-        AtomicReference<Text> ref = new AtomicReference<>();
+    public static Supplier<net.minecraft.network.chat.Component> fbLazyMemoized(Component component) {
+        AtomicReference<net.minecraft.network.chat.Component> ref = new AtomicReference<>();
         return () -> {
-            Text cached = ref.get();
+            net.minecraft.network.chat.Component cached = ref.get();
             if (cached != null) {
                 return cached;
             }
-            Text created = toNative(component);
+            net.minecraft.network.chat.Component created = toNative(component);
             ref.compareAndSet(null, created);
             return ref.get();
         };
     }
 
-    private static Text decodeText(JsonElement tree, Consumer<String> onError) {
+    private static net.minecraft.network.chat.Component decodeText(JsonElement tree, Consumer<String> onError) {
         return adapter().decode(tree, onError);
     }
 
-    private static JsonElement encodeText(Text text, RegistryWrapper.WrapperLookup registries) {
+    private static JsonElement encodeText(net.minecraft.network.chat.Component text, HolderLookup.Provider registries) {
         return adapter().encode(text, registries);
     }
 

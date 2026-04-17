@@ -21,9 +21,10 @@ config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2865:.g
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:116:.getField(
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:31:Class.forName(
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:71:.getMethod(
+http-client/src/main/java/dev/ua/theroer/magicutils/http/HttpClientLifecycle.java:51:.getMethod(
 lang/src/main/java/dev/ua/theroer/magicutils/lang/LanguageManager.java:1094:.getMethod(
-lang/src/main/java/dev/ua/theroer/magicutils/lang/Messages.java:223:.getMethod(
-lang/src/main/java/dev/ua/theroer/magicutils/lang/MessagesView.java:170:.getMethod(
+lang/src/main/java/dev/ua/theroer/magicutils/lang/Messages.java:226:.getMethod(
+lang/src/main/java/dev/ua/theroer/magicutils/lang/MessagesView.java:173:.getMethod(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:62:Class.forName(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:64:.getMethod(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:65:.getMethod(

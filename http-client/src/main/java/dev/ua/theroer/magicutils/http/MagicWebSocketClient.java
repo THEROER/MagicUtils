@@ -144,13 +144,11 @@ public final class MagicWebSocketClient implements AutoCloseable {
         if (!ownsClient) {
             return;
         }
-        try {
-            client.close();
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warn("Failed to close WebSocket HTTP client", e);
-            }
-        }
+        HttpClientLifecycle.closeOwnedClient(
+                client,
+                logger,
+                "Failed to close WebSocket HTTP client"
+        );
     }
 
     private boolean isBlockingSensitiveThread() {

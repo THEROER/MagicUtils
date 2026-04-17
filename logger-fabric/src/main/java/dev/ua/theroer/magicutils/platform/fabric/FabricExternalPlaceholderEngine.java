@@ -9,12 +9,9 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.server.level.ServerPlayer;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,22 +64,23 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             Class<?> placeholders = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.Placeholders").orElse(null);
             Class<?> placeholderContext = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.PlaceholderContext").orElse(null);
             Class<?> placeholderResult = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.PlaceholderResult").orElse(null);
-            if (placeholders == null || placeholderContext == null || placeholderResult == null) {
+            Class<?> identifierType = FabricIdentifierBridge.type();
+            if (placeholders == null || placeholderContext == null || placeholderResult == null || identifierType == null) {
                 throw new IllegalStateException("PB4 classes are unavailable");
             }
 
             parsePlaceholder = ReflectiveAccess.publicMethod(
                     placeholders,
                     "parsePlaceholder",
-                    Identifier.class,
+                    identifierType,
                     String.class,
                     placeholderContext
             ).orElse(null);
-            parseText = ReflectiveAccess.publicMethod(placeholders, "parseText", Text.class, placeholderContext).orElse(null);
+            parseText = ReflectiveAccess.publicMethod(placeholders, "parseText", net.minecraft.network.chat.Component.class, placeholderContext).orElse(null);
             resultValid = ReflectiveAccess.publicMethod(placeholderResult, "isValid").orElse(null);
             resultText = ReflectiveAccess.publicMethod(placeholderResult, "text").orElse(null);
 
-            contextOfPlayer = ReflectiveAccess.publicMethod(placeholderContext, "of", ServerPlayerEntity.class).orElse(null);
+            contextOfPlayer = ReflectiveAccess.publicMethod(placeholderContext, "of", ServerPlayer.class).orElse(null);
             contextOfServer = ReflectiveAccess.publicMethod(placeholderContext, "of", MinecraftServer.class).orElse(null);
         } catch (Throwable ignored) {
             // PB4 placeholder api not available
@@ -144,9 +142,9 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return component;
         }
         try {
-            Text nativeText = FabricComponentSerializer.toNative(component);
+            net.minecraft.network.chat.Component nativeText = FabricComponentSerializer.toNative(component);
             Object parsed = ReflectiveAccess.invoke(pb4ParseText, null, nativeText, context).orElse(null);
-            if (parsed instanceof Text parsedText) {
+            if (parsed instanceof net.minecraft.network.chat.Component parsedText) {
                 return FabricComponentSerializer.toAdventure(parsedText);
             }
         } catch (Throwable ignored) {
@@ -224,11 +222,11 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return null;
         }
         try {
-            ServerPlayerEntity player = extractPlayer(audience);
+            ServerPlayer player = extractPlayer(audience);
             if (player != null) {
                 return ReflectiveAccess.invoke(pb4ContextOfPlayer, null, player).orElse(null);
             }
-            ServerCommandSource source = extractSource(audience);
+            CommandSourceStack source = extractSource(audience);
             if (source != null && source.getServer() != null) {
                 return ReflectiveAccess.invoke(pb4ContextOfServer, null, source.getServer()).orElse(null);
             }
@@ -258,7 +256,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         return resolved;
     }
 
-    private ServerPlayerEntity extractPlayer(Audience audience) {
+    private ServerPlayer extractPlayer(Audience audience) {
         if (audience instanceof FabricAudience fabricAudience) {
             return fabricAudience.getPlayer();
         }
@@ -268,7 +266,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         return null;
     }
 
-    private ServerCommandSource extractSource(Audience audience) {
+    private CommandSourceStack extractSource(Audience audience) {
         if (audience instanceof FabricCommandAudience commandAudience) {
             return commandAudience.getSource();
         }
@@ -296,7 +294,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return null;
         }
         String[] parts = raw.split(" ", 2);
-        Identifier identifier = Identifier.tryParse(parts[0]);
+        Object identifier = FabricIdentifierBridge.parse(parts[0]);
         if (identifier == null) {
             return null;
         }
@@ -312,7 +310,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
                 return null;
             }
             Object text = ReflectiveAccess.invoke(pb4ResultText, result).orElse(null);
-            if (!(text instanceof Text textValue)) {
+            if (!(text instanceof net.minecraft.network.chat.Component textValue)) {
                 return null;
             }
             Component component = FabricComponentSerializer.toAdventure(textValue);
@@ -323,7 +321,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
     }
 
     private net.kyori.adventure.audience.Audience createMiniAudience(Audience audience) {
-        ServerPlayerEntity player = extractPlayer(audience);
+        ServerPlayer player = extractPlayer(audience);
         if (player == null) {
             return net.kyori.adventure.audience.Audience.empty();
         }
@@ -331,7 +329,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         Component displayName = FabricComponentSerializer.toAdventure(player.getDisplayName());
 
         Pointers pointers = Pointers.builder()
-                .withStatic(Identity.UUID, player.getUuid())
+                .withStatic(Identity.UUID, player.getUUID())
                 .withStatic(Identity.NAME, name)
                 .withStatic(Identity.DISPLAY_NAME, displayName)
                 .build();

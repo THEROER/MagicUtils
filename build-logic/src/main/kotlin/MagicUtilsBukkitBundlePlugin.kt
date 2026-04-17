@@ -56,8 +56,14 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
 
             tasks.named("processResources", ProcessResources::class.java).configure { resources ->
                 resources.inputs.property("version", version)
+                resources.inputs.property("apiVersion", magicutilsTarget.minecraft.get())
                 resources.filesMatching("plugin.yml") { details ->
-                    details.expand(mapOf("version" to version))
+                    details.expand(
+                        mapOf(
+                            "version" to version,
+                            "apiVersion" to magicutilsTarget.minecraft.get(),
+                        )
+                    )
                 }
             }
 

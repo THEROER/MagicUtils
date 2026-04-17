@@ -19,7 +19,7 @@ import dev.ua.theroer.magicutils.platform.ThreadContext;
 import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,7 +125,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         if (server == null) {
             return Collections.emptyList();
         }
-        return server.getPlayerManager().getPlayerList().stream()
+        return server.getPlayerList().getPlayers().stream()
                 .map(this::wrap)
                 .collect(Collectors.toList());
     }
@@ -141,7 +141,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
             task.run();
             return;
         }
-        if (server.isOnThread()) {
+        if (server.isSameThread()) {
             task.run();
             return;
         }
@@ -151,7 +151,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     @Override
     public boolean isMainThread() {
         MinecraftServer server = server();
-        return server != null && server.isOnThread();
+        return server != null && server.isSameThread();
     }
 
     @Override
@@ -160,7 +160,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         if (server == null) {
             return ThreadContext.UNKNOWN;
         }
-        return server.isOnThread() ? ThreadContext.MAIN : ThreadContext.WORKER;
+        return server.isSameThread() ? ThreadContext.MAIN : ThreadContext.WORKER;
     }
 
     @Override
@@ -212,7 +212,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         SHUTDOWN_HOOKS.remove(hook);
     }
 
-    private Audience wrap(ServerPlayerEntity player) {
+    private Audience wrap(ServerPlayer player) {
         return new FabricAudience(player);
     }
 
@@ -238,10 +238,10 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
                         return null;
                     }
                     String content = extractMessageContent(args[0]);
-                    final ServerPlayerEntity[] senderHolder = new ServerPlayerEntity[1];
-                    ReflectiveAccess.cast(args[1], ServerPlayerEntity.class)
+                    final ServerPlayer[] senderHolder = new ServerPlayer[1];
+                    ReflectiveAccess.cast(args[1], ServerPlayer.class)
                             .ifPresent(value -> senderHolder[0] = value);
-                    ServerPlayerEntity sender = senderHolder[0];
+                    ServerPlayer sender = senderHolder[0];
                     publishPlayerMessage(sender, content, PlayerMessageType.CHAT);
                     return null;
                 }
@@ -255,12 +255,12 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
                     }
                     String content = extractMessageContent(args[0]);
                     Object source = args[1];
-                    final ServerPlayerEntity[] senderHolder = new ServerPlayerEntity[1];
+                    final ServerPlayer[] senderHolder = new ServerPlayer[1];
                     ReflectiveAccess.publicMethod(source.getClass(), "getPlayer")
                             .flatMap(getPlayer -> ReflectiveAccess.invoke(getPlayer, source))
-                            .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
+                            .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayer.class))
                             .ifPresent(value -> senderHolder[0] = value);
-                    ServerPlayerEntity sender = senderHolder[0];
+                    ServerPlayer sender = senderHolder[0];
                     publishPlayerMessage(sender, content, PlayerMessageType.COMMAND);
                     return null;
                 }
@@ -363,12 +363,12 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         ReflectiveAccess.invoke(register, event, listener);
     }
 
-    private void publishPlayerMessage(ServerPlayerEntity player, String message, PlayerMessageType type) {
+    private void publishPlayerMessage(ServerPlayer player, String message, PlayerMessageType type) {
         if (player == null || message == null || message.isBlank() || type == null) {
             return;
         }
         PlayerMessage playerMessage = new PlayerMessage(
-                player.getUuid(),
+                player.getUUID(),
                 player.getName().getString(),
                 message,
                 type
@@ -385,12 +385,12 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         }
     }
 
-    private void publishPlayerLifecycle(ServerPlayerEntity player, PlayerLifecycleType type) {
+    private void publishPlayerLifecycle(ServerPlayer player, PlayerLifecycleType type) {
         if (player == null || type == null || playerLifecycleListeners.isEmpty()) {
             return;
         }
         PlayerLifecycle lifecycle = new PlayerLifecycle(
-                player.getUuid(),
+                player.getUUID(),
                 player.getName().getString(),
                 type
         );
@@ -406,22 +406,22 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         }
     }
 
-    private static ServerPlayerEntity extractPlayer(Object handler) {
+    private static ServerPlayer extractPlayer(Object handler) {
         if (handler == null) {
             return null;
         }
-        final ServerPlayerEntity[] playerHolder = new ServerPlayerEntity[1];
+        final ServerPlayer[] playerHolder = new ServerPlayer[1];
         ReflectiveAccess.publicMethod(handler.getClass(), "getPlayer")
                 .flatMap(method -> ReflectiveAccess.invoke(method, handler))
-                .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
+                .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayer.class))
                 .ifPresent(value -> playerHolder[0] = value);
         if (playerHolder[0] != null) {
             return playerHolder[0];
         }
-        final ServerPlayerEntity[] fieldHolder = new ServerPlayerEntity[1];
+        final ServerPlayer[] fieldHolder = new ServerPlayer[1];
         ReflectiveAccess.publicField(handler.getClass(), "player")
                 .flatMap(field -> ReflectiveAccess.readField(field, handler))
-                .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayerEntity.class))
+                .flatMap(value -> ReflectiveAccess.cast(value, ServerPlayer.class))
                 .ifPresent(value -> fieldHolder[0] = value);
         return fieldHolder[0];
     }

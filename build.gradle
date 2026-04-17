@@ -3,9 +3,15 @@ plugins {
     id 'magicutils.target'
 }
 
+def baseVersion = project.properties.get('version') ?: '0.0.0'
+def publishTargetSuffix = (findProperty('publish_target_suffix')?.toString()?.toBoolean()) ?: false
+def targetVersion = publishTargetSuffix
+        ? "${baseVersion}-${project.extensions.extraProperties.get('magicutilsTargetName')}"
+        : baseVersion
+
 allprojects {
     group = 'dev.ua.theroer'
-    version = project.properties.get('version') ?: '0.0.0'
+    version = targetVersion
 }
 
 def reflectionPatterns = [

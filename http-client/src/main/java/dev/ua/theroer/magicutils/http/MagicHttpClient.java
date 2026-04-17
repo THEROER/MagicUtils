@@ -510,13 +510,7 @@ public final class MagicHttpClient implements AutoCloseable {
         if (!ownsClient) {
             return;
         }
-        try {
-            client.close();
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warn("Failed to close HTTP client", e);
-            }
-        }
+        HttpClientLifecycle.closeOwnedClient(client, logger, "Failed to close HTTP client");
     }
 
     private Map<String, String> buildDefaultHeaders(Builder builder) {
