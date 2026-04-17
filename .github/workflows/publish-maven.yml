@@ -47,7 +47,24 @@ jobs:
       - name: Publish mc1201 target to local gh-pages folder
         run: |
           chmod +x ./gradlew
-          ./gradlew clean publish --rerun-tasks \
+          ./gradlew --rerun-tasks \
+            :platform-api:publish \
+            :core:publish \
+            :config:publish \
+            :lang:publish \
+            :logger:publish \
+            :commands:publish \
+            :placeholders:publish \
+            :http-client:publish \
+            :config-yaml:publish \
+            :config-toml:publish \
+            :platform-bukkit:publish \
+            :bukkit-bundle:publish \
+            :platform-fabric:publish \
+            :logger-fabric:publish \
+            :commands-fabric:publish \
+            :placeholders-fabric:publish \
+            :fabric-bundle:publish \
             -Ppublish_repo=$GITHUB_WORKSPACE/maven \
             -Pskip_shadow_publish=true \
             -Ptarget=mc1201 \
