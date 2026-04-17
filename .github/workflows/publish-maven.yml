@@ -38,10 +38,10 @@ jobs:
           ./gradlew --stop
 
       - uses: actions/setup-java@v5
-        name: Set up Java 17
+        name: Set up Java 21 for mc1201 build JVM
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - name: Publish mc1201 target to local gh-pages folder
