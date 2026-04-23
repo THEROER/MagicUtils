@@ -185,8 +185,10 @@ public class BukkitCommandWrapper extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias,
             @NotNull String[] args) {
         try {
-            commandLogger.debug(
-                    "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+            if (commandLogger.isLevelEnabled(dev.ua.theroer.magicutils.logger.LogLevel.DEBUG)) {
+                commandLogger.debug(
+                        "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+            }
 
             List<String> suggestions = commandManager.getSuggestions(alias, sender, Arrays.asList(args));
 

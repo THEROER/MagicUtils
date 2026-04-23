@@ -102,6 +102,21 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
     }
 
     @Override
+    public void runForAudience(Audience audience, Runnable task) {
+        if (task == null) {
+            return;
+        }
+        if (audience != null && audience.id() != null) {
+            org.bukkit.entity.Player player = Bukkit.getPlayer(audience.id());
+            if (player != null) {
+                BukkitThreading.runEntity(plugin, player, task);
+                return;
+            }
+        }
+        runOnMain(task);
+    }
+
+    @Override
     public boolean isMainThread() {
         return Bukkit.isPrimaryThread();
     }

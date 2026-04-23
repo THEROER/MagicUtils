@@ -4,6 +4,9 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.Platform;
@@ -14,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Velocity-specific bootstrap helper for wiring MagicUtils services.
@@ -59,6 +63,8 @@ public final class VelocityBootstrap {
         private String permissionPrefix;
         private Executor asyncExecutor;
         private Consumer<CommandRegistry> commandConfigurer;
+        private boolean enableDiagnostics;
+        private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
 
         private Builder(ProxyServer proxy, Object plugin, String pluginName, Path dataDirectory) {
             this.proxy = Objects.requireNonNull(proxy, "proxy");
@@ -256,6 +262,27 @@ public final class VelocityBootstrap {
         }
 
         /**
+         * Enables runtime diagnostics service creation.
+         *
+         * @return builder
+         */
+        public Builder enableDiagnostics() {
+            this.enableDiagnostics = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring diagnostics checks before the service is exposed.
+         *
+         * @param diagnosticsConfigurer diagnostics registry callback
+         * @return builder
+         */
+        public Builder configureDiagnostics(Consumer<DiagnosticRegistry> diagnosticsConfigurer) {
+            this.diagnosticsConfigurer = diagnosticsConfigurer;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
@@ -284,7 +311,12 @@ public final class VelocityBootstrap {
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
+                runtime.putNamedComponent("commandRegistry", prepared.commandRegistry());
+                runtime.putNamedComponent("commandManager", prepared.commandRegistry().commandManager());
                 runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(plugin));
+            }
+            if (enableDiagnostics) {
+                DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));
@@ -399,6 +431,15 @@ public final class VelocityBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+        /**
+         * Returns the diagnostics service when diagnostics were enabled.
+         *
+         * @return diagnostics service or null
+         */
+        public @Nullable DiagnosticsService diagnosticsService() {
+            return runtime.findComponent(DiagnosticsService.class).orElse(null);
+        }
+
         /**
          * Returns the legacy bootstrap view without the runtime wrapper.
          *

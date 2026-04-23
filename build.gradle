@@ -1,5 +1,6 @@
 plugins {
     id 'base'
+    id 'magicutils.matrix-root'
     id 'magicutils.target'
 }
 

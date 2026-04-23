@@ -15,6 +15,9 @@ public final class BukkitThreading {
     private static final Method BUKKIT_GET_GLOBAL_REGION_SCHEDULER = resolveBukkitMethod(
             "getGlobalRegionScheduler"
     );
+    private static final Method BUKKIT_IS_GLOBAL_TICK_THREAD = resolveBukkitMethod(
+            "isGlobalTickThread"
+    );
     private static final Method BUKKIT_IS_OWNED_BY_CURRENT_REGION = resolveBukkitMethod(
             "isOwnedByCurrentRegion",
             Entity.class
@@ -63,6 +66,10 @@ public final class BukkitThreading {
                 return;
             }
             Bukkit.getScheduler().runTask(plugin, task);
+            return;
+        }
+        if (isGlobalThread()) {
+            task.run();
             return;
         }
 
@@ -148,6 +155,25 @@ public final class BukkitThreading {
         }
         Object owned = invoke(BUKKIT_IS_OWNED_BY_CURRENT_REGION, null, entity);
         return Boolean.TRUE.equals(owned);
+    }
+
+    /**
+     * Checks whether the current thread is already the Folia global tick thread.
+     * Falls back to Bukkit's primary-thread probe when the dedicated Folia API is unavailable.
+     *
+     * @return true when the current thread can execute global tasks inline
+     */
+    public static boolean isGlobalThread() {
+        if (!FOLIA) {
+            return Bukkit.isPrimaryThread();
+        }
+        if (BUKKIT_IS_GLOBAL_TICK_THREAD != null) {
+            Object global = invoke(BUKKIT_IS_GLOBAL_TICK_THREAD, null);
+            if (Boolean.TRUE.equals(global)) {
+                return true;
+            }
+        }
+        return Bukkit.isPrimaryThread();
     }
 
     private static boolean detectFolia() {

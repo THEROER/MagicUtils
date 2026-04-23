@@ -56,8 +56,13 @@ public final class FoliaPlatformProvider implements Platform, ShutdownHookRegist
     }
 
     @Override
+    public void runForAudience(Audience audience, Runnable task) {
+        delegate.runForAudience(audience, task);
+    }
+
+    @Override
     public boolean isMainThread() {
-        return false;
+        return BukkitThreading.isGlobalThread();
     }
 
     @Override

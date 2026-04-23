@@ -219,6 +219,21 @@ These nodes are prefixed by the registry permission prefix. See
 - `NOT_OP`
 - `FALSE`
 
+For manual checks outside annotation processing, use `MagicSender`:
+
+```java
+MagicSender sender = MagicSender.wrap(rawSender);
+if (MagicSender.hasPermission(rawSender, "myplugin.admin")) {
+    // adapter-default fallback
+}
+if (sender != null && sender.hasPermission("myplugin.admin", 4)) {
+    // explicit fallback override for this check
+}
+```
+
+The overload with `fallbackOpLevel` is mainly useful on Fabric and NeoForge,
+where adapters may fall back to command-source permission levels.
+
 ## CommandResult
 
 `CommandResult.success()` and `CommandResult.failure()` control whether MagicUtils
@@ -405,3 +420,5 @@ command is frozen. Later calls to:
 throw `IllegalStateException`. If you still use `registerSpec(...)`, it remains
 supported as a compatibility path and is internally converted into the same
 `MagicCommand` runtime model.
+
+For runtime diagnostics mounted the same way, see [Diagnostics](diagnostics.md).

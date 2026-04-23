@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
+import java.util.function.Supplier;
+
 /**
  * Lightweight logger interface for command engine diagnostics.
  */
@@ -10,6 +12,27 @@ public interface CommandLogger {
      * @param message log message
      */
     void debug(String message);
+
+    /**
+     * Returns whether debug logging is currently enabled.
+     *
+     * @return true when debug messages will be emitted
+     */
+    default boolean isDebugEnabled() {
+        return true;
+    }
+
+    /**
+     * Lazily logs a debug message only when debug output is enabled.
+     *
+     * @param messageSupplier supplier for the log message
+     */
+    default void debug(Supplier<String> messageSupplier) {
+        if (!isDebugEnabled() || messageSupplier == null) {
+            return;
+        }
+        debug(messageSupplier.get());
+    }
 
     /**
      * Logs an info message.
@@ -59,6 +82,11 @@ public interface CommandLogger {
         return new CommandLogger() {
             @Override
             public void debug(String message) {
+            }
+
+            @Override
+            public boolean isDebugEnabled() {
+                return false;
             }
 
             @Override

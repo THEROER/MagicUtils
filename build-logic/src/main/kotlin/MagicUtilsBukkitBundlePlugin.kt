@@ -14,8 +14,7 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.shadow")
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val moduleName = project.magicUtilsModuleName()
 
         with(project) {
             val bundleShadow = configurations.create("bundleShadow")
@@ -30,6 +29,8 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
                 project(":platform-api"),
                 project(":logger"),
                 project(":commands"),
+                project(":diagnostics"),
+                project(":http-client"),
                 project(":placeholders"),
                 project(":core"),
                 project(":platform-bukkit")
@@ -50,6 +51,11 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
 
             bundleProjects.forEach { dep ->
                 dependencies.add("bundleShadow", project(dep.path))
+                dependencies.add("compileOnly", project(dep.path))
+            }
+
+            bundleShadedProjects.forEach { dep ->
+                dependencies.add("compileOnly", project(dep.path))
             }
 
             dependencies.add("compileOnly", "io.papermc.paper:paper-api:${magicutilsTarget.paper.get()}")

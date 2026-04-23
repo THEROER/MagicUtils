@@ -19,6 +19,7 @@ currently uses manual wiring with the platform adapter plus command module.
 | Config TOML | `magicutils-config-toml` | Adds TOML support via Jackson. |
 | Lang | `magicutils-lang` | Language manager and message helpers. |
 | Commands | `magicutils-commands` | Annotation/builder command framework. |
+| Diagnostics | `magicutils-diagnostics` | Runtime diagnostics service, built-in checks, JSON export, and command helper support. |
 | Logger | `magicutils-logger` | Adventure-based logger core. |
 | Placeholders | `magicutils-placeholders` | Placeholder registry. |
 | Processor | `magicutils-processor` | Annotation processor used by internal tooling. |

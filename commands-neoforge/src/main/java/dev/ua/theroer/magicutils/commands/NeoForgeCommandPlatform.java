@@ -2,11 +2,11 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.neoforge.NeoForgeCommandAudience;
+import dev.ua.theroer.magicutils.platform.neoforge.NeoForgePermissionBridge;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
@@ -151,7 +151,12 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
 
         @Override
         public boolean hasPermission(String permission) {
-            return fallback(sender, MagicPermissionDefault.OP, opLevel);
+            return hasPermission(permission, opLevel);
+        }
+
+        @Override
+        public boolean hasPermission(String permission, int fallbackOpLevel) {
+            return NeoForgePermissionBridge.hasPermission(sender, permission, fallbackOpLevel);
         }
 
         @Override
@@ -183,14 +188,7 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
     }
 
     private static boolean hasPermissionLevel(CommandSourceStack sender, int opLevel) {
-        if (sender == null) {
-            return false;
-        }
-        try {
-            return sender.hasPermission(opLevel);
-        } catch (Exception ignored) {
-            return false;
-        }
+        return NeoForgePermissionBridge.hasPermissionLevel(sender, opLevel);
     }
 
     private static ServerPlayer getPlayerSafe(CommandSourceStack sender) {
@@ -210,7 +208,7 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         }
 
         Entity entity = sender != null ? sender.getEntity() : null;
-        if (entity instanceof MinecartCommandBlock) {
+        if (isMinecartCommandBlockEntity(entity)) {
             return AllowedSender.MINECART;
         }
 
@@ -222,7 +220,7 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         if (type.equals(ServerPlayer.class)) {
             return AllowedSender.PLAYER;
         }
-        if (type.equals(MinecartCommandBlock.class)) {
+        if (isMinecartCommandBlockType(type)) {
             return AllowedSender.MINECART;
         }
         String name = type.getSimpleName().toLowerCase(Locale.ROOT);
@@ -233,6 +231,21 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
             return AllowedSender.MINECART;
         }
         return AllowedSender.ANY;
+    }
+
+    private static boolean isMinecartCommandBlockEntity(@Nullable Entity entity) {
+        return entity != null && isMinecartCommandBlockType(entity.getClass());
+    }
+
+    private static boolean isMinecartCommandBlockType(@Nullable Class<?> type) {
+        if (type == null) {
+            return false;
+        }
+        String simpleName = type.getSimpleName();
+        String fullName = type.getName();
+        return "MinecartCommandBlock".equals(simpleName)
+                || fullName.endsWith(".MinecartCommandBlock")
+                || fullName.endsWith(".minecart.MinecartCommandBlock");
     }
 
     private static String resolveName(CommandSourceStack sender) {

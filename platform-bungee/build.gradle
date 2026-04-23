@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     api project(':core')
+    api project(':diagnostics')
     compileOnly libs.bungeecord.api
     api libs.kyori.adventure.text.serializer.legacy
     implementation libs.kyori.adventure.text.serializer.plain

@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     api project(':commands-brigadier')
+    api project(':diagnostics')
     api project(':platform-fabric')
     api project(':logger-fabric')
 

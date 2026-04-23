@@ -33,6 +33,11 @@ final class VelocityAudience implements Audience {
     }
 
     @Override
+    public String name() {
+        return source instanceof Player player ? player.getUsername() : null;
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
         if (permission == null || permission.isBlank()) {
             return true;

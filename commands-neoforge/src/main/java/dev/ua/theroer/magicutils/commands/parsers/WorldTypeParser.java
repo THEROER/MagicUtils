@@ -2,8 +2,9 @@ package dev.ua.theroer.magicutils.commands.parsers;
 
 import dev.ua.theroer.magicutils.commands.TypeParser;
 import dev.ua.theroer.magicutils.logger.PrefixedLoggerCore;
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
+import java.lang.reflect.Method;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,6 +18,8 @@ import java.util.List;
  * Type parser for ServerLevel arguments with @current support.
  */
 public class WorldTypeParser implements TypeParser<CommandSourceStack, ServerLevel> {
+    private static final Method IDENTIFIER_GET_PATH = resolveIdentifierPathMethod();
+    private static final Method RESOURCE_KEY_IDENTIFIER = resolveResourceKeyIdentifierMethod();
     private final PrefixedLoggerCore logger;
 
     /** Default constructor. */
@@ -50,8 +53,9 @@ public class WorldTypeParser implements TypeParser<CommandSourceStack, ServerLev
         if ("@current".equals(value)) {
             ServerLevel world = sender.getLevel();
             if (world != null) {
+                Object worldId = worldIdentifier(world);
                 if (logger != null) {
-                    logger.debug().send("Resolving @current to world: " + world.dimension().location());
+                    logger.debug().send("Resolving @current to world: " + worldId);
                 }
                 return world;
             }
@@ -63,9 +67,10 @@ public class WorldTypeParser implements TypeParser<CommandSourceStack, ServerLev
         }
         String normalized = value.trim();
         for (ServerLevel world : server.getAllLevels()) {
-            ResourceLocation id = world.dimension().location();
-            if (id.toString().equalsIgnoreCase(normalized)
-                    || id.getPath().equalsIgnoreCase(normalized)) {
+            Object id = worldIdentifier(world);
+            String idPath = identifierPath(id);
+            if (id != null && (id.toString().equalsIgnoreCase(normalized)
+                    || (idPath != null && idPath.equalsIgnoreCase(normalized)))) {
                 if (logger != null) {
                     logger.debug().send("World lookup for '" + value + "': " + id);
                 }
@@ -87,8 +92,10 @@ public class WorldTypeParser implements TypeParser<CommandSourceStack, ServerLev
             return result;
         }
         for (ServerLevel world : server.getAllLevels()) {
-            ResourceLocation id = world.dimension().location();
-            result.add(id.getPath());
+            String idPath = identifierPath(worldIdentifier(world));
+            if (idPath != null && !idPath.isBlank()) {
+                result.add(idPath);
+            }
         }
         if (getPlayerSafe(sender) != null) {
             result.add("@current");
@@ -112,5 +119,41 @@ public class WorldTypeParser implements TypeParser<CommandSourceStack, ServerLev
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private static @Nullable String identifierPath(@Nullable Object identifier) {
+        if (identifier == null || IDENTIFIER_GET_PATH == null) {
+            return null;
+        }
+        return ReflectiveAccess.invoke(IDENTIFIER_GET_PATH, identifier)
+                .flatMap(value -> ReflectiveAccess.cast(value, String.class))
+                .orElse(null);
+    }
+
+    private static @Nullable Method resolveIdentifierPathMethod() {
+        Class<?> identifierClass = ReflectiveAccess.loadFirstAvailable(
+                "net.minecraft.resources.ResourceLocation",
+                "net.minecraft.resources.Identifier"
+        ).orElse(null);
+        if (identifierClass == null) {
+            return null;
+        }
+        return ReflectiveAccess.publicMethod(identifierClass, "getPath").orElse(null);
+    }
+
+    private static @Nullable Object worldIdentifier(@NotNull ServerLevel world) {
+        return ReflectiveAccess.invoke(RESOURCE_KEY_IDENTIFIER, world.dimension()).orElse(null);
+    }
+
+    private static @Nullable Method resolveResourceKeyIdentifierMethod() {
+        Class<?> resourceKeyClass = ReflectiveAccess.loadClass("net.minecraft.resources.ResourceKey").orElse(null);
+        if (resourceKeyClass == null) {
+            return null;
+        }
+        Method method = ReflectiveAccess.publicMethod(resourceKeyClass, "location").orElse(null);
+        if (method != null) {
+            return method;
+        }
+        return ReflectiveAccess.publicMethod(resourceKeyClass, "identifier").orElse(null);
     }
 }

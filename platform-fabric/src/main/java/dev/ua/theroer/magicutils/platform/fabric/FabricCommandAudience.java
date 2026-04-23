@@ -88,6 +88,11 @@ public final class FabricCommandAudience implements Audience {
 
     @Override
     public boolean hasPermission(String permission) {
-        return FabricPermissionBridge.hasPermission(source, permission, 2);
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return FabricPermissionBridge.hasPermission(source, permission, fallbackOpLevel);
     }
 }

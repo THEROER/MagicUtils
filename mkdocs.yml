@@ -69,6 +69,7 @@ nav:
       - Commands: modules/commands.md
       - Permissions: modules/permissions.md
       - Commands Cheat Sheet: modules/commands-cheatsheet.md
+      - Diagnostics: modules/diagnostics.md
       - HTTP Client: modules/http-client.md
       - Config: modules/config.md
       - Config Advanced: modules/config-advanced.md

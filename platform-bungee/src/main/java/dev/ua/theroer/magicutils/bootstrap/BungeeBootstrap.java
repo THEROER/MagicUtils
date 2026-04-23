@@ -3,6 +3,9 @@ package dev.ua.theroer.magicutils.bootstrap;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.Platform;
@@ -15,6 +18,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * BungeeCord-specific bootstrap helper for wiring MagicUtils services.
@@ -58,6 +62,8 @@ public final class BungeeBootstrap {
         private String permissionPrefix;
         private Executor asyncExecutor;
         private Consumer<CommandRegistry> commandConfigurer;
+        private boolean enableDiagnostics;
+        private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
 
         private Builder(Plugin plugin, String pluginName) {
             this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -255,6 +261,27 @@ public final class BungeeBootstrap {
         }
 
         /**
+         * Enables runtime diagnostics service creation.
+         *
+         * @return this builder
+         */
+        public Builder enableDiagnostics() {
+            this.enableDiagnostics = true;
+            return this;
+        }
+
+        /**
+         * Sets the diagnostics registry configurer.
+         *
+         * @param diagnosticsConfigurer diagnostics configurer
+         * @return this builder
+         */
+        public Builder configureDiagnostics(Consumer<DiagnosticRegistry> diagnosticsConfigurer) {
+            this.diagnosticsConfigurer = diagnosticsConfigurer;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result.
          *
          * @return bootstrap result
@@ -284,7 +311,12 @@ public final class BungeeBootstrap {
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
+                runtime.putNamedComponent("commandRegistry", prepared.commandRegistry());
+                runtime.putNamedComponent("commandManager", prepared.commandRegistry().commandManager());
                 runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(plugin));
+            }
+            if (enableDiagnostics) {
+                DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));
@@ -399,6 +431,15 @@ public final class BungeeBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+        /**
+         * Returns the diagnostics service when diagnostics were enabled.
+         *
+         * @return diagnostics service or null
+         */
+        public @Nullable DiagnosticsService diagnosticsService() {
+            return runtime.findComponent(DiagnosticsService.class).orElse(null);
+        }
+
         /**
          * Converts this runtime result to a simple result.
          *

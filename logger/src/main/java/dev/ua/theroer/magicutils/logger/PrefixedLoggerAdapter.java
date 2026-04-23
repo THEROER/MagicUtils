@@ -63,6 +63,16 @@ public interface PrefixedLoggerAdapter<P, B extends LogBuilderCore> {
     }
 
     /**
+     * Returns whether the supplied log level is enabled for this prefixed logger.
+     *
+     * @param level log level to check
+     * @return true when formatting and delivery should proceed
+     */
+    default boolean isLevelEnabled(LogLevel level) {
+        return isEnabled() && getCore().getLogger().isLevelEnabled(level);
+    }
+
+    /**
      * Enables or disables this logger.
      *
      * @param enabled true to enable

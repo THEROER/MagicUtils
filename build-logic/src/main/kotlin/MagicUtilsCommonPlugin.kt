@@ -20,6 +20,7 @@ class MagicUtilsCommonPlugin : Plugin<Project> {
                 "commands-neoforge" to "magicutils-commands-neoforge",
                 "placeholders" to "magicutils-placeholders",
                 "http-client" to "magicutils-http-client",
+                "diagnostics" to "magicutils-diagnostics",
                 "commands-fabric" to "magicutils-commands-fabric",
                 "logger-fabric" to "magicutils-logger-fabric",
                 "placeholders-fabric" to "magicutils-placeholders-fabric",

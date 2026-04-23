@@ -48,4 +48,14 @@ public final class BungeePlatformLogger implements PlatformLogger {
     public void debug(String message) {
         delegate.fine(message);
     }
+
+    @Override
+    public boolean isDebugEnabled() {
+        return delegate.isLoggable(java.util.logging.Level.FINE);
+    }
+
+    @Override
+    public boolean isTraceEnabled() {
+        return delegate.isLoggable(java.util.logging.Level.FINEST);
+    }
 }

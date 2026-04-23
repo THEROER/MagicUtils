@@ -137,5 +137,22 @@ if (MagicSender.hasPermission(rawSender, "donatemenu.commands.donate")) {
 }
 ```
 
+When the platform adapter uses op-level fallback semantics, the two-argument
+form keeps the adapter default, while the three-argument form overrides it for
+that one check:
+
+```java
+if (MagicSender.hasPermission(rawSender, "leavepulse.whitelist.notify", 3)) {
+    // ...
+}
+
+if (sender != null && sender.hasPermission("leavepulse.admin", 4)) {
+    // ...
+}
+```
+
+This matters most on Fabric and NeoForge, where permission backends may fall
+back to command-source op levels when a node is unknown or no backend responds.
+
 You can also use the registry prefix when building related manual nodes so the
 manual and generated permissions stay in the same namespace.

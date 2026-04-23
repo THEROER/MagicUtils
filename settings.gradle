@@ -7,19 +7,13 @@ pluginManagement {
     }
 }
 
-def targetsFile = new File(rootDir, 'gradle/targets.properties')
-def targetProperties = new Properties()
-if (targetsFile.exists()) {
-    targetsFile.withInputStream { targetProperties.load(it) }
+plugins {
+    id 'magicutils.matrix-settings'
 }
 
-def rawTarget = gradle.startParameter.projectProperties.get('target') ?: targetProperties.getProperty('target', 'mc12110')
-def targetName = rawTarget.startsWith('mc') ? rawTarget : "mc${rawTarget}"
-def includeFabricModules = !targetName.startsWith('mc26')
-
 rootProject.name = 'MagicUtils'
-include 'platform-api', 'core', 'config', 'lang', 'logger', 'commands', 'commands-brigadier', 'commands-neoforge', 'placeholders', 'http-client', 'config-yaml', 'config-toml', 'platform-bukkit', 'platform-bungee', 'platform-neoforge', 'platform-velocity', 'bukkit-bundle', 'processor'
 
-if (includeFabricModules) {
-    include 'platform-fabric', 'commands-fabric', 'logger-fabric', 'placeholders-fabric', 'fabric-bundle'
+magicMatrix {
+    targetsFile = 'gradle/targets.properties'
+    defaultTarget = 'mc12110'
 }

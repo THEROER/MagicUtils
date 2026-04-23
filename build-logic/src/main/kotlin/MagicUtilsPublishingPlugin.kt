@@ -11,8 +11,7 @@ class MagicUtilsPublishingPlugin : Plugin<Project> {
         project.pluginManager.apply(MavenPublishPlugin::class.java)
         project.pluginManager.apply("magicutils.common")
 
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val moduleName = project.magicUtilsModuleName()
 
         val skipShadowPublish = project.hasProperty("skip_shadow_publish")
 

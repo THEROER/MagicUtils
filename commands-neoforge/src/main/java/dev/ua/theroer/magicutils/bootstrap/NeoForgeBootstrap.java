@@ -4,6 +4,9 @@ import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.neoforge.NeoForgePlatformProvider;
@@ -13,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * NeoForge-specific bootstrap helper for wiring MagicUtils services.
@@ -55,6 +59,8 @@ public final class NeoForgeBootstrap {
         private String permissionPrefix;
         private int opLevel = 2;
         private Consumer<CommandRegistry> commandConfigurer;
+        private boolean enableDiagnostics;
+        private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
 
         private Builder(String modName, Supplier<MinecraftServer> serverSupplier) {
             this.modName = normalizeModName(modName);
@@ -250,6 +256,27 @@ public final class NeoForgeBootstrap {
         }
 
         /**
+         * Enables runtime diagnostics service creation.
+         *
+         * @return this builder
+         */
+        public Builder enableDiagnostics() {
+            this.enableDiagnostics = true;
+            return this;
+        }
+
+        /**
+         * Sets the diagnostics registry configurer.
+         *
+         * @param diagnosticsConfigurer diagnostics configurer
+         * @return this builder
+         */
+        public Builder configureDiagnostics(Consumer<DiagnosticRegistry> diagnosticsConfigurer) {
+            this.diagnosticsConfigurer = diagnosticsConfigurer;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
@@ -278,7 +305,12 @@ public final class NeoForgeBootstrap {
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
+                runtime.putNamedComponent("commandRegistry", prepared.commandRegistry());
+                runtime.putNamedComponent("commandManager", prepared.commandRegistry().commandManager());
                 runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(modName));
+            }
+            if (enableDiagnostics) {
+                DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(modName));
@@ -396,6 +428,15 @@ public final class NeoForgeBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+        /**
+         * Returns the diagnostics service when diagnostics were enabled.
+         *
+         * @return diagnostics service or null
+         */
+        public @Nullable DiagnosticsService diagnosticsService() {
+            return runtime.findComponent(DiagnosticsService.class).orElse(null);
+        }
+
         /**
          * Converts this runtime result to a simple result.
          *

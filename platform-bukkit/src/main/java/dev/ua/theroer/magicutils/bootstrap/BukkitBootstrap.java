@@ -4,13 +4,18 @@ import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.platform.Platform;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitMagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
 import dev.ua.theroer.magicutils.platform.bukkit.FoliaPlatformProvider;
 import java.util.Objects;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -49,6 +54,8 @@ public final class BukkitBootstrap {
         private boolean enableCommands;
         private String permissionPrefix;
         private Consumer<CommandRegistry> commandConfigurer;
+        private boolean enableDiagnostics;
+        private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
 
         private Builder(JavaPlugin plugin) {
             this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -210,6 +217,27 @@ public final class BukkitBootstrap {
         }
 
         /**
+         * Enables runtime diagnostics service creation.
+         *
+         * @return builder
+         */
+        public Builder enableDiagnostics() {
+            this.enableDiagnostics = true;
+            return this;
+        }
+
+        /**
+         * Allows registering custom diagnostics checks before the service is exposed.
+         *
+         * @param diagnosticsConfigurer diagnostics registry callback
+         * @return builder
+         */
+        public Builder configureDiagnostics(Consumer<DiagnosticRegistry> diagnosticsConfigurer) {
+            this.diagnosticsConfigurer = diagnosticsConfigurer;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result and wires requested services.
          *
          * @return bootstrap result
@@ -239,8 +267,21 @@ public final class BukkitBootstrap {
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
+                runtime.putNamedComponent("commandRegistry", prepared.commandRegistry());
+                runtime.putNamedComponent("commandManager", prepared.commandRegistry().commandManager());
                 runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(plugin));
             }
+            if (enableDiagnostics) {
+                DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
+            }
+            Runnable refreshConsumerRegistration =
+                    () -> BukkitMagicUtilsConsumerRegistry.register(plugin, runtime, prepared.commandRegistry());
+            runtime.onStateChanged(refreshConsumerRegistration);
+            if (prepared.commandRegistry() != null) {
+                prepared.commandRegistry().onCommandsChanged(refreshConsumerRegistration);
+            }
+            refreshConsumerRegistration.run();
+            runtime.onClose("magicutils.consumerRegistry", () -> BukkitMagicUtilsConsumerRegistry.unregister(plugin));
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(plugin.getName()));
             }
@@ -355,6 +396,15 @@ public final class BukkitBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+        /**
+         * Returns the diagnostics service when diagnostics were enabled.
+         *
+         * @return diagnostics service or null
+         */
+        public @Nullable DiagnosticsService diagnosticsService() {
+            return runtime.findComponent(DiagnosticsService.class).orElse(null);
+        }
+
         /**
          * Returns the legacy bootstrap view without the runtime wrapper.
          *

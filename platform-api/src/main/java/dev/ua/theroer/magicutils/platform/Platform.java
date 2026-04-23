@@ -50,6 +50,17 @@ public interface Platform {
     boolean isMainThread();
 
     /**
+     * Executes a task in the context of a specific audience (e.g., entity region on Folia).
+     * On platforms without regional threading, this delegates to {@link #runOnMain(Runnable)}.
+     *
+     * @param audience target audience for region resolution
+     * @param task work to run
+     */
+    default void runForAudience(Audience audience, Runnable task) {
+        runOnMain(task);
+    }
+
+    /**
      * Returns the current execution context for thread-sensitive operations.
      *
      * @return thread context classification

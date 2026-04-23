@@ -59,6 +59,11 @@ public class BukkitAudienceWrapper implements Audience {
     }
 
     @Override
+    public String name() {
+        return sender instanceof Player player ? player.getName() : null;
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
         if (permission == null || permission.isBlank()) {
             return true;

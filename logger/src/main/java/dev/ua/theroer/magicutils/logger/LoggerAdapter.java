@@ -155,6 +155,16 @@ public interface LoggerAdapter<P, L> {
     }
 
     /**
+     * Returns whether the supplied log level is enabled for the default target.
+     *
+     * @param level log level to check
+     * @return true when formatting and delivery should proceed
+     */
+    default boolean isLevelEnabled(LogLevel level) {
+        return getCore().isLevelEnabled(level);
+    }
+
+    /**
      * Returns whether console formatting is stripped.
      *
      * @return true if formatting is stripped

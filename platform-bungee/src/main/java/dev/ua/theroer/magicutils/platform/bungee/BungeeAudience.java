@@ -33,6 +33,11 @@ final class BungeeAudience implements Audience {
     }
 
     @Override
+    public String name() {
+        return source instanceof ProxiedPlayer player ? player.getName() : null;
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
         if (permission == null || permission.isBlank()) {
             return true;

@@ -2,7 +2,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import java.io.File
-import java.util.Properties
 
 abstract class MagicUtilsTargetExtension {
     abstract val name: Property<String>
@@ -21,34 +20,33 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
         with(project) {
             val extension = extensions.create("magicutilsTarget", MagicUtilsTargetExtension::class.java)
 
-            val targetsFile = File(rootDir, "gradle/targets.properties")
-            val properties = Properties()
-            if (targetsFile.exists()) {
-                targetsFile.inputStream().use { properties.load(it) }
-            }
-
-            val rawTargetName = if (project.hasProperty("target")) {
-                project.property("target") as String
+            val resolvedContext = gradle.extensions.extraProperties.properties["magicutilsMatrixResolved"]
+                as? MagicUtilsMatrixResolvedContext
+            val targetSpec = if (resolvedContext != null) {
+                resolvedContext.target
             } else {
-                properties.getProperty("target", "mc12110")
-            }
-            val targetName = if (rawTargetName.startsWith("mc")) {
-                rawTargetName
-            } else {
-                "mc$rawTargetName"
+                resolveMagicUtilsTargetSpec(
+                    targetsFile = File(rootDir, "gradle/targets.properties"),
+                    defaultTarget = "mc12110",
+                    explicitTarget = if (project.hasProperty("target")) {
+                        project.property("target") as String
+                    } else {
+                        null
+                    },
+                )
             }
 
-            extension.name.set(targetName)
-            extension.minecraft.set(properties.getProperty("$targetName.minecraft"))
-            extension.java.set(properties.getProperty("$targetName.java")?.toInt())
-            extension.yarn.set(properties.getProperty("$targetName.yarn"))
-            extension.loader.set(properties.getProperty("$targetName.loader"))
-            extension.pb4_placeholder_api.set(properties.getProperty("$targetName.pb4_placeholder_api"))
-            extension.miniplaceholders_api.set(properties.getProperty("$targetName.miniplaceholders_api"))
-            extension.paper.set(properties.getProperty("$targetName.paper"))
-            extension.neoforge.set(properties.getProperty("$targetName.neoforge"))
+            extension.name.set(targetSpec.name)
+            extension.minecraft.set(targetSpec.minecraft)
+            extension.java.set(targetSpec.java)
+            extension.yarn.set(targetSpec.yarn)
+            extension.loader.set(targetSpec.loader)
+            extension.pb4_placeholder_api.set(targetSpec.pb4PlaceholderApi)
+            extension.miniplaceholders_api.set(targetSpec.miniplaceholdersApi)
+            extension.paper.set(targetSpec.paper)
+            extension.neoforge.set(targetSpec.neoforge)
 
-            project.extensions.extraProperties.set("magicutilsTargetName", targetName)
+            project.extensions.extraProperties.set("magicutilsTargetName", targetSpec.name)
             project.extensions.extraProperties.set("magicutilsTarget", extension)
         }
     }

@@ -47,4 +47,22 @@ public interface PlatformLogger {
      * @param message text to log
      */
     void debug(String message);
+
+    /**
+     * Returns whether debug output is currently enabled by the platform logger.
+     *
+     * @return true if debug logs would be emitted
+     */
+    default boolean isDebugEnabled() {
+        return true;
+    }
+
+    /**
+     * Returns whether trace output is currently enabled by the platform logger.
+     *
+     * @return true if trace logs would be emitted
+     */
+    default boolean isTraceEnabled() {
+        return isDebugEnabled();
+    }
 }

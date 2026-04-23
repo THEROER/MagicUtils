@@ -85,8 +85,8 @@ dependencies {
 - Platform API: `magicutils-api`
 - Core stack: `magicutils-core`
 - Feature modules: `magicutils-config`, `magicutils-lang`,
-  `magicutils-logger`, `magicutils-commands`, `magicutils-placeholders`,
-  `magicutils-http-client`
+  `magicutils-logger`, `magicutils-commands`, `magicutils-diagnostics`,
+  `magicutils-placeholders`, `magicutils-http-client`
 - Config format helpers: `magicutils-config-yaml`,
   `magicutils-config-toml`
 - Platform adapters: `magicutils-bukkit`, `magicutils-bungee`,
@@ -115,6 +115,9 @@ bootstrap helpers from common code.
 
 `buildRuntime()` returns a managed `MagicRuntime` container with the platform,
 config manager, logger, language manager, and optional command registry.
+Enable diagnostics with `.enableDiagnostics()` and fetch the service from
+`runtime.requireComponent(DiagnosticsService.class)` or the bootstrap runtime
+result accessor.
 
 See the full setup guide in the docs:
 https://theroer.github.io/MagicUtils/getting-started/quickstart/

@@ -1218,7 +1218,7 @@ public class CommandManager<S> {
      * @return a list of suggestions
      */
     public List<String> getSuggestions(String name, S sender, List<String> args) {
-        logger.debug("Getting suggestions for command: " + name + " with args: " + args);
+        logger.debug(() -> "Getting suggestions for command: " + name + " with args: " + args);
 
         MagicCommand command = commands.get(name.toLowerCase());
         CommandInfo info = commandInfos.get(name.toLowerCase());
@@ -1227,22 +1227,22 @@ public class CommandManager<S> {
         String baseCommandName = info != null ? info.name().toLowerCase(Locale.ROOT) : normalizedName;
 
         if (command == null || info == null) {
-            logger.debug("Command not found for suggestions: " + name);
+            logger.debug(() -> "Command not found for suggestions: " + name);
             return Collections.emptyList();
         }
 
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
         if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
-            logger.debug("No permission for suggestions");
+            logger.debug(() -> "No permission for suggestions");
             return Collections.emptyList();
         }
 
         try {
             List<String> suggestions = generateSuggestions(command, info, sender, args, baseCommandName);
-            logger.debug("Generated suggestions: " + suggestions);
+            logger.debug(() -> "Generated suggestions: " + suggestions);
             return suggestions;
         } catch (Exception e) {
-            logger.debug("Error generating suggestions: " + e);
+            logger.debug(() -> "Error generating suggestions: " + e);
             return Collections.emptyList();
         }
     }
@@ -1252,19 +1252,19 @@ public class CommandManager<S> {
         List<CommandAction<S>> subCommands = getSubCommandActions(command);
         CommandAction<S> directAction = getDirectAction(command, info);
 
-        logger.debug("Generating suggestions - executeHandler: " + (directAction != null)
+        logger.debug(() -> "Generating suggestions - executeHandler: " + (directAction != null)
                 + ", subCommands: " + subCommands.size() + ", args: " + args);
 
         // If there's only a direct execute handler and no subcommands
         if (directAction != null && subCommands.isEmpty()) {
             List<CommandArgument> arguments = directAction.arguments();
-            logger.debug("Using direct method suggestions with " + arguments.size() + " arguments");
+            logger.debug(() -> "Using direct method suggestions with " + arguments.size() + " arguments");
             return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName, null, Collections.emptyMap());
         }
 
         // If there are no subcommands and no execute handler
         if (subCommands.isEmpty() && directAction == null) {
-            logger.debug("No subcommands and no execute handler");
+            logger.debug(() -> "No subcommands and no execute handler");
             return Collections.emptyList();
         }
 
@@ -1369,12 +1369,12 @@ public class CommandManager<S> {
     private List<String> generatePositionalSuggestions(MagicCommand command, List<CommandArgument> arguments,
             S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
             @NotNull Map<String, Object> allParsedArguments, @NotNull Set<CommandArgument> skipArguments) {
-        logger.debug("generatePositionalSuggestions called with " + arguments.size()
+        logger.debug(() -> "generatePositionalSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
-        logger.debug("Raw args: " + args);
+        logger.debug(() -> "Raw args: " + args);
 
         if (arguments.isEmpty()) {
-            logger.debug("No arguments defined for direct method");
+            logger.debug(() -> "No arguments defined for direct method");
             return Collections.emptyList();
         }
 
@@ -1791,40 +1791,41 @@ public class CommandManager<S> {
 
     private List<String> generateSuggestionsForArgument(MagicCommand command, CommandArgument argument,
             S sender, String currentInput, Map<String, Object> previousParsedArguments) {
-        logger.debug("generateSuggestionsForArgument called for argument: " + argument.getName()
+        logger.debug(() -> "generateSuggestionsForArgument called for argument: " + argument.getName()
                 + " with input: '" + currentInput + "'");
-        logger.debug("Argument suggestions: " + argument.getSuggestions());
-        logger.debug("Argument type: " + argument.getType());
+        logger.debug(() -> "Argument suggestions: " + argument.getSuggestions());
+        logger.debug(() -> "Argument type: " + argument.getType());
 
         List<String> suggestions = new ArrayList<>();
 
         // If no explicit suggestions, try to get suggestions from the argument type
         if (argument.getSuggestions().isEmpty()) {
-            logger.debug("No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
+            logger.debug(() -> "No explicit suggestions, getting suggestions for type: "
+                    + argument.getType().getSimpleName());
             List<String> typeSuggestions = typeParserRegistry.getSuggestionsForArgumentFiltered(argument,
                     currentInput, sender, previousParsedArguments);
             if (!typeSuggestions.isEmpty()) {
-                logger.debug("Got " + typeSuggestions.size() + " suggestions from type parser");
+                logger.debug(() -> "Got " + typeSuggestions.size() + " suggestions from type parser");
                 return typeSuggestions;
             }
         }
 
         // Process explicit suggestions
         for (String suggestionSource : argument.getSuggestions()) {
-            logger.debug("Processing suggestion source: '" + suggestionSource + "'");
+            logger.debug(() -> "Processing suggestion source: '" + suggestionSource + "'");
 
             if (suggestionSource.contains("|")) {
                 String[] sources = suggestionSource.split("\\|");
                 for (String source : sources) {
                     List<String> sourceSuggestions = processSuggestionSource(command, source.trim(), sender,
                             currentInput, argument, previousParsedArguments);
-                    logger.debug("Source '" + source.trim() + "' generated: " + sourceSuggestions);
+                    logger.debug(() -> "Source '" + source.trim() + "' generated: " + sourceSuggestions);
                     suggestions.addAll(sourceSuggestions);
                 }
             } else {
                 List<String> sourceSuggestions = processSuggestionSource(command, suggestionSource, sender,
                         currentInput, argument, previousParsedArguments);
-                logger.debug("Source '" + suggestionSource + "' generated: " + sourceSuggestions);
+                logger.debug(() -> "Source '" + suggestionSource + "' generated: " + sourceSuggestions);
                 suggestions.addAll(sourceSuggestions);
             }
         }
@@ -1834,7 +1835,7 @@ public class CommandManager<S> {
                 .distinct()
                 .collect(Collectors.toList());
 
-        logger.debug("Final filtered suggestions: " + filteredSuggestions);
+        logger.debug(() -> "Final filtered suggestions: " + filteredSuggestions);
         return filteredSuggestions;
     }
 

@@ -394,6 +394,12 @@ public class BrigadierCommandRegistry<S> {
             }
 
             @Override
+            public boolean isDebugEnabled() {
+                return logger.isEnabled()
+                        && logger.getLogger().isLevelEnabled(dev.ua.theroer.magicutils.logger.LogLevel.DEBUG);
+            }
+
+            @Override
             public void info(String message) {
                 logger.info().send(message);
             }

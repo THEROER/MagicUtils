@@ -147,7 +147,12 @@ public class FabricCommandPlatform implements CommandPlatform<CommandSourceStack
 
         @Override
         public boolean hasPermission(String permission) {
-            return FabricPermissionDefaults.check(sender, permission, opLevel);
+            return hasPermission(permission, opLevel);
+        }
+
+        @Override
+        public boolean hasPermission(String permission, int fallbackOpLevel) {
+            return FabricPermissionDefaults.check(sender, permission, fallbackOpLevel);
         }
 
         @Override

@@ -41,6 +41,14 @@ gradlePlugin {
             id = "magicutils.target"
             implementationClass = "MagicUtilsTargetPlugin"
         }
+        register("magicutilsMatrixSettings") {
+            id = "magicutils.matrix-settings"
+            implementationClass = "MagicUtilsMatrixSettingsPlugin"
+        }
+        register("magicutilsMatrixRoot") {
+            id = "magicutils.matrix-root"
+            implementationClass = "MagicUtilsMatrixRootPlugin"
+        }
         register("magicutilsRepositories") {
             id = "magicutils.repositories"
             implementationClass = "MagicUtilsRepositoriesPlugin"

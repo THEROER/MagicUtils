@@ -87,6 +87,16 @@ public final class NeoForgeCommandAudience implements Audience {
         return player != null ? player.getUUID() : null;
     }
 
+    @Override
+    public boolean hasPermission(String permission) {
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return NeoForgePermissionBridge.hasPermission(source, permission, fallbackOpLevel);
+    }
+
     private ServerPlayer getPlayerSafe() {
         if (source == null) {
             return null;

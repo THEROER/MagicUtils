@@ -424,6 +424,9 @@ public class LoggerCore extends LoggerCoreMethods {
               @Nullable String subLoggerPrefix,
               @Nullable PrefixMode prefixOverride,
               Object... placeholders) {
+        if (!isLevelEnabled(level, target, audience, audiences, broadcast)) {
+            return;
+        }
         LogMessageFormatter.FormattedMessage formatted = LogMessageFormatter.formatDetailed(
                 this,
                 message,
@@ -517,6 +520,57 @@ public class LoggerCore extends LoggerCoreMethods {
      */
     public LogTarget getDefaultTarget() {
         return config != null ? config.getDefaultTarget() : LogTarget.BOTH;
+    }
+
+    /**
+     * Returns whether a log level is enabled for the default target.
+     *
+     * @param level log level to check
+     * @return true when formatting and delivery should proceed
+     */
+    public boolean isLevelEnabled(LogLevel level) {
+        return isLevelEnabled(level, getDefaultTarget(), null, null, false);
+    }
+
+    /**
+     * Returns whether a log level is enabled for the provided target.
+     *
+     * @param level log level to check
+     * @param target target to evaluate
+     * @return true when formatting and delivery should proceed
+     */
+    public boolean isLevelEnabled(LogLevel level, LogTarget target) {
+        return isLevelEnabled(level, target, null, null, false);
+    }
+
+    private boolean isLevelEnabled(LogLevel level,
+                                   @Nullable LogTarget target,
+                                   @Nullable Audience audience,
+                                   @Nullable Collection<? extends Audience> audiences,
+                                   boolean broadcast) {
+        if (level == null) {
+            return true;
+        }
+
+        boolean hasChatRecipients = broadcast || audience != null || (audiences != null && !audiences.isEmpty());
+        LogTarget effectiveTarget = target != null ? target : getDefaultTarget();
+        if (hasChatRecipients && (effectiveTarget == LogTarget.CHAT || effectiveTarget == LogTarget.BOTH)) {
+            return true;
+        }
+
+        if (effectiveTarget == LogTarget.CHAT) {
+            return true;
+        }
+
+        if (platform == null || platform.logger() == null) {
+            return true;
+        }
+
+        return switch (level) {
+            case DEBUG -> platform.logger().isDebugEnabled();
+            case TRACE -> platform.logger().isTraceEnabled();
+            default -> true;
+        };
     }
 
     /**

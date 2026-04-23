@@ -34,6 +34,7 @@ public final class MagicRuntime implements AutoCloseable {
     private final Map<Class<?>, Object> components = new LinkedHashMap<>();
     private final Map<String, Object> namedComponents = new LinkedHashMap<>();
     private final List<CloseStep> closeSteps = new ArrayList<>();
+    private final List<Runnable> stateChangeListeners = new ArrayList<>();
     private final @Nullable ShutdownHookRegistrar shutdownRegistrar;
     private final @Nullable Runnable shutdownHook;
     private boolean closed;
@@ -164,6 +165,7 @@ public final class MagicRuntime implements AutoCloseable {
         synchronized (lifecycleLock) {
             components.put(type, component);
         }
+        notifyStateChanged();
         return component;
     }
 
@@ -180,6 +182,7 @@ public final class MagicRuntime implements AutoCloseable {
         synchronized (lifecycleLock) {
             namedComponents.put(normalizeName(name, "component"), component);
         }
+        notifyStateChanged();
         return component;
     }
 
@@ -190,9 +193,30 @@ public final class MagicRuntime implements AutoCloseable {
      * @return removed component or null when absent
      */
     public @Nullable Object removeNamedComponent(String name) {
+        Object removed;
         synchronized (lifecycleLock) {
-            return namedComponents.remove(normalizeName(name, "component"));
+            removed = namedComponents.remove(normalizeName(name, "component"));
         }
+        if (removed != null) {
+            notifyStateChanged();
+        }
+        return removed;
+    }
+
+    /**
+     * Registers a listener that is invoked whenever runtime component state changes.
+     *
+     * @param listener listener to invoke after component registry updates
+     * @return runtime for chaining
+     */
+    public MagicRuntime onStateChanged(Runnable listener) {
+        Objects.requireNonNull(listener, "listener");
+        synchronized (lifecycleLock) {
+            if (!closed) {
+                stateChangeListeners.add(listener);
+            }
+        }
+        return this;
     }
 
     /**
@@ -365,6 +389,7 @@ public final class MagicRuntime implements AutoCloseable {
             }
             toClose = new ArrayList<>(closeSteps);
             closeSteps.clear();
+            stateChangeListeners.clear();
         }
 
         for (int index = toClose.size() - 1; index >= 0; index--) {
@@ -389,6 +414,24 @@ public final class MagicRuntime implements AutoCloseable {
             step.action().run();
         } catch (Exception error) {
             platformLogger.warn("Failed to close MagicRuntime resource '" + step.name() + "'", error);
+        }
+    }
+
+    private void notifyStateChanged() {
+        List<Runnable> listeners;
+        synchronized (lifecycleLock) {
+            if (closed || stateChangeListeners.isEmpty()) {
+                return;
+            }
+            listeners = List.copyOf(stateChangeListeners);
+        }
+
+        for (Runnable listener : listeners) {
+            try {
+                listener.run();
+            } catch (RuntimeException error) {
+                platformLogger.warn("Failed to handle MagicRuntime state change listener", error);
+            }
         }
     }
 

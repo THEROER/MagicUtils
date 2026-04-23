@@ -22,8 +22,7 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
         val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val moduleName = project.magicUtilsModuleName()
 
         with(project) {
             project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")

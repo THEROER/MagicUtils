@@ -43,7 +43,17 @@ public final class FabricAudience implements Audience {
     }
 
     @Override
+    public String name() {
+        return player != null && player.getName() != null ? player.getName().getString() : null;
+    }
+
+    @Override
     public boolean hasPermission(String permission) {
-        return FabricPermissionBridge.hasPermission(player, permission, 2);
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return FabricPermissionBridge.hasPermission(player, permission, fallbackOpLevel);
     }
 }
