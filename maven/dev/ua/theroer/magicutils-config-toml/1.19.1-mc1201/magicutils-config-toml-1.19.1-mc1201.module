@@ -1,0 +1,146 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-config-toml",
+    "version": "1.19.1-mc1201",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.19.1-mc1201"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-config-toml-1.19.1-mc1201-mc1.20.jar",
+          "url": "magicutils-config-toml-1.19.1-mc1201-mc1.20.jar",
+          "size": 1722,
+          "sha512": "c243686256a47ac25e1894030b10ef3271dcfdfcc820b5853976f13061701703239308f7b62acabacb1bd4563e93d6d899547fa5fafa17ad74e2095347a3405a",
+          "sha256": "1320da95644b5c0c0a3d8442dc9fe6bbc8fd43ccb44d842aa735d124797b6f86",
+          "sha1": "c2c8fb20154e2aa42e438de4b44e64738e01781b",
+          "md5": "2fed83243b12e47f0949431056ee14bd"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.fasterxml.jackson.dataformat",
+          "module": "jackson-dataformat-toml",
+          "version": {
+            "requires": "2.17.1"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.19.1-mc1201"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-config-toml-1.19.1-mc1201-mc1.20.jar",
+          "url": "magicutils-config-toml-1.19.1-mc1201-mc1.20.jar",
+          "size": 1722,
+          "sha512": "c243686256a47ac25e1894030b10ef3271dcfdfcc820b5853976f13061701703239308f7b62acabacb1bd4563e93d6d899547fa5fafa17ad74e2095347a3405a",
+          "sha256": "1320da95644b5c0c0a3d8442dc9fe6bbc8fd43ccb44d842aa735d124797b6f86",
+          "sha1": "c2c8fb20154e2aa42e438de4b44e64738e01781b",
+          "md5": "2fed83243b12e47f0949431056ee14bd"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-config-toml-1.19.1-mc1201-sources.jar",
+          "url": "magicutils-config-toml-1.19.1-mc1201-sources.jar",
+          "size": 1611,
+          "sha512": "093d30bd041edff4de4e720f24bfd2690e9d69fc33698c5899980c86e15cd24e410f1712fad09100b2338ea76b328ac23b3208d35a9a82158d7cea76b2b553aa",
+          "sha256": "1660c82d5c18c9ebfc2e16469f3a4f3c411430786b1d80f9bcbd7b1ee9cd1d42",
+          "sha1": "3c9b74690a899f902f0f5d37d8d00c667bd96184",
+          "md5": "0c278a8894541f165eb9c5233ee66a4b"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-config-toml-1.19.1-mc1201-javadoc.jar",
+          "url": "magicutils-config-toml-1.19.1-mc1201-javadoc.jar",
+          "size": 79830,
+          "sha512": "4750cca28672f35490eac00b996479943e462f1362a9f8ea8c7129bc60b4c90954e81e94033a640a96a4b7f72e0279b6245e5b1a8b09fe6a9b61058304cefc46",
+          "sha256": "2361cab53aa955eac764ccef9118e545504bb39fd3c88fef9448a6f637b4ce52",
+          "sha1": "dbf0f0b365c170ce5bae8c232fcb7794811ef803",
+          "md5": "950fe0d5ac63508c65cf3a506f0dff44"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-config-toml-1.19.1-mc1201-all.jar",
+          "url": "magicutils-config-toml-1.19.1-mc1201-all.jar",
+          "size": 3009642,
+          "sha512": "e9d863146c26ca1fef28ffafb4304f470d2a0a79821592cb3f7cd632025ef6773d3c136e7de2a6b33e6cb567f319e2f3d913abd79edfa68edea0abe10232126f",
+          "sha256": "afe43a7ddb8047ca63cbe2bb9d678b72c6c04f1d8794e0142b88e774d55aa8d8",
+          "sha1": "f357bbccc01f6aea42107b46730e42d447994bba",
+          "md5": "0329d269ebf56120c3546a264cee0fd3"
+        }
+      ]
+    }
+  ]
+}

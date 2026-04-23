@@ -1,0 +1,153 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-velocity",
+    "version": "1.19.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.19.1"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-diagnostics",
+          "version": {
+            "requires": "1.19.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-velocity-1.19.1-mc1.21.jar",
+          "url": "magicutils-velocity-1.19.1-mc1.21.jar",
+          "size": 38632,
+          "sha512": "7cd85948191900a2d737658056e7f330743a2e39a93fb694f4c42a94a292add4c302410a9917c327f4ba25b1f3a5c1f7a5c7dd6833cc92b9a97ee7f0b853166c",
+          "sha256": "c98075027881351449c2a86461b3a6bc366002cef7a8c0532e566ea800c1f0f0",
+          "sha1": "81712d9b8043ad0cb7102da8bbe6c785223455c4",
+          "md5": "4788056298b72e21765658cb5ccd370e"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.19.1"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-diagnostics",
+          "version": {
+            "requires": "1.19.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-velocity-1.19.1-mc1.21.jar",
+          "url": "magicutils-velocity-1.19.1-mc1.21.jar",
+          "size": 38632,
+          "sha512": "7cd85948191900a2d737658056e7f330743a2e39a93fb694f4c42a94a292add4c302410a9917c327f4ba25b1f3a5c1f7a5c7dd6833cc92b9a97ee7f0b853166c",
+          "sha256": "c98075027881351449c2a86461b3a6bc366002cef7a8c0532e566ea800c1f0f0",
+          "sha1": "81712d9b8043ad0cb7102da8bbe6c785223455c4",
+          "md5": "4788056298b72e21765658cb5ccd370e"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-velocity-1.19.1-sources.jar",
+          "url": "magicutils-velocity-1.19.1-sources.jar",
+          "size": 15400,
+          "sha512": "463023aca59ad2cb41322312dffed963263e204751044d147fbb6eeab9f4840712015bce883db4eacf8670b1518b38937839e9291779361141dc03a51b6a7402",
+          "sha256": "cdbaa90774c32a0762415f603a52b08e219c3f88c6f02ac2b5e20868358cb86c",
+          "sha1": "887cef5ab492367980795c039f8743cf0940281e",
+          "md5": "2fd9691441e622c6b6d990f61f702fb9"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-velocity-1.19.1-javadoc.jar",
+          "url": "magicutils-velocity-1.19.1-javadoc.jar",
+          "size": 130561,
+          "sha512": "bc96c186e20aebd82dd76bf7b23515c611647609bb20d245b20eade178443cb8cb6283f239662d58635821b84ef8b7a4f04435f4678faeb2db0747becbb46ebe",
+          "sha256": "741dc06ad336d16cec05c806ebd58009cae32e46c626a3d0e5561f025f3de1d6",
+          "sha1": "f2eb47bfe20a2054b12c5ae23fcb6d94636b9167",
+          "md5": "a8f305d0110058b68df284d46aae1f9c"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-velocity-1.19.1-all.jar",
+          "url": "magicutils-velocity-1.19.1-all.jar",
+          "size": 3519803,
+          "sha512": "39ab501151f0c10e49b5f0c9343aecd48cda8516e04f542147810bda450d96745f2131d5deb334e25f7c4acbeeb44e5f3f1f5dfb564fc2da8d411b6038f13afa",
+          "sha256": "7196b263cfd0fa97930ac8de817edd8509ca294a95bc09541b7ad00193431aaa",
+          "sha1": "17a133bad6a077fa01e249d033edd36df096a4dd",
+          "md5": "e1e29e49ff96c76d14e67e6a54c0be54"
+        }
+      ]
+    }
+  ]
+}
