@@ -1,0 +1,174 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-commands-neoforge",
+    "version": "1.20.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-commands-brigadier",
+          "version": {
+            "requires": "1.20.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-diagnostics",
+          "version": {
+            "requires": "1.20.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-neoforge",
+          "version": {
+            "requires": "1.20.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-commands-neoforge-1.20.0-mc1.21.jar",
+          "url": "magicutils-commands-neoforge-1.20.0-mc1.21.jar",
+          "size": 49424,
+          "sha512": "4bb5792de8aebc331ed8da83d70ec9c396771e6660e7e642ecc45cb0bd33d11ac87b98a81579f9c84ab2a6d309cadf2eb661573ff80d0ac49ed99eaf81e19643",
+          "sha256": "cdc717d884bf922fac5ea95320299de8b16cd224ab0534cbb96204ef67ec5bf6",
+          "sha1": "7be815d81c01b1c8e5c750a72a4d5270b293b6fa",
+          "md5": "f83f6dc66c0cd206c118d2c2e0daf7a1"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-serializer-plain",
+          "version": {
+            "requires": "4.24.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-commands-brigadier",
+          "version": {
+            "requires": "1.20.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-diagnostics",
+          "version": {
+            "requires": "1.20.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-neoforge",
+          "version": {
+            "requires": "1.20.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-commands-neoforge-1.20.0-mc1.21.jar",
+          "url": "magicutils-commands-neoforge-1.20.0-mc1.21.jar",
+          "size": 49424,
+          "sha512": "4bb5792de8aebc331ed8da83d70ec9c396771e6660e7e642ecc45cb0bd33d11ac87b98a81579f9c84ab2a6d309cadf2eb661573ff80d0ac49ed99eaf81e19643",
+          "sha256": "cdc717d884bf922fac5ea95320299de8b16cd224ab0534cbb96204ef67ec5bf6",
+          "sha1": "7be815d81c01b1c8e5c750a72a4d5270b293b6fa",
+          "md5": "f83f6dc66c0cd206c118d2c2e0daf7a1"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-neoforge-1.20.0-sources.jar",
+          "url": "magicutils-commands-neoforge-1.20.0-sources.jar",
+          "size": 16673,
+          "sha512": "31b54cec2fef5e6713cb717adbd662157b417eedd75415b51297d49d3cec4b41c91fbca9f590e860795e78a2f33b242e4a4581de9db017e90763c310c98af440",
+          "sha256": "8bc80b11b0068d7975d1aa805f34f8336fa745f9fc3349d8c73073fb34f2595d",
+          "sha1": "7917a1e3beb41420315bfcb7f5ed403e97c39852",
+          "md5": "4533120bbf8aa170b4781cb493b7b3cd"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-neoforge-1.20.0-javadoc.jar",
+          "url": "magicutils-commands-neoforge-1.20.0-javadoc.jar",
+          "size": 152290,
+          "sha512": "bd88df1d8359bd03c51ad83c943396516f155e2995ec35ce091556f15b1c7e88632353650fd851bb3cfcded028c5bdf2d25aa66711e8903c6a6f852a8f7c9004",
+          "sha256": "af1cc534869ac3b38edc3c54bcd088bb45b2e2ea7d649357c9363a1d07969b8a",
+          "sha1": "272357bbc24f69f9e760a78faf2734544840fb73",
+          "md5": "6670dc0746654d1408a161a947bd8d78"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-neoforge-1.20.0-all.jar",
+          "url": "magicutils-commands-neoforge-1.20.0-all.jar",
+          "size": 40512876,
+          "sha512": "4d745717b8fc7990433c235995b2515f4330d2ae0877184044667710c7e2b5cb79ac4deac7286b5897064f85536ecd7aef07b65982736c53eea0d9e375c2d28e",
+          "sha256": "9f2ff1dc6cd86e7953da015d18f0c3ea5e5a9e0978e224402d9cf9977b1e36bb",
+          "sha1": "094a154cf7adc04c1fd46ac434121a93ff762baf",
+          "md5": "4fce927cda32d07e811a09dcdb1b8386"
+        }
+      ]
+    }
+  ]
+}
