@@ -7,6 +7,8 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessage;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageType;
@@ -19,6 +21,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.event.SettingsChangedEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
@@ -49,6 +52,7 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
 
     private final Map<UUID, Audience> audienceCache = new ConcurrentHashMap<>();
     private final Collection<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
+    private final Collection<PlayerLocaleListener> playerLocaleListeners = new CopyOnWriteArrayList<>();
     private final Collection<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final ProxyServer proxy;
     private final Plugin plugin;
@@ -245,6 +249,20 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null || proxy == null || plugin == null) {
+            return ListenerSubscription.noop();
+        }
+        registerEventListener();
+        playerLocaleListeners.add(listener);
+        publishCurrentPlayerLocales(listener);
+        return () -> playerLocaleListeners.remove(listener);
+    }
+
+    /**
      * Handles player post-login event.
      *
      * @param event Bungee event
@@ -254,11 +272,13 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         if (event == null || event.getPlayer() == null) {
             return;
         }
+        ProxiedPlayer player = event.getPlayer();
         publishPlayerLifecycle(new PlayerLifecycle(
-                event.getPlayer().getUniqueId(),
-                event.getPlayer().getName(),
+                player.getUniqueId(),
+                player.getName(),
                 PlayerLifecycleType.JOIN
         ));
+        publishPlayerLocale(toPlayerLocale(player));
     }
 
     /**
@@ -279,6 +299,19 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
                 event.getPlayer().getName(),
                 PlayerLifecycleType.LEAVE
         ));
+    }
+
+    /**
+     * Handles Bungee client settings updates.
+     *
+     * @param event Bungee event
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onSettingsChanged(SettingsChangedEvent event) {
+        if (event == null || event.getPlayer() == null) {
+            return;
+        }
+        publishPlayerLocale(toPlayerLocale(event.getPlayer()));
     }
 
     /**
@@ -355,6 +388,42 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
                 logger.warn("Failed to deliver player lifecycle listener", e);
             }
         }
+    }
+
+    private void publishCurrentPlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null || proxy == null) {
+            return;
+        }
+        for (ProxiedPlayer player : proxy.getPlayers()) {
+            publishPlayerLocale(listener, toPlayerLocale(player));
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocale playerLocale) {
+        if (playerLocale == null || !playerLocale.isValid() || playerLocaleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLocaleListener listener : playerLocaleListeners) {
+            publishPlayerLocale(listener, playerLocale);
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocaleListener listener, PlayerLocale playerLocale) {
+        if (listener == null || playerLocale == null || !playerLocale.isValid()) {
+            return;
+        }
+        try {
+            listener.onPlayerLocale(playerLocale);
+        } catch (RuntimeException e) {
+            logger.warn("Failed to deliver player locale listener", e);
+        }
+    }
+
+    private PlayerLocale toPlayerLocale(ProxiedPlayer player) {
+        if (player == null || player.getLocale() == null) {
+            return null;
+        }
+        return new PlayerLocale(player.getUniqueId(), player.getName(), player.getLocale().toLanguageTag());
     }
 
     private static void runShutdownHooks() {

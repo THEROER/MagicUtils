@@ -23,6 +23,31 @@ final class LanguageDefaults {
         map.put("invalid_arguments", "&cInvalid command arguments. Usage: &7{usage}");
         map.put("not_found", "&cCommand not found");
         map.put("internal_error", "&cAn internal error occurred while executing the command");
+        map.put("help.command_description", "Shows available commands and usages");
+        map.put("help.subcommand_description", "Shows available commands and usages");
+        map.put("help.sender_unavailable", "Sender unavailable");
+        map.put("help.unavailable", "Help unavailable (command manager not ready)");
+        map.put("help.command_not_found", "Command not found.");
+        map.put("help.title", "Help");
+        map.put("help.available_commands", "Available commands:");
+        map.put("help.no_commands_found", "No commands found.");
+        map.put("help.label.command", "Command:");
+        map.put("help.label.description", "Description:");
+        map.put("help.label.aliases", "Aliases:");
+        map.put("help.label.subcommands", "Subcommands:");
+        map.put("help.label.arguments", "Arguments:");
+        map.put("help.optional", "(Optional)");
+        map.put("help.default_value", "(Default: {value})");
+        map.put("help.values", "(Values: {values})");
+        map.put("help.page_label", "Page");
+        map.put("help.nav.previous", "Previous page");
+        map.put("help.nav.next", "Next page");
+        map.put("help.query_prefix", "Showing search results for query:");
+        map.put("help.no_description", "No description");
+        map.put("help.hover.show", "Click to show help for this command");
+        map.put("help.aliases_inline", "(aliases: {aliases})");
+        map.put("help.argument_permission", "Argument {argument} for /{command}{subcommandSuffix}");
+        map.put("help.usage_or", "OR");
         return map;
     }
 
@@ -150,6 +175,31 @@ final class LanguageDefaults {
         map.put("invalid_arguments", "&cНеправильні аргументи. Використання: &7{usage}");
         map.put("not_found", "&cКоманду не знайдено");
         map.put("internal_error", "&cСталася внутрішня помилка під час виконання команди");
+        map.put("help.command_description", "Показує доступні команди та їх використання");
+        map.put("help.subcommand_description", "Показує доступні команди та їх використання");
+        map.put("help.sender_unavailable", "Відправник недоступний");
+        map.put("help.unavailable", "Довідка недоступна (менеджер команд ще не готовий)");
+        map.put("help.command_not_found", "Команду не знайдено.");
+        map.put("help.title", "Довідка");
+        map.put("help.available_commands", "Доступні команди:");
+        map.put("help.no_commands_found", "Команд не знайдено.");
+        map.put("help.label.command", "Команда:");
+        map.put("help.label.description", "Опис:");
+        map.put("help.label.aliases", "Аліаси:");
+        map.put("help.label.subcommands", "Підкоманди:");
+        map.put("help.label.arguments", "Аргументи:");
+        map.put("help.optional", "(Необов'язково)");
+        map.put("help.default_value", "(Типове значення: {value})");
+        map.put("help.values", "(Значення: {values})");
+        map.put("help.page_label", "Сторінка");
+        map.put("help.nav.previous", "Попередня сторінка");
+        map.put("help.nav.next", "Наступна сторінка");
+        map.put("help.query_prefix", "Показано результати пошуку за запитом:");
+        map.put("help.no_description", "Опис відсутній");
+        map.put("help.hover.show", "Натисніть, щоб показати довідку для цієї команди");
+        map.put("help.aliases_inline", "(аліаси: {aliases})");
+        map.put("help.argument_permission", "Аргумент {argument} для /{command}{subcommandSuffix}");
+        map.put("help.usage_or", "АБО");
         return map;
     }
 

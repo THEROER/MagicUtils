@@ -97,4 +97,14 @@ public interface Platform {
     default ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
         return ListenerSubscription.noop();
     }
+
+    /**
+     * Subscribes to normalized player locale updates when the platform supports it.
+     *
+     * @param listener locale listener
+     * @return subscription handle, or a no-op subscription when unsupported
+     */
+    default ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        return ListenerSubscription.noop();
+    }
 }

@@ -54,6 +54,7 @@ public final class FabricBootstrap {
         private boolean setMessagesManager = true;
         private boolean registerMessages = true;
         private boolean addMagicUtilsMessages = true;
+        private boolean bindClientLocaleSync = true;
         private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
@@ -202,6 +203,17 @@ public final class FabricBootstrap {
         }
 
         /**
+         * Toggles synchronizing player language from client locale updates.
+         *
+         * @param bindClientLocaleSync true to bind client locale synchronization
+         * @return builder
+         */
+        public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
+            this.bindClientLocaleSync = bindClientLocaleSync;
+            return this;
+        }
+
+        /**
          * Registers plugin translations against the language manager.
          *
          * @param translations translation registrar
@@ -302,6 +314,11 @@ public final class FabricBootstrap {
                     .manageConfigManager(configManager == null)
                     .component(Logger.class, prepared.logger())
                     .build();
+
+            if (bindClientLocaleSync) {
+                runtime.manage("language.clientLocaleSync",
+                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
+            }
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());

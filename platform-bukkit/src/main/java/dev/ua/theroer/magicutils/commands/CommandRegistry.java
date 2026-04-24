@@ -477,7 +477,7 @@ public class CommandRegistry {
                 plugin,
                 scheduler);
 
-        bukkitCommand.setDescription(info.description());
+        bukkitCommand.setDescription(CommandDescriptions.resolveGlobal(plugin.getName(), info.description(), info.name()));
         bukkitCommand.setUsage(usage);
         String commandPermission = resolvePermission(info.permission(),
                 "commands." + info.name());
@@ -525,7 +525,7 @@ public class CommandRegistry {
                     messageLogger,
                     plugin,
                     scheduler);
-            aliasCommand.setDescription(info.description());
+            aliasCommand.setDescription(CommandDescriptions.resolveGlobal(plugin.getName(), info.description(), info.name()));
             aliasCommand.setUsage(aliasUsage);
             if (!commandPermission.isEmpty()) {
                 aliasCommand.setPermission(commandPermission);
@@ -570,7 +570,8 @@ public class CommandRegistry {
                 "commands." + info.name());
         if (!commandPermission.isEmpty()) {
             permissions.add(commandPermission + " (" + info.permissionDefault() + ")");
-            platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+            platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(),
+                    CommandDescriptions.resolveGlobal(plugin.getName(), info.description(), info.name()));
             incrementCount(counts, info.permissionDefault());
         }
 
@@ -584,8 +585,13 @@ public class CommandRegistry {
                     "commands." + info.name() + ".subcommand." + subInfo.permissionSegment());
             if (!subPermission.isEmpty()) {
                 permissions.add(subPermission + " (" + subInfo.permissionDefault() + ")");
-                String description = !subInfo.description().isEmpty() ? subInfo.description() : info.description();
-                platform.ensurePermissionRegistered(subPermission, subInfo.permissionDefault(), description);
+                platform.ensurePermissionRegistered(subPermission, subInfo.permissionDefault(),
+                        CommandDescriptions.resolveGlobal(
+                                plugin.getName(),
+                                subInfo.description(),
+                                info.name(),
+                                subInfo.fullPathSegments()
+                        ));
                 incrementCount(counts, subInfo.permissionDefault());
             }
 

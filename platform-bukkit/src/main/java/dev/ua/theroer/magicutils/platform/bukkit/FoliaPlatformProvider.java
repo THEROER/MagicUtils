@@ -5,6 +5,7 @@ import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
@@ -88,5 +89,10 @@ public final class FoliaPlatformProvider implements Platform, ShutdownHookRegist
     @Override
     public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
         return delegate.subscribePlayerLifecycle(listener);
+    }
+
+    @Override
+    public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        return delegate.subscribePlayerLocales(listener);
     }
 }

@@ -6,6 +6,7 @@ import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
+import com.velocitypowered.api.event.player.PlayerSettingsChangedEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -16,6 +17,8 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessage;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageType;
@@ -49,6 +52,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
 
     private final Map<UUID, Audience> audienceCache = new ConcurrentHashMap<>();
     private final Collection<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
+    private final Collection<PlayerLocaleListener> playerLocaleListeners = new CopyOnWriteArrayList<>();
     private final Collection<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final ProxyServer proxy;
     private final Object plugin;
@@ -248,6 +252,20 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         return () -> playerLifecycleListeners.remove(listener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null || proxy == null || plugin == null) {
+            return ListenerSubscription.noop();
+        }
+        registerEventListener();
+        playerLocaleListeners.add(listener);
+        publishCurrentPlayerLocales(listener);
+        return () -> playerLocaleListeners.remove(listener);
+    }
+
     private Audience wrap(Player player) {
         if (player == null) {
             return consoleAudience;
@@ -286,6 +304,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
     public void onProxyShutdown(ProxyShutdownEvent event) {
         audienceCache.clear();
         playerLifecycleListeners.clear();
+        playerLocaleListeners.clear();
         playerMessageListeners.clear();
         runShutdownHooks();
     }
@@ -320,11 +339,26 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         if (event == null || event.getPlayer() == null) {
             return;
         }
+        Player player = event.getPlayer();
         publishPlayerLifecycle(new PlayerLifecycle(
-                event.getPlayer().getUniqueId(),
-                event.getPlayer().getUsername(),
+                player.getUniqueId(),
+                player.getUsername(),
                 PlayerLifecycleType.JOIN
         ));
+        publishPlayerLocale(toPlayerLocale(player));
+    }
+
+    /**
+     * Handles Velocity client settings updates.
+     *
+     * @param event settings changed event
+     */
+    @Subscribe
+    public void onPlayerSettingsChanged(PlayerSettingsChangedEvent event) {
+        if (event == null || event.getPlayer() == null) {
+            return;
+        }
+        publishPlayerLocale(toPlayerLocale(event.getPlayer()));
     }
 
     /**
@@ -394,6 +428,48 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
                 logger.warn("Failed to deliver player lifecycle listener", e);
             }
         }
+    }
+
+    private void publishCurrentPlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null || proxy == null) {
+            return;
+        }
+        for (Player player : proxy.getAllPlayers()) {
+            publishPlayerLocale(listener, toPlayerLocale(player));
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocale playerLocale) {
+        if (playerLocale == null || !playerLocale.isValid() || playerLocaleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLocaleListener listener : playerLocaleListeners) {
+            publishPlayerLocale(listener, playerLocale);
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocaleListener listener, PlayerLocale playerLocale) {
+        if (listener == null || playerLocale == null || !playerLocale.isValid()) {
+            return;
+        }
+        try {
+            listener.onPlayerLocale(playerLocale);
+        } catch (RuntimeException e) {
+            logger.warn("Failed to deliver player locale listener", e);
+        }
+    }
+
+    private PlayerLocale toPlayerLocale(Player player) {
+        if (player == null) {
+            return null;
+        }
+        java.util.Locale locale = player.getPlayerSettings() != null
+                ? player.getPlayerSettings().getLocale()
+                : player.getEffectiveLocale();
+        if (locale == null) {
+            return null;
+        }
+        return new PlayerLocale(player.getUniqueId(), player.getUsername(), locale.toLanguageTag());
     }
 
     private static void runShutdownHooks() {

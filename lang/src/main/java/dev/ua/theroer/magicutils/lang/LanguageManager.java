@@ -2,8 +2,11 @@ package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.Tasks;
 import lombok.Getter;
@@ -17,11 +20,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +41,7 @@ public class LanguageManager {
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
+    private final Map<UUID, String> autoDetectedPlayerLanguages = new ConcurrentHashMap<>();
     private final Map<String, Map<String, String>> registeredTranslations = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
@@ -575,26 +581,7 @@ public class LanguageManager {
      * @return true if updated
      */
     public boolean setPlayerLanguage(UUID playerId, String languageCode) {
-        if (playerId == null) {
-            return false;
-        }
-
-        if (languageCode == null || languageCode.isEmpty()) {
-            playerLanguages.remove(playerId);
-            return true;
-        }
-
-        if (!loadedLanguages.containsKey(languageCode)) {
-            if (isBlockingSensitiveThread()) {
-                warnIfMainThread("loadLanguage");
-                scheduleLanguageLoad(languageCode);
-            } else if (!loadLanguageBlocking(languageCode)) {
-                return false;
-            }
-        }
-
-        playerLanguages.put(playerId, languageCode);
-        return true;
+        return setStoredPlayerLanguage(playerLanguages, playerId, languageCode, false);
     }
 
     /**
@@ -632,6 +619,51 @@ public class LanguageManager {
     }
 
     /**
+     * Assign an auto-detected language for a player based on client locale data.
+     *
+     * <p>Auto-detected languages are used only when no explicit player language override exists.</p>
+     *
+     * @param playerId player UUID
+     * @param languageCode locale tag or language code to resolve
+     * @return true if a supported language was stored or cleared
+     */
+    public boolean setAutoDetectedPlayerLanguage(UUID playerId, String languageCode) {
+        return setStoredPlayerLanguage(autoDetectedPlayerLanguages, playerId, languageCode, true);
+    }
+
+    /**
+     * Assign an auto-detected language for an {@link Audience}.
+     *
+     * @param audience audience with id
+     * @param languageCode locale tag or language code to resolve
+     * @return true if updated
+     */
+    public boolean setAutoDetectedPlayerLanguage(Audience audience, String languageCode) {
+        return audience != null && setAutoDetectedPlayerLanguage(audience.id(), languageCode);
+    }
+
+    /**
+     * Remove stored auto-detected language for a player.
+     *
+     * @param playerId player UUID
+     */
+    public void clearAutoDetectedPlayerLanguage(UUID playerId) {
+        if (playerId != null) {
+            autoDetectedPlayerLanguages.remove(playerId);
+        }
+    }
+
+    /**
+     * Remove stored auto-detected language for an arbitrary player object.
+     *
+     * @param player player object
+     */
+    public void clearAutoDetectedPlayerLanguage(Object player) {
+        UUID id = extractUuid(player);
+        clearAutoDetectedPlayerLanguage(id);
+    }
+
+    /**
      * Remove stored language preference for an arbitrary player object.
      *
      * @param player player object
@@ -651,7 +683,15 @@ public class LanguageManager {
         if (playerId == null) {
             return currentLanguage;
         }
-        return playerLanguages.getOrDefault(playerId, currentLanguage);
+        String explicit = playerLanguages.get(playerId);
+        if (explicit != null && !explicit.isBlank()) {
+            return explicit;
+        }
+        String autoDetected = autoDetectedPlayerLanguages.get(playerId);
+        if (autoDetected != null && !autoDetected.isBlank()) {
+            return autoDetected;
+        }
+        return currentLanguage;
     }
 
     /**
@@ -672,6 +712,66 @@ public class LanguageManager {
      */
     public Map<UUID, String> getPlayerLanguages() {
         return Collections.unmodifiableMap(new HashMap<>(playerLanguages));
+    }
+
+    /**
+     * Snapshot of auto-detected player language preferences.
+     *
+     * @return snapshot of auto-detected player language preferences
+     */
+    public Map<UUID, String> getAutoDetectedPlayerLanguages() {
+        return Collections.unmodifiableMap(new HashMap<>(autoDetectedPlayerLanguages));
+    }
+
+    /**
+     * Resolve a supported language code from a client locale tag or language code.
+     *
+     * @param languageCode client locale tag or language code
+     * @return supported language code, or null when no supported match exists
+     */
+    public String resolveSupportedLanguageCode(String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return null;
+        }
+        for (String candidate : expandLanguageCandidates(languageCode)) {
+            String matched = matchAvailableLanguageCode(candidate);
+            if (matched != null && !matched.isBlank()) {
+                return matched;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Binds automatic player locale synchronization to the manager platform.
+     *
+     * @return subscription that removes the registered listeners
+     */
+    public ListenerSubscription bindClientLocaleSync() {
+        return bindClientLocaleSync(platform);
+    }
+
+    /**
+     * Binds automatic player locale synchronization to the provided platform.
+     *
+     * @param targetPlatform platform to subscribe to
+     * @return subscription that removes the registered listeners
+     */
+    public ListenerSubscription bindClientLocaleSync(Platform targetPlatform) {
+        Platform resolvedPlatform = targetPlatform != null ? targetPlatform : platform;
+        if (resolvedPlatform == null) {
+            return ListenerSubscription.noop();
+        }
+        ListenerSubscription localeSubscription = resolvedPlatform.subscribePlayerLocales(this::applyPlayerLocale);
+        ListenerSubscription lifecycleSubscription = resolvedPlatform.subscribePlayerLifecycle(lifecycle -> {
+            if (lifecycle != null && lifecycle.type() == PlayerLifecycleType.LEAVE) {
+                clearAutoDetectedPlayerLanguage(lifecycle.playerId());
+            }
+        });
+        return () -> {
+            lifecycleSubscription.close();
+            localeSubscription.close();
+        };
     }
 
     /**
@@ -920,6 +1020,101 @@ public class LanguageManager {
         return config;
     }
 
+    private boolean setStoredPlayerLanguage(Map<UUID, String> store,
+                                            UUID playerId,
+                                            String languageCode,
+                                            boolean resolveSupportedLanguage) {
+        if (playerId == null) {
+            return false;
+        }
+
+        if (languageCode == null || languageCode.isBlank()) {
+            store.remove(playerId);
+            return true;
+        }
+
+        String resolvedLanguageCode = resolveSupportedLanguage
+                ? resolveSupportedLanguageCode(languageCode)
+                : languageCode;
+        if (resolvedLanguageCode == null || resolvedLanguageCode.isBlank()) {
+            store.remove(playerId);
+            return false;
+        }
+
+        if (!loadedLanguages.containsKey(resolvedLanguageCode)) {
+            if (isBlockingSensitiveThread()) {
+                warnIfMainThread("loadLanguage");
+                scheduleLanguageLoad(resolvedLanguageCode);
+            } else if (!loadLanguageBlocking(resolvedLanguageCode)) {
+                return false;
+            }
+        }
+
+        store.put(playerId, resolvedLanguageCode);
+        return true;
+    }
+
+    private void applyPlayerLocale(PlayerLocale playerLocale) {
+        if (playerLocale == null || !playerLocale.isValid()) {
+            return;
+        }
+        setAutoDetectedPlayerLanguage(playerLocale.playerId(), playerLocale.localeTag());
+    }
+
+    private Set<String> expandLanguageCandidates(String languageCode) {
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+        String trimmed = languageCode != null ? languageCode.trim() : "";
+        if (trimmed.isEmpty()) {
+            return candidates;
+        }
+        candidates.add(trimmed);
+
+        String lowerCased = trimmed.toLowerCase(Locale.ROOT);
+        candidates.add(lowerCased);
+
+        String normalizedTag = normalizeLanguageKey(trimmed);
+        candidates.add(normalizedTag);
+
+        int hyphenIndex = normalizedTag.indexOf('-');
+        if (hyphenIndex > 0) {
+            candidates.add(normalizedTag.substring(0, hyphenIndex));
+        }
+
+        int underscoreIndex = lowerCased.indexOf('_');
+        if (underscoreIndex > 0) {
+            candidates.add(lowerCased.substring(0, underscoreIndex));
+        }
+
+        return candidates;
+    }
+
+    private String matchAvailableLanguageCode(String candidate) {
+        if (candidate == null || candidate.isBlank()) {
+            return null;
+        }
+        if (loadedLanguages.containsKey(candidate)) {
+            return candidate;
+        }
+
+        String normalizedCandidate = normalizeLanguageKey(candidate);
+        for (String availableLanguage : getAvailableLanguages()) {
+            if (candidate.equals(availableLanguage)) {
+                return availableLanguage;
+            }
+            if (normalizedCandidate.equals(normalizeLanguageKey(availableLanguage))) {
+                return availableLanguage;
+            }
+        }
+        if (!createTranslations(candidate).isEmpty()) {
+            return candidate;
+        }
+        return null;
+    }
+
+    private String normalizeLanguageKey(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+    }
+
     private void applyLanguage(String languageCode) {
         this.currentLanguage = languageCode;
         this.currentConfig = loadedLanguages.get(languageCode);
@@ -987,6 +1182,11 @@ public class LanguageManager {
             }
         }
 
+        String inMemory = resolveInMemoryMessage(languageCode, key);
+        if (inMemory != null) {
+            return inMemory;
+        }
+
         ensureFallbackLoaded();
         if (fallbackConfig != null) {
             String fallbackMessage = fallbackConfig.getMessage(key);
@@ -1002,6 +1202,40 @@ public class LanguageManager {
     private boolean hasMessage(LanguageConfig config, String key) {
         if (config == null) return false;
         return config.getMessage(key) != null;
+    }
+
+    private String resolveInMemoryMessage(String languageCode, String key) {
+        if (languageCode == null || languageCode.isBlank() || key == null || key.isBlank()) {
+            return null;
+        }
+
+        Map<String, String> registered = registeredTranslations.get(languageCode);
+        if (registered != null) {
+            String registeredMessage = registered.get(key);
+            if (registeredMessage != null) {
+                return registeredMessage;
+            }
+        }
+
+        Map<String, Map<String, String>> bundled = createTranslations(languageCode);
+        if (bundled.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, Map<String, String>> sectionEntry : bundled.entrySet()) {
+            if (sectionEntry == null || sectionEntry.getKey() == null || sectionEntry.getValue() == null) {
+                continue;
+            }
+            String section = sectionEntry.getKey();
+            if (!key.startsWith(section + ".")) {
+                continue;
+            }
+            String relativeKey = key.substring(section.length() + 1);
+            String bundledMessage = sectionEntry.getValue().get(relativeKey);
+            if (bundledMessage != null) {
+                return bundledMessage;
+            }
+        }
+        return null;
     }
 
     private void logMissing(String languageCode, String key) {

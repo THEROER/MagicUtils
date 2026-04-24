@@ -3,6 +3,8 @@ package dev.ua.theroer.magicutils.commands;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.annotations.Permission;
 import dev.ua.theroer.magicutils.config.ConfigManager;
+import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
@@ -47,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.bytebuddy.matcher.ElementMatchers.not;
 import static net.bytebuddy.matcher.ElementMatchers.isDeclaredBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -139,6 +142,64 @@ class CommandRegistryIntegrationTest {
         }
     }
 
+    @Test
+    void registerResolvesAtPrefixedDescriptionsUsingDefaultLanguage() throws Exception {
+        try (TestHarness harness = new TestHarness(tempDir, "TestPlugin")) {
+            LanguageManager languageManager = new LanguageManager(harness.platform, harness.configManager);
+            languageManager.registerTranslations(
+                    "en",
+                    java.util.Map.of("commands.localized.description", "English localized description")
+            );
+            languageManager.registerTranslations(
+                    "uk",
+                    java.util.Map.of("commands.localized.description", "Український локалізований опис")
+            );
+            languageManager.init("en");
+            Messages.register(harness.plugin.getName(), languageManager);
+            try {
+                CommandRegistry.register(new LocalizedDescriptionCommand());
+
+                Command command = harness.commandMap.getCommand("localized");
+                assertNotNull(command);
+                assertEquals("English localized description", command.getDescription());
+                assertEquals("English localized description",
+                        harness.permissions.get("commands.localized").getDescription());
+            } finally {
+                Messages.unregister(harness.plugin.getName());
+                Messages.setLanguageManager(null);
+            }
+        }
+    }
+
+    @Test
+    void registerResolvesImplicitDescriptionKeysUsingDefaultLanguage() throws Exception {
+        try (TestHarness harness = new TestHarness(tempDir, "TestPlugin")) {
+            LanguageManager languageManager = new LanguageManager(harness.platform, harness.configManager);
+            languageManager.registerTranslations(
+                    "en",
+                    java.util.Map.of("commands.implicitlocalized.description", "English implicit localized description")
+            );
+            languageManager.registerTranslations(
+                    "uk",
+                    java.util.Map.of("commands.implicitlocalized.description", "Український неявний локалізований опис")
+            );
+            languageManager.init("en");
+            Messages.register(harness.plugin.getName(), languageManager);
+            try {
+                CommandRegistry.register(new ImplicitLocalizedDescriptionCommand());
+
+                Command command = harness.commandMap.getCommand("implicitlocalized");
+                assertNotNull(command);
+                assertEquals("English implicit localized description", command.getDescription());
+                assertEquals("English implicit localized description",
+                        harness.permissions.get("commands.implicitlocalized").getDescription());
+            } finally {
+                Messages.unregister(harness.plugin.getName());
+                Messages.setLanguageManager(null);
+            }
+        }
+    }
+
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
         @SuppressWarnings("unused")
@@ -152,6 +213,22 @@ class CommandRegistryIntegrationTest {
         @SuppressWarnings("unused")
         public CommandResult execute() {
             return CommandResult.failure(false);
+        }
+    }
+
+    @CommandInfo(name = "localized", description = "@commands.localized.description")
+    private static final class LocalizedDescriptionCommand extends MagicCommand {
+        @SuppressWarnings("unused")
+        public CommandResult execute() {
+            return CommandResult.success("ok");
+        }
+    }
+
+    @CommandInfo(name = "implicitlocalized")
+    private static final class ImplicitLocalizedDescriptionCommand extends MagicCommand {
+        @SuppressWarnings("unused")
+        public CommandResult execute() {
+            return CommandResult.success("ok");
         }
     }
 

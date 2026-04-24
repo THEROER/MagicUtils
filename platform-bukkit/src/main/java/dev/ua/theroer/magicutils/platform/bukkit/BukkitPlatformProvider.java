@@ -7,6 +7,8 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessage;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageType;
@@ -23,8 +25,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLocaleChangeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -47,9 +51,11 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
     private final BukkitScheduler scheduler;
     private final List<Runnable> shutdownHooks = new CopyOnWriteArrayList<>();
     private final List<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
+    private final List<PlayerLocaleListener> playerLocaleListeners = new CopyOnWriteArrayList<>();
     private final List<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean shutdownListenerRegistered = new AtomicBoolean(false);
     private final AtomicBoolean playerLifecycleListenerRegistered = new AtomicBoolean(false);
+    private final AtomicBoolean playerLocaleListenerRegistered = new AtomicBoolean(false);
     private final AtomicBoolean playerMessageListenerRegistered = new AtomicBoolean(false);
     private final TaskScheduler taskScheduler;
 
@@ -159,6 +165,17 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         return () -> playerLifecycleListeners.remove(listener);
     }
 
+    @Override
+    public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        playerLocaleListeners.add(listener);
+        registerPlayerLocaleHook();
+        publishCurrentPlayerLocales(listener);
+        return () -> playerLocaleListeners.remove(listener);
+    }
+
     private Audience wrap(CommandSender sender) {
         return new BukkitAudienceWrapper(plugin, sender);
     }
@@ -227,6 +244,29 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         }, plugin);
     }
 
+    private void registerPlayerLocaleHook() {
+        if (!playerLocaleListenerRegistered.compareAndSet(false, true)) {
+            return;
+        }
+        Bukkit.getPluginManager().registerEvents(new Listener() {
+            @EventHandler(priority = EventPriority.MONITOR)
+            public void onJoin(PlayerJoinEvent event) {
+                if (event == null || event.getPlayer() == null) {
+                    return;
+                }
+                publishPlayerLocale(event.getPlayer(), event.getPlayer().getLocale());
+            }
+
+            @EventHandler(priority = EventPriority.MONITOR)
+            public void onLocaleChange(PlayerLocaleChangeEvent event) {
+                if (event == null || event.getPlayer() == null) {
+                    return;
+                }
+                publishPlayerLocale(event.getPlayer(), event.getLocale());
+            }
+        }, plugin);
+    }
+
     private void publishPlayerMessage(PlayerMessage message) {
         if (message == null || !message.isValid() || playerMessageListeners.isEmpty()) {
             return;
@@ -251,6 +291,46 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
                 logger.warn("Failed to deliver player lifecycle listener", e);
             }
         }
+    }
+
+    private void publishCurrentPlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null) {
+            return;
+        }
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            publishPlayerLocale(listener, toPlayerLocale(player, player.getLocale()));
+        }
+    }
+
+    private void publishPlayerLocale(Player player, String localeTag) {
+        publishPlayerLocale(toPlayerLocale(player, localeTag));
+    }
+
+    private void publishPlayerLocale(PlayerLocale playerLocale) {
+        if (playerLocale == null || !playerLocale.isValid() || playerLocaleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLocaleListener listener : playerLocaleListeners) {
+            publishPlayerLocale(listener, playerLocale);
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocaleListener listener, PlayerLocale playerLocale) {
+        if (listener == null || playerLocale == null || !playerLocale.isValid()) {
+            return;
+        }
+        try {
+            listener.onPlayerLocale(playerLocale);
+        } catch (RuntimeException e) {
+            logger.warn("Failed to deliver player locale listener", e);
+        }
+    }
+
+    private PlayerLocale toPlayerLocale(Player player, String localeTag) {
+        if (player == null || localeTag == null || localeTag.isBlank()) {
+            return null;
+        }
+        return new PlayerLocale(player.getUniqueId(), player.getName(), localeTag);
     }
 
     private static void registerShutdownHookInternal(JavaPlugin plugin,

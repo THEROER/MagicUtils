@@ -17,6 +17,8 @@ import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.ThreadContext;
@@ -403,6 +405,16 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<ServerP
         @Override
         public ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
             return delegate.subscribePlayerMessages(listener);
+        }
+
+        @Override
+        public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+            return delegate.subscribePlayerLifecycle(listener);
+        }
+
+        @Override
+        public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+            return delegate.subscribePlayerLocales(listener);
         }
 
         @Override

@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.lang;
 
+import dev.ua.theroer.magicutils.platform.Audience;
+
 import java.util.Map;
 
 /**
@@ -23,6 +25,56 @@ public enum InternalMessages {
     CMD_NOT_FOUND("commands.not_found"),
     /** Internal error while running command. */
     CMD_INTERNAL_ERROR("commands.internal_error"),
+    /** Built-in help command description. */
+    CMD_HELP_COMMAND_DESCRIPTION("commands.help.command_description"),
+    /** Built-in help subcommand description. */
+    CMD_HELP_SUBCOMMAND_DESCRIPTION("commands.help.subcommand_description"),
+    /** Help command sender missing. */
+    CMD_HELP_SENDER_UNAVAILABLE("commands.help.sender_unavailable"),
+    /** Help is unavailable because no manager is ready. */
+    CMD_HELP_UNAVAILABLE("commands.help.unavailable"),
+    /** Help target command not found. */
+    CMD_HELP_COMMAND_NOT_FOUND("commands.help.command_not_found"),
+    /** Help header title. */
+    CMD_HELP_TITLE("commands.help.title"),
+    /** Help available commands section label. */
+    CMD_HELP_AVAILABLE_COMMANDS("commands.help.available_commands"),
+    /** Help empty state when nothing matches. */
+    CMD_HELP_NO_COMMANDS_FOUND("commands.help.no_commands_found"),
+    /** Help command label. */
+    CMD_HELP_LABEL_COMMAND("commands.help.label.command"),
+    /** Help description label. */
+    CMD_HELP_LABEL_DESCRIPTION("commands.help.label.description"),
+    /** Help aliases label. */
+    CMD_HELP_LABEL_ALIASES("commands.help.label.aliases"),
+    /** Help subcommands label. */
+    CMD_HELP_LABEL_SUBCOMMANDS("commands.help.label.subcommands"),
+    /** Help arguments label. */
+    CMD_HELP_LABEL_ARGUMENTS("commands.help.label.arguments"),
+    /** Help optional argument marker. */
+    CMD_HELP_OPTIONAL("commands.help.optional"),
+    /** Help default value marker. */
+    CMD_HELP_DEFAULT_VALUE("commands.help.default_value"),
+    /** Help values marker. */
+    CMD_HELP_VALUES("commands.help.values"),
+    /** Help page label. */
+    CMD_HELP_PAGE_LABEL("commands.help.page_label"),
+    /** Help previous page hover. */
+    CMD_HELP_NAV_PREVIOUS("commands.help.nav.previous"),
+    /** Help next page hover. */
+    CMD_HELP_NAV_NEXT("commands.help.nav.next"),
+    /** Help search query prefix. */
+    CMD_HELP_QUERY_PREFIX("commands.help.query_prefix"),
+    /** Help fallback description. */
+    CMD_HELP_NO_DESCRIPTION("commands.help.no_description"),
+    /** Help hover text for clickable entries. */
+    CMD_HELP_HOVER_SHOW("commands.help.hover.show"),
+    /** Help inline aliases text. */
+    CMD_HELP_ALIASES_INLINE("commands.help.aliases_inline"),
+    /** Help-generated argument permission description. */
+    CMD_HELP_ARGUMENT_PERMISSION("commands.help.argument_permission"),
+    /** Help usage separator between direct and subcommand forms. */
+    CMD_HELP_USAGE_OR("commands.help.usage_or"),
 
     // Settings command
     /** Language manager not initialised. */
@@ -138,14 +190,59 @@ public enum InternalMessages {
      * @return translated text with replacements or default message
      */
     public String get(String... replacements) {
-        LanguageManager manager = Messages.getLanguageManager();
+        return getScoped(null, null, replacements);
+    }
+
+    /**
+     * Get localized value using a scoped language manager with fallback to the global manager.
+     *
+     * @param scope scope identifier
+     * @param replacements placeholder/value pairs
+     * @return translated text with replacements or default message
+     */
+    public String getScoped(String scope, String... replacements) {
+        return getScoped(scope, null, replacements);
+    }
+
+    /**
+     * Get localized value for an audience using a scoped language manager with fallback to the global manager.
+     *
+     * @param scope scope identifier
+     * @param audience target audience
+     * @return translated text or default message
+     */
+    public String getScoped(String scope, Audience audience) {
+        return getScoped(scope, audience, new String[0]);
+    }
+
+    /**
+     * Get localized value with replacements for an audience using a scoped language manager
+     * with fallback to the global manager.
+     *
+     * @param scope scope identifier
+     * @param audience target audience
+     * @param replacements placeholder/value pairs
+     * @return translated text with replacements or default message
+     */
+    public String getScoped(String scope, Audience audience, String... replacements) {
+        LanguageManager manager = findLanguageManager(scope);
         if (manager != null) {
-            String message = manager.getMessage(getKey(), replacements);
+            String message = audience != null
+                    ? manager.getMessageForAudience(audience, getKey(), replacements)
+                    : manager.getMessage(getKey(), replacements);
             if (message != null && !message.equals(getKey()) && !message.startsWith("magicutils.")) {
                 return message;
             }
         }
         return applyPlaceholders(getDefaultMessage(), replacements);
+    }
+
+    private static LanguageManager findLanguageManager(String scope) {
+        LanguageManager manager = null;
+        if (scope != null && !scope.isBlank()) {
+            manager = Messages.getLanguageManager(scope);
+        }
+        return manager != null ? manager : Messages.getLanguageManager();
     }
 
     private String getDefaultMessage() {

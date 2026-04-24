@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.commands;
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
 import dev.ua.theroer.magicutils.config.logger.HelpSettings;
 import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
+import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.logger.LogBuilderCore;
 import dev.ua.theroer.magicutils.logger.LogLevel;
 import dev.ua.theroer.magicutils.logger.LogTarget;
@@ -77,7 +78,7 @@ public final class HelpCommandSupport {
         Supplier<CommandManager<?>> supplier = managerSupplier != null ? managerSupplier : () -> null;
 
         return SubCommandSpec.<S>builder(helpNameFinal)
-                .description("Shows available commands and usages")
+                .description("@magicutils.commands.help.subcommand_description")
                 .permissionDefault(MagicPermissionDefault.TRUE)
                 .argument(CommandArgument.builder("sender", MagicSender.class)
                         .sender(new AllowedSender[] { AllowedSender.ANY })
@@ -91,12 +92,13 @@ public final class HelpCommandSupport {
                         .greedy()
                         .build())
                 .execute(execution -> {
+                    CommandManager<?> manager = supplier.get();
                     MagicSender sender = execution.arg("sender", MagicSender.class);
                     if (sender == null) {
-                        return CommandResult.failure("Sender unavailable");
+                        return CommandResult.failure(message(manager, null,
+                                InternalMessages.CMD_HELP_SENDER_UNAVAILABLE));
                     }
 
-                    CommandManager<?> manager = supplier.get();
                     String commandName = execution.arg("command", String.class);
                     String subCommand = execution.arg("subcommand", String.class);
 
@@ -136,7 +138,7 @@ public final class HelpCommandSupport {
         Supplier<List<CommandManager<?>>> supplier = managersSupplier != null ? managersSupplier : List::of;
 
         return SubCommandSpec.<S>builder(helpNameFinal)
-                .description("Shows available commands and usages")
+                .description("@magicutils.commands.help.subcommand_description")
                 .permissionDefault(MagicPermissionDefault.TRUE)
                 .argument(CommandArgument.builder("sender", MagicSender.class)
                         .sender(new AllowedSender[] { AllowedSender.ANY })
@@ -150,12 +152,13 @@ public final class HelpCommandSupport {
                         .greedy()
                         .build())
                 .execute(execution -> {
+                    List<CommandManager<?>> managers = normalizeManagers(supplier.get());
                     MagicSender sender = execution.arg("sender", MagicSender.class);
                     if (sender == null) {
-                        return CommandResult.failure("Sender unavailable");
+                        return CommandResult.failure(message(primaryManager(managers), null,
+                                InternalMessages.CMD_HELP_SENDER_UNAVAILABLE));
                     }
 
-                    List<CommandManager<?>> managers = normalizeManagers(supplier.get());
                     String commandName = execution.arg("command", String.class);
                     String subCommand = execution.arg("subcommand", String.class);
 
@@ -201,7 +204,7 @@ public final class HelpCommandSupport {
     public static HelpResult build(CommandManager<?> manager, String commandName, String subCommand,
                                    String helpCommand, LoggerCore logger, MagicSender sender) {
         if (manager == null) {
-            return HelpResult.failure("Help unavailable (command manager not ready)");
+            return HelpResult.failure(message(null, sender, InternalMessages.CMD_HELP_UNAVAILABLE));
         }
 
         HelpStyle style = resolveStyle(logger);
@@ -218,7 +221,7 @@ public final class HelpCommandSupport {
                                    String helpCommand, LoggerCore logger, MagicSender sender) {
         List<CommandManager<?>> normalized = normalizeManagers(managers);
         if (normalized.isEmpty()) {
-            return HelpResult.failure("Help unavailable (command manager not ready)");
+            return HelpResult.failure(message(null, sender, InternalMessages.CMD_HELP_UNAVAILABLE));
         }
 
         HelpStyle style = resolveStyle(logger);
@@ -228,7 +231,8 @@ public final class HelpCommandSupport {
             CommandManager<?> detailManager = resolveManagerForCommand(normalized, request.detailTarget,
                     request.detailSub);
             if (detailManager == null) {
-                return HelpResult.failure("Command not found");
+                return HelpResult.failure(message(primaryManager(normalized), sender,
+                        InternalMessages.CMD_HELP_COMMAND_NOT_FOUND));
             }
             return HelpResult.success(buildDetails(detailManager, request.detailTarget, request.detailSub,
                     context, style, sender));
@@ -289,22 +293,22 @@ public final class HelpCommandSupport {
         List<HelpEntry> pageEntries = filtered.subList(start, end);
 
         List<String> lines = new ArrayList<>();
-        lines.addAll(buildHeaderLines("Help", safePage, totalPages, style));
-        lines.add(buildQueryLine(query, style));
-        lines.add(color(style.mutedTag(), "|- Available commands:"));
+        lines.addAll(buildHeaderLines(message(manager, sender, InternalMessages.CMD_HELP_TITLE), safePage, totalPages, style));
+        lines.add(buildQueryLine(manager, sender, query, style));
+        lines.add(color(style.mutedTag(), "|- " + message(manager, sender, InternalMessages.CMD_HELP_AVAILABLE_COMMANDS)));
 
         if (pageEntries.isEmpty()) {
-            lines.add(color(style.mutedTag(), "|- No commands found."));
+            lines.add(color(style.mutedTag(), "|- " + message(manager, sender, InternalMessages.CMD_HELP_NO_COMMANDS_FOUND)));
         } else {
             for (int i = 0; i < pageEntries.size(); i++) {
                 HelpEntry entry = pageEntries.get(i);
                 boolean last = i == pageEntries.size() - 1;
-                lines.add(buildEntryLine(entry, last, context, style));
+                lines.add(buildEntryLine(manager, sender, entry, last, context, style));
             }
         }
 
         if (totalPages > 1) {
-            lines.add(buildFooter(query, safePage, totalPages, context, style));
+            lines.add(buildFooter(manager, sender, query, safePage, totalPages, context, style));
         } else {
             lines.add(color(style.lineTag(), style.lineText()));
         }
@@ -325,22 +329,23 @@ public final class HelpCommandSupport {
         List<HelpEntry> pageEntries = filtered.subList(start, end);
 
         List<String> lines = new ArrayList<>();
-        lines.addAll(buildHeaderLines("Help", safePage, totalPages, style));
-        lines.add(buildQueryLine(query, style));
-        lines.add(color(style.mutedTag(), "|- Available commands:"));
+        CommandManager<?> primaryManager = primaryManager(managers);
+        lines.addAll(buildHeaderLines(message(primaryManager, sender, InternalMessages.CMD_HELP_TITLE), safePage, totalPages, style));
+        lines.add(buildQueryLine(primaryManager, sender, query, style));
+        lines.add(color(style.mutedTag(), "|- " + message(primaryManager, sender, InternalMessages.CMD_HELP_AVAILABLE_COMMANDS)));
 
         if (pageEntries.isEmpty()) {
-            lines.add(color(style.mutedTag(), "|- No commands found."));
+            lines.add(color(style.mutedTag(), "|- " + message(primaryManager, sender, InternalMessages.CMD_HELP_NO_COMMANDS_FOUND)));
         } else {
             for (int i = 0; i < pageEntries.size(); i++) {
                 HelpEntry entry = pageEntries.get(i);
                 boolean last = i == pageEntries.size() - 1;
-                lines.add(buildEntryLine(entry, last, context, style));
+                lines.add(buildEntryLine(primaryManager, sender, entry, last, context, style));
             }
         }
 
         if (totalPages > 1) {
-            lines.add(buildFooter(query, safePage, totalPages, context, style));
+            lines.add(buildFooter(primaryManager, sender, query, safePage, totalPages, context, style));
         } else {
             lines.add(color(style.lineTag(), style.lineText()));
         }
@@ -480,7 +485,7 @@ public final class HelpCommandSupport {
                                              HelpStyle style, MagicSender sender) {
         CommandInfo info = resolveCommandInfo(manager, target);
         if (info == null) {
-            return List.of(color(style.mutedTag(), "Command not found."));
+            return List.of(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_COMMAND_NOT_FOUND)));
         }
 
         String baseCommandName = baseCommandName(info);
@@ -490,14 +495,14 @@ public final class HelpCommandSupport {
         List<CommandManager.CommandAction<?>> allowedSubs = filterSubCommands(manager, sender, baseCommandName, subs);
 
         if (subInfo != null && !canViewSubCommand(manager, sender, baseCommandName, subInfo)) {
-            return List.of(color(style.mutedTag(), "Command not found."));
+            return List.of(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_COMMAND_NOT_FOUND)));
         }
         if (subInfo == null && !directAllowed && allowedSubs.isEmpty()) {
-            return List.of(color(style.mutedTag(), "Command not found."));
+            return List.of(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_COMMAND_NOT_FOUND)));
         }
 
         List<String> lines = new ArrayList<>();
-        lines.addAll(buildHeaderLines("Help", 0, 0, style));
+        lines.addAll(buildHeaderLines(message(manager, sender, InternalMessages.CMD_HELP_TITLE), 0, 0, style));
 
         if (subInfo != null) {
             lines.addAll(buildSubCommandDetails(manager, info, subInfo, style, sender, baseCommandName));
@@ -519,13 +524,17 @@ public final class HelpCommandSupport {
         List<CommandArgument> directArgs = directAction != null
                 ? filterVisibleArguments(manager, sender, baseCommandName, null, directAction.arguments())
                 : List.of();
-        String usage = buildCommandUsage(manager, info, directArgs, directAllowed, allowedSubs);
-        lines.add(color(style.mutedTag(), "Command: ") + color(style.textTag(), styleUsage(usage, style)));
-        lines.add(color(style.mutedTag(), "Description: ") + color(style.textTag(), safeDescription(info.description())));
+        String usage = buildCommandUsage(manager, sender, info, directArgs, directAllowed, allowedSubs);
+        lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_COMMAND) + " ")
+                + color(style.textTag(), styleUsage(usage, style)));
+        lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_DESCRIPTION) + " ")
+                + color(style.textTag(), safeDescription(manager, sender,
+                resolveDescription(manager, sender, info.name(), info.description(), null))));
 
         List<String> commandAliases = normalizeAliases(info.aliases());
         if (!commandAliases.isEmpty()) {
-            lines.add(color(style.mutedTag(), "Aliases: ") + color(style.textTag(), joinValues(commandAliases)));
+            lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ALIASES) + " ")
+                    + color(style.textTag(), joinValues(commandAliases)));
         }
 
         if (directAction != null && directAllowed) {
@@ -533,7 +542,7 @@ public final class HelpCommandSupport {
         }
 
         if (!allowedSubs.isEmpty()) {
-            lines.add(color(style.mutedTag(), "Subcommands:"));
+            lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_SUBCOMMANDS)));
             for (int i = 0; i < allowedSubs.size(); i++) {
                 CommandManager.CommandAction<?> sub = allowedSubs.get(i);
                 String subPath = sub.fullPath();
@@ -541,7 +550,8 @@ public final class HelpCommandSupport {
                         subPath, sub.arguments());
                 String subUsage = styleUsage(buildUsage(manager, info, subPath, subArgs), style);
                 String prefix = i == allowedSubs.size() - 1 ? "`-" : "|-";
-                String hover = hoverText(sub.description());
+                String hover = hoverText(manager, sender, resolveDescription(manager, sender, baseCommandName,
+                        sub.description(), sub.fullPathSegments()));
                 String click = buildHelpCommand(context, info.name(), subPath);
                 String line = color(style.mutedTag(), prefix + " ")
                         + clickable(subUsage, hover, click, style);
@@ -561,12 +571,21 @@ public final class HelpCommandSupport {
         List<CommandArgument> visibleArgs = filterVisibleArguments(manager, sender, baseCommandName,
                 subPath, args);
         String usage = buildUsage(manager, info, subPath, visibleArgs);
-        lines.add(color(style.mutedTag(), "Command: ") + color(style.textTag(), styleUsage(usage, style)));
-        lines.add(color(style.mutedTag(), "Description: ") + color(style.textTag(),
-                safeDescription(subInfo != null ? subInfo.description() : "")));
+        lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_COMMAND) + " ")
+                + color(style.textTag(), styleUsage(usage, style)));
+        String description = resolveDescription(
+                manager,
+                sender,
+                baseCommandName,
+                subInfo != null ? subInfo.description() : "",
+                subInfo != null ? subInfo.fullPathSegments() : null
+        );
+        lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_DESCRIPTION) + " ")
+                + color(style.textTag(), safeDescription(manager, sender, description)));
         List<String> aliases = subInfo != null ? normalizeAliases(subInfo.aliases()) : List.of();
         if (!aliases.isEmpty()) {
-            lines.add(color(style.mutedTag(), "Aliases: ") + color(style.textTag(), joinValues(aliases)));
+            lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ALIASES) + " ")
+                    + color(style.textTag(), joinValues(aliases)));
         }
         appendArguments(lines, args, manager, style, sender, baseCommandName, subPath);
         return lines;
@@ -583,21 +602,26 @@ public final class HelpCommandSupport {
         if (visible.isEmpty()) {
             return;
         }
-        lines.add(color(style.mutedTag(), "Arguments:"));
+        lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ARGUMENTS)));
         for (int i = 0; i < visible.size(); i++) {
             CommandArgument arg = visible.get(i);
             String prefix = i == visible.size() - 1 ? "`-" : "|-";
             boolean optional = arg.isOptional() || arg.getDefaultValue() != null;
             String label = argumentLabel(arg);
-            String suffix = optional ? " " + color(style.primaryTag(), "(Optional)") : "";
+            String suffix = optional
+                    ? " " + color(style.primaryTag(), message(manager, sender, InternalMessages.CMD_HELP_OPTIONAL))
+                    : "";
             String defaultValue = arg.getDefaultValue();
             if (defaultValue != null) {
                 String shown = defaultValue.isEmpty() ? "\"\"" : escapeMiniText(defaultValue);
-                suffix += " " + color(style.mutedTag(), "(Default: " + shown + ")");
+                suffix += " " + color(style.mutedTag(),
+                        message(manager, sender, InternalMessages.CMD_HELP_DEFAULT_VALUE, "value", shown));
             }
             List<String> enumValues = getEnumValues(arg);
             if (!enumValues.isEmpty() && enumValues.size() <= style.maxEnumValues()) {
-                suffix += " " + color(style.mutedTag(), "(Values: " + joinValues(enumValues) + ")");
+                suffix += " " + color(style.mutedTag(),
+                        message(manager, sender, InternalMessages.CMD_HELP_VALUES,
+                                "values", joinValues(enumValues)));
             }
             lines.add(color(style.mutedTag(), prefix + " ") + color(style.textTag(), label) + suffix);
         }
@@ -625,8 +649,13 @@ public final class HelpCommandSupport {
                 List<CommandArgument> directArgs = filterVisibleArguments(manager, sender, baseCommandName,
                         null, directAction.arguments());
                 String usage = buildUsage(manager, info, null, directArgs);
-                entries.add(new HelpEntry(usage, info.description(), info.name(), null,
-                        normalizeAliases(info.aliases())));
+                entries.add(new HelpEntry(
+                        usage,
+                        resolveDescription(manager, sender, info.name(), info.description(), null),
+                        info.name(),
+                        null,
+                        normalizeAliases(info.aliases())
+                ));
             }
 
             for (CommandManager.CommandAction<?> sub : getSubCommandActions(manager, cmd)) {
@@ -637,8 +666,13 @@ public final class HelpCommandSupport {
                 List<CommandArgument> subArgs = filterVisibleArguments(manager, sender, baseCommandName,
                         subPath, sub.arguments());
                 String usage = buildUsage(manager, info, subPath, subArgs);
-                entries.add(new HelpEntry(usage, sub.description(), info.name(), subPath,
-                        normalizeAliases(sub.aliases())));
+                entries.add(new HelpEntry(
+                        usage,
+                        resolveDescription(manager, sender, baseCommandName, sub.description(), sub.fullPathSegments()),
+                        info.name(),
+                        subPath,
+                        normalizeAliases(sub.aliases())
+                ));
             }
         }
 
@@ -693,10 +727,16 @@ public final class HelpCommandSupport {
         return lines;
     }
 
-    private static String buildFooter(String query, int page, int totalPages, HelpContext context, HelpStyle style) {
-        String prev = navButton("[-]", page > 1, query, page - 1, "Previous page", context, style);
-        String next = navButton("[+]", page < totalPages, query, page + 1, "Next page", context, style);
-        return prev + " " + color(style.mutedTag(), "Page " + page + "/" + totalPages) + " " + next;
+    private static String buildFooter(CommandManager<?> manager, MagicSender sender, String query,
+                                      int page, int totalPages, HelpContext context, HelpStyle style) {
+        String prev = navButton("[-]", page > 1, query, page - 1,
+                message(manager, sender, InternalMessages.CMD_HELP_NAV_PREVIOUS), context, style);
+        String next = navButton("[+]", page < totalPages, query, page + 1,
+                message(manager, sender, InternalMessages.CMD_HELP_NAV_NEXT), context, style);
+        return prev + " "
+                + color(style.mutedTag(),
+                message(manager, sender, InternalMessages.CMD_HELP_PAGE_LABEL) + " " + page + "/" + totalPages)
+                + " " + next;
     }
 
     private static String navButton(String label, boolean enabled, String query, int page, String hover,
@@ -711,20 +751,25 @@ public final class HelpCommandSupport {
         return clickable(label, hover, command, style);
     }
 
-    private static String buildQueryLine(String query, HelpStyle style) {
+    private static String buildQueryLine(CommandManager<?> manager, MagicSender sender,
+                                         String query, HelpStyle style) {
         String safe = query == null ? "" : query;
-        return color(style.mutedTag(), "Showing search results for query: ")
+        return color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_QUERY_PREFIX) + " ")
                 + color(style.textTag(), "\"" + escapeMiniText(safe) + "\"");
     }
 
-    private static String buildEntryLine(HelpEntry entry, boolean last, HelpContext context, HelpStyle style) {
+    private static String buildEntryLine(CommandManager<?> manager, MagicSender sender,
+                                         HelpEntry entry, boolean last,
+                                         HelpContext context, HelpStyle style) {
         String prefix = last ? "`-" : "|-";
-        String hover = hoverText(entry.description);
+        String hover = hoverText(manager, sender, entry.description);
         String click = buildHelpCommand(context, entry.command, entry.subcommand);
         String usage = styleUsage(entry.usage, style);
         String line = color(style.mutedTag(), prefix + " ") + clickable(usage, hover, click, style);
         if (entry.subcommand == null && entry.aliases != null && !entry.aliases.isEmpty()) {
-            line += " " + color(style.mutedTag(), "(aliases: " + joinValues(entry.aliases) + ")");
+            line += " " + color(style.mutedTag(),
+                    message(manager, sender, InternalMessages.CMD_HELP_ALIASES_INLINE,
+                            "aliases", joinValues(entry.aliases)));
         }
         return line;
     }
@@ -868,7 +913,8 @@ public final class HelpCommandSupport {
             return true;
         }
         String permission = manager.resolvePermission(info.permission(), "commands." + baseCommandName);
-        return manager.hasPermissionForHelp(sender, permission, info.permissionDefault(), info.description())
+        return manager.hasPermissionForHelp(sender, permission, info.permissionDefault(),
+                info.name(), info.description(), List.of())
                 || hasArgumentPermissionOverride(manager, sender, baseCommandName, null);
     }
 
@@ -879,7 +925,8 @@ public final class HelpCommandSupport {
         }
         String permission = manager.resolvePermission(subInfo.permission(),
                 "commands." + baseCommandName + ".subcommand." + subInfo.permissionSegment());
-        return manager.hasPermissionForHelp(sender, permission, subInfo.permissionDefault(), subInfo.description())
+        return manager.hasPermissionForHelp(sender, permission, subInfo.permissionDefault(),
+                baseCommandName, subInfo.description(), subInfo.fullPathSegments())
                 || hasArgumentPermissionOverride(manager, sender, baseCommandName, subInfo.fullPath());
     }
 
@@ -944,8 +991,11 @@ public final class HelpCommandSupport {
         if (argName == null || argName.isEmpty()) {
             argName = argumentLabel(argument);
         }
-        String description = "Argument " + argName + " for /" + baseCommandName
-                + (subCommandName != null && !subCommandName.isEmpty() ? " " + subCommandName : "");
+        String subCommandSuffix = subCommandName != null && !subCommandName.isEmpty() ? " " + subCommandName : "";
+        String description = message(manager, null, InternalMessages.CMD_HELP_ARGUMENT_PERMISSION,
+                "argument", argName,
+                "command", baseCommandName,
+                "subcommandSuffix", subCommandSuffix);
         return manager.hasPermissionForHelp(sender, resolved, argument.getPermissionDefault(), description);
     }
 
@@ -1000,7 +1050,7 @@ public final class HelpCommandSupport {
         return result;
     }
 
-    private static String buildCommandUsage(CommandManager<?> manager, CommandInfo info,
+    private static String buildCommandUsage(CommandManager<?> manager, MagicSender sender, CommandInfo info,
                                             List<CommandArgument> directArgs, boolean directAllowed,
                                             List<CommandManager.CommandAction<?>> allowedSubs) {
         String base = "/" + info.name();
@@ -1016,7 +1066,7 @@ public final class HelpCommandSupport {
             subsUsage = base + " <" + joined + ">";
         }
         if (directUsage != null && subsUsage != null) {
-            return directUsage + " OR " + subsUsage;
+            return directUsage + " " + message(manager, sender, InternalMessages.CMD_HELP_USAGE_OR) + " " + subsUsage;
         }
         if (directUsage != null) {
             return directUsage;
@@ -1167,18 +1217,44 @@ public final class HelpCommandSupport {
         return out.toString();
     }
 
-    private static String safeDescription(String description) {
+    private static String safeDescription(CommandManager<?> manager, MagicSender sender, String description) {
         if (description == null || description.isEmpty()) {
-            return "No description";
+            return message(manager, sender, InternalMessages.CMD_HELP_NO_DESCRIPTION);
         }
         return description;
     }
 
-    private static String hoverText(String description) {
+    private static String hoverText(CommandManager<?> manager, MagicSender sender, String description) {
         if (description == null || description.isEmpty()) {
-            return "Click to show help for this command";
+            return message(manager, sender, InternalMessages.CMD_HELP_HOVER_SHOW);
         }
         return description;
+    }
+
+    private static String message(CommandManager<?> manager, MagicSender sender, InternalMessages key,
+                                  String... replacements) {
+        String scope = manager != null ? manager.languageScope() : null;
+        Audience audience = sender != null ? sender.audience() : null;
+        return key.getScoped(scope, audience, replacements);
+    }
+
+    private static CommandManager<?> primaryManager(List<CommandManager<?>> managers) {
+        if (managers == null || managers.isEmpty()) {
+            return null;
+        }
+        return managers.get(0);
+    }
+
+    private static String resolveDescription(CommandManager<?> manager,
+                                             MagicSender sender,
+                                             String commandName,
+                                             String description,
+                                             List<String> relativePath) {
+        Audience audience = sender != null ? sender.audience() : null;
+        String languageScope = manager != null ? manager.languageScope() : null;
+        return relativePath == null || relativePath.isEmpty()
+                ? CommandDescriptions.resolveForAudience(languageScope, audience, description, commandName)
+                : CommandDescriptions.resolveForAudience(languageScope, audience, description, commandName, relativePath);
     }
 
     private static String normalizeHelpCommand(String helpCommand) {

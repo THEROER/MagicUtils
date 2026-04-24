@@ -57,6 +57,7 @@ public final class BungeeBootstrap {
         private boolean setMessagesManager = true;
         private boolean registerMessages = true;
         private boolean addMagicUtilsMessages = true;
+        private boolean bindClientLocaleSync = true;
         private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
@@ -207,6 +208,17 @@ public final class BungeeBootstrap {
         }
 
         /**
+         * Toggles synchronizing player language from client locale updates.
+         *
+         * @param bindClientLocaleSync true to bind client locale synchronization
+         * @return this builder
+         */
+        public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
+            this.bindClientLocaleSync = bindClientLocaleSync;
+            return this;
+        }
+
+        /**
          * Sets the translations consumer for additional language setup.
          *
          * @param translations translations configurer
@@ -308,6 +320,11 @@ public final class BungeeBootstrap {
                     .component(Plugin.class, plugin)
                     .component(ProxyServer.class, proxy)
                     .build();
+
+            if (bindClientLocaleSync) {
+                runtime.manage("language.clientLocaleSync",
+                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
+            }
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());

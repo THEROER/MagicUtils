@@ -4,8 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.Test;
@@ -16,7 +22,9 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executor;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -165,10 +173,75 @@ class LanguageManagerTest {
         }
     }
 
+    @Test
+    void autoDetectedLanguageResolvesLocaleTags() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+
+            UUID playerId = UUID.randomUUID();
+            assertTrue(manager.setAutoDetectedPlayerLanguage(playerId, "uk_UA"));
+
+            assertEquals("uk", manager.getPlayerLanguage(playerId));
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void manualOverrideWinsOverAutoDetectedLanguage() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+
+            UUID playerId = UUID.randomUUID();
+            assertTrue(manager.setAutoDetectedPlayerLanguage(playerId, "uk_UA"));
+            assertTrue(manager.setPlayerLanguage(playerId, "en"));
+
+            assertEquals("en", manager.getPlayerLanguage(playerId));
+            assertEquals("uk", manager.getAutoDetectedPlayerLanguages().get(playerId));
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void bindClientLocaleSyncAppliesLocalesAndClearsOnLeave() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+
+            UUID playerId = UUID.randomUUID();
+            ListenerSubscription subscription = manager.bindClientLocaleSync(platform);
+            try {
+                platform.firePlayerLocale(new PlayerLocale(playerId, "Alice", "uk_UA"));
+                assertEquals("uk", manager.getPlayerLanguage(playerId));
+
+                platform.firePlayerLifecycle(new PlayerLifecycle(playerId, "Alice", PlayerLifecycleType.LEAVE));
+                assertEquals("en", manager.getPlayerLanguage(playerId));
+            } finally {
+                subscription.close();
+            }
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
     private static final class TestPlatform implements Platform, ConfigFormatProvider {
         private final Path configDir;
         private final RuntimeException dispatchFailure;
         private final TaskScheduler scheduler = new DirectTaskScheduler();
+        private final CopyOnWriteArrayList<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
+        private final CopyOnWriteArrayList<PlayerLocaleListener> playerLocaleListeners = new CopyOnWriteArrayList<>();
 
         private TestPlatform(Path configDir, RuntimeException dispatchFailure) {
             this.configDir = configDir;
@@ -216,12 +289,42 @@ class LanguageManagerTest {
         }
 
         @Override
+        public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+            if (listener == null) {
+                return ListenerSubscription.noop();
+            }
+            playerLifecycleListeners.add(listener);
+            return () -> playerLifecycleListeners.remove(listener);
+        }
+
+        @Override
+        public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+            if (listener == null) {
+                return ListenerSubscription.noop();
+            }
+            playerLocaleListeners.add(listener);
+            return () -> playerLocaleListeners.remove(listener);
+        }
+
+        @Override
         public String defaultConfigExtension() {
             return "json";
         }
 
         private void shutdown() {
             scheduler.shutdown();
+        }
+
+        private void firePlayerLifecycle(PlayerLifecycle lifecycle) {
+            for (PlayerLifecycleListener listener : playerLifecycleListeners) {
+                listener.onPlayerLifecycle(lifecycle);
+            }
+        }
+
+        private void firePlayerLocale(PlayerLocale playerLocale) {
+            for (PlayerLocaleListener listener : playerLocaleListeners) {
+                listener.onPlayerLocale(playerLocale);
+            }
         }
     }
 

@@ -9,6 +9,8 @@ import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
 import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessage;
 import dev.ua.theroer.magicutils.platform.PlayerMessageListener;
 import dev.ua.theroer.magicutils.platform.PlayerMessageType;
@@ -55,6 +57,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     private final String configNamespace;
     private final TaskScheduler taskScheduler;
     private final List<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
+    private final List<PlayerLocaleListener> playerLocaleListeners = new CopyOnWriteArrayList<>();
     private final List<PlayerMessageListener> playerMessageListeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean playerLifecycleHooksRegistered = new AtomicBoolean(false);
     private final AtomicBoolean playerMessageHooksRegistered = new AtomicBoolean(false);
@@ -189,6 +192,17 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
     }
 
     @Override
+    public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        playerLocaleListeners.add(listener);
+        registerPlayerLifecycleHooks();
+        publishCurrentPlayerLocales(listener);
+        return () -> playerLocaleListeners.remove(listener);
+    }
+
+    @Override
     public void registerShutdownHook(Runnable hook) {
         if (hook == null) {
             return;
@@ -278,7 +292,9 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
                     if (args == null || args.length < 1) {
                         return null;
                     }
-                    publishPlayerLifecycle(extractPlayer(args[0]), PlayerLifecycleType.JOIN);
+                    ServerPlayer player = extractPlayer(args[0]);
+                    publishPlayerLifecycle(player, PlayerLifecycleType.JOIN);
+                    publishPlayerLocale(player);
                     return null;
                 }
         );
@@ -404,6 +420,94 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
                 logger.warn("Failed to dispatch Fabric player lifecycle", e);
             }
         }
+    }
+
+    private void publishCurrentPlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null) {
+            return;
+        }
+        MinecraftServer server = server();
+        if (server == null) {
+            return;
+        }
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            publishPlayerLocale(listener, toPlayerLocale(player));
+        }
+    }
+
+    private void publishPlayerLocale(ServerPlayer player) {
+        publishPlayerLocale(toPlayerLocale(player));
+    }
+
+    private void publishPlayerLocale(PlayerLocale playerLocale) {
+        if (playerLocale == null || !playerLocale.isValid() || playerLocaleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLocaleListener listener : playerLocaleListeners) {
+            publishPlayerLocale(listener, playerLocale);
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocaleListener listener, PlayerLocale playerLocale) {
+        if (listener == null || playerLocale == null || !playerLocale.isValid()) {
+            return;
+        }
+        try {
+            listener.onPlayerLocale(playerLocale);
+        } catch (RuntimeException e) {
+            logger.warn("Failed to dispatch Fabric player locale", e);
+        }
+    }
+
+    private PlayerLocale toPlayerLocale(ServerPlayer player) {
+        if (player == null) {
+            return null;
+        }
+        String localeTag = extractLocaleTag(player);
+        if (localeTag == null || localeTag.isBlank()) {
+            return null;
+        }
+        return new PlayerLocale(player.getUUID(), player.getName().getString(), localeTag);
+    }
+
+    private static String extractLocaleTag(ServerPlayer player) {
+        if (player == null) {
+            return null;
+        }
+        Object options = ReflectiveAccess.publicMethod(player.getClass(), "getClientOptions")
+                .flatMap(method -> ReflectiveAccess.invoke(method, player))
+                .orElse(null);
+        if (options == null) {
+            options = ReflectiveAccess.publicMethod(player.getClass(), "getClientInformation")
+                    .flatMap(method -> ReflectiveAccess.invoke(method, player))
+                    .orElse(null);
+        }
+        if (options == null) {
+            options = ReflectiveAccess.publicMethod(player.getClass(), "clientInformation")
+                    .flatMap(method -> ReflectiveAccess.invoke(method, player))
+                    .orElse(null);
+        }
+        return extractLanguageTag(options);
+    }
+
+    private static String extractLanguageTag(Object options) {
+        if (options == null) {
+            return null;
+        }
+        Object language = ReflectiveAccess.publicMethod(options.getClass(), "language")
+                .flatMap(method -> ReflectiveAccess.invoke(method, options))
+                .orElse(null);
+        if (language == null) {
+            language = ReflectiveAccess.publicMethod(options.getClass(), "languageCode")
+                    .flatMap(method -> ReflectiveAccess.invoke(method, options))
+                    .orElse(null);
+        }
+        if (language == null) {
+            language = ReflectiveAccess.publicMethod(options.getClass(), "getLanguage")
+                    .flatMap(method -> ReflectiveAccess.invoke(method, options))
+                    .orElse(null);
+        }
+        return language instanceof String value && !value.isBlank() ? value : null;
     }
 
     private static ServerPlayer extractPlayer(Object handler) {
