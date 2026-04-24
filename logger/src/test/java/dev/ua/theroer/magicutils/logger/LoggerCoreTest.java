@@ -46,6 +46,7 @@ class LoggerCoreTest {
         try {
             Object owner = new Object();
             LoggerCore core = new LoggerCore(platform, configManager, owner, "TestPlugin");
+            configManager.shutdown();
             MagicPlaceholders.registerLocal(owner, "user", (audience, argument) -> "alice");
             MagicPlaceholders.registerLocal("foreign", "user", (audience, argument) -> "bob");
 
@@ -79,6 +80,7 @@ class LoggerCoreTest {
         ConfigManager configManager = new ConfigManager(platform);
         try {
             LoggerCore core = new LoggerCore(platform, configManager, new Object(), "TestPlugin");
+            configManager.shutdown();
             setConsolePrefixModeNone(core);
 
             core.debug().send("plain debug");
