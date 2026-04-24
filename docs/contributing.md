@@ -14,7 +14,16 @@ mkdocs build --strict
 mkdocs serve
 ```
 
+Preferred release/tag flow:
+
+```bash
+python3 scripts/publish_release.py 1.10.0 --dry-run
+python3 scripts/publish_release.py 1.10.0
+```
+
 ## Deploy versioned docs (maintainers)
+
+Manual docs deployment:
 
 ```bash
 mike deploy --update-aliases 1.10.0 stable

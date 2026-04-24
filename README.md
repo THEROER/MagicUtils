@@ -139,3 +139,17 @@ reviewable:
 
 `verifyReflectionBoundaries` is wired into `check`, so CI catches unexpected
 new reflection usage automatically.
+
+## Release Helper
+
+Maintainers can prepare and dispatch a tagged release with:
+
+```bash
+python3 scripts/publish_release.py 1.19.2 --dry-run
+python3 scripts/publish_release.py 1.19.2
+```
+
+The helper mirrors the GitHub Actions flow: it can sync `gradle.properties`,
+push the selected branch, wait until `origin/<ref>` resolves to the pushed
+commit, and then dispatch `release.yml`. Optional flags are available for
+manual `javadoc.yml` and `publish-maven.yml` dispatches when needed.

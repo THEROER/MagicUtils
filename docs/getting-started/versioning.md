@@ -15,8 +15,20 @@ set to the active docs version.
 
 ## Tag releases (for maintainers)
 
-When you tag a release (for example `v1.10.0`), the workflow deploys a new
-docs version and updates the `stable` alias.
+Use the release helper to sync `gradle.properties`, push the release branch,
+and dispatch the tag workflow safely:
+
+```bash
+python3 scripts/publish_release.py 1.10.0 --dry-run
+python3 scripts/publish_release.py 1.10.0
+```
+
+The helper waits until `origin/<ref>` resolves to the pushed local HEAD before
+dispatching `release.yml`, which avoids tagging an older commit when GitHub has
+not caught up with the branch update yet.
+
+When a release tag is created (for example `v1.10.0`), the workflow deploys a
+new docs version and updates the `stable` alias.
 
 ```
 # Local
