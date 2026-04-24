@@ -1880,7 +1880,10 @@ public class ConfigManager {
         ensureReloadExecutor();
         reloadExecutor.submit(() -> {
             try {
-                if (reloadEntry(entry, Collections.emptySet(), true)) {
+                if (shuttingDown) {
+                    return;
+                }
+                if (reloadEntry(entry, Collections.emptySet(), true) && !shuttingDown) {
                     notifyChangeListenersOnMain(entry, Collections.emptySet());
                 }
             } finally {

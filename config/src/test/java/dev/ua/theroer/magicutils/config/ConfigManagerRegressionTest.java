@@ -14,21 +14,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -143,6 +148,31 @@ class ConfigManagerRegressionTest {
 
             assertEquals("updated-twice", config.value);
             assertEquals(1, calls.get());
+        } finally {
+            manager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void queuedExternalReloadDoesNotRunAfterShutdown() throws Exception {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager manager = new ConfigManager(platform);
+        try {
+            PlainChangeConfig config = manager.register(PlainChangeConfig.class);
+            AtomicInteger calls = new AtomicInteger();
+            manager.subscribeChanges(PlainChangeConfig.class, (updated, sections) -> calls.incrementAndGet());
+
+            DeferredExecutor deferredExecutor = new DeferredExecutor();
+            setPrivateField(manager, "reloadExecutor", deferredExecutor);
+            Object entry = invokePrivate(manager, "getEntry", new Class<?>[] { Object.class }, config);
+            invokePrivate(manager, "scheduleExternalReload", new Class<?>[] { entry.getClass() }, entry);
+
+            manager.shutdown();
+            deferredExecutor.runCaptured();
+
+            assertEquals("plain-default", config.value);
+            assertEquals(0, calls.get());
         } finally {
             manager.shutdown();
             platform.shutdown();
@@ -302,6 +332,65 @@ class ConfigManagerRegressionTest {
                 throw new ConcurrentModificationException("transient list snapshot failure");
             }
             return super.toArray();
+        }
+    }
+
+    private static Object invokePrivate(
+            Object target,
+            String methodName,
+            Class<?>[] parameterTypes,
+            Object... args
+    ) throws ReflectiveOperationException {
+        Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(target, args);
+    }
+
+    private static void setPrivateField(Object target, String fieldName, Object value) throws ReflectiveOperationException {
+        java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    private static final class DeferredExecutor extends AbstractExecutorService {
+        private final Deque<Runnable> tasks = new ArrayDeque<>();
+        private boolean shutdown;
+
+        @Override
+        public void shutdown() {
+            shutdown = true;
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            shutdown = true;
+            return List.of();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return shutdown;
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return shutdown;
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) {
+            return true;
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            tasks.addLast(command);
+        }
+
+        void runCaptured() {
+            while (!tasks.isEmpty()) {
+                tasks.removeFirst().run();
+            }
         }
     }
 
