@@ -76,6 +76,17 @@ public class ConfigManager {
     private volatile boolean watchServiceUnavailable = false;
     private volatile boolean watchServiceWarned = false;
     private volatile boolean shuttingDown = false;
+    /**
+     * Guards the {@link #shuttingDown} flag against external reload tasks.
+     *
+     * <p>{@link #shutdown()} sets {@code shuttingDown=true} under this lock,
+     * and each watcher-driven reload task acquires the lock before reading
+     * the flag. This eliminates the race where a queued task observes the
+     * flag still {@code false} while shutdown is mid-flight, then proceeds
+     * to mutate config state and notify listeners after the manager is
+     * supposed to be quiet.</p>
+     */
+    private final Object shutdownLock = new Object();
     private static final String EXT_TOKEN = "{ext}";
     private static final String MIGRATION_VERSION_KEY = "config-version";
     private static final String GLOBAL_FORMAT_FILE = "magicutils.format";
@@ -1880,11 +1891,23 @@ public class ConfigManager {
         ensureReloadExecutor();
         reloadExecutor.submit(() -> {
             try {
-                if (shuttingDown) {
-                    return;
-                }
-                if (reloadEntry(entry, Collections.emptySet(), true) && !shuttingDown) {
-                    notifyChangeListenersOnMain(entry, Collections.emptySet());
+                synchronized (shutdownLock) {
+                    if (shuttingDown) {
+                        return;
+                    }
+                    // Skip reload if the file's mtime matches what we last
+                    // saw — this drops spurious watcher events caused by
+                    // initial registration writes (saveConfig defaults), and
+                    // duplicate ENTRY_CREATE/ENTRY_MODIFY pairs the OS emits
+                    // for the same physical save.
+                    long observed = entry.file.exists() ? entry.file.lastModified() : -1L;
+                    long lastKnown = entry.lastModified.get();
+                    if (lastKnown > 0 && observed == lastKnown) {
+                        return;
+                    }
+                    if (reloadEntry(entry, Collections.emptySet(), true)) {
+                        notifyChangeListenersOnMain(entry, Collections.emptySet());
+                    }
                 }
             } finally {
                 entry.reloadComplete();
@@ -1922,21 +1945,16 @@ public class ConfigManager {
      * Stops the watcher service and releases associated resources.
      */
     public void shutdown() {
-        shuttingDown = true;
+        synchronized (shutdownLock) {
+            shuttingDown = true;
+        }
         if (shutdownRegistrar != null && shutdownHook != null) {
             shutdownRegistrar.unregisterShutdownHook(shutdownHook);
         }
 
-        if (reloadExecutor != null) {
-            reloadExecutor.shutdownNow();
-            try {
-                reloadExecutor.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            reloadExecutor = null;
-        }
-
+        // Stop the watcher first so no new external reloads are queued while
+        // we drain the reload executor. Closing watchService also unblocks
+        // watchService.take() inside watchLoop.
         if (watcherExecutor != null) {
             watcherExecutor.shutdownNow();
             try {
@@ -1954,6 +1972,23 @@ public class ConfigManager {
                 logger.error("Failed to close config watch service", e);
             }
             watchService = null;
+        }
+
+        // Drain reload executor gracefully — let in-flight tasks observe
+        // shuttingDown under shutdownLock and skip their work, then exit.
+        // We avoid shutdownNow() here so currently-running reloadEntry()
+        // calls can release entry.monitor cleanly.
+        if (reloadExecutor != null) {
+            reloadExecutor.shutdown();
+            try {
+                if (!reloadExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    reloadExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                reloadExecutor.shutdownNow();
+            }
+            reloadExecutor = null;
         }
 
         directoryWatchKeys.clear();

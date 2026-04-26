@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -55,7 +56,9 @@ class MagicRuntimeHttpBindingTest {
     @Test
     void httpClientBindingReloadsMatchingSectionAndClosesReplacedClient() throws Exception {
         try (TestContext context = newContext("http-binding")) {
-            List<TestHttpClient> ownedClients = new ArrayList<>();
+            // Thread-safe — the factory lambda may be invoked from the watcher
+            // reload executor concurrently with the test thread reading the list.
+            List<TestHttpClient> ownedClients = new CopyOnWriteArrayList<>();
             MagicRuntime runtime = newRuntime(context);
             MagicRuntimeConfigBinding<EndpointConfig, MagicHttpClient> binding = runtime.bindConfig(
                     "http.api",
@@ -102,7 +105,9 @@ class MagicRuntimeHttpBindingTest {
     @Test
     void webSocketBindingReloadsMatchingSectionAndUpdatesNamedComponent() throws Exception {
         try (TestContext context = newContext("websocket-binding")) {
-            List<TestHttpClient> ownedClients = new ArrayList<>();
+            // Thread-safe — the factory lambda may be invoked from the watcher
+            // reload executor concurrently with the test thread reading the list.
+            List<TestHttpClient> ownedClients = new CopyOnWriteArrayList<>();
             MagicRuntime runtime = newRuntime(context);
             MagicRuntimeConfigBinding<EndpointConfig, MagicWebSocketClient> binding = runtime.bindConfig(
                     "ws.gateway",
@@ -153,7 +158,9 @@ class MagicRuntimeHttpBindingTest {
     @Test
     void httpProfileBuildsNamedClientFromConfigAndRebuildsOnSectionReload() throws Exception {
         try (TestContext context = newContext("http-profile")) {
-            List<TestHttpClient> ownedClients = new ArrayList<>();
+            // Thread-safe — the factory lambda may be invoked from the watcher
+            // reload executor concurrently with the test thread reading the list.
+            List<TestHttpClient> ownedClients = new CopyOnWriteArrayList<>();
             MagicRuntime runtime = newRuntime(context);
             MagicHttpClientProfile<HttpProfileConfig> profile = MagicHttpClientProfile
                     .builder(runtime, "http.monitoring", HttpProfileConfig.class)
@@ -208,7 +215,9 @@ class MagicRuntimeHttpBindingTest {
     @Test
     void webSocketProfileBuildsNamedClientFromConfigAndRebuildsOnSectionReload() throws Exception {
         try (TestContext context = newContext("websocket-profile")) {
-            List<TestHttpClient> ownedClients = new ArrayList<>();
+            // Thread-safe — the factory lambda may be invoked from the watcher
+            // reload executor concurrently with the test thread reading the list.
+            List<TestHttpClient> ownedClients = new CopyOnWriteArrayList<>();
             MagicRuntime runtime = newRuntime(context);
             MagicWebSocketClientProfile<WebSocketProfileConfig> profile = MagicWebSocketClientProfile
                     .builder(runtime, "ws.gateway.profile", WebSocketProfileConfig.class)
@@ -531,9 +540,13 @@ class MagicRuntimeHttpBindingTest {
     }
 
     private static final class RecordingWebSocketBuilder implements WebSocket.Builder {
-        private URI uri;
-        private final Map<String, String> headers = new LinkedHashMap<>();
-        private List<String> subprotocols = List.of();
+        // Fields are read from the test thread but written from whichever
+        // executor the WebSocket plumbing runs buildAsync on. They must be
+        // visible across threads — hence volatile / synchronized accessors.
+        private volatile URI uri;
+        private final Map<String, String> headers =
+                java.util.Collections.synchronizedMap(new LinkedHashMap<>());
+        private volatile List<String> subprotocols = List.of();
 
         @Override
         public WebSocket.Builder header(String name, String value) {
