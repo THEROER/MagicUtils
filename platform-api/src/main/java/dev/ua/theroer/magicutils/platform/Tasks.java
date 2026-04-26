@@ -46,7 +46,7 @@ public final class Tasks {
         if (platform == null || platform.isMainThread()) {
             wrapped.run();
         } else {
-            platform.runOnMain(wrapped);
+            dispatchOnMain(platform, wrapped, future);
         }
         return future;
     }
@@ -74,7 +74,7 @@ public final class Tasks {
         if (platform == null || platform.isMainThread()) {
             wrapped.run();
         } else {
-            platform.runOnMain(wrapped);
+            dispatchOnMain(platform, wrapped, future);
         }
         return future;
     }
@@ -102,9 +102,17 @@ public final class Tasks {
                 target.complete(value);
                 return;
             }
-            platform.runOnMain(() -> target.complete(value));
+            dispatchOnMain(platform, () -> target.complete(value), target);
         });
         return target;
+    }
+
+    private static void dispatchOnMain(Platform platform, Runnable task, CompletableFuture<?> target) {
+        try {
+            platform.runOnMain(task);
+        } catch (Throwable error) {
+            target.completeExceptionally(error);
+        }
     }
 
     /**

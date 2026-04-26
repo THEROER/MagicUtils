@@ -1,29 +1,54 @@
 # Logger
 
-MagicUtils logger builds on Adventure components and provides a consistent
-API for console and chat output, with optional localisation and placeholders.
+MagicUtils logger builds on Adventure components and provides a consistent API
+for console and chat output, with optional localisation, internal placeholders,
+and external placeholder engines.
 
 ## Setup
 
-Use the platform adapter where available:
+The recommended path is to obtain the logger from a bootstrap result or
+`MagicRuntime`.
+
+### Bukkit/Paper
 
 ```java
-Platform platform = new BukkitPlatformProvider(plugin);
-ConfigManager configManager = new ConfigManager(platform);
-Logger logger = new Logger(platform, plugin, configManager);
+BukkitBootstrap.RuntimeResult magic = BukkitBootstrap.forPlugin(plugin)
+        .buildRuntime();
+
+Logger logger = magic.logger();
 ```
 
-Fabric uses the same `Logger` class from `magicutils-logger-fabric`:
+### Fabric
 
 ```java
-Platform platform = new FabricPlatformProvider(server);
-ConfigManager configManager = new ConfigManager(platform);
-Logger logger = new Logger(platform, configManager, "MyMod");
+FabricBootstrap.RuntimeResult magic = FabricBootstrap.forMod("mymod", () -> server)
+        .buildRuntime();
+
+Logger logger = magic.logger();
 ```
 
-For custom platforms (or NeoForge), use `LoggerCore` directly.
+### Velocity
 
-## Basic usage
+Velocity bootstrap returns `LoggerCore` directly:
+
+```java
+VelocityBootstrap.RuntimeResult magic = VelocityBootstrap.forPlugin(proxy, plugin, "MyPlugin", dataDirectory)
+        .buildRuntime();
+
+LoggerCore logger = magic.logger();
+```
+
+### NeoForge / Custom Platforms
+
+NeoForge and custom platforms typically wire `LoggerCore` manually:
+
+```java
+Platform platform = new NeoForgePlatformProvider();
+ConfigManager configManager = new ConfigManager(platform);
+LoggerCore logger = new LoggerCore(platform, configManager, this, "MyMod");
+```
+
+## Basic Usage
 
 ```java
 logger.info("<green>Ready.</green>");
@@ -31,19 +56,9 @@ logger.warn("Slow query detected");
 logger.error("Database unavailable");
 ```
 
-The logger accepts MiniMessage markup and can route to console, chat, or both.
+The logger accepts MiniMessage markup and can target console, chat, or both.
 
-## Prefixed loggers
-
-```java
-PrefixedLogger db = logger.withPrefix("database", "[DB]");
-db.info("Connected");
-```
-
-Each prefixed logger has its own entry under `sub-loggers` in `logger.yml`
-for enable/disable.
-
-## Log builder
+## Log Builder
 
 ```java
 logger.info()
@@ -52,56 +67,98 @@ logger.info()
         .send("<yellow>Reloaded</yellow>");
 ```
 
-Use `target(LogTarget.CHAT/CONSOLE/BOTH)` and `to(audience)` for fine control.
+Use the builder when you want fine-grained control:
 
-## Prefix modes
+- `target(LogTarget.CHAT | CONSOLE | BOTH)`
+- `to(audience)`
+- `toConsole()`
+- `noPrefix()`
 
-Prefix rendering can be controlled via `PrefixMode`:
+## Prefixed Loggers
+
+```java
+PrefixedLogger db = logger.withPrefix("database", "[DB]");
+db.info("Connected");
+```
+
+Each prefixed logger gets its own entry under `sub-loggers` in `logger.{ext}`
+for enable or disable toggles.
+
+## Prefix Modes
+
+Prefix rendering is controlled by `PrefixMode`:
 
 - `FULL` -> full plugin/mod name
 - `SHORT` -> short name from config
-- `CUSTOM` -> `LoggerCore.setCustomPrefix(...)`
+- `CUSTOM` -> `setCustomPrefix(...)`
 - `NONE` -> no prefix
 
-## Logger configuration
+`Logger` delegates these controls to the underlying `LoggerCore`.
 
-`LoggerConfig` is stored as `logger.{ext}`. On Fabric it is placed under
-`config/<modid>/` by default (via `ConfigNamespaceProvider`).
+## Runtime Integration
 
-See [Logger Config](logger-config.md) for a full key reference and examples.
+When you already have `MagicRuntime`, the logger is a shared typed component:
+
+```java
+MagicRuntime runtime = magic.runtime();
+LoggerCore loggerCore = runtime.requireComponent(LoggerCore.class);
+```
+
+That makes it easy to pass the logger into reloadable services or register
+named runtime resources that log through the same config and placeholder setup.
+
+## Logger Configuration
+
+`LoggerConfig` is stored as `logger.{ext}`.
+
+- Bukkit: plugin config directory
+- Fabric: `config/<modid>/` by default
+- Velocity / custom platforms: resolved through the active `Platform`
+
+See [Logger Config](logger-config.md) for a full key reference.
 
 Key sections:
 
-- `prefix`: format and prefix mode.
-- `defaults`: max length, console/chat defaults.
-- `chat` / `console`: colors, gradients, separators.
-- `help`: help command styling.
-- `sub-loggers`: per-prefix toggles.
+- `prefix`
+- `defaults`
+- `chat` / `console`
+- `help`
+- `sub-loggers`
 
-## Localisation and placeholders
+## Localisation
 
-Attach a `LanguageManager` to enable auto-localisation:
+Attach a `LanguageManager` to enable `@key` lookups:
 
 ```java
 logger.setLanguageManager(languageManager);
-```
-
-When a `LanguageManager` is attached, any message that starts with `@` is treated
-as a language key:
-
-```java
 logger.info("@myplugin.ready");
 ```
 
-The key is resolved via `LanguageManager` and then rendered as MiniMessage.
+The logger resolves the key through the attached `LanguageManager` and then
+renders the result as MiniMessage.
 
-Logger messages also pass through MagicPlaceholders. Use `{key}` to resolve
-placeholders from the logger namespace (based on the logger name), or
-`{namespace:key}` for explicit namespaces.
+Bootstrap helpers bind the language manager automatically when language support
+is enabled.
 
-On Bukkit, the logger automatically bridges MagicPlaceholders to
-[PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) when it is
-installed. On Fabric, MagicPlaceholders are bridged to
-[Text Placeholder API](https://modrinth.com/mod/placeholder-api) and
-[MiniPlaceholders](https://modrinth.com/mod/miniplaceholders) when those mods
-are present.
+## Internal And External Placeholders
+
+Logger messages pass through both:
+
+1. `MagicPlaceholders` for `{key}` and `{namespace:key}` tokens.
+2. Platform-specific external placeholder engines.
+
+Examples:
+
+```java
+logger.info("Balance: {economy:balance}");
+logger.info("Hello {player}");
+```
+
+Platform integrations:
+
+- Bukkit logger installs the PlaceholderAPI bridge and a Bukkit external
+  placeholder engine.
+- Fabric logger installs Text Placeholder API / MiniPlaceholders / PB4 support
+  when those mods are present.
+- `LoggerCore` also supports a custom `ExternalPlaceholderEngine` for custom
+  platforms.

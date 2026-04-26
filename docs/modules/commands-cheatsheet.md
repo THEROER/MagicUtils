@@ -1,8 +1,15 @@
-# Commands cheat sheet
+# Commands Cheat Sheet
 
 Quick reference for the MagicUtils command system.
 
-## Minimal annotated command
+## Minimal Registry Setup
+
+```java
+CommandRegistry registry = CommandRegistry.create(plugin, "myplugin", logger);
+registry.registerCommand(new DonateCommand());
+```
+
+## Minimal Annotated Command
 
 ```java
 @CommandInfo(name = "donate", description = "Main command")
@@ -13,7 +20,7 @@ public final class DonateCommand extends MagicCommand {
 }
 ```
 
-## Threading (async)
+## Threading (Async)
 
 ```java
 @CommandInfo(name = "donate", threading = CommandThreading.ASYNC)
@@ -23,7 +30,7 @@ public final class DonateCommand extends MagicCommand {
 }
 ```
 
-## Subcommands and nested paths
+## Subcommands And Nested Paths
 
 ```java
 @SubCommand(name = "give")
@@ -33,7 +40,7 @@ public CommandResult give(@Sender MagicSender sender, Player target) { ... }
 public CommandResult addNpcCommand(...) { ... }
 ```
 
-## Options / flags
+## Options / Flags
 
 ```java
 public CommandResult give(
@@ -48,7 +55,7 @@ Accepted forms:
 - `-a 5`
 - `--silent` / `-s`
 
-## Optional + default values
+## Optional + Default Values
 
 ```java
 public CommandResult set(
@@ -57,7 +64,7 @@ public CommandResult set(
 ) { ... }
 ```
 
-## Greedy text
+## Greedy Text
 
 ```java
 public CommandResult say(@Greedy String message) { ... }
@@ -76,8 +83,9 @@ Suggestion methods can be:
 - `List<String> getItems()`
 - `List<String> getItems(Player player)`
 - `List<String> getItems(ServerCommandSource sender)`
+- `List<String> getItems(CommandSource sender)`
 
-## Sender injection
+## Sender Injection
 
 ```java
 public CommandResult execute(@Sender MagicSender sender) { ... }
@@ -87,10 +95,10 @@ Allowed senders:
 
 `ANY`, `PLAYER`, `CONSOLE`, `BLOCK`, `MINECART`, `PROXIED`, `REMOTE`.
 
-## Builder API snippet
+## Builder API Snippet
 
 ```java
-CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
+MagicCommand command = MagicCommand.<CommandSender>builder("donate")
         .description("Main command")
         .aliases("d")
         .threading(CommandThreading.ASYNC)
@@ -100,5 +108,15 @@ CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
                 .threading(CommandThreading.ASYNC)
                 .execute(ctx -> CommandResult.success("ok"))
                 .build())
+        .build();
+
+registry.registerCommand(command);
+```
+
+## Mount Existing Command Tree
+
+```java
+MagicCommand admin = MagicCommand.<CommandSender>builder("admin")
+        .mount("punish", new BanCommand())
         .build();
 ```

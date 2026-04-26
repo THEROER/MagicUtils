@@ -2,22 +2,21 @@ package dev.ua.theroer.magicutils.platform.fabric;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import net.kyori.adventure.text.Component;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.server.level.ServerPlayer;
 import java.util.UUID;
 
 /**
  * Audience wrapper for Fabric server players.
  */
 public final class FabricAudience implements Audience {
-    private final ServerPlayerEntity player;
+    private final ServerPlayer player;
 
     /**
      * Creates an audience for the given player.
      *
      * @param player player instance
      */
-    public FabricAudience(ServerPlayerEntity player) {
+    public FabricAudience(ServerPlayer player) {
         this.player = player;
     }
 
@@ -26,7 +25,7 @@ public final class FabricAudience implements Audience {
      *
      * @return player instance
      */
-    public ServerPlayerEntity getPlayer() {
+    public ServerPlayer getPlayer() {
         return player;
     }
 
@@ -35,11 +34,26 @@ public final class FabricAudience implements Audience {
         if (player == null) {
             return;
         }
-        player.sendMessage(FabricComponentSerializer.toNative(component), false);
+        player.displayClientMessage(FabricComponentSerializer.toNative(component), false);
     }
 
     @Override
     public UUID id() {
-        return player != null ? player.getUuid() : null;
+        return player != null ? player.getUUID() : null;
+    }
+
+    @Override
+    public String name() {
+        return player != null && player.getName() != null ? player.getName().getString() : null;
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return FabricPermissionBridge.hasPermission(player, permission, fallbackOpLevel);
     }
 }

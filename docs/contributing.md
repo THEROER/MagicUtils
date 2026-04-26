@@ -9,11 +9,21 @@
 ## Build the docs locally
 
 ```bash
-python -m pip install mkdocs-material mkdocs-macros-plugin mike
+python -m pip install -r requirements-docs.txt
+mkdocs build --strict
 mkdocs serve
 ```
 
+Preferred release/tag flow:
+
+```bash
+python3 scripts/publish_release.py 1.10.0 --dry-run
+python3 scripts/publish_release.py 1.10.0
+```
+
 ## Deploy versioned docs (maintainers)
+
+Manual docs deployment:
 
 ```bash
 mike deploy --update-aliases 1.10.0 stable

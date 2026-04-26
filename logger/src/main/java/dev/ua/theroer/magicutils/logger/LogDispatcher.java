@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.logger;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.Platform;
+import dev.ua.theroer.magicutils.platform.Tasks;
 import net.kyori.adventure.text.Component;
 
 import java.util.ArrayList;
@@ -60,6 +61,25 @@ public final class LogDispatcher {
      * @param target LogTarget describing where to deliver
      */
     public static void deliver(Platform platform, Component component, Collection<Audience> recipients, LogTarget target) {
+        deliver(platform, component, component, recipients, target, null);
+    }
+
+    /**
+     * Sends the component to console and/or chat in a thread-safe way.
+     *
+     * @param platform platform adapter
+     * @param chatComponent component for chat delivery (includes prefixes)
+     * @param consoleComponent component for console delivery (no prefixes — logger name carries that)
+     * @param recipients resolved chat recipients (ignored for console-only)
+     * @param target LogTarget describing where to deliver
+     * @param consoleMetadata structured console metadata when available
+     */
+    public static void deliver(Platform platform,
+                               Component chatComponent,
+                               Component consoleComponent,
+                               Collection<Audience> recipients,
+                               LogTarget target,
+                               ConsoleMessageMetadata consoleMetadata) {
         if (platform == null) {
             return;
         }
@@ -67,7 +87,11 @@ public final class LogDispatcher {
         if (target == LogTarget.CONSOLE || target == LogTarget.BOTH) {
             Audience console = platform.console();
             if (console != null) {
-                console.send(component);
+                if (console instanceof StructuredConsoleAudience structured && consoleMetadata != null) {
+                    structured.sendConsole(consoleComponent, consoleMetadata);
+                } else {
+                    console.send(chatComponent);
+                }
             }
         }
 
@@ -75,11 +99,15 @@ public final class LogDispatcher {
             if (recipients == null || recipients.isEmpty()) {
                 return;
             }
-            Runnable deliver = () -> recipients.forEach(a -> a.send(component));
+            Runnable deliver = () -> recipients.forEach(a -> a.send(chatComponent));
             if (platform.isMainThread()) {
                 deliver.run();
             } else {
-                platform.runOnMain(deliver);
+                Tasks.runOnMain(platform, deliver).whenComplete((ignored, error) -> {
+                    if (error != null && platform.logger() != null) {
+                        platform.logger().warn("Failed to deliver chat log on the main thread", error);
+                    }
+                });
             }
         }
     }

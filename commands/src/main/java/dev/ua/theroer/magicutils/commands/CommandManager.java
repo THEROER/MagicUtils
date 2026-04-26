@@ -1,7 +1,6 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
-import dev.ua.theroer.magicutils.annotations.SubCommand;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import lombok.Getter;
 
@@ -78,6 +77,9 @@ public class CommandManager<S> {
      * @param info    the command info annotation
      */
     public void register(MagicCommand command, CommandInfo info) {
+        Objects.requireNonNull(command, "command");
+        Objects.requireNonNull(info, "info");
+        command.freeze();
         String name = info.name().toLowerCase();
         commands.put(name, command);
         commandInfos.put(name, info);
@@ -119,24 +121,57 @@ public class CommandManager<S> {
     }
 
     /**
+     * Returns the resolved command schema for the provided command label.
+     *
+     * @param name command name, alias, or namespaced label
+     * @return resolved schema or null when the command is not registered
+     */
+    @Nullable
+    public ResolvedCommandSchema describe(String name) {
+        if (name == null) {
+            return null;
+        }
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
+        if (command == null || info == null) {
+            return null;
+        }
+        return describe(command, info);
+    }
+
+    /**
+     * Returns the resolved command schema for a registered command instance.
+     *
+     * @param command command instance
+     * @param info resolved command info
+     * @return immutable resolved schema or null when the command is unknown
+     */
+    @Nullable
+    public ResolvedCommandSchema describe(MagicCommand command, CommandInfo info) {
+        if (command == null || info == null) {
+            return null;
+        }
+        CommandAction<S> directAction = getDirectAction(command, info);
+        SubCommandNode<S> subTree = getSubCommandTree(command, info);
+        return new ResolvedCommandSchema(
+                info.name(),
+                resolveCommandDescription(info),
+                Arrays.asList(info.aliases()),
+                info.permission(),
+                info.permissionDefault(),
+                directAction != null ? toResolvedAction(info.name(), directAction) : null,
+                toResolvedNode(info.name(), subTree)
+        );
+    }
+
+    /**
      * Gets the direct execute method if it exists.
      * 
      * @param clazz the command class
      * @return the execute method or null if not found
      */
-    private Method findExecuteMethod(Class<?> clazz) {
-        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
-            for (Method method : current.getDeclaredMethods()) {
-                if (method.getName().equals("execute") && !method.isAnnotationPresent(SubCommand.class)) {
-                    return method;
-                }
-            }
-        }
-        return null;
-    }
-
     private Method getExecuteMethodCached(Class<?> clazz) {
-        return executeMethodCache.computeIfAbsent(clazz, this::findExecuteMethod);
+        return executeMethodCache.computeIfAbsent(clazz, MagicCommand::findExecuteMethod);
     }
 
     private List<MagicCommand.SubCommandInfo> getSubCommandInfoCached(Class<?> clazz) {
@@ -268,6 +303,35 @@ public class CommandManager<S> {
         return false;
     }
 
+    private ResolvedCommandAction toResolvedAction(String commandName, CommandAction<S> action) {
+        return new ResolvedCommandAction(
+                action.name(),
+                action.path(),
+                resolveActionDescription(commandName, action),
+                action.aliases(),
+                action.permission(),
+                action.permissionDefault(),
+                action.threading(),
+                action.arguments()
+        );
+    }
+
+    private ResolvedSubCommandNode toResolvedNode(String commandName, SubCommandNode<S> node) {
+        if (node == null) {
+            return ResolvedSubCommandNode.root();
+        }
+        List<ResolvedSubCommandNode> children = new ArrayList<>();
+        for (SubCommandNode<S> child : node.children().values()) {
+            children.add(toResolvedNode(commandName, child));
+        }
+        return new ResolvedSubCommandNode(
+                node.name(),
+                node.aliases(),
+                children,
+                node.action() != null ? toResolvedAction(commandName, node.action()) : null
+        );
+    }
+
     private boolean pathEquals(List<String> left, List<String> right) {
         List<String> leftNorm = normalizePath(left);
         List<String> rightNorm = normalizePath(right);
@@ -386,6 +450,43 @@ public class CommandManager<S> {
         return hasCommandPermission(command, info, sender, baseCommandName, targetSubName);
     }
 
+    /**
+     * Checks whether the sender can access a resolved subcommand path or any executable child under it.
+     *
+     * @param name command label or alias
+     * @param sender sender handle
+     * @param pathSegments path tokens using either canonical names or aliases
+     * @return true if the path resolves to an accessible node
+     */
+    public boolean canAccessSubCommandPath(String name, S sender, List<String> pathSegments) {
+        if (name == null) {
+            return false;
+        }
+        MagicCommand command = commands.get(name.toLowerCase(Locale.ROOT));
+        CommandInfo info = commandInfos.get(name.toLowerCase(Locale.ROOT));
+        if (command == null || info == null) {
+            return false;
+        }
+
+        String baseCommandName = info.name().toLowerCase(Locale.ROOT);
+        String targetSubName = (pathSegments != null && !pathSegments.isEmpty())
+                ? pathSegments.get(0).toLowerCase(Locale.ROOT)
+                : null;
+        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
+            return false;
+        }
+        if (pathSegments == null || pathSegments.isEmpty()) {
+            return true;
+        }
+
+        SubCommandNode<S> root = getSubCommandTree(command, info);
+        SubCommandNode<S> node = resolveNode(root, pathSegments);
+        if (node == null) {
+            return false;
+        }
+        return hasAccessibleAction(node, sender, baseCommandName);
+    }
+
     private CommandResult executeInternal(String name, S sender, List<String> args, boolean bubbleErrors)
             throws CommandExecutionException {
         logger.debug("Attempting to execute command: " + name + " with args: " + args);
@@ -427,7 +528,8 @@ public class CommandManager<S> {
             String baseCommandName, @Nullable String targetSubName) {
         String commandPermission = resolvePermission(info.permission(),
                 "commands." + baseCommandName);
-        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(),
+                resolveCommandDescription(info));
         if (commandPermission.isEmpty()) {
             return true;
         }
@@ -437,7 +539,6 @@ public class CommandManager<S> {
         if (hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
             return true;
         }
-        logger.debug("Permission denied for " + platform.getName(sender) + " on permission: " + commandPermission);
         return false;
     }
 
@@ -473,6 +574,10 @@ public class CommandManager<S> {
         SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
 
         if (traversal.consumed() == 0) {
+            if (directAction != null) {
+                logger.debug("No subcommand match, falling back to direct execute handler");
+                return executeAction(command, info, directAction, sender, args, normalizedCommandName, null, bubbleErrors);
+            }
             String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
             logger.debug("Subcommand not found: " + subCommandName + ". Available: " +
                     getAvailableSubCommands(subCommands, sender, normalizedCommandName));
@@ -504,11 +609,10 @@ public class CommandManager<S> {
         String subPermission = resolvePermission(targetSubCommand.permission(),
                 "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.permissionSegment());
         platform.ensurePermissionRegistered(subPermission, targetSubCommand.permissionDefault(),
-                targetSubCommand.description());
+                resolveActionDescription(normalizedCommandName, targetSubCommand));
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, targetSubCommand.permissionDefault())
                 && !hasArgumentPermissionOverride(normalizedCommandName, subCommandName, sender)) {
-            logger.debug("Permission denied for subcommand " + subCommandName + " on permission: " + subPermission);
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
@@ -639,9 +743,10 @@ public class CommandManager<S> {
                 if (optionValue == null) {
                     continue;
                 }
-                result[i] = convertArgument(optionValue, argument.getType(), sender);
+                TypeParseResult<Object> parsedOption = convertArgumentDetailed(optionValue, argument.getType(), sender);
+                result[i] = parsedOption.value();
                 filled[i] = true;
-                if (result[i] == null && !argument.isOptional()) {
+                if (parsedOption.isInvalid()) {
                     logger.debug("Failed to convert option value for argument " + argument.getName()
                             + " from value: " + optionValue);
                     return null;
@@ -757,20 +862,25 @@ public class CommandManager<S> {
                 }
             }
 
-            result[i] = convertArgument(value, argument.getType(), sender);
+            TypeParseResult<Object> parsedArgument = convertArgumentDetailed(value, argument.getType(), sender);
+            result[i] = parsedArgument.value();
             logger.debug("Parsed argument " + i + " (" + argument.getName() + "): " + result[i]
                     + " (type: " + (result[i] != null ? result[i].getClass().getSimpleName() : "null") + ")");
 
-            // If optional argument failed to convert, do not consume the user arg; let next parameter try it
-            if (providedByUser && result[i] == null && argument.isOptional()) {
-                userArgIndex = Math.max(0, userArgIndex - 1);
-                logger.debug("Conversion failed for optional argument " + argument.getName()
-                        + ", reusing value for next parameter");
-                continue;
+            if (providedByUser && parsedArgument.isInvalid()) {
+                if (argument.isOptional() && canLaterArgumentConsume(arguments, i + 1, value, sender)) {
+                    userArgIndex = Math.max(0, userArgIndex - 1);
+                    logger.debug("Conversion failed for optional argument " + argument.getName()
+                            + ", reusing value for next parameter");
+                    continue;
+                }
+                logger.debug("Failed to convert argument " + i + " (" + argument.getName()
+                        + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
+                return null;
             }
 
             // Check if conversion failed
-            if (value != null && result[i] == null && !argument.isOptional()) {
+            if (value != null && parsedArgument.isInvalid() && !argument.isOptional()) {
                 logger.debug("Failed to convert argument " + i + " (" + argument.getName()
                         + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
                 return null;
@@ -819,24 +929,40 @@ public class CommandManager<S> {
         return false;
     }
 
+    private boolean canLaterArgumentConsume(List<CommandArgument> arguments, int startIndex, String value, S sender) {
+        if (value == null) {
+            return false;
+        }
+        for (int i = startIndex; i < arguments.size(); i++) {
+            CommandArgument argument = arguments.get(i);
+            if (argument == null || isSenderArgument(argument) || argument.isFlag()) {
+                continue;
+            }
+            if (argument.isGreedy()) {
+                if (argument.getType().equals(String.class)) {
+                    return true;
+                }
+                TypeParseResult<Object> parsed = convertArgumentDetailed(value, argument.getType(), sender);
+                return parsed.isSuccess() || argumentHasSuggestion(argument, value, sender);
+            }
+            if (isArgumentMatch(argument, value, sender)) {
+                return true;
+            }
+            if (!argument.isOptional() && argument.getDefaultValue() == null) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     private Object convertArgument(String value, Class<?> type, S sender) {
+        return convertArgumentDetailed(value, type, sender).value();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private TypeParseResult<Object> convertArgumentDetailed(String value, Class<?> type, S sender) {
         logger.debug("Converting argument: '" + value + "' to type: " + type.getSimpleName());
-
-        // Use the argument parser registry to convert the argument
-        Object result = typeParserRegistry.parse(value, type, sender);
-
-        if (result != null || value == null) {
-            return result;
-        }
-
-        // Fallback: only return raw value for String targets; otherwise treat as unparsed
-        if (type.equals(String.class)) {
-            logger.debug("No parser found for type " + type.getSimpleName() + ", returning string value");
-            return value;
-        }
-
-        logger.debug("No parser found for type " + type.getSimpleName() + ", returning null");
-        return null;
+        return (TypeParseResult<Object>) typeParserRegistry.parseDetailed(value, (Class) type, sender);
     }
 
     /**
@@ -876,9 +1002,9 @@ public class CommandManager<S> {
                             + (subCommandName != null ? " " + subCommandName : ""));
             if (resolved != null && !resolved.isEmpty()
                     && !platform.hasPermission(sender, resolved, argument.getPermissionDefault())) {
-                logger.debug("Skipping permission check for argument " + argument.getName()
-                        + " (missing permission " + resolved + "), treating as optional");
-                continue;
+                logger.debug("Permission denied for argument " + argument.getName()
+                        + " (missing permission " + resolved + ")");
+                return false;
             }
         }
         return true;
@@ -1093,7 +1219,7 @@ public class CommandManager<S> {
      * @return a list of suggestions
      */
     public List<String> getSuggestions(String name, S sender, List<String> args) {
-        logger.debug("Getting suggestions for command: " + name + " with args: " + args);
+        logger.debug(() -> "Getting suggestions for command: " + name + " with args: " + args);
 
         MagicCommand command = commands.get(name.toLowerCase());
         CommandInfo info = commandInfos.get(name.toLowerCase());
@@ -1102,22 +1228,22 @@ public class CommandManager<S> {
         String baseCommandName = info != null ? info.name().toLowerCase(Locale.ROOT) : normalizedName;
 
         if (command == null || info == null) {
-            logger.debug("Command not found for suggestions: " + name);
+            logger.debug(() -> "Command not found for suggestions: " + name);
             return Collections.emptyList();
         }
 
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
         if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
-            logger.debug("No permission for suggestions");
+            logger.debug(() -> "No permission for suggestions");
             return Collections.emptyList();
         }
 
         try {
             List<String> suggestions = generateSuggestions(command, info, sender, args, baseCommandName);
-            logger.debug("Generated suggestions: " + suggestions);
+            logger.debug(() -> "Generated suggestions: " + suggestions);
             return suggestions;
         } catch (Exception e) {
-            logger.debug("Error generating suggestions: " + e);
+            logger.debug(() -> "Error generating suggestions: " + e);
             return Collections.emptyList();
         }
     }
@@ -1127,19 +1253,19 @@ public class CommandManager<S> {
         List<CommandAction<S>> subCommands = getSubCommandActions(command);
         CommandAction<S> directAction = getDirectAction(command, info);
 
-        logger.debug("Generating suggestions - executeHandler: " + (directAction != null)
+        logger.debug(() -> "Generating suggestions - executeHandler: " + (directAction != null)
                 + ", subCommands: " + subCommands.size() + ", args: " + args);
 
         // If there's only a direct execute handler and no subcommands
         if (directAction != null && subCommands.isEmpty()) {
             List<CommandArgument> arguments = directAction.arguments();
-            logger.debug("Using direct method suggestions with " + arguments.size() + " arguments");
+            logger.debug(() -> "Using direct method suggestions with " + arguments.size() + " arguments");
             return generateDirectMethodSuggestions(command, arguments, sender, args, normalizedCommandName, null, Collections.emptyMap());
         }
 
         // If there are no subcommands and no execute handler
         if (subCommands.isEmpty() && directAction == null) {
-            logger.debug("No subcommands and no execute handler");
+            logger.debug(() -> "No subcommands and no execute handler");
             return Collections.emptyList();
         }
 
@@ -1167,7 +1293,7 @@ public class CommandManager<S> {
             String subPermission = resolvePermission(matchedAction.permission(),
                     "commands." + normalizedCommandName + ".subcommand." + matchedAction.permissionSegment());
             platform.ensurePermissionRegistered(subPermission, matchedAction.permissionDefault(),
-                    matchedAction.description());
+                    resolveActionDescription(normalizedCommandName, matchedAction));
             if (!subPermission.isEmpty()
                     && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
                 return Collections.emptyList();
@@ -1200,7 +1326,7 @@ public class CommandManager<S> {
         String subPermission = resolvePermission(matchedAction.permission(),
                 "commands." + normalizedCommandName + ".subcommand." + matchedAction.permissionSegment());
         platform.ensurePermissionRegistered(subPermission, matchedAction.permissionDefault(),
-                matchedAction.description());
+                resolveActionDescription(normalizedCommandName, matchedAction));
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
             return filteredChildren.isEmpty() ? Collections.emptyList() : filteredChildren;
@@ -1244,12 +1370,12 @@ public class CommandManager<S> {
     private List<String> generatePositionalSuggestions(MagicCommand command, List<CommandArgument> arguments,
             S sender, List<String> args, String normalizedCommandName, @Nullable String subCommandName,
             @NotNull Map<String, Object> allParsedArguments, @NotNull Set<CommandArgument> skipArguments) {
-        logger.debug("generatePositionalSuggestions called with " + arguments.size()
+        logger.debug(() -> "generatePositionalSuggestions called with " + arguments.size()
                 + " arguments and " + args.size() + " args");
-        logger.debug("Raw args: " + args);
+        logger.debug(() -> "Raw args: " + args);
 
         if (arguments.isEmpty()) {
-            logger.debug("No arguments defined for direct method");
+            logger.debug(() -> "No arguments defined for direct method");
             return Collections.emptyList();
         }
 
@@ -1272,7 +1398,7 @@ public class CommandManager<S> {
                 // Flags are options, not positional arguments, handled elsewhere
                 continue;
             } else {
-                userInputArguments.add(new ArgumentInfo(i, arg));
+                userInputArguments.add(new ArgumentInfo(arg));
             }
         }
 
@@ -1391,13 +1517,10 @@ public class CommandManager<S> {
     }
 
 
-    // Helper class to track argument info with original indices
     private static class ArgumentInfo {
-        final int originalIndex;
         final CommandArgument argument;
 
-        ArgumentInfo(int originalIndex, CommandArgument argument) {
-            this.originalIndex = originalIndex;
+        ArgumentInfo(CommandArgument argument) {
             this.argument = argument;
         }
     }
@@ -1669,40 +1792,41 @@ public class CommandManager<S> {
 
     private List<String> generateSuggestionsForArgument(MagicCommand command, CommandArgument argument,
             S sender, String currentInput, Map<String, Object> previousParsedArguments) {
-        logger.debug("generateSuggestionsForArgument called for argument: " + argument.getName()
+        logger.debug(() -> "generateSuggestionsForArgument called for argument: " + argument.getName()
                 + " with input: '" + currentInput + "'");
-        logger.debug("Argument suggestions: " + argument.getSuggestions());
-        logger.debug("Argument type: " + argument.getType());
+        logger.debug(() -> "Argument suggestions: " + argument.getSuggestions());
+        logger.debug(() -> "Argument type: " + argument.getType());
 
         List<String> suggestions = new ArrayList<>();
 
         // If no explicit suggestions, try to get suggestions from the argument type
         if (argument.getSuggestions().isEmpty()) {
-            logger.debug("No explicit suggestions, getting suggestions for type: " + argument.getType().getSimpleName());
+            logger.debug(() -> "No explicit suggestions, getting suggestions for type: "
+                    + argument.getType().getSimpleName());
             List<String> typeSuggestions = typeParserRegistry.getSuggestionsForArgumentFiltered(argument,
                     currentInput, sender, previousParsedArguments);
             if (!typeSuggestions.isEmpty()) {
-                logger.debug("Got " + typeSuggestions.size() + " suggestions from type parser");
+                logger.debug(() -> "Got " + typeSuggestions.size() + " suggestions from type parser");
                 return typeSuggestions;
             }
         }
 
         // Process explicit suggestions
         for (String suggestionSource : argument.getSuggestions()) {
-            logger.debug("Processing suggestion source: '" + suggestionSource + "'");
+            logger.debug(() -> "Processing suggestion source: '" + suggestionSource + "'");
 
             if (suggestionSource.contains("|")) {
                 String[] sources = suggestionSource.split("\\|");
                 for (String source : sources) {
                     List<String> sourceSuggestions = processSuggestionSource(command, source.trim(), sender,
                             currentInput, argument, previousParsedArguments);
-                    logger.debug("Source '" + source.trim() + "' generated: " + sourceSuggestions);
+                    logger.debug(() -> "Source '" + source.trim() + "' generated: " + sourceSuggestions);
                     suggestions.addAll(sourceSuggestions);
                 }
             } else {
                 List<String> sourceSuggestions = processSuggestionSource(command, suggestionSource, sender,
                         currentInput, argument, previousParsedArguments);
-                logger.debug("Source '" + suggestionSource + "' generated: " + sourceSuggestions);
+                logger.debug(() -> "Source '" + suggestionSource + "' generated: " + sourceSuggestions);
                 suggestions.addAll(sourceSuggestions);
             }
         }
@@ -1712,7 +1836,7 @@ public class CommandManager<S> {
                 .distinct()
                 .collect(Collectors.toList());
 
-        logger.debug("Final filtered suggestions: " + filteredSuggestions);
+        logger.debug(() -> "Final filtered suggestions: " + filteredSuggestions);
         return filteredSuggestions;
     }
 
@@ -1958,8 +2082,9 @@ public class CommandManager<S> {
 
             appendArgumentsToUsage(usage, subInfo.arguments());
 
-            if (subInfo.description() != null && !subInfo.description().isEmpty()) {
-                usage.append(" - ").append(subInfo.description());
+            String description = resolveActionDescription(info.name(), subInfo);
+            if (description != null && !description.isEmpty()) {
+                usage.append(" - ").append(description);
             }
 
             usages.add(usage.toString());
@@ -2070,7 +2195,14 @@ public class CommandManager<S> {
             usage.append(" ").append(subCommandName);
         }
         appendArgumentsToUsage(usage, arguments, false);
-        return usage.toString();
+        return escapeMiniMessage(usage.toString());
+    }
+
+    private static String escapeMiniMessage(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        return text.replace("\\", "\\\\").replace("<", "\\<").replace(">", "\\>");
     }
 
     /**
@@ -2102,6 +2234,20 @@ public class CommandManager<S> {
                 return displayName != null ? displayName : "world";
             } else if (suggestion.equals("@sender")) {
                 return displayName != null ? displayName : "player";
+            }
+        }
+
+        if (argument.getType().isEnum()) {
+            Object[] constants = argument.getType().getEnumConstants();
+            if (constants != null && constants.length > 0) {
+                List<String> variants = Arrays.stream(constants)
+                        .map(String::valueOf)
+                        .map(value -> value.toLowerCase(Locale.ROOT))
+                        .toList();
+                if (variants.size() <= 4) {
+                    return String.join("|", variants);
+                }
+                return (displayName != null ? displayName : typeName) + ":" + variants.get(0) + "|...";
             }
         }
 
@@ -2696,7 +2842,25 @@ public class CommandManager<S> {
         if (sender == null) {
             return false;
         }
-        platform.ensurePermissionRegistered(permission, defaultValue, description != null ? description : "");
+        platform.ensurePermissionRegistered(permission, defaultValue,
+                CommandDescriptions.resolveGlobal(pluginName, description));
+        S raw = unwrapSender(sender);
+        if (raw != null) {
+            return platform.hasPermission(raw, permission, defaultValue);
+        }
+        return sender.hasPermission(permission);
+    }
+
+    boolean hasPermissionForHelp(MagicSender sender, String permission, MagicPermissionDefault defaultValue,
+                                 String commandName, String description, @Nullable List<String> relativePath) {
+        if (permission == null || permission.isEmpty()) {
+            return true;
+        }
+        if (sender == null) {
+            return false;
+        }
+        platform.ensurePermissionRegistered(permission, defaultValue,
+                CommandDescriptions.resolveGlobal(pluginName, description, commandName, relativePath));
         S raw = unwrapSender(sender);
         if (raw != null) {
             return platform.hasPermission(raw, permission, defaultValue);
@@ -2761,5 +2925,33 @@ public class CommandManager<S> {
             return prefix + "." + permission;
         }
         return permission.startsWith(".") ? permission.substring(1) : permission;
+    }
+
+    String languageScope() {
+        return pluginName;
+    }
+
+    private String resolveCommandDescription(CommandInfo info) {
+        if (info == null) {
+            return "";
+        }
+        return CommandDescriptions.resolveGlobal(pluginName, info.description(), info.name());
+    }
+
+    private String resolveActionDescription(String commandName, CommandAction<S> action) {
+        if (action == null) {
+            return "";
+        }
+        List<String> relativePath = isDirectRootAction(commandName, action)
+                ? List.of()
+                : action.fullPathSegments();
+        return CommandDescriptions.resolveGlobal(pluginName, action.description(), commandName, relativePath);
+    }
+
+    private boolean isDirectRootAction(String commandName, CommandAction<S> action) {
+        if (commandName == null || action == null) {
+            return false;
+        }
+        return action.path().isEmpty() && commandName.equalsIgnoreCase(action.name());
     }
 }

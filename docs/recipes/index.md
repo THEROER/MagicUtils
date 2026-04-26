@@ -1,44 +1,50 @@
 # Recipes
 
-## Embed MagicUtils in a Fabric mod
+## Embed MagicUtils In A Fabric Mod
 
-Use `include("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}")` and avoid
-installing the standalone bundle on the server.
+Use `include("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}")`
+and avoid installing the standalone bundle on the server.
 
-## Share a single bundle on a server
+## Share A Single Bundle On A Server
 
-Install `magicutils-fabric-bundle` in `mods/` and use `modImplementation` only.
+Install `magicutils-fabric-bundle` in `mods/` and use `modImplementation`
+without `include(...)`.
 
 Download link:
 [`magicutils-fabric-bundle-{{ magicutils_version }}.jar`](https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/magicutils-fabric-bundle/{{ magicutils_version }}/magicutils-fabric-bundle-{{ magicutils_version }}.jar)
 
-## Register the built-in help command
+## Register The Built-In Help Command
+
+Bukkit or Fabric:
 
 ```java
-CommandRegistry.register(plugin, new HelpCommand(logger));
+registry.registerCommand(new HelpCommand(logger, registry));
 ```
 
-## Add help as a subcommand
+## Add Help As A Subcommand
+
+Use this pattern when you want help attached to an existing command tree or on
+platforms without a dedicated `HelpCommand` wrapper:
 
 ```java
-CommandRegistry.register(plugin, new MyCommand()
+registry.registerCommand(new MyCommand()
         .addSubCommand(HelpCommandSupport.createHelpSubCommand(
                 "help",
-                logger.getCore(),
-                () -> CommandRegistry.getCommandManager(plugin)
+                loggerCore,
+                registry::commandManager
         )));
 ```
 
-## Force a config format
+## Force A Config Format
 
 Create `<config>.format` next to the file or `magicutils.format` in the root
 config directory with a single line:
 
-```
+```text
 jsonc
 ```
 
-## Add enum suggestions
+## Add Enum Suggestions
 
-Enum parameters are auto-suggested. You can additionally limit the visible
-choices via `@Suggest("{one,two}")` for a specific argument.
+Enum parameters are auto-suggested. You can additionally limit visible choices
+via `@Suggest("{one,two}")` for a specific argument.

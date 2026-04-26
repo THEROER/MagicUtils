@@ -1,10 +1,10 @@
 package dev.ua.theroer.magicutils.platform.velocity;
 
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
 import dev.ua.theroer.magicutils.logger.LogLevel;
-import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Console audience that routes messages through an SLF4J logger with proper levels.
  */
-final class VelocityConsoleAudience implements Audience {
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+final class VelocityConsoleAudience implements StructuredConsoleAudience {
 
     private final Logger baseLogger;
     private final String baseLoggerName;
@@ -31,11 +30,23 @@ final class VelocityConsoleAudience implements Audience {
         if (component == null) {
             return;
         }
-        String plain = PLAIN.serialize(component);
-        ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-        String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
+    }
+
+    @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || metadata == null) {
+            return;
+        }
+        String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
         Logger logger = resolveLogger(loggerName);
-        logWithLevel(logger, parsed.level(), parsed.message());
+        logWithLevel(logger, metadata.level(), ConsoleColorSerializer.serialize(component));
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
     }
 
     private Logger resolveLogger(String loggerName) {

@@ -4,6 +4,7 @@ import dev.ua.theroer.magicutils.platform.Audience;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -35,12 +36,27 @@ public final class NeoForgePlayerAudience implements Audience {
         if (player == null || component == null) {
             return;
         }
-        net.minecraft.network.chat.Component nativeComponent = NeoForgeComponentSerializer.toNative(component);
+        net.minecraft.network.chat.Component nativeComponent = Objects.requireNonNull(NeoForgeComponentSerializer.toNative(component), "nativeComponent");
         player.sendSystemMessage(nativeComponent);
     }
 
     @Override
     public UUID id() {
         return player != null ? player.getUUID() : null;
+    }
+
+    @Override
+    public String name() {
+        return player != null && player.getName() != null ? player.getName().getString() : null;
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return NeoForgePermissionBridge.hasPermission(player, permission, fallbackOpLevel);
     }
 }

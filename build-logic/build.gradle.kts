@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 plugins {
     kotlin("jvm") version "2.2.0"
     `java-gradle-plugin`
@@ -20,11 +23,31 @@ dependencies {
     implementation("fabric-loom:fabric-loom.gradle.plugin:${project.property("fabricLoomVersion")}")
 }
 
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(21)
+}
+
 gradlePlugin {
     plugins {
         register("magicutilsTarget") {
             id = "magicutils.target"
             implementationClass = "MagicUtilsTargetPlugin"
+        }
+        register("magicutilsMatrixSettings") {
+            id = "magicutils.matrix-settings"
+            implementationClass = "MagicUtilsMatrixSettingsPlugin"
+        }
+        register("magicutilsMatrixRoot") {
+            id = "magicutils.matrix-root"
+            implementationClass = "MagicUtilsMatrixRootPlugin"
         }
         register("magicutilsRepositories") {
             id = "magicutils.repositories"

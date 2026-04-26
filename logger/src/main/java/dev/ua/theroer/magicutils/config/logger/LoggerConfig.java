@@ -313,7 +313,7 @@ public class LoggerConfig {
 
     /**
      * Gets the default target.
-     * 
+     *
      * @return the default target for messages
      */
     public LogTarget getDefaultTarget() {
@@ -326,6 +326,37 @@ public class LoggerConfig {
         } catch (IllegalArgumentException e) {
             return LogTarget.BOTH;
         }
+    }
+
+    /**
+     * Gets the custom prefix text without allocating a defensive copy of the prefix section.
+     *
+     * @return custom prefix string, or empty string if unset
+     */
+    public String getCustomPrefix() {
+        if (prefix == null) {
+            return "";
+        }
+        String custom = prefix.getCustom();
+        return custom != null ? custom : "";
+    }
+
+    /**
+     * Returns whether console messages should use gradient coloring.
+     *
+     * @return true if console gradient is enabled
+     */
+    public boolean isConsoleUseGradient() {
+        return prefix != null && prefix.isUseGradientConsole();
+    }
+
+    /**
+     * Returns whether console messages should have formatting stripped.
+     *
+     * @return true if console formatting is stripped
+     */
+    public boolean isConsoleStripFormatting() {
+        return console != null && console.isStripFormatting();
     }
 
     private PrefixSettings copyPrefix(PrefixSettings source) {

@@ -1,10 +1,12 @@
 # Installation
 
-MagicUtils is split into modules. For most projects you only need a single
-platform entry point (`magicutils-bukkit`, `magicutils-fabric-bundle`,
-`magicutils-neoforge`) plus optional format helpers.
+MagicUtils is split into modules. For most projects you only need one platform
+entry point (`magicutils-bukkit`, `magicutils-fabric-bundle`,
+`magicutils-velocity`, or `magicutils-neoforge`) plus optional format helpers.
 
-## Choose a version
+Use the modular artifacts only when you need a custom wiring path.
+
+## Choose A Version
 
 This documentation is versioned. The examples below use
 `{{ magicutils_version }}` which matches the current docs version.
@@ -22,6 +24,20 @@ repositories {
 }
 ```
 
+## Which Artifact Do I Need?
+
+| Scenario | Recommended artifacts | Notes |
+| --- | --- | --- |
+| Bukkit/Paper plugin | `magicutils-bukkit` | Default choice for most plugins. |
+| Shared Bukkit server install | `magicutils-bukkit-bundle` + plugin `compileOnly` dependency | Use when multiple plugins should share one install. |
+| Fabric mod | `magicutils-fabric-bundle` | Default choice for most mods. |
+| Shared Fabric server install | `magicutils-fabric-bundle:dev` without `include(...)` | Install the bundle mod on the server. |
+| Modular Fabric setup | `magicutils-fabric` + Fabric integration modules | Use only when you want custom wiring. |
+| Velocity plugin | `magicutils-velocity` | Includes config/logger/lang/commands support. |
+| NeoForge mod | `magicutils-neoforge` + `magicutils-commands-neoforge` | Placeholder bridge is not available yet. |
+| Extra config formats | `magicutils-config-yaml`, `magicutils-config-toml` | Optional helpers for YAML and TOML. |
+| HTTP client | `magicutils-http-client` | Optional runtime-aware HTTP/WebSocket clients. |
+
 ## Bukkit/Paper
 
 The Bukkit/Paper adapter bundles the core modules (config, logger, commands,
@@ -29,8 +45,8 @@ lang, placeholders). Add optional format helpers only when you need them.
 
 You can use it in two ways:
 
-1) Embed MagicUtils into your plugin (default).
-2) Use a shared MagicUtils plugin (`magicutils-bukkit-bundle`) so multiple
+1. Embed MagicUtils into your plugin.
+2. Use a shared MagicUtils plugin (`magicutils-bukkit-bundle`) so multiple
    plugins reuse the same runtime.
 
 Kotlin DSL:
@@ -38,7 +54,6 @@ Kotlin DSL:
 ```kotlin
 dependencies {
     implementation("dev.ua.theroer:magicutils-bukkit:{{ magicutils_version }}")
-    // Optional format helpers
     implementation("dev.ua.theroer:magicutils-config-yaml:{{ magicutils_version }}")
     implementation("dev.ua.theroer:magicutils-config-toml:{{ magicutils_version }}")
 }
@@ -49,13 +64,12 @@ Groovy DSL:
 ```groovy
 dependencies {
     implementation 'dev.ua.theroer:magicutils-bukkit:{{ magicutils_version }}'
-    // Optional format helpers
     implementation 'dev.ua.theroer:magicutils-config-yaml:{{ magicutils_version }}'
     implementation 'dev.ua.theroer:magicutils-config-toml:{{ magicutils_version }}'
 }
 ```
 
-### Shared Bukkit bundle (optional)
+### Shared Bukkit Bundle
 
 If you want a single shared MagicUtils install for multiple plugins, use the
 bundle plugin and do not embed MagicUtils inside your plugins.
@@ -77,7 +91,7 @@ Install the bundle on the server:
 
 You have two options:
 
-### Embed the bundle inside your mod (Jar-in-Jar)
+### Embed The Bundle Inside Your Mod
 
 This is the recommended approach for single-mod setups and avoids requiring
 server owners to install MagicUtils separately.
@@ -87,7 +101,6 @@ Kotlin DSL:
 ```kotlin
 dependencies {
     modImplementation(include("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}"))
-    // Optional: dev mappings for local run configs
     modCompileOnly("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev")
     modRuntimeOnly("dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev")
 }
@@ -98,13 +111,12 @@ Groovy DSL:
 ```groovy
 dependencies {
     modImplementation(include('dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}'))
-    // Optional: dev mappings for local run configs
     modCompileOnly 'dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev'
     modRuntimeOnly 'dev.ua.theroer:magicutils-fabric-bundle:{{ magicutils_version }}:dev'
 }
 ```
 
-### Depend on a shared bundle mod
+### Depend On A Shared Bundle Mod
 
 If you want one shared MagicUtils install for multiple mods, use a standard
 dependency and install the bundle mod on the server.
@@ -116,7 +128,7 @@ dependencies {
 ```
 
 If you pick the shared bundle, add the `magicutils-fabric-bundle` mod to the
-server `mods` folder and do not embed it inside other mods.
+server `mods/` folder and do not embed it inside other mods.
 
 You can download the bundle from the Maven repository:
 [`magicutils-fabric-bundle-{{ magicutils_version }}.jar`](https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/magicutils-fabric-bundle/{{ magicutils_version }}/magicutils-fabric-bundle-{{ magicutils_version }}.jar)
@@ -126,15 +138,17 @@ You can also add a dependency in your `fabric.mod.json`:
 ```json
 {
   "depends": {
-    "magicutils-fabric-bundle": ">=1.10.0"
+    "magicutils-fabric-bundle": ">={{ magicutils_version }}"
   }
 }
 ```
 
-### Modular Fabric dependencies (advanced)
+### Modular Fabric Dependencies
 
-If you want to wire only specific modules, use the platform adapter plus the
-feature modules you need:
+Use this only when you want to wire specific modules yourself instead of using
+the bundle. `FabricBootstrap` lives in the command integration layer, so a
+bootstrap-first modular setup usually pulls both the platform adapter and the
+Fabric integration modules.
 
 ```kotlin
 dependencies {
@@ -149,15 +163,14 @@ dependencies {
 
 ## NeoForge
 
-NeoForge exposes platform, config, logger, and command integrations. There is
-no NeoForge placeholder bridge yet.
+NeoForge exposes platform, config, logger, and Brigadier command integrations.
+There is no NeoForge placeholder bridge yet.
 
 Kotlin DSL:
 
 ```kotlin
 dependencies {
     implementation("dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}")
-    // Optional command integration
     implementation("dev.ua.theroer:magicutils-commands-neoforge:{{ magicutils_version }}")
 }
 ```
@@ -167,14 +180,14 @@ Groovy DSL:
 ```groovy
 dependencies {
     implementation 'dev.ua.theroer:magicutils-neoforge:{{ magicutils_version }}'
-    // Optional command integration
     implementation 'dev.ua.theroer:magicutils-commands-neoforge:{{ magicutils_version }}'
 }
 ```
 
 ## Velocity
 
-The Velocity adapter provides config + logger + lang support.
+The Velocity adapter exposes platform, config, logger, lang, and command
+integration in a single artifact.
 
 ```kotlin
 dependencies {
@@ -182,14 +195,14 @@ dependencies {
 }
 ```
 
-## Optional format helpers
+## Optional Format Helpers
 
 - `magicutils-config-yaml` enables YAML support.
 - `magicutils-config-toml` enables TOML support.
 
 Without them, MagicUtils uses JSON or JSONC (Fabric default).
 
-## Optional HTTP client
+## Optional HTTP Client
 
 ```kotlin
 dependencies {
@@ -197,7 +210,7 @@ dependencies {
 }
 ```
 
-## Notes on shaded artifacts
+## Notes On Shaded Artifacts
 
 Local builds produce `*-all` artifacts (shaded). The GitHub Pages repository
 does not include these files due to the 100 MB limit, so do not depend on them.

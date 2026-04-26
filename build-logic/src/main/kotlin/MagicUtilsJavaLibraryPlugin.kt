@@ -46,8 +46,7 @@ class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
             }
         }
 
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val moduleName = project.magicUtilsModuleName()
 
         project.tasks.withType(Jar::class.java).configureEach { jarTask ->
             jarTask.archiveBaseName.set(moduleName)

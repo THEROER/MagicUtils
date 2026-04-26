@@ -4,16 +4,14 @@ import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.logger.ExternalPlaceholderEngine;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.server.level.ServerPlayer;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,17 +61,27 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         Method contextOfServer = null;
 
         try {
-            Class<?> placeholders = Class.forName("eu.pb4.placeholders.api.Placeholders");
-            Class<?> placeholderContext = Class.forName("eu.pb4.placeholders.api.PlaceholderContext");
-            Class<?> placeholderResult = Class.forName("eu.pb4.placeholders.api.PlaceholderResult");
+            Class<?> placeholders = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.Placeholders").orElse(null);
+            Class<?> placeholderContext = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.PlaceholderContext").orElse(null);
+            Class<?> placeholderResult = ReflectiveAccess.loadClass("eu.pb4.placeholders.api.PlaceholderResult").orElse(null);
+            Class<?> identifierType = FabricIdentifierBridge.type();
+            if (placeholders == null || placeholderContext == null || placeholderResult == null || identifierType == null) {
+                throw new IllegalStateException("PB4 classes are unavailable");
+            }
 
-            parsePlaceholder = placeholders.getMethod("parsePlaceholder", Identifier.class, String.class, placeholderContext);
-            parseText = placeholders.getMethod("parseText", Text.class, placeholderContext);
-            resultValid = placeholderResult.getMethod("isValid");
-            resultText = placeholderResult.getMethod("text");
+            parsePlaceholder = ReflectiveAccess.publicMethod(
+                    placeholders,
+                    "parsePlaceholder",
+                    identifierType,
+                    String.class,
+                    placeholderContext
+            ).orElse(null);
+            parseText = ReflectiveAccess.publicMethod(placeholders, "parseText", net.minecraft.network.chat.Component.class, placeholderContext).orElse(null);
+            resultValid = ReflectiveAccess.publicMethod(placeholderResult, "isValid").orElse(null);
+            resultText = ReflectiveAccess.publicMethod(placeholderResult, "text").orElse(null);
 
-            contextOfPlayer = placeholderContext.getMethod("of", ServerPlayerEntity.class);
-            contextOfServer = placeholderContext.getMethod("of", MinecraftServer.class);
+            contextOfPlayer = ReflectiveAccess.publicMethod(placeholderContext, "of", ServerPlayer.class).orElse(null);
+            contextOfServer = ReflectiveAccess.publicMethod(placeholderContext, "of", MinecraftServer.class).orElse(null);
         } catch (Throwable ignored) {
             // PB4 placeholder api not available
         }
@@ -101,7 +109,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return TagResolver.empty();
         }
         try {
-            Object resolver = miniAudienceGlobalPlaceholders.invoke(null);
+            Object resolver = ReflectiveAccess.invoke(miniAudienceGlobalPlaceholders, null).orElse(null);
             return resolver instanceof TagResolver ? (TagResolver) resolver : TagResolver.empty();
         } catch (Throwable ignored) {
             return TagResolver.empty();
@@ -134,9 +142,9 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return component;
         }
         try {
-            Text nativeText = FabricComponentSerializer.toNative(component);
-            Object parsed = pb4ParseText.invoke(null, nativeText, context);
-            if (parsed instanceof Text parsedText) {
+            net.minecraft.network.chat.Component nativeText = FabricComponentSerializer.toNative(component);
+            Object parsed = ReflectiveAccess.invoke(pb4ParseText, null, nativeText, context).orElse(null);
+            if (parsed instanceof net.minecraft.network.chat.Component parsedText) {
                 return FabricComponentSerializer.toAdventure(parsedText);
             }
         } catch (Throwable ignored) {
@@ -147,8 +155,11 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
 
     private Method resolveMiniAudienceGlobalPlaceholders() {
         try {
-            Class<?> miniPlaceholders = Class.forName("io.github.miniplaceholders.api.MiniPlaceholders");
-            return miniPlaceholders.getMethod("audienceGlobalPlaceholders");
+            Class<?> miniPlaceholders = ReflectiveAccess.loadClass("io.github.miniplaceholders.api.MiniPlaceholders")
+                    .orElse(null);
+            return miniPlaceholders != null
+                    ? ReflectiveAccess.publicMethod(miniPlaceholders, "audienceGlobalPlaceholders").orElse(null)
+                    : null;
         } catch (Throwable ignored) {
             return null;
         }
@@ -211,13 +222,13 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return null;
         }
         try {
-            ServerPlayerEntity player = extractPlayer(audience);
+            ServerPlayer player = extractPlayer(audience);
             if (player != null) {
-                return pb4ContextOfPlayer.invoke(null, player);
+                return ReflectiveAccess.invoke(pb4ContextOfPlayer, null, player).orElse(null);
             }
-            ServerCommandSource source = extractSource(audience);
+            CommandSourceStack source = extractSource(audience);
             if (source != null && source.getServer() != null) {
-                return pb4ContextOfServer.invoke(null, source.getServer());
+                return ReflectiveAccess.invoke(pb4ContextOfServer, null, source.getServer()).orElse(null);
             }
         } catch (Throwable ignored) {
             return null;
@@ -245,7 +256,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         return resolved;
     }
 
-    private ServerPlayerEntity extractPlayer(Audience audience) {
+    private ServerPlayer extractPlayer(Audience audience) {
         if (audience instanceof FabricAudience fabricAudience) {
             return fabricAudience.getPlayer();
         }
@@ -255,7 +266,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         return null;
     }
 
-    private ServerCommandSource extractSource(Audience audience) {
+    private CommandSourceStack extractSource(Audience audience) {
         if (audience instanceof FabricCommandAudience commandAudience) {
             return commandAudience.getSource();
         }
@@ -283,19 +294,23 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
             return null;
         }
         String[] parts = raw.split(" ", 2);
-        Identifier identifier = Identifier.tryParse(parts[0]);
+        Object identifier = FabricIdentifierBridge.parse(parts[0]);
         if (identifier == null) {
             return null;
         }
         String argument = parts.length > 1 ? parts[1] : null;
         try {
-            Object result = pb4ParsePlaceholder.invoke(null, identifier, argument, context);
-            boolean valid = (boolean) pb4ResultValid.invoke(result);
+            Object result = ReflectiveAccess.invoke(pb4ParsePlaceholder, null, identifier, argument, context).orElse(null);
+            if (result == null) {
+                return null;
+            }
+            Object validValue = ReflectiveAccess.invoke(pb4ResultValid, result).orElse(Boolean.FALSE);
+            boolean valid = validValue instanceof Boolean flag && flag;
             if (!valid) {
                 return null;
             }
-            Object text = pb4ResultText.invoke(result);
-            if (!(text instanceof Text textValue)) {
+            Object text = ReflectiveAccess.invoke(pb4ResultText, result).orElse(null);
+            if (!(text instanceof net.minecraft.network.chat.Component textValue)) {
                 return null;
             }
             Component component = FabricComponentSerializer.toAdventure(textValue);
@@ -306,7 +321,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
     }
 
     private net.kyori.adventure.audience.Audience createMiniAudience(Audience audience) {
-        ServerPlayerEntity player = extractPlayer(audience);
+        ServerPlayer player = extractPlayer(audience);
         if (player == null) {
             return net.kyori.adventure.audience.Audience.empty();
         }
@@ -314,7 +329,7 @@ public final class FabricExternalPlaceholderEngine implements ExternalPlaceholde
         Component displayName = FabricComponentSerializer.toAdventure(player.getDisplayName());
 
         Pointers pointers = Pointers.builder()
-                .withStatic(Identity.UUID, player.getUuid())
+                .withStatic(Identity.UUID, player.getUUID())
                 .withStatic(Identity.NAME, name)
                 .withStatic(Identity.DISPLAY_NAME, displayName)
                 .build();

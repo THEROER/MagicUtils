@@ -50,6 +50,17 @@ public interface Platform {
     boolean isMainThread();
 
     /**
+     * Executes a task in the context of a specific audience (e.g., entity region on Folia).
+     * On platforms without regional threading, this delegates to {@link #runOnMain(Runnable)}.
+     *
+     * @param audience target audience for region resolution
+     * @param task work to run
+     */
+    default void runForAudience(Audience audience, Runnable task) {
+        runOnMain(task);
+    }
+
+    /**
      * Returns the current execution context for thread-sensitive operations.
      *
      * @return thread context classification
@@ -65,5 +76,35 @@ public interface Platform {
      */
     default TaskScheduler scheduler() {
         return TaskSchedulers.shared();
+    }
+
+    /**
+     * Subscribes to normalized player chat/command messages when the platform supports it.
+     *
+     * @param listener message listener
+     * @return subscription handle, or a no-op subscription when unsupported
+     */
+    default ListenerSubscription subscribePlayerMessages(PlayerMessageListener listener) {
+        return ListenerSubscription.noop();
+    }
+
+    /**
+     * Subscribes to normalized player join/leave events when the platform supports it.
+     *
+     * @param listener lifecycle listener
+     * @return subscription handle, or a no-op subscription when unsupported
+     */
+    default ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+        return ListenerSubscription.noop();
+    }
+
+    /**
+     * Subscribes to normalized player locale updates when the platform supports it.
+     *
+     * @param listener locale listener
+     * @return subscription handle, or a no-op subscription when unsupported
+     */
+    default ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        return ListenerSubscription.noop();
     }
 }

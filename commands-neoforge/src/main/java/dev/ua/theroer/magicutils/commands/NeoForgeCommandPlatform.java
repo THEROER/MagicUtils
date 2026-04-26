@@ -2,19 +2,15 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.neoforge.NeoForgeCommandAudience;
+import dev.ua.theroer.magicutils.platform.neoforge.NeoForgePermissionBridge;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * NeoForge-specific platform hooks for the command engine.
@@ -155,7 +151,24 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
 
         @Override
         public boolean hasPermission(String permission) {
-            return fallback(sender, MagicPermissionDefault.OP, opLevel);
+            return hasPermission(permission, opLevel);
+        }
+
+        @Override
+        public boolean hasPermission(String permission, int fallbackOpLevel) {
+            return NeoForgePermissionBridge.hasPermission(sender, permission, fallbackOpLevel);
+        }
+
+        @Override
+        public @Nullable String address() {
+            ServerPlayer player = getPlayerSafe(sender);
+            if (player != null
+                    && player.connection != null
+                    && player.connection.getRemoteAddress() != null) {
+                return player.connection.getRemoteAddress().toString()
+                        .replace("/", "").split(":")[0];
+            }
+            return null;
         }
 
         @Override
@@ -175,14 +188,7 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
     }
 
     private static boolean hasPermissionLevel(CommandSourceStack sender, int opLevel) {
-        if (sender == null) {
-            return false;
-        }
-        try {
-            return sender.hasPermission(opLevel);
-        } catch (Exception ignored) {
-            return false;
-        }
+        return NeoForgePermissionBridge.hasPermissionLevel(sender, opLevel);
     }
 
     private static ServerPlayer getPlayerSafe(CommandSourceStack sender) {
@@ -202,59 +208,19 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         }
 
         Entity entity = sender != null ? sender.getEntity() : null;
-        if (entity instanceof MinecartCommandBlock) {
+        if (isMinecartCommandBlockEntity(entity)) {
             return AllowedSender.MINECART;
         }
 
         return AllowedSender.CONSOLE;
     }
 
-    private static boolean isAllowedSender(AllowedSender[] allowed, AllowedSender calleeKind) {
-        if (allowed == null || allowed.length == 0) {
-            return true;
-        }
-        for (AllowedSender a : allowed) {
-            if (a == AllowedSender.ANY) {
-                return true;
-            }
-            if (a == calleeKind) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static String buildSenderError(Class<?> targetType, AllowedSender[] allowed) {
-        Set<AllowedSender> required = new LinkedHashSet<>();
-        if (allowed != null) {
-            required.addAll(Arrays.asList(allowed));
-        }
-        required.remove(AllowedSender.ANY);
-
-        if (required.isEmpty()) {
-            AllowedSender inferred = inferSenderFromType(targetType);
-            if (inferred != AllowedSender.ANY) {
-                required.add(inferred);
-            }
-        }
-
-        if (required.isEmpty()) {
-            return "This command cannot be used by this sender";
-        }
-
-        String messageBody = required.stream()
-                .map(NeoForgeCommandPlatform::describeSender)
-                .distinct()
-                .collect(Collectors.joining(" or "));
-
-        return "This command can only be used by " + messageBody;
-    }
-
-    private static AllowedSender inferSenderFromType(Class<?> type) {
+    @Override
+    public AllowedSender inferSenderFromType(Class<?> type) {
         if (type.equals(ServerPlayer.class)) {
             return AllowedSender.PLAYER;
         }
-        if (type.equals(MinecartCommandBlock.class)) {
+        if (isMinecartCommandBlockType(type)) {
             return AllowedSender.MINECART;
         }
         String name = type.getSimpleName().toLowerCase(Locale.ROOT);
@@ -267,16 +233,19 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         return AllowedSender.ANY;
     }
 
-    private static String describeSender(AllowedSender sender) {
-        return switch (sender) {
-            case PLAYER -> "players";
-            case CONSOLE -> "console";
-            case BLOCK -> "command blocks";
-            case MINECART -> "command minecarts";
-            case PROXIED -> "proxied senders";
-            case REMOTE -> "remote console";
-            default -> "valid senders";
-        };
+    private static boolean isMinecartCommandBlockEntity(@Nullable Entity entity) {
+        return entity != null && isMinecartCommandBlockType(entity.getClass());
+    }
+
+    private static boolean isMinecartCommandBlockType(@Nullable Class<?> type) {
+        if (type == null) {
+            return false;
+        }
+        String simpleName = type.getSimpleName();
+        String fullName = type.getName();
+        return "MinecartCommandBlock".equals(simpleName)
+                || fullName.endsWith(".MinecartCommandBlock")
+                || fullName.endsWith(".minecart.MinecartCommandBlock");
     }
 
     private static String resolveName(CommandSourceStack sender) {

@@ -3,9 +3,8 @@ package dev.ua.theroer.magicutils.logger;
 import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.platform.Audience;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.Collection;
 import java.util.Map;
 
@@ -46,7 +45,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param player target player
      * @return this builder
      */
-    public LogBuilder to(ServerPlayerEntity player) {
+    public LogBuilder to(ServerPlayer player) {
         super.to(logger.wrapAudience(player));
         return this;
     }
@@ -57,9 +56,9 @@ public class LogBuilder extends LogBuilderCore {
      * @param players target players
      * @return this builder
      */
-    public LogBuilder to(ServerPlayerEntity... players) {
+    public LogBuilder to(ServerPlayer... players) {
         if (players != null) {
-            for (ServerPlayerEntity player : players) {
+            for (ServerPlayer player : players) {
                 if (player != null) {
                     super.recipient(logger.wrapAudience(player));
                 }
@@ -74,9 +73,9 @@ public class LogBuilder extends LogBuilderCore {
      * @param players target players
      * @return this builder
      */
-    public LogBuilder to(Collection<? extends ServerPlayerEntity> players) {
+    public LogBuilder to(Collection<? extends ServerPlayer> players) {
         if (players != null) {
-            for (ServerPlayerEntity player : players) {
+            for (ServerPlayer player : players) {
                 if (player != null) {
                     super.recipient(logger.wrapAudience(player));
                 }
@@ -91,7 +90,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param player target player
      * @return this builder
      */
-    public LogBuilder recipient(ServerPlayerEntity player) {
+    public LogBuilder recipient(ServerPlayer player) {
         super.recipient(logger.wrapAudience(player));
         return this;
     }
@@ -102,7 +101,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param source command source
      * @return this builder
      */
-    public LogBuilder to(ServerCommandSource source) {
+    public LogBuilder to(CommandSourceStack source) {
         super.to(logger.wrapAudience(source));
         return this;
     }
@@ -114,7 +113,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param broadcastToOps whether to broadcast to ops
      * @return this builder
      */
-    public LogBuilder to(ServerCommandSource source, boolean broadcastToOps) {
+    public LogBuilder to(CommandSourceStack source, boolean broadcastToOps) {
         super.to(logger.wrapAudience(source, broadcastToOps));
         return this;
     }
@@ -125,7 +124,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param source command source
      * @return this builder
      */
-    public LogBuilder toError(ServerCommandSource source) {
+    public LogBuilder toError(CommandSourceStack source) {
         super.to(logger.wrapErrorAudience(source));
         return this;
     }
@@ -136,7 +135,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param source command source
      * @return this builder
      */
-    public LogBuilder recipient(ServerCommandSource source) {
+    public LogBuilder recipient(CommandSourceStack source) {
         super.recipient(logger.wrapAudience(source));
         return this;
     }
@@ -147,7 +146,7 @@ public class LogBuilder extends LogBuilderCore {
      * @param source command source
      * @return this builder
      */
-    public LogBuilder recipientError(ServerCommandSource source) {
+    public LogBuilder recipientError(CommandSourceStack source) {
         super.recipient(logger.wrapErrorAudience(source));
         return this;
     }

@@ -7,5 +7,13 @@ pluginManagement {
     }
 }
 
+plugins {
+    id 'magicutils.matrix-settings'
+}
+
 rootProject.name = 'MagicUtils'
-include 'platform-api', 'core', 'config', 'lang', 'logger', 'commands', 'commands-brigadier', 'commands-neoforge', 'placeholders', 'http-client', 'config-yaml', 'config-toml', 'platform-bukkit', 'platform-neoforge', 'platform-velocity', 'platform-fabric', 'commands-fabric', 'logger-fabric', 'placeholders-fabric', 'fabric-bundle', 'bukkit-bundle', 'processor'
+
+magicMatrix {
+    targetsFile = 'gradle/targets.properties'
+    defaultTarget = 'mc12110'
+}

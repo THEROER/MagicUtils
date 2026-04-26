@@ -21,12 +21,12 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
         shadowRuntimeClasspath.isCanBeConsumed = false
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
+        val moduleName = project.magicUtilsModuleName()
 
         with(project) {
             project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")
-            project.dependencies.add("mappings", loomMappingsString(magicutilsTarget.yarn.get()))
+            project.dependencies.add("mappings", loom.officialMojangMappings())
             project.dependencies.add("modCompileOnly", "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
             project.dependencies.add("modCompileOnly", "eu.pb4:placeholder-api:${magicutilsTarget.pb4_placeholder_api.get()}")
             project.dependencies.add("modCompileOnly", "io.github.miniplaceholders:miniplaceholders-api:${magicutilsTarget.miniplaceholders_api.get()}")
@@ -61,11 +61,14 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
                     publication.artifact(project.tasks.named("sourcesJar", Jar::class.java).get())
                     publication.artifact(project.tasks.named("javadocJar", Jar::class.java).get())
                 }
+
+                if (project.hasProperty("publish_repo")) {
+                    publishing.repositories.maven { repo ->
+                        repo.name = "ghPages"
+                        repo.url = project.uri(project.property("publish_repo") as String)
+                    }
+                }
             }
         }
-    }
-
-    private fun loomMappingsString(yarnVersion: String): String {
-        return "net.fabricmc:yarn:$yarnVersion:v2"
     }
 }

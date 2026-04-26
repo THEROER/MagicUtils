@@ -22,4 +22,40 @@ public interface Audience {
     default UUID id() {
         return null;
     }
+
+    /**
+     * Checks whether this audience has the given permission.
+     *
+     * <p>Implementations that can resolve permissions should override this method.
+     * Default behavior only allows empty permission checks.</p>
+     *
+     * @param permission permission node
+     * @return true when allowed
+     */
+    default boolean hasPermission(String permission) {
+        return permission == null || permission.isBlank();
+    }
+
+    /**
+     * Checks whether this audience has the given permission with a custom op-level fallback.
+     *
+     * <p>Implementations that can resolve permissions with platform-specific fallback handling
+     * should override this method. The default implementation preserves existing behavior.</p>
+     *
+     * @param permission permission node
+     * @param fallbackOpLevel op level to treat as granted when no permission backend answers
+     * @return true when allowed
+     */
+    default boolean hasPermission(String permission, int fallbackOpLevel) {
+        return hasPermission(permission);
+    }
+
+    /**
+     * Optional display name for this audience (e.g., player username).
+     *
+     * @return audience name or null if not applicable
+     */
+    default String name() {
+        return null;
+    }
 }

@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -71,7 +72,8 @@ public final class NeoForgeCommandAudience implements Audience {
         if (source == null || component == null) {
             return;
         }
-        net.minecraft.network.chat.Component nativeComponent = NeoForgeComponentSerializer.toNative(component);
+        net.minecraft.network.chat.Component nativeComponent =
+                Objects.requireNonNull(NeoForgeComponentSerializer.toNative(component), "nativeComponent");
         if (mode == Mode.ERROR) {
             source.sendFailure(nativeComponent);
         } else {
@@ -83,6 +85,16 @@ public final class NeoForgeCommandAudience implements Audience {
     public UUID id() {
         ServerPlayer player = getPlayerSafe();
         return player != null ? player.getUUID() : null;
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return NeoForgePermissionBridge.hasPermission(source, permission, fallbackOpLevel);
     }
 
     private ServerPlayer getPlayerSafe() {

@@ -1,13 +1,12 @@
 package dev.ua.theroer.magicutils.platform.fabric;
 
-import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
 import dev.ua.theroer.magicutils.logger.LogLevel;
-import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.LoggerFactory;
 
 import org.slf4j.Logger;
@@ -15,9 +14,8 @@ import org.slf4j.Logger;
 /**
  * Console audience that logs through PlatformLogger.
  */
-public final class FabricConsoleAudience implements Audience {
+public final class FabricConsoleAudience implements StructuredConsoleAudience {
     private static final ANSIComponentSerializer ANSI = ANSIComponentSerializer.ansi();
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     private final PlatformLogger logger;
     private final String baseLoggerName;
@@ -47,19 +45,30 @@ public final class FabricConsoleAudience implements Audience {
         if (component == null) {
             return;
         }
-        String plain = PLAIN.serialize(component);
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
+    }
+
+    @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || metadata == null) {
+            return;
+        }
         if (baseLoggerName == null) {
             if (logger != null) {
-                logger.info(plain);
+                logWithPlatformLogger(logger, metadata.level(), ConsoleColorSerializer.serialize(component));
             }
             return;
         }
-        ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-        Component stripped = ComponentPrefixStripper.stripPrefix(component, parsed.prefixText());
-        String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
+        String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
         Logger slf4j = LoggerFactory.getLogger(loggerName);
-        String rendered = ANSI.serialize(stripped);
-        logWithLevel(slf4j, parsed.level(), rendered);
+        String rendered = ANSI.serialize(component);
+        logWithLevel(slf4j, metadata.level(), rendered);
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
     }
 
     private String buildLoggerName(String baseName, String subLogger) {
@@ -101,6 +110,23 @@ public final class FabricConsoleAudience implements Audience {
                 }
             }
             case SUCCESS, INFO -> slf4j.info(message);
+        }
+    }
+
+    private void logWithPlatformLogger(PlatformLogger platformLogger, LogLevel level, String message) {
+        if (platformLogger == null) {
+            return;
+        }
+        if (level == null) {
+            platformLogger.info(message);
+            return;
+        }
+        switch (level) {
+            case WARN -> platformLogger.warn(message);
+            case ERROR -> platformLogger.error(message);
+            case DEBUG -> platformLogger.debug(message);
+            case TRACE -> platformLogger.debug(message);
+            case SUCCESS, INFO -> platformLogger.info(message);
         }
     }
 

@@ -1,7 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
 /**
- * Command implementation backed by a CommandSpec builder.
+ * Concrete {@link MagicCommand} implementation backed by a {@link CommandSpec}.
  */
 public final class DynamicCommand extends MagicCommand {
     private final CommandSpec<?> spec;

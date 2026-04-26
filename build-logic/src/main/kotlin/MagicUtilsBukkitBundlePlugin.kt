@@ -14,8 +14,8 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.shadow")
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val getModuleName = project.extensions.extraProperties.get("getModuleName") as ((String) -> String)
-        val moduleName = getModuleName(project.name)
+        val moduleName = project.magicUtilsModuleName()
+        val apiVersion = bukkitApiVersion(magicutilsTarget.minecraft.get())
 
         with(project) {
             val bundleShadow = configurations.create("bundleShadow")
@@ -30,6 +30,8 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
                 project(":platform-api"),
                 project(":logger"),
                 project(":commands"),
+                project(":diagnostics"),
+                project(":http-client"),
                 project(":placeholders"),
                 project(":core"),
                 project(":platform-bukkit")
@@ -50,14 +52,25 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
 
             bundleProjects.forEach { dep ->
                 dependencies.add("bundleShadow", project(dep.path))
+                dependencies.add("compileOnly", project(dep.path))
+            }
+
+            bundleShadedProjects.forEach { dep ->
+                dependencies.add("compileOnly", project(dep.path))
             }
 
             dependencies.add("compileOnly", "io.papermc.paper:paper-api:${magicutilsTarget.paper.get()}")
 
             tasks.named("processResources", ProcessResources::class.java).configure { resources ->
                 resources.inputs.property("version", version)
+                resources.inputs.property("apiVersion", apiVersion)
                 resources.filesMatching("plugin.yml") { details ->
-                    details.expand(mapOf("version" to version))
+                    details.expand(
+                        mapOf(
+                            "version" to version,
+                            "apiVersion" to apiVersion,
+                        )
+                    )
                 }
             }
 
@@ -87,6 +100,22 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
                     }
                 }
             }
+
+            if (project.hasProperty("publish_repo")) {
+                publishing.repositories.maven { repo ->
+                    repo.name = "ghPages"
+                    repo.url = project.uri(project.property("publish_repo") as String)
+                }
+            }
         }
+    }
+}
+
+private fun bukkitApiVersion(minecraftVersion: String): String {
+    val parts = minecraftVersion.split('.')
+    return if (parts.size >= 3) {
+        "${parts[0]}.${parts[1]}"
+    } else {
+        minecraftVersion
     }
 }

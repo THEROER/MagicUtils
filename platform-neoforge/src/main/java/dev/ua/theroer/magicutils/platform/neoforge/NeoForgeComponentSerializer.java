@@ -39,7 +39,11 @@ public final class NeoForgeComponentSerializer {
             }
         } catch (Exception ignored) {
         }
-        return net.minecraft.network.chat.Component.literal(PLAIN.serialize(component));
+        String plain = PLAIN.serialize(component);
+        if (plain == null) {
+            plain = "";
+        }
+        return net.minecraft.network.chat.Component.literal(plain);
     }
 
     private static net.minecraft.network.chat.Component decode(JsonElement tree) {

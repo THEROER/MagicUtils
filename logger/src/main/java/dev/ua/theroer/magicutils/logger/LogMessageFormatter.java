@@ -44,7 +44,33 @@ public final class LogMessageFormatter {
             @Nullable Audience directAudience,
             @Nullable Collection<? extends Audience> audienceCollection,
             Object... placeholdersArgs) {
+        return formatDetailed(logger, message, level, target, prefixOverride, directAudience, audienceCollection,
+                placeholdersArgs).chatComponent();
+    }
 
+    static FormattedMessage formatDetailed(
+            LoggerCore logger,
+            Object message,
+            LogLevel level,
+            LogTarget target,
+            @Nullable PrefixMode prefixOverride,
+            @Nullable Audience directAudience,
+            @Nullable Collection<? extends Audience> audienceCollection,
+            Object... placeholdersArgs) {
+        return formatDetailed(logger, message, level, target, prefixOverride, null,
+                directAudience, audienceCollection, placeholdersArgs);
+    }
+
+    static FormattedMessage formatDetailed(
+            LoggerCore logger,
+            Object message,
+            LogLevel level,
+            LogTarget target,
+            @Nullable PrefixMode prefixOverride,
+            @Nullable String subLoggerPrefix,
+            @Nullable Audience directAudience,
+            @Nullable Collection<? extends Audience> audienceCollection,
+            Object... placeholdersArgs) {
         String content = stringify(logger, message);
         Object[] args = placeholdersArgs != null ? placeholdersArgs : new Object[0];
         Audience targetAudience = resolveTargetAudience(directAudience, audienceCollection, args);
@@ -58,14 +84,43 @@ public final class LogMessageFormatter {
         }
         String processed = applyPipeline(logger, content, targetAudience, args);
         PrefixRender prefixRender = buildPrefixRender(logger, level, target, prefixOverride);
-        String combined = combinePrefix(prefixRender.text(), processed);
-        boolean needsMini = prefixRender.useGradient() || hasMiniMessageTags(combined)
-                || hasExternalResolver(externalResolver);
 
+        // Build chat component: main prefix + sub-logger prefix + message
+        String chatText = combinePrefix(prefixRender.text(), subLoggerPrefix != null
+                ? subLoggerPrefix + " " + processed : processed);
+        // Build console text: message only (no prefixes — logger name carries that info)
+        String consoleText = processed;
+
+        boolean chatNeedsMini = prefixRender.useGradient() || hasMiniMessageTags(chatText)
+                || hasExternalResolver(externalResolver);
+        boolean consoleNeedsMini = hasMiniMessageTags(consoleText) || hasExternalResolver(externalResolver);
+
+        Component chatComponent = deserializeComponent(logger, engine, targetAudience,
+                chatText, prefixRender, level, target, externalResolver, chatNeedsMini);
+        Component consoleComponent = deserializeComponent(logger, engine, targetAudience,
+                consoleText, null, level, target, externalResolver, consoleNeedsMini);
+
+        if (logger.isConsoleStripFormatting()) {
+            consoleComponent = Component.text(PlainTextComponentSerializer.plainText().serialize(consoleComponent));
+        }
+        return new FormattedMessage(chatComponent, consoleComponent, prefixRender.text());
+    }
+
+    private static Component deserializeComponent(LoggerCore logger,
+                                                   ExternalPlaceholderEngine engine,
+                                                   @Nullable Audience targetAudience,
+                                                   String text,
+                                                   @Nullable PrefixRender prefixRender,
+                                                   LogLevel level,
+                                                   LogTarget target,
+                                                   @Nullable TagResolver externalResolver,
+                                                   boolean needsMini) {
         Component component;
         try {
             if (needsMini) {
-                String finalMessage = attachPrefix(prefixRender, combined, logger, level, target);
+                String finalMessage = prefixRender != null
+                        ? attachPrefix(prefixRender, text, logger, level, target)
+                        : "<reset>" + text;
                 TagResolver resolver = externalResolver == null
                         ? TagResolver.standard()
                         : TagResolver.resolver(TagResolver.standard(), externalResolver);
@@ -79,23 +134,19 @@ public final class LogMessageFormatter {
                         ? logger.getMiniMessage().deserialize(finalMessage, pointered, resolver)
                         : logger.getMiniMessage().deserialize(finalMessage, resolver);
             } else {
-                component = Component.text(combined);
+                component = Component.text(text);
                 if (component.decoration(TextDecoration.ITALIC) == TextDecoration.State.NOT_SET) {
                     component = component.decoration(TextDecoration.ITALIC, false);
                 }
             }
         } catch (Throwable error) {
             logger.getPlatform().logger().warn("Failed to deserialize message", error);
-            component = Component.text(combined);
+            component = Component.text(text);
         }
-
         try {
             component = engine.applyComponent(targetAudience, component);
         } catch (Throwable error) {
             logger.getPlatform().logger().warn("Failed to apply external component placeholders", error);
-        }
-        if ((target == LogTarget.CONSOLE || target == LogTarget.BOTH) && logger.isConsoleStripFormatting()) {
-            component = Component.text(PlainTextComponentSerializer.plainText().serialize(component));
         }
         return component;
     }
@@ -133,7 +184,7 @@ public final class LogMessageFormatter {
 
     private static String applyPipeline(LoggerCore logger, String messageStr, @Nullable Audience audience, Object[] args) {
         String processed = safeApplyLocalization(logger, messageStr, audience);
-        processed = applyInlinePlaceholders(processed, args);
+        processed = applyInlinePlaceholders(processed, args, logger.isEscapePlaceholders());
         PlaceholderContext context = PlaceholderContext.builder()
                 .audience(audience)
                 .ownerKey(logger.getPlaceholderOwner())
@@ -159,11 +210,14 @@ public final class LogMessageFormatter {
         return null;
     }
 
-    private static String applyInlinePlaceholders(String messageStr, Object[] args) {
+    private static final java.util.function.Function<String, String> ESCAPE_TAGS =
+            net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()::escapeTags;
+
+    private static String applyInlinePlaceholders(String messageStr, Object[] args, boolean escapeTags) {
         if (messageStr == null || messageStr.isEmpty() || args == null || args.length == 0) {
             return messageStr;
         }
-        return MsgFmt.apply(messageStr, args);
+        return MsgFmt.apply(messageStr, escapeTags ? ESCAPE_TAGS : null, args);
     }
 
     private static String safeApplyExternal(LoggerCore logger, @Nullable Audience audience, String input) {
@@ -234,6 +288,9 @@ public final class LogMessageFormatter {
     private record PrefixRender(String text, boolean useGradient) {
     }
 
+    static record FormattedMessage(Component chatComponent, Component consoleComponent, String prefixText) {
+    }
+
     private static String buildPrefix(LoggerCore logger, LogLevel level, PrefixMode mode) {
         if (mode == PrefixMode.NONE) {
             return "";
@@ -270,7 +327,7 @@ public final class LogMessageFormatter {
         if (lang != null && messageStr != null && messageStr.startsWith("@")) {
             String key = messageStr.substring(1);
             String localized = audience != null
-                    ? lang.getMessageForAudience(audience, key)
+                    ? lang.getMessageFor(audience, key)
                     : lang.getMessage(key);
             if (!localized.equals(messageStr)) {
                 return localized;

@@ -115,6 +115,8 @@ generated-test-sources/
 
 # MkDocs
 site/
+__pycache__/
+*.pyc
 
 # Maven (if used alongside Gradle)
 target/
@@ -145,3 +147,4 @@ yarn-error.log*
 
 .gemini/
 gha-creds-*.json
+.lsmcp/

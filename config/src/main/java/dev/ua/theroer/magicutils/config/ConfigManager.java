@@ -4,11 +4,13 @@ import dev.ua.theroer.magicutils.config.annotations.*;
 import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.Tasks;
+import dev.ua.theroer.magicutils.platform.ThreadContext;
 import lombok.Getter;
 
 import java.io.File;
@@ -16,6 +18,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
@@ -29,6 +32,7 @@ import java.nio.file.WatchService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +76,17 @@ public class ConfigManager {
     private volatile boolean watchServiceUnavailable = false;
     private volatile boolean watchServiceWarned = false;
     private volatile boolean shuttingDown = false;
+    /**
+     * Guards the {@link #shuttingDown} flag against external reload tasks.
+     *
+     * <p>{@link #shutdown()} sets {@code shuttingDown=true} under this lock,
+     * and each watcher-driven reload task acquires the lock before reading
+     * the flag. This eliminates the race where a queued task observes the
+     * flag still {@code false} while shutdown is mid-flight, then proceeds
+     * to mutate config state and notify listeners after the manager is
+     * supposed to be quiet.</p>
+     */
+    private final Object shutdownLock = new Object();
     private static final String EXT_TOKEN = "{ext}";
     private static final String MIGRATION_VERSION_KEY = "config-version";
     private static final String GLOBAL_FORMAT_FILE = "magicutils.format";
@@ -79,6 +94,7 @@ public class ConfigManager {
     private static final String GLOBAL_FORMAT_ENV = "MAGICUTILS_CONFIG_FORMAT";
     private static final String DEFAULT_EXTENSION = "yml";
     private static final List<String> SUPPORTED_EXTENSIONS = List.of("jsonc", "json", "yml", "yaml", "toml");
+    private static final int CLONE_SNAPSHOT_RETRY_LIMIT = 8;
 
     /**
      * Creates a new ConfigManager for the provided platform.
@@ -259,14 +275,11 @@ public class ConfigManager {
         warnIfMainThread("reloadAll");
         List<ConfigEntry<?>> entries = new ArrayList<>(configs.values());
         for (ConfigEntry<?> entry : entries) {
-            if (reloadEntry(entry, Collections.emptySet(), false)) {
-                ConfigReloadable reloadable = entry.key.configClass.getAnnotation(ConfigReloadable.class);
-                if (reloadable != null && reloadable.notifyOnChange()) {
+                if (reloadEntry(entry, Collections.emptySet(), false) && shouldNotifyOnChange(entry)) {
                     notifyChangeListeners(entry, Collections.emptySet());
                 }
             }
         }
-    }
 
     /**
      * Unregisters all instances of a config class.
@@ -280,6 +293,31 @@ public class ConfigManager {
     }
 
     private <T> LoadResult loadConfig(T instance, ConfigMetadata metadata) throws Exception {
+        return loadConfig(instance, metadata, Collections.emptySet());
+    }
+
+    /**
+     * Loads a config with one retry on ConcurrentModificationException.
+     * <p>
+     * If a user-supplied Map/List in the config instance throws CME during the first
+     * iteration (a transient state, e.g. another thread mutating it), retry once —
+     * the second attempt typically succeeds because the new document load replaces
+     * the field values before iteration is needed again.
+     */
+    private <T> LoadResult loadConfigWithRetry(T instance, ConfigMetadata metadata, Set<String> sections) throws Exception {
+        try {
+            return loadConfig(instance, metadata, sections);
+        } catch (java.util.ConcurrentModificationException firstCme) {
+            try {
+                return loadConfig(instance, metadata, sections);
+            } catch (java.util.ConcurrentModificationException secondCme) {
+                secondCme.addSuppressed(firstCme);
+                throw secondCme;
+            }
+        }
+    }
+
+    private <T> LoadResult loadConfig(T instance, ConfigMetadata metadata, Set<String> sections) throws Exception {
         File configFile = metadata.resolveFile(platform.configDir());
         boolean created = false;
 
@@ -290,7 +328,10 @@ public class ConfigManager {
 
         ConfigDocument document = ConfigDocument.load(configFile);
         MigrationResult migrationResult = applyMigrations(instance.getClass(), document, created);
-        processFields(instance, document, instance.getClass());
+        Set<String> normalizedSections = normalizeSections(sections);
+        boolean fullReload = normalizedSections.isEmpty() || migrationResult.shouldSave();
+        processFields(instance, document, instance.getClass(), "",
+                fullReload ? Collections.emptySet() : normalizedSections);
         if (migrationResult.shouldSave()) {
             saveConfigToFile(instance, metadata, migrationResult.schemaVersion());
         }
@@ -402,7 +443,7 @@ public class ConfigManager {
     }
 
     private void writeDefaults(Object instance, ConfigDocument document, Class<?> clazz, String prefix) throws Exception {
-        for (Field field : clazz.getDeclaredFields()) {
+        for (Field field : getConfigFields(clazz)) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
@@ -449,14 +490,18 @@ public class ConfigManager {
         }
     }
 
-    private void processFields(Object instance, ConfigDocument document, Class<?> clazz) throws Exception {
-        for (Field field : clazz.getDeclaredFields()) {
+    private void processFields(Object instance, ConfigDocument document, Class<?> clazz,
+                               String prefix, Set<String> sections) throws Exception {
+        for (Field field : getConfigFields(clazz)) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
                 continue;
 
-            String path = getFieldPath(field, "");
+            String path = getFieldPath(field, prefix);
+            if (!shouldProcessPath(path, sections)) {
+                continue;
+            }
 
             ConfigSection section = field.getAnnotation(ConfigSection.class);
             if (section != null) {
@@ -467,7 +512,8 @@ public class ConfigManager {
                 }
                 ConfigSectionView subsection = document.getConfigurationSection(path);
                 if (subsection != null) {
-                    processFields(sectionInstance, new ConfigDocument(subsection.unwrap(), document.header), field.getType());
+                    processFields(sectionInstance, new ConfigDocument(subsection.unwrap(), document.header),
+                            field.getType(), "", narrowSections(path, sections));
                 }
                 continue;
             }
@@ -521,11 +567,17 @@ public class ConfigManager {
         Class<?> fieldType = field.getType();
 
         if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
-                ParameterizedType listType = (ParameterizedType) field.getGenericType();
-                Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+                Class<?> elementType = null;
+                Type genericType = field.getGenericType();
+                if (genericType instanceof ParameterizedType listType) {
+                    Type[] typeArgs = listType.getActualTypeArguments();
+                    if (typeArgs.length > 0) {
+                        elementType = resolveRawClass(typeArgs[0]);
+                    }
+                }
 
                 List<?> list = (List<?>) value;
-                if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
+                if (elementType != null && elementType.isAnnotationPresent(ConfigSerializable.class)) {
                     List<Object> deserializedList = new ArrayList<>();
                     for (Object item : list) {
                         if (item instanceof Map) {
@@ -536,7 +588,7 @@ public class ConfigManager {
                     }
                     value = deserializedList;
                 } else {
-                    ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+                    ConfigValueAdapter<?> adapter = elementType != null ? ConfigAdapters.get(elementType) : null;
                     if (adapter != null) {
                         ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                         List<Object> converted = new ArrayList<>(list.size());
@@ -552,9 +604,21 @@ public class ConfigManager {
                     value = processList(field, (List<?>) value);
                 }
         } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
-                ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-                Class<?> keyType = (Class<?>) mapType.getActualTypeArguments()[0];
-                Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
+                Class<?> keyType = String.class;
+                Class<?> valueType = null;
+                Type genericType = field.getGenericType();
+                if (genericType instanceof ParameterizedType mapType) {
+                    Type[] typeArgs = mapType.getActualTypeArguments();
+                    if (typeArgs.length > 0) {
+                        Class<?> resolvedKeyType = resolveRawClass(typeArgs[0]);
+                        if (resolvedKeyType != null) {
+                            keyType = resolvedKeyType;
+                        }
+                    }
+                    if (typeArgs.length > 1) {
+                        valueType = resolveRawClass(typeArgs[1]);
+                    }
+                }
 
                 Map<Object, Object> map = new LinkedHashMap<>();
                 ConfigValueAdapter<?> keyAdapter = keyType == String.class ? null : ConfigAdapters.get(keyType);
@@ -662,9 +726,15 @@ public class ConfigManager {
         }
 
         if (value instanceof List && List.class.isAssignableFrom(field.getType())) {
-            ParameterizedType listType = (ParameterizedType) field.getGenericType();
-            Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
-            if (elementType.isAnnotationPresent(ConfigSerializable.class)) {
+            Class<?> elementType = null;
+            Type genericType = field.getGenericType();
+            if (genericType instanceof ParameterizedType listType) {
+                Type[] typeArgs = listType.getActualTypeArguments();
+                if (typeArgs.length > 0) {
+                    elementType = resolveRawClass(typeArgs[0]);
+                }
+            }
+            if (elementType != null && elementType.isAnnotationPresent(ConfigSerializable.class)) {
                 List<Object> serializedList = new ArrayList<>();
                 for (Object item : (List<?>) value) {
                     if (item == null) {
@@ -678,7 +748,7 @@ public class ConfigManager {
                 return serializedList;
             }
 
-            ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+            ConfigValueAdapter<?> adapter = elementType != null ? ConfigAdapters.get(elementType) : null;
             if (adapter != null) {
                 @SuppressWarnings("unchecked")
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
@@ -691,9 +761,15 @@ public class ConfigManager {
         }
 
         if (value instanceof Map && Map.class.isAssignableFrom(field.getType())) {
-            ParameterizedType mapType = (ParameterizedType) field.getGenericType();
-            Class<?> valueType = (Class<?>) mapType.getActualTypeArguments()[1];
-            if (valueType.isAnnotationPresent(ConfigSerializable.class)) {
+            Class<?> valueType = null;
+            Type genericType = field.getGenericType();
+            if (genericType instanceof ParameterizedType mapType) {
+                Type[] typeArgs = mapType.getActualTypeArguments();
+                if (typeArgs.length > 1) {
+                    valueType = resolveRawClass(typeArgs[1]);
+                }
+            }
+            if (valueType != null && valueType.isAnnotationPresent(ConfigSerializable.class)) {
                 Map<String, Object> serializedMap = new LinkedHashMap<>();
                 Map<?, ?> map = (Map<?, ?>) value;
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -717,7 +793,7 @@ public class ConfigManager {
                 }
             }
 
-            ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+            ConfigValueAdapter<?> adapter = valueType != null ? ConfigAdapters.get(valueType) : null;
             if (adapter != null) {
                 @SuppressWarnings("unchecked")
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
@@ -750,7 +826,7 @@ public class ConfigManager {
     }
 
     private void writeSectionToMap(Object instance, Map<String, Object> out, String prefix, Map<String, List<String>> comments) throws Exception {
-        for (Field field : instance.getClass().getDeclaredFields()) {
+        for (Field field : getConfigFields(instance.getClass())) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
@@ -856,18 +932,36 @@ public class ConfigManager {
     @SuppressWarnings("unchecked")
     private Object cloneIfNeeded(Object value) {
         if (value instanceof List<?>) {
+            List<?> snapshot = snapshotWithRetry(() -> new ArrayList<>((List<?>) value));
             List<Object> copy = new ArrayList<>();
-            for (Object item : (List<Object>) value) {
+            for (Object item : (List<Object>) snapshot) {
                 copy.add(cloneIfNeeded(item));
             }
             return copy;
         }
         if (value instanceof Map<?, ?>) {
+            Map<?, ?> snapshot = snapshotWithRetry(() -> new LinkedHashMap<>((Map<?, ?>) value));
             Map<Object, Object> copy = new LinkedHashMap<>();
-            ((Map<?, ?>) value).forEach((key, val) -> copy.put(key, cloneIfNeeded(val)));
+            snapshot.forEach((key, val) -> copy.put(key, cloneIfNeeded(val)));
             return copy;
         }
         return value;
+    }
+
+    private <T> T snapshotWithRetry(Supplier<T> supplier) {
+        ConcurrentModificationException lastFailure = null;
+        for (int attempt = 0; attempt < CLONE_SNAPSHOT_RETRY_LIMIT; attempt++) {
+            try {
+                return supplier.get();
+            } catch (ConcurrentModificationException failure) {
+                lastFailure = failure;
+                Thread.yield();
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
+        throw new IllegalStateException("Failed to snapshot mutable config value");
     }
 
     private Object getPrimitiveDefault(Class<?> type) {
@@ -1177,6 +1271,77 @@ public class ConfigManager {
         return prefix + field.getName();
     }
 
+    private List<Field> getConfigFields(Class<?> clazz) {
+        List<Class<?>> hierarchy = new ArrayList<>();
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            hierarchy.add(current);
+        }
+        Collections.reverse(hierarchy);
+
+        List<Field> fields = new ArrayList<>();
+        for (Class<?> current : hierarchy) {
+            fields.addAll(Arrays.asList(current.getDeclaredFields()));
+        }
+        return fields;
+    }
+
+    private Set<String> normalizeSections(Set<String> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String section : sections) {
+            if (section == null) {
+                continue;
+            }
+            String trimmed = section.trim();
+            if (!trimmed.isEmpty()) {
+                normalized.add(trimmed);
+            }
+        }
+        return normalized.isEmpty() ? Collections.emptySet() : normalized;
+    }
+
+    private boolean shouldProcessPath(String path, Set<String> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return true;
+        }
+        for (String section : sections) {
+            if (section.equals(path)
+                    || section.startsWith(path + ".")
+                    || path.startsWith(section + ".")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<String> narrowSections(String parentPath, Set<String> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> nested = new LinkedHashSet<>();
+        for (String section : sections) {
+            if (section.equals(parentPath)) {
+                return Collections.emptySet();
+            }
+            if (section.startsWith(parentPath + ".")) {
+                nested.add(section.substring(parentPath.length() + 1));
+            }
+        }
+        return nested.isEmpty() ? Collections.emptySet() : nested;
+    }
+
+    private Class<?> resolveRawClass(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return clazz;
+        }
+        if (type instanceof ParameterizedType parameterizedType && parameterizedType.getRawType() instanceof Class<?> rawClass) {
+            return rawClass;
+        }
+        return null;
+    }
+
     /**
      * Saves all registered instances of the given config class.
      *
@@ -1252,7 +1417,7 @@ public class ConfigManager {
     }
 
     private void saveFields(Object instance, ConfigDocument document, Class<?> clazz, String prefix) throws Exception {
-        for (Field field : clazz.getDeclaredFields()) {
+        for (Field field : getConfigFields(clazz)) {
             field.setAccessible(true);
 
             if (!isConfigField(field))
@@ -1349,7 +1514,7 @@ public class ConfigManager {
         }
 
         for (ConfigEntry<?> entry : getEntries(configClass)) {
-            if (reloadEntry(entry, sectionSet, false) && reloadable != null && reloadable.notifyOnChange()) {
+            if (reloadEntry(entry, sectionSet, false) && shouldNotifyOnChange(entry)) {
                 notifyChangeListeners(entry, sectionSet);
             }
         }
@@ -1436,10 +1601,34 @@ public class ConfigManager {
      * @param configClass config type to monitor
      * @param listener callback receiving updated instance and changed sections
      */
-    @SuppressWarnings("unchecked")
     public <T> void onChange(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
-        changeListeners.computeIfAbsent(configClass, k -> new ArrayList<>())
-                .add((BiConsumer<Object, Set<String>>) listener);
+        subscribeChanges(configClass, listener);
+    }
+
+    /**
+     * Subscribes to config change notifications and returns an unregister handle.
+     *
+     * @param <T> config type
+     * @param configClass config type to monitor
+     * @param listener callback receiving updated instance and changed sections
+     * @return subscription handle that removes the listener when closed
+     */
+    @SuppressWarnings("unchecked")
+    public <T> ListenerSubscription subscribeChanges(Class<T> configClass, BiConsumer<T, Set<String>> listener) {
+        Objects.requireNonNull(configClass, "configClass");
+        Objects.requireNonNull(listener, "listener");
+
+        CopyOnWriteArrayList<BiConsumer<Object, Set<String>>> listeners =
+                (CopyOnWriteArrayList<BiConsumer<Object, Set<String>>>) changeListeners.computeIfAbsent(
+                        configClass, k -> new CopyOnWriteArrayList<>());
+        BiConsumer<Object, Set<String>> typedListener = (BiConsumer<Object, Set<String>>) listener;
+        listeners.add(typedListener);
+        return () -> {
+            listeners.remove(typedListener);
+            if (listeners.isEmpty()) {
+                changeListeners.remove(configClass, listeners);
+            }
+        };
     }
 
     private void notifyChangeListeners(ConfigEntry<?> entry, Set<String> changedSections) {
@@ -1449,8 +1638,18 @@ public class ConfigManager {
         }
 
         for (BiConsumer<Object, Set<String>> listener : listeners) {
-            listener.accept(entry.instance, changedSections);
+            try {
+                listener.accept(entry.instance, changedSections);
+            } catch (Throwable error) {
+                logger.error("Failed to notify config change listener for "
+                        + entry.key.configClass.getName(), error);
+            }
         }
+    }
+
+    private boolean shouldNotifyOnChange(ConfigEntry<?> entry) {
+        ConfigReloadable reloadable = entry.key.configClass.getAnnotation(ConfigReloadable.class);
+        return reloadable == null || reloadable.notifyOnChange();
     }
 
     private Collection<ConfigEntry<?>> getEntries(Class<?> configClass) {
@@ -1554,7 +1753,10 @@ public class ConfigManager {
         synchronized (entry.monitor) {
             try {
                 long beforeReload = entry.file.exists() ? entry.file.lastModified() : -1L;
-                LoadResult loadResult = loadConfig(entry.instance, entry.metadata);
+                // Always mutate in-place: the instance reference returned from register()
+                // is part of the public contract — consumers hold it and expect getter
+                // calls to see live data without re-fetching.
+                LoadResult loadResult = loadConfigWithRetry(entry.instance, entry.metadata, sections);
                 entry.schemaVersion = loadResult.schemaVersion();
 
                 entry.lastModified.set(beforeReload);
@@ -1689,11 +1891,34 @@ public class ConfigManager {
         ensureReloadExecutor();
         reloadExecutor.submit(() -> {
             try {
-                if (reloadEntry(entry, Collections.emptySet(), true)) {
-                    platform.runOnMain(() -> notifyChangeListeners(entry, Collections.emptySet()));
+                synchronized (shutdownLock) {
+                    if (shuttingDown) {
+                        return;
+                    }
+                    // Skip reload if the file's mtime matches what we last
+                    // saw — this drops spurious watcher events caused by
+                    // initial registration writes (saveConfig defaults), and
+                    // duplicate ENTRY_CREATE/ENTRY_MODIFY pairs the OS emits
+                    // for the same physical save.
+                    long observed = entry.file.exists() ? entry.file.lastModified() : -1L;
+                    long lastKnown = entry.lastModified.get();
+                    if (lastKnown > 0 && observed == lastKnown) {
+                        return;
+                    }
+                    if (reloadEntry(entry, Collections.emptySet(), true)) {
+                        notifyChangeListenersOnMain(entry, Collections.emptySet());
+                    }
                 }
             } finally {
                 entry.reloadComplete();
+            }
+        });
+    }
+
+    private void notifyChangeListenersOnMain(ConfigEntry<?> entry, Set<String> sections) {
+        Tasks.runOnMain(platform, () -> notifyChangeListeners(entry, sections)).whenComplete((ignored, error) -> {
+            if (error != null) {
+                logger.warn("Failed to notify config change listeners for " + entry.key.filePath, error);
             }
         });
     }
@@ -1706,28 +1931,30 @@ public class ConfigManager {
     }
 
     private boolean isBlockingSensitiveThread() {
-        return platform != null && platform.threadContext().isBlockingSensitive();
+        if (platform == null) {
+            return false;
+        }
+        ThreadContext context = platform.threadContext();
+        if (context == ThreadContext.UNKNOWN) {
+            return platform.isMainThread();
+        }
+        return context.isBlockingSensitive();
     }
 
     /**
      * Stops the watcher service and releases associated resources.
      */
     public void shutdown() {
-        shuttingDown = true;
+        synchronized (shutdownLock) {
+            shuttingDown = true;
+        }
         if (shutdownRegistrar != null && shutdownHook != null) {
             shutdownRegistrar.unregisterShutdownHook(shutdownHook);
         }
 
-        if (reloadExecutor != null) {
-            reloadExecutor.shutdownNow();
-            try {
-                reloadExecutor.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            reloadExecutor = null;
-        }
-
+        // Stop the watcher first so no new external reloads are queued while
+        // we drain the reload executor. Closing watchService also unblocks
+        // watchService.take() inside watchLoop.
         if (watcherExecutor != null) {
             watcherExecutor.shutdownNow();
             try {
@@ -1745,6 +1972,23 @@ public class ConfigManager {
                 logger.error("Failed to close config watch service", e);
             }
             watchService = null;
+        }
+
+        // Drain reload executor gracefully — let in-flight tasks observe
+        // shuttingDown under shutdownLock and skip their work, then exit.
+        // We avoid shutdownNow() here so currently-running reloadEntry()
+        // calls can release entry.monitor cleanly.
+        if (reloadExecutor != null) {
+            reloadExecutor.shutdown();
+            try {
+                if (!reloadExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    reloadExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                reloadExecutor.shutdownNow();
+            }
+            reloadExecutor = null;
         }
 
         directoryWatchKeys.clear();
@@ -1943,7 +2187,7 @@ public class ConfigManager {
      * Minimal config document helper backed by Jackson.
      */
     private static class ConfigDocument extends ConfigSectionView {
-        private static final ObjectMapper SCALAR_MAPPER = JsonMapper.builder().build();
+        private static final ObjectMapper SCALAR_MAPPER = createScalarMapper();
         private final Map<String, Object> data;
         private final Map<String, List<String>> comments;
         private List<String> header;
@@ -1957,6 +2201,12 @@ public class ConfigManager {
 
         static ConfigDocument empty() {
             return new ConfigDocument(new LinkedHashMap<>(), null);
+        }
+
+        private static ObjectMapper createScalarMapper() {
+            ObjectMapper mapper = JsonMapper.builder().build();
+            mapper.findAndRegisterModules();
+            return mapper;
         }
 
         static ConfigDocument load(File file) throws IOException {
@@ -2350,15 +2600,12 @@ public class ConfigManager {
             if (value == null) {
                 return null;
             }
-            if (value instanceof Map) {
-                return null;
+            if (value instanceof Map<?, ?> map) {
+                return formatTomlInlineTable(castMap(map));
             }
             if (value instanceof List<?> list) {
                 List<String> parts = new ArrayList<>();
                 for (Object item : list) {
-                    if (item instanceof Map) {
-                        return null;
-                    }
                     String formatted = formatTomlValue(item);
                     if (formatted != null) {
                         parts.add(formatted);
@@ -2367,6 +2614,20 @@ public class ConfigManager {
                 return "[" + String.join(", ", parts) + "]";
             }
             return formatScalar(value);
+        }
+
+        private static String formatTomlInlineTable(Map<String, Object> map) {
+            if (map == null || map.isEmpty()) {
+                return "{}";
+            }
+            List<String> parts = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String formatted = formatTomlValue(entry.getValue());
+                if (formatted != null) {
+                    parts.add(formatTomlKey(entry.getKey()) + " = " + formatted);
+                }
+            }
+            return "{" + String.join(", ", parts) + "}";
         }
 
         private static String formatJsonKey(String key) {

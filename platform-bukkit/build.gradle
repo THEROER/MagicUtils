@@ -9,6 +9,7 @@ def target = project.extensions.getByType(MagicUtilsTargetExtension)
 
 dependencies {
     api project(':core')
+    api project(':diagnostics')
     compileOnly("io.papermc.paper:paper-api:${target.paper.get()}")
     compileOnly libs.jetbrains.annotations
     compileOnly libs.projectlombok.lombok
@@ -18,4 +19,6 @@ dependencies {
 
     testImplementation libs.junit.jupiter
     testImplementation libs.mockito.core
+    testImplementation("io.papermc.paper:paper-api:${target.paper.get()}")
+    testRuntimeOnly libs.junit.platform.launcher
 }

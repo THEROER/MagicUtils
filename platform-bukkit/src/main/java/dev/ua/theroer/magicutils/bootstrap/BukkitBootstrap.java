@@ -4,11 +4,18 @@ import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.platform.Platform;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitMagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
+import dev.ua.theroer.magicutils.platform.bukkit.FoliaPlatformProvider;
 import java.util.Objects;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -43,10 +50,13 @@ public final class BukkitBootstrap {
         private boolean setMessagesManager = true;
         private boolean registerMessages = true;
         private boolean addMagicUtilsMessages = true;
+        private boolean bindClientLocaleSync = true;
         private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private Consumer<CommandRegistry> commandConfigurer;
+        private boolean enableDiagnostics;
+        private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
 
         private Builder(JavaPlugin plugin) {
             this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -82,6 +92,17 @@ public final class BukkitBootstrap {
          */
         public Builder logger(Logger logger) {
             this.logger = logger;
+            return this;
+        }
+
+        /**
+         * Overrides the language manager instance.
+         *
+         * @param languageManager language manager to use
+         * @return builder
+         */
+        public Builder languageManager(LanguageManager languageManager) {
+            this.languageManager = languageManager;
             return this;
         }
 
@@ -154,6 +175,17 @@ public final class BukkitBootstrap {
         }
 
         /**
+         * Toggles synchronizing player language from client locale updates.
+         *
+         * @param bindClientLocaleSync true to bind client locale synchronization
+         * @return builder
+         */
+        public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
+            this.bindClientLocaleSync = bindClientLocaleSync;
+            return this;
+        }
+
+        /**
          * Registers plugin translations against the language manager.
          *
          * @param translations translation registrar
@@ -197,12 +229,97 @@ public final class BukkitBootstrap {
         }
 
         /**
+         * Enables runtime diagnostics service creation.
+         *
+         * @return builder
+         */
+        public Builder enableDiagnostics() {
+            this.enableDiagnostics = true;
+            return this;
+        }
+
+        /**
+         * Allows registering custom diagnostics checks before the service is exposed.
+         *
+         * @param diagnosticsConfigurer diagnostics registry callback
+         * @return builder
+         */
+        public Builder configureDiagnostics(Consumer<DiagnosticRegistry> diagnosticsConfigurer) {
+            this.diagnosticsConfigurer = diagnosticsConfigurer;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result and wires requested services.
          *
          * @return bootstrap result
          */
         public Result build() {
-            Platform resolvedPlatform = platform != null ? platform : new BukkitPlatformProvider(plugin);
+            RuntimeResult runtimeResult = buildRuntime();
+            return runtimeResult.result();
+        }
+
+        /**
+         * Builds the bootstrap result and a managed {@link MagicRuntime}.
+         *
+         * @return runtime-aware bootstrap result
+         */
+        public RuntimeResult buildRuntime() {
+            Prepared prepared = prepare();
+            MagicRuntime runtime = MagicRuntime.builder(
+                            prepared.platform(),
+                            prepared.configManager(),
+                            prepared.logger().getCore()
+                    )
+                    .languageManager(prepared.languageManager())
+                    .manageConfigManager(configManager == null)
+                    .component(JavaPlugin.class, plugin)
+                    .component(Logger.class, prepared.logger())
+                    .build();
+
+            if (bindClientLocaleSync) {
+                runtime.manage("language.clientLocaleSync",
+                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
+            }
+
+            if (prepared.commandRegistry() != null) {
+                runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
+                runtime.putNamedComponent("commandRegistry", prepared.commandRegistry());
+                runtime.putNamedComponent("commandManager", prepared.commandRegistry().commandManager());
+                runtime.onClose("commandRegistry", () -> CommandRegistry.shutdown(plugin));
+            }
+            if (enableDiagnostics) {
+                DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
+            }
+            Runnable refreshConsumerRegistration =
+                    () -> BukkitMagicUtilsConsumerRegistry.register(plugin, runtime, prepared.commandRegistry());
+            runtime.onStateChanged(refreshConsumerRegistration);
+            if (prepared.commandRegistry() != null) {
+                prepared.commandRegistry().onCommandsChanged(refreshConsumerRegistration);
+            }
+            refreshConsumerRegistration.run();
+            runtime.onClose("magicutils.consumerRegistry", () -> BukkitMagicUtilsConsumerRegistry.unregister(plugin));
+            if (registerMessages) {
+                runtime.onClose("messages.scope", () -> Messages.unregister(plugin.getName()));
+            }
+            if (setMessagesManager) {
+                runtime.onClose("messages.default", () -> {
+                    if (Messages.getLanguageManager() == prepared.languageManager()) {
+                        Messages.setLanguageManager(null);
+                    }
+                });
+            }
+
+            return new RuntimeResult(runtime, prepared.platform(), prepared.configManager(), prepared.logger(),
+                    prepared.languageManager(), prepared.commandRegistry());
+        }
+
+        private Prepared prepare() {
+            Platform resolvedPlatform = platform != null
+                    ? platform
+                    : BukkitThreading.isFoliaRuntime()
+                    ? new FoliaPlatformProvider(plugin)
+                    : new BukkitPlatformProvider(plugin);
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);
@@ -247,8 +364,16 @@ public final class BukkitBootstrap {
                 }
             }
 
-            return new Result(resolvedPlatform, resolvedConfigManager, resolvedLogger,
-                    resolvedLanguageManager, registry);
+            return new Prepared(resolvedPlatform, resolvedConfigManager, resolvedLogger, resolvedLanguageManager, registry);
+        }
+
+        private record Prepared(
+                Platform platform,
+                ConfigManager configManager,
+                Logger logger,
+                LanguageManager languageManager,
+                CommandRegistry commandRegistry
+        ) {
         }
     }
 
@@ -268,5 +393,42 @@ public final class BukkitBootstrap {
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
+    }
+
+    /**
+     * Runtime-aware bootstrap result.
+     *
+     * @param runtime managed runtime container
+     * @param platform platform adapter
+     * @param configManager config manager
+     * @param logger logger instance
+     * @param languageManager language manager
+     * @param commandRegistry command registry (nullable when disabled)
+     */
+    public record RuntimeResult(
+            MagicRuntime runtime,
+            Platform platform,
+            ConfigManager configManager,
+            Logger logger,
+            LanguageManager languageManager,
+            CommandRegistry commandRegistry
+    ) {
+        /**
+         * Returns the diagnostics service when diagnostics were enabled.
+         *
+         * @return diagnostics service or null
+         */
+        public @Nullable DiagnosticsService diagnosticsService() {
+            return runtime.findComponent(DiagnosticsService.class).orElse(null);
+        }
+
+        /**
+         * Returns the legacy bootstrap view without the runtime wrapper.
+         *
+         * @return legacy result
+         */
+        public Result result() {
+            return new Result(platform, configManager, logger, languageManager, commandRegistry);
+        }
     }
 }

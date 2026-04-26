@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -45,6 +46,7 @@ public class CommandRegistry {
     private final JavaPlugin plugin;
     private final String permissionPrefix;
     private final TaskScheduler scheduler;
+    private final List<Runnable> commandChangeListeners = new CopyOnWriteArrayList<>();
 
     private CommandRegistry(JavaPlugin plugin, String permissionPrefix, Logger loggerInstance) {
         if (plugin == null) {
@@ -66,6 +68,11 @@ public class CommandRegistry {
             }
 
             @Override
+            public boolean isDebugEnabled() {
+                return logger.isLevelEnabled(dev.ua.theroer.magicutils.logger.LogLevel.DEBUG);
+            }
+
+            @Override
             public void info(String message) {
                 logger.info(message);
             }
@@ -81,7 +88,7 @@ public class CommandRegistry {
             }
         };
 
-        this.platform = new BukkitCommandPlatform(commandLogger);
+        this.platform = new BukkitCommandPlatform(plugin, commandLogger);
 
         TypeParserRegistry<CommandSender> parserRegistry = TypeParserRegistry.createWithDefaults(commandLogger);
         parserRegistry.register(new PlayerTypeParser(logger));
@@ -272,7 +279,7 @@ public class CommandRegistry {
     }
 
     /**
-     * Registers a single builder-defined command.
+     * Registers a single compatibility command spec.
      *
      * @param spec command spec to register
      */
@@ -390,6 +397,19 @@ public class CommandRegistry {
     }
 
     /**
+     * Registers a listener that runs after root command registrations change.
+     *
+     * @param listener listener to invoke after command mutations
+     * @return registry for chaining
+     */
+    public CommandRegistry onCommandsChanged(Runnable listener) {
+        if (listener != null) {
+            commandChangeListeners.add(listener);
+        }
+        return this;
+    }
+
+    /**
      * Returns true if this registry is initialized.
      *
      * @return true if ready
@@ -457,7 +477,7 @@ public class CommandRegistry {
                 plugin,
                 scheduler);
 
-        bukkitCommand.setDescription(info.description());
+        bukkitCommand.setDescription(CommandDescriptions.resolveGlobal(plugin.getName(), info.description(), info.name()));
         bukkitCommand.setUsage(usage);
         String commandPermission = resolvePermission(info.permission(),
                 "commands." + info.name());
@@ -505,7 +525,7 @@ public class CommandRegistry {
                     messageLogger,
                     plugin,
                     scheduler);
-            aliasCommand.setDescription(info.description());
+            aliasCommand.setDescription(CommandDescriptions.resolveGlobal(plugin.getName(), info.description(), info.name()));
             aliasCommand.setUsage(aliasUsage);
             if (!commandPermission.isEmpty()) {
                 aliasCommand.setPermission(commandPermission);
@@ -526,6 +546,8 @@ public class CommandRegistry {
                 logger.info(InternalMessages.SYS_ALIAS_REGISTERED.get("alias", alias, "command", info.name()));
             }
         }
+
+        notifyCommandsChanged();
     }
 
     /**
@@ -537,7 +559,7 @@ public class CommandRegistry {
         if (spec == null) {
             return;
         }
-        registerCommand(new DynamicCommand(spec));
+        registerCommand(MagicCommand.fromSpec(spec));
     }
 
     private void generatePermissions(MagicCommand command, CommandInfo info) {
@@ -548,7 +570,8 @@ public class CommandRegistry {
                 "commands." + info.name());
         if (!commandPermission.isEmpty()) {
             permissions.add(commandPermission + " (" + info.permissionDefault() + ")");
-            platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(), info.description());
+            platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(),
+                    CommandDescriptions.resolveGlobal(plugin.getName(), info.description(), info.name()));
             incrementCount(counts, info.permissionDefault());
         }
 
@@ -562,8 +585,13 @@ public class CommandRegistry {
                     "commands." + info.name() + ".subcommand." + subInfo.permissionSegment());
             if (!subPermission.isEmpty()) {
                 permissions.add(subPermission + " (" + subInfo.permissionDefault() + ")");
-                String description = !subInfo.description().isEmpty() ? subInfo.description() : info.description();
-                platform.ensurePermissionRegistered(subPermission, subInfo.permissionDefault(), description);
+                platform.ensurePermissionRegistered(subPermission, subInfo.permissionDefault(),
+                        CommandDescriptions.resolveGlobal(
+                                plugin.getName(),
+                                subInfo.description(),
+                                info.name(),
+                                subInfo.fullPathSegments()
+                        ));
                 incrementCount(counts, subInfo.permissionDefault());
             }
 
@@ -721,12 +749,25 @@ public class CommandRegistry {
             if (removed && !silent) {
                 logger.info(InternalMessages.SYS_UNREGISTERED_COMMAND.get("command", commandName));
             }
+            if (removed) {
+                notifyCommandsChanged();
+            }
             return removed;
         } catch (Exception e) {
             if (!silent) {
                 logger.warn("Failed to unregister command " + commandName + ": " + e.getMessage());
             }
             return false;
+        }
+    }
+
+    private void notifyCommandsChanged() {
+        for (Runnable listener : commandChangeListeners) {
+            try {
+                listener.run();
+            } catch (RuntimeException error) {
+                logger.warn("Failed to handle command registry change listener: " + error.getMessage());
+            }
         }
     }
 
@@ -762,7 +803,10 @@ public class CommandRegistry {
 
             @Override
             public MagicSender wrap(Object sender) {
-                return BukkitCommandPlatform.wrapMagicSender((CommandSender) sender);
+                return BukkitCommandPlatform.wrapMagicSender(
+                        (CommandSender) sender,
+                        requireDefault().plugin
+                );
             }
         });
     }

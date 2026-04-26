@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Builder spec for a command.
+ * Compatibility command specification used by the legacy builder path.
  *
  * @param <S> sender type
  */
@@ -118,7 +118,7 @@ public final class CommandSpec<S> {
     }
 
     /**
-     * Creates a builder for a command name.
+     * Creates a compatibility builder for a command name.
      *
      * @param name command name
      * @param <S> sender type
@@ -168,7 +168,7 @@ public final class CommandSpec<S> {
     }
 
     /**
-     * Builder for command specifications.
+     * Builder for compatibility command specifications.
      *
      * @param <S> sender type
      */

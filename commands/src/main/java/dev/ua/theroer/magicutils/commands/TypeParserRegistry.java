@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class TypeParserRegistry<S> {
     private final CommandLogger logger;
-    private final List<TypeParser<S, ?>> parsers = new ArrayList<>();
+    private final List<TypeParser<S, ?>> parsers = new CopyOnWriteArrayList<>();
 
     /**
      * Create a new empty TypeParserRegistry; prefer {@link #createWithDefaults(CommandLogger)}.
@@ -89,29 +90,65 @@ public class TypeParserRegistry<S> {
      * @return the parsed object or null if no suitable parser found
      */
     @Nullable
-    @SuppressWarnings("unchecked")
     public <T> T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull S sender) {
+        TypeParseResult<T> result = parseDetailed(value, targetType, sender);
+        if (result.isSuccess() || result.isMissing()) {
+            return result.value();
+        }
+        return null;
+    }
+
+    /**
+     * Parses a value to the specified type using registered parsers and returns a detailed outcome.
+     *
+     * @param <T> the type to parse to
+     * @param value the string value to parse
+     * @param targetType the target class type
+     * @param sender the command sender for context
+     * @return detailed parse result
+     */
+    @NotNull
+    @SuppressWarnings("unchecked")
+    public <T> TypeParseResult<T> parseDetailed(@Nullable String value, @NotNull Class<T> targetType,
+            @NotNull S sender) {
         logger.debug("Parsing value: '" + value + "' to type: " + targetType.getSimpleName());
+        boolean sawCompatibleParser = false;
+        boolean sawInvalid = false;
 
         for (TypeParser<S, ?> parser : parsers) {
             if (parser.canParse(targetType)) {
+                sawCompatibleParser = true;
                 logger.debug("Using parser: " + parser.getClass().getSimpleName());
                 try {
                     @SuppressWarnings("rawtypes")
-                    Object result = ((TypeParser) parser).parse(value, targetType, sender);
-                    if (result != null || value == null) {
+                    TypeParseResult<T> result = ((TypeParser) parser).parseDetailed(value, targetType, sender);
+                    if (result.isSuccess()) {
                         logger.debug("Successfully parsed to: "
-                                + (result != null ? result.getClass().getSimpleName() + "=" + result : "null"));
-                        return (T) result;
+                                + result.value().getClass().getSimpleName() + "=" + result.value());
+                        return result;
                     }
+                    if (result.isMissing()) {
+                        logger.debug("Input is missing for type: " + targetType.getSimpleName());
+                        return result;
+                    }
+                    sawInvalid = true;
                 } catch (Exception e) {
+                    sawInvalid = true;
                     logger.debug("Parser " + parser.getClass().getSimpleName() + " failed: " + e.getMessage());
                 }
             }
         }
 
+        if (value == null) {
+            logger.debug("Input is missing for type: " + targetType.getSimpleName());
+            return TypeParseResult.missing();
+        }
+        if (sawCompatibleParser || sawInvalid) {
+            logger.debug("Compatible parser rejected value for type: " + targetType.getSimpleName());
+            return TypeParseResult.invalid();
+        }
         logger.debug("No suitable parser found for type: " + targetType.getSimpleName());
-        return null;
+        return TypeParseResult.invalid();
     }
 
     /**
@@ -147,24 +184,25 @@ public class TypeParserRegistry<S> {
      */
     @NotNull
     public List<String> parseSuggestion(@NotNull String source, @NotNull S sender) {
-        logger.debug("Parsing suggestion source: '" + source + "'");
+        logger.debug(() -> "Parsing suggestion source: '" + source + "'");
 
         for (TypeParser<S, ?> parser : parsers) {
             if (parser.canParseSuggestion(source)) {
-                logger.debug("Using parser for suggestion: " + parser.getClass().getSimpleName());
+                logger.debug(() -> "Using parser for suggestion: " + parser.getClass().getSimpleName());
                 try {
                     List<String> result = parser.parseSuggestion(source, sender);
                     if (!result.isEmpty()) {
-                        logger.debug("Successfully parsed " + result.size() + " suggestions");
+                        logger.debug(() -> "Successfully parsed " + result.size() + " suggestions");
                         return result;
                     }
                 } catch (Exception e) {
-                    logger.debug("Parser " + parser.getClass().getSimpleName() + " failed: " + e.getMessage());
+                    logger.debug(() -> "Parser " + parser.getClass().getSimpleName()
+                            + " failed: " + e.getMessage());
                 }
             }
         }
 
-        logger.debug("No suitable parser found for suggestion source: " + source);
+        logger.debug(() -> "No suitable parser found for suggestion source: " + source);
         if ("@sender".equalsIgnoreCase(source)) {
             return new ArrayList<>();
         }
@@ -182,7 +220,7 @@ public class TypeParserRegistry<S> {
     @NotNull
     public List<String> parseSuggestionFiltered(@NotNull String source, @NotNull String currentInput,
             @NotNull S sender) {
-        logger.debug("Parsing filtered suggestion source: '" + source + "' with input: '" + currentInput + "'");
+        logger.debug(() -> "Parsing filtered suggestion source: '" + source + "' with input: '" + currentInput + "'");
 
         List<String> suggestions = parseSuggestion(source, sender);
 
@@ -242,11 +280,11 @@ public class TypeParserRegistry<S> {
     private List<String> getSuggestionsInternal(@NotNull Class<?> targetType, @NotNull S sender,
             @Nullable CommandArgument argument, @NotNull Map<String, Object> previousParsedArguments,
             @Nullable String currentInput) {
-        logger.debug("Getting suggestions for type: " + targetType.getSimpleName());
+        logger.debug(() -> "Getting suggestions for type: " + targetType.getSimpleName());
 
         for (TypeParser<S, ?> parser : parsers) {
             if (parser.canParse(targetType)) {
-                logger.debug("Using parser for suggestions: " + parser.getClass().getSimpleName());
+                logger.debug(() -> "Using parser for suggestions: " + parser.getClass().getSimpleName());
                 try {
                     List<String> suggestions;
                     if (overridesSuggestionsWithContext(parser)) {
@@ -256,16 +294,16 @@ public class TypeParserRegistry<S> {
                     } else {
                         suggestions = parser.getSuggestions(sender, argument, previousParsedArguments, currentInput);
                     }
-                    logger.debug("Got " + suggestions.size() + " suggestions");
+                    logger.debug(() -> "Got " + suggestions.size() + " suggestions");
                     return suggestions;
                 } catch (Exception e) {
-                    logger.debug("Parser " + parser.getClass().getSimpleName()
+                    logger.debug(() -> "Parser " + parser.getClass().getSimpleName()
                             + " failed to get suggestions: " + e.getMessage());
                 }
             }
         }
 
-        logger.debug("No suitable parser found for suggestions");
+        logger.debug(() -> "No suitable parser found for suggestions");
         return new ArrayList<>();
     }
 

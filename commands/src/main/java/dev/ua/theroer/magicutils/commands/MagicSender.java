@@ -28,6 +28,19 @@ public interface MagicSender {
     static boolean hasPermission(Object sender, String permission) {
         return MagicSenderAdapters.hasPermission(sender, permission);
     }
+
+    /**
+     * Checks permission on raw sender using registered adapters and a custom op-level fallback.
+     *
+     * @param sender raw sender instance
+     * @param permission permission node
+     * @param fallbackOpLevel op level to treat as granted when no permission backend answers
+     * @return true if granted
+     */
+    static boolean hasPermission(Object sender, String permission, int fallbackOpLevel) {
+        return MagicSenderAdapters.hasPermission(sender, permission, fallbackOpLevel);
+    }
+
     /**
      * Audience for sending messages back to the sender.
      *
@@ -59,6 +72,29 @@ public interface MagicSender {
      * @return true if granted
      */
     boolean hasPermission(String permission);
+
+    /**
+     * Permission check for the sender with a custom op-level fallback.
+     *
+     * <p>Platforms that support fallback-aware permission checks should override this method.
+     * The default implementation preserves existing behavior.</p>
+     *
+     * @param permission permission node
+     * @param fallbackOpLevel op level to treat as granted when no permission backend answers
+     * @return true if granted
+     */
+    default boolean hasPermission(String permission, int fallbackOpLevel) {
+        return hasPermission(permission);
+    }
+
+    /**
+     * IP address of the sender, if available.
+     *
+     * @return IP address string or null
+     */
+    default @Nullable String address() {
+        return null;
+    }
 
     /**
      * Raw platform sender handle.

@@ -47,4 +47,14 @@ public final class VelocityPlatformLogger implements PlatformLogger {
     public void debug(String message) {
         delegate.debug(message);
     }
+
+    @Override
+    public boolean isDebugEnabled() {
+        return delegate.isDebugEnabled();
+    }
+
+    @Override
+    public boolean isTraceEnabled() {
+        return delegate.isTraceEnabled();
+    }
 }

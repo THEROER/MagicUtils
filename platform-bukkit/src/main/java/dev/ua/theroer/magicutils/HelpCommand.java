@@ -10,7 +10,7 @@ import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
  */
 @CommandInfo(
         name = "mhelp",
-        description = "Shows available commands and usages",
+        description = "@magicutils.commands.help.command_description",
         aliases = {"help"},
         permissionDefault = MagicPermissionDefault.TRUE
 )

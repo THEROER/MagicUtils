@@ -1,11 +1,50 @@
 package dev.ua.theroer.magicutils.commands;
 
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 /**
  * Helper methods for comparing argument values without Bukkit dependencies.
  */
 public final class ComparisonUtils {
+
+    private static final ClassValue<Method> UUID_METHOD = new ClassValue<>() {
+        @Override
+        protected Method computeValue(Class<?> type) {
+            try {
+                return type.getMethod("getUniqueId");
+            } catch (NoSuchMethodException e) {
+                try {
+                    return type.getMethod("getUuid");
+                } catch (NoSuchMethodException e2) {
+                    return null;
+                }
+            }
+        }
+    };
+
+    private static final ClassValue<Method> NAME_METHOD = new ClassValue<>() {
+        @Override
+        protected Method computeValue(Class<?> type) {
+            try {
+                return type.getMethod("getName");
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
+        }
+    };
+
+    private static final ClassValue<Method> GET_STRING_METHOD = new ClassValue<>() {
+        @Override
+        protected Method computeValue(Class<?> type) {
+            try {
+                return type.getMethod("getString");
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
+        }
+    };
+
     private ComparisonUtils() {
     }
 
@@ -69,21 +108,15 @@ public final class ComparisonUtils {
         if (obj instanceof UUID uuid) {
             return uuid;
         }
-        try {
-            var method = obj.getClass().getMethod("getUniqueId");
-            Object res = method.invoke(obj);
-            if (res instanceof UUID uuidRes) {
-                return uuidRes;
+        Method method = UUID_METHOD.get(obj.getClass());
+        if (method != null) {
+            try {
+                Object res = method.invoke(obj);
+                if (res instanceof UUID uuidRes) {
+                    return uuidRes;
+                }
+            } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
             }
-        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
-        }
-        try {
-            var method = obj.getClass().getMethod("getUuid");
-            Object res = method.invoke(obj);
-            if (res instanceof UUID uuidRes) {
-                return uuidRes;
-            }
-        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
         return null;
     }
@@ -95,23 +128,24 @@ public final class ComparisonUtils {
      * @return name or null
      */
     public static String extractName(Object obj) {
-        try {
-            var method = obj.getClass().getMethod("getName");
-            Object res = method.invoke(obj);
-            if (res instanceof String s) {
-                return s;
-            }
-            if (res != null) {
-                try {
-                    var getString = res.getClass().getMethod("getString");
-                    Object strRes = getString.invoke(res);
-                    if (strRes instanceof String s) {
-                        return s;
-                    }
-                } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
+        Method method = NAME_METHOD.get(obj.getClass());
+        if (method != null) {
+            try {
+                Object res = method.invoke(obj);
+                if (res instanceof String s) {
+                    return s;
                 }
+                if (res != null) {
+                    Method getString = GET_STRING_METHOD.get(res.getClass());
+                    if (getString != null) {
+                        Object strRes = getString.invoke(res);
+                        if (strRes instanceof String s) {
+                            return s;
+                        }
+                    }
+                }
+            } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
             }
-        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
         }
         return obj != null ? obj.toString() : null;
     }

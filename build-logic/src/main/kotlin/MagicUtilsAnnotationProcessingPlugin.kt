@@ -6,9 +6,8 @@ import org.gradle.kotlin.dsl.*
 class MagicUtilsAnnotationProcessingPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         if (project.name != "processor") {
-            project.dependencies.add("annotationProcessor", project.project(":processor")) 
-
-            project.tasks.withType(JavaCompile::class.java).configureEach { javaCompileTask ->
+            project.dependencies.add("annotationProcessor", project.project(":processor"))
+            project.tasks.named("compileJava", JavaCompile::class.java).configure { javaCompileTask ->
                 javaCompileTask.options.compilerArgs.addAll(
                     listOf(
                         "-processor",

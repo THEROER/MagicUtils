@@ -1,10 +1,17 @@
 package dev.ua.theroer.magicutils.platform.neoforge;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
+import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycle;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleListener;
+import dev.ua.theroer.magicutils.platform.PlayerLifecycleType;
+import dev.ua.theroer.magicutils.platform.PlayerLocale;
+import dev.ua.theroer.magicutils.platform.PlayerLocaleListener;
 import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
@@ -12,6 +19,8 @@ import dev.ua.theroer.magicutils.platform.ThreadContext;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.ClientInformationUpdatedEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.neoforged.fml.loading.FMLPaths;
@@ -25,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -44,6 +54,9 @@ public class NeoForgePlatformProvider implements Platform, ConfigNamespaceProvid
     private final boolean useConfigNamespace;
     private final String configNamespace;
     private final TaskScheduler taskScheduler;
+    private final Collection<PlayerLifecycleListener> playerLifecycleListeners = new CopyOnWriteArrayList<>();
+    private final Collection<PlayerLocaleListener> playerLocaleListeners = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean eventListenersRegistered = new AtomicBoolean(false);
 
     /**
      * Create a NeoForge platform adapter using the current server lifecycle hooks.
@@ -112,6 +125,7 @@ public class NeoForgePlatformProvider implements Platform, ConfigNamespaceProvid
         TaskScheduler scheduler = TaskSchedulers.create("MagicUtils-NeoForge", null);
         this.taskScheduler = scheduler;
         registerShutdownHookInternal(this.logger, scheduler::shutdown);
+        AudienceResolver.registerFactory(obj -> obj instanceof ServerPlayer sp ? new NeoForgePlayerAudience(sp) : null);
     }
 
     @Override
@@ -192,6 +206,27 @@ public class NeoForgePlatformProvider implements Platform, ConfigNamespaceProvid
     }
 
     @Override
+    public ListenerSubscription subscribePlayerLifecycle(PlayerLifecycleListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        registerEventListeners();
+        playerLifecycleListeners.add(listener);
+        return () -> playerLifecycleListeners.remove(listener);
+    }
+
+    @Override
+    public ListenerSubscription subscribePlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null) {
+            return ListenerSubscription.noop();
+        }
+        registerEventListeners();
+        playerLocaleListeners.add(listener);
+        publishCurrentPlayerLocales(listener);
+        return () -> playerLocaleListeners.remove(listener);
+    }
+
+    @Override
     public void registerShutdownHook(Runnable hook) {
         registerShutdownHookInternal(logger, hook);
     }
@@ -206,6 +241,135 @@ public class NeoForgePlatformProvider implements Platform, ConfigNamespaceProvid
 
     private MinecraftServer server() {
         return serverSupplier != null ? serverSupplier.get() : null;
+    }
+
+    private void registerEventListeners() {
+        if (!eventListenersRegistered.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
+            NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
+            NeoForge.EVENT_BUS.addListener(this::onClientInformationUpdated);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event == null || !(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        publishPlayerLifecycle(new PlayerLifecycle(player.getUUID(), player.getName().getString(),
+                PlayerLifecycleType.JOIN));
+        publishPlayerLocale(toPlayerLocale(player));
+    }
+
+    private void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event == null || !(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        publishPlayerLifecycle(new PlayerLifecycle(player.getUUID(), player.getName().getString(),
+                PlayerLifecycleType.LEAVE));
+    }
+
+    private void onClientInformationUpdated(ClientInformationUpdatedEvent event) {
+        if (event == null || event.getEntity() == null) {
+            return;
+        }
+        publishPlayerLocale(toPlayerLocale(event.getEntity(), event.getUpdatedInformation()));
+    }
+
+    private void publishCurrentPlayerLocales(PlayerLocaleListener listener) {
+        if (listener == null) {
+            return;
+        }
+        MinecraftServer server = server();
+        if (server == null) {
+            return;
+        }
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            publishPlayerLocale(listener, toPlayerLocale(player));
+        }
+    }
+
+    private void publishPlayerLifecycle(PlayerLifecycle lifecycle) {
+        if (lifecycle == null || !lifecycle.isValid() || playerLifecycleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLifecycleListener listener : playerLifecycleListeners) {
+            try {
+                listener.onPlayerLifecycle(lifecycle);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to deliver NeoForge player lifecycle listener", e);
+            }
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocale playerLocale) {
+        if (playerLocale == null || !playerLocale.isValid() || playerLocaleListeners.isEmpty()) {
+            return;
+        }
+        for (PlayerLocaleListener listener : playerLocaleListeners) {
+            publishPlayerLocale(listener, playerLocale);
+        }
+    }
+
+    private void publishPlayerLocale(PlayerLocaleListener listener, PlayerLocale playerLocale) {
+        if (listener == null || playerLocale == null || !playerLocale.isValid()) {
+            return;
+        }
+        try {
+            listener.onPlayerLocale(playerLocale);
+        } catch (RuntimeException e) {
+            logger.warn("Failed to deliver NeoForge player locale listener", e);
+        }
+    }
+
+    private PlayerLocale toPlayerLocale(ServerPlayer player) {
+        return toPlayerLocale(player, null);
+    }
+
+    private PlayerLocale toPlayerLocale(ServerPlayer player, Object clientInformation) {
+        if (player == null) {
+            return null;
+        }
+        String localeTag = extractLocaleTag(player, clientInformation);
+        if (localeTag == null || localeTag.isBlank()) {
+            return null;
+        }
+        return new PlayerLocale(player.getUUID(), player.getName().getString(), localeTag);
+    }
+
+    private String extractLocaleTag(ServerPlayer player, Object clientInformation) {
+        String fromInfo = extractLanguageTag(clientInformation);
+        if (fromInfo != null && !fromInfo.isBlank()) {
+            return fromInfo;
+        }
+        if (player == null) {
+            return null;
+        }
+        Object info = invoke(player, "getClientInformation");
+        if (info == null) {
+            info = invoke(player, "clientInformation");
+        }
+        if (info == null) {
+            info = invoke(player, "getClientOptions");
+        }
+        return extractLanguageTag(info);
+    }
+
+    private static String extractLanguageTag(Object info) {
+        if (info == null) {
+            return null;
+        }
+        Object language = invoke(info, "language");
+        if (language == null) {
+            language = invoke(info, "languageCode");
+        }
+        if (language == null) {
+            language = invoke(info, "getLanguage");
+        }
+        return language instanceof String value && !value.isBlank() ? value : null;
     }
 
     private static void runShutdownHooks() {
@@ -286,6 +450,18 @@ public class NeoForgePlatformProvider implements Platform, ConfigNamespaceProvid
             Method method = server.getClass().getMethod(methodName);
             Object result = method.invoke(server);
             return result instanceof Boolean ? (Boolean) result : null;
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static Object invoke(Object target, String methodName) {
+        if (target == null || methodName == null || methodName.isBlank()) {
+            return null;
+        }
+        try {
+            Method method = target.getClass().getMethod(methodName);
+            return method.invoke(target);
         } catch (ReflectiveOperationException ignored) {
             return null;
         }

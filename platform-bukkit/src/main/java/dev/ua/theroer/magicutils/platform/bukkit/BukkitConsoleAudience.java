@@ -1,26 +1,22 @@
 package dev.ua.theroer.magicutils.platform.bukkit;
 
-import dev.ua.theroer.magicutils.logger.ComponentPrefixStripper;
-import dev.ua.theroer.magicutils.logger.ConsoleMessageParser;
+import dev.ua.theroer.magicutils.logger.ConsoleColorSerializer;
+import dev.ua.theroer.magicutils.logger.ConsoleMessageMetadata;
 import dev.ua.theroer.magicutils.logger.LogLevel;
-import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.logger.StructuredConsoleAudience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Console audience that routes messages through a JUL logger with proper levels.
  */
-public final class BukkitConsoleAudience implements Audience {
-    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+public final class BukkitConsoleAudience implements StructuredConsoleAudience {
     private static final ComponentLoggerSupport COMPONENT_LOGGER = ComponentLoggerSupport.load();
-    private static final AnsiSerializerSupport ANSI = AnsiSerializerSupport.load();
 
     private final Logger baseLogger;
     private final String baseLoggerName;
@@ -45,16 +41,26 @@ public final class BukkitConsoleAudience implements Audience {
         if (component == null) {
             return;
         }
-        String plain = PLAIN.serialize(component);
-        ConsoleMessageParser.ParsedMessage parsed = ConsoleMessageParser.parse(plain);
-        Component stripped = ComponentPrefixStripper.stripPrefix(component, parsed.prefixText());
-        String loggerName = buildLoggerName(baseLoggerName, parsed.subLogger());
-        if (logWithComponentLogger(loggerName, parsed.level(), stripped)) {
+        sendConsole(component, new ConsoleMessageMetadata(LogLevel.INFO, null));
+    }
+
+    @Override
+    public void sendConsole(Component component, ConsoleMessageMetadata metadata) {
+        if (component == null || metadata == null) {
+            return;
+        }
+        String loggerName = buildLoggerName(baseLoggerName, metadata.subLoggerName());
+        if (logWithComponentLogger(loggerName, metadata.level(), component)) {
             return;
         }
         Logger logger = resolveLogger(loggerName);
-        String rendered = renderForConsole(stripped, parsed.message());
-        logWithLevel(logger, parsed.level(), rendered);
+        logWithLevel(logger, metadata.level(), ConsoleColorSerializer.serialize(component));
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        // Console has unrestricted access by design.
+        return true;
     }
 
     private Logger resolveLogger(String loggerName) {
@@ -105,14 +111,6 @@ public final class BukkitConsoleAudience implements Audience {
             return;
         }
         logger.log(jul, message);
-    }
-
-    private String renderForConsole(Component component, String fallback) {
-        if (component == null) {
-            return fallback;
-        }
-        String ansi = ANSI != null ? ANSI.serialize(component) : null;
-        return ansi != null ? ansi : fallback;
     }
 
     private Level toJulLevel(LogLevel level) {
@@ -234,40 +232,4 @@ public final class BukkitConsoleAudience implements Audience {
         }
     }
 
-    private static final class AnsiSerializerSupport {
-        private final Method serialize;
-        private final Object serializer;
-
-        private AnsiSerializerSupport(Object serializer, Method serialize) {
-            this.serializer = serializer;
-            this.serialize = serialize;
-        }
-
-        static AnsiSerializerSupport load() {
-            try {
-                Class<?> serializerClass = Class.forName(
-                        "net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer");
-                Method ansi = serializerClass.getMethod("ansi");
-                Method serialize = serializerClass.getMethod("serialize", Component.class);
-                Object serializer = ansi.invoke(null);
-                return new AnsiSerializerSupport(serializer, serialize);
-            } catch (ClassNotFoundException ignored) {
-                return null;
-            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ignored) {
-                return null;
-            }
-        }
-
-        String serialize(Component component) {
-            if (serializer == null || serialize == null || component == null) {
-                return null;
-            }
-            try {
-                Object value = serialize.invoke(serializer, component);
-                return value != null ? value.toString() : null;
-            } catch (IllegalAccessException | InvocationTargetException ignored) {
-                return null;
-            }
-        }
-    }
 }

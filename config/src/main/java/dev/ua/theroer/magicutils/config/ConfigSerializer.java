@@ -2,10 +2,13 @@ package dev.ua.theroer.magicutils.config;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigSerializable;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import dev.ua.theroer.magicutils.config.annotations.MinValue;
+import dev.ua.theroer.magicutils.config.annotations.MaxValue;
 import dev.ua.theroer.magicutils.config.serialization.ConfigAdapters;
 import dev.ua.theroer.magicutils.config.serialization.ConfigValueAdapter;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -38,11 +41,11 @@ public class ConfigSerializer {
         boolean includeNulls = serializable != null && serializable.includeNulls();
 
         // Process all fields
-        for (Field field : clazz.getDeclaredFields()) {
+        for (Field field : getSerializableFields(clazz)) {
             field.setAccessible(true);
 
             // Skip transient fields
-            if (java.lang.reflect.Modifier.isTransient(field.getModifiers())) {
+            if (Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
 
@@ -126,7 +129,7 @@ public class ConfigSerializer {
         try {
             T instance = clazz.getDeclaredConstructor().newInstance();
 
-            for (Field field : clazz.getDeclaredFields()) {
+            for (Field field : getSerializableFields(clazz)) {
                 field.setAccessible(true);
 
                 String key = resolveKey(field);
@@ -135,44 +138,45 @@ public class ConfigSerializer {
 
                 Object value = data.get(key);
                 if (value == null) {
-                    field.set(instance, null);
+                    if (!field.getType().isPrimitive()) {
+                        field.set(instance, null);
+                    }
                     continue;
                 }
 
                 try {
                     Class<?> fieldType = field.getType();
+                    Object deserializedValue = null;
 
                     // Handle different types
                     ConfigValueAdapter<?> adapter = ConfigAdapters.get(fieldType);
                     if (adapter != null) {
                         ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
-                        field.set(instance, typed.deserialize(value));
+                        deserializedValue = typed.deserialize(value);
                     } else if (isPrimitiveOrWrapper(fieldType) || fieldType == String.class) {
-                        field.set(instance, convertValue(value, fieldType));
+                        deserializedValue = convertValue(value, fieldType);
                     } else if (List.class.isAssignableFrom(fieldType) && value instanceof List) {
-                        ParameterizedType listType = (ParameterizedType) field.getGenericType();
-                        Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
-                        field.set(instance, deserializeList(logger, (List<?>) value, elementType));
+                        Class<?> elementType = extractListElementType(field);
+                        deserializedValue = deserializeList(logger, (List<?>) value, elementType);
                     } else if (Map.class.isAssignableFrom(fieldType) && value instanceof Map) {
-                        Class<?> valueType = null;
-                        Type genericType = field.getGenericType();
-                        if (genericType instanceof ParameterizedType) {
-                            ParameterizedType mapType = (ParameterizedType) genericType;
-                            Type[] typeArgs = mapType.getActualTypeArguments();
-                            if (typeArgs.length > 1 && typeArgs[1] instanceof Class) {
-                                valueType = (Class<?>) typeArgs[1];
-                            }
-                        }
-
-                        // If valueType is found, deserialize map with typed values
-                        // Otherwise, for raw maps or maps with complex generics, deserialize with raw values
-                        field.set(instance, deserializeMap(logger, (Map<?, ?>) value, valueType));
+                        Class<?> valueType = extractMapValueType(field);
+                        deserializedValue = deserializeMap(logger, (Map<?, ?>) value, valueType);
                     } else if (fieldType.isAnnotationPresent(ConfigSerializable.class) && value instanceof Map) {
                         // Recursive deserialization - security check is already in deserialize method
-                        field.set(instance, deserialize(logger, (Map<String, Object>) value, fieldType));
+                        deserializedValue = deserialize(logger, (Map<String, Object>) value, fieldType);
                     }
+
+                    // Validate numeric bounds before setting
+                    if (deserializedValue != null) {
+                        deserializedValue = validateNumericBounds(logger, field, deserializedValue);
+                    }
+
+                    field.set(instance, deserializedValue);
                 } catch (ReflectiveOperationException | ClassCastException | IllegalArgumentException e) {
-                    // Skip field
+                    if (logger != null) {
+                        logger.warn("Failed to deserialize field '" + field.getName()
+                                + "' in " + clazz.getName() + ". Keeping current/default value.", e);
+                    }
                 }
             }
 
@@ -220,7 +224,7 @@ public class ConfigSerializer {
     private static <T> List<T> deserializeList(PlatformLogger logger, List<?> data, Class<T> elementType) {
         List<T> result = new ArrayList<>();
 
-        ConfigValueAdapter<?> adapter = ConfigAdapters.get(elementType);
+        ConfigValueAdapter<?> adapter = elementType != null ? ConfigAdapters.get(elementType) : null;
 
         for (Object item : data) {
             if (item == null) {
@@ -228,9 +232,9 @@ public class ConfigSerializer {
             } else if (adapter != null) {
                 ConfigValueAdapter<Object> typed = (ConfigValueAdapter<Object>) adapter;
                 result.add((T) typed.deserialize(item));
-            } else if (isPrimitiveOrWrapper(elementType) || elementType == String.class) {
+            } else if (elementType != null && (isPrimitiveOrWrapper(elementType) || elementType == String.class)) {
                 result.add((T) convertValue(item, elementType));
-            } else if (elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
+            } else if (elementType != null && elementType.isAnnotationPresent(ConfigSerializable.class) && item instanceof Map) {
                 // Recursive deserialization - security check is already in deserialize method
                 result.add(deserialize(logger, (Map<String, Object>) item, elementType));
             } else {
@@ -338,7 +342,7 @@ public class ConfigSerializer {
     private static Map<String, Object> deserializeMap(PlatformLogger logger, Map<?, ?> data, Class<?> valueType) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        ConfigValueAdapter<?> adapter = ConfigAdapters.get(valueType);
+        ConfigValueAdapter<?> adapter = valueType != null ? ConfigAdapters.get(valueType) : null;
 
         for (Map.Entry<?, ?> entry : data.entrySet()) {
             String key = String.valueOf(entry.getKey());
@@ -356,13 +360,30 @@ public class ConfigSerializer {
                 result.put(key, deserialize(logger, (Map<String, Object>) raw, valueType));
             } else {
                 if (valueType != null) { // Only warn if a specific type was expected
-                    logger.warn("Unknown or unhandled map value type '" + valueType.getName() + "' for key '" + key + "'. Falling back to raw value. Value: " + raw);
+                    if (logger != null) {
+                        logger.warn("Unknown or unhandled map value type '" + valueType.getName()
+                                + "' for key '" + key + "'. Falling back to raw value. Value: " + raw);
+                    }
                 }
                 result.put(key, raw);
             }
         }
 
         return result;
+    }
+
+    private static List<Field> getSerializableFields(Class<?> clazz) {
+        List<Class<?>> hierarchy = new ArrayList<>();
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            hierarchy.add(current);
+        }
+        Collections.reverse(hierarchy);
+
+        List<Field> fields = new ArrayList<>();
+        for (Class<?> current : hierarchy) {
+            fields.addAll(Arrays.asList(current.getDeclaredFields()));
+        }
+        return fields;
     }
 
     /**
@@ -392,6 +413,91 @@ public class ConfigSerializer {
             return Short.parseShort(stringValue);
 
         return value;
+    }
+
+    /**
+     * Validates and clamps a numeric value based on @MinValue and @MaxValue annotations.
+     *
+     * @param logger the platform logger for warnings
+     * @param field  the field being validated
+     * @param value  the value to validate
+     * @return the clamped value, or the original if no clamping is needed
+     */
+    private static Object validateNumericBounds(PlatformLogger logger, Field field, Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        Class<?> fieldType = field.getType();
+        if (!isNumericType(fieldType)) {
+            return value;
+        }
+
+        MinValue minValue = field.getAnnotation(MinValue.class);
+        MaxValue maxValue = field.getAnnotation(MaxValue.class);
+
+        if (minValue == null && maxValue == null) {
+            return value;
+        }
+
+        double numValue = ((Number) value).doubleValue();
+        double original = numValue;
+        boolean clamped = false;
+
+        if (minValue != null && numValue < minValue.value()) {
+            numValue = minValue.value();
+            clamped = true;
+            if (minValue.warn()) {
+                logger.warn(String.format(
+                    "Config value for field '%s' (%s) is below minimum (%s). Clamped to %s.",
+                    field.getName(), original, minValue.value(), numValue
+                ));
+            }
+        }
+
+        if (maxValue != null && numValue > maxValue.value()) {
+            numValue = maxValue.value();
+            clamped = true;
+            if (maxValue.warn()) {
+                logger.warn(String.format(
+                    "Config value for field '%s' (%s) exceeds maximum (%s). Clamped to %s.",
+                    field.getName(), original, maxValue.value(), numValue
+                ));
+            }
+        }
+
+        if (!clamped) {
+            return value;
+        }
+
+        // Convert back to the original type
+        if (fieldType == int.class || fieldType == Integer.class) {
+            return (int) numValue;
+        } else if (fieldType == long.class || fieldType == Long.class) {
+            return (long) numValue;
+        } else if (fieldType == double.class || fieldType == Double.class) {
+            return numValue;
+        } else if (fieldType == float.class || fieldType == Float.class) {
+            return (float) numValue;
+        } else if (fieldType == byte.class || fieldType == Byte.class) {
+            return (byte) numValue;
+        } else if (fieldType == short.class || fieldType == Short.class) {
+            return (short) numValue;
+        }
+
+        return value;
+    }
+
+    /**
+     * Checks if type is a numeric type.
+     */
+    private static boolean isNumericType(Class<?> type) {
+        return type == int.class || type == Integer.class ||
+                type == long.class || type == Long.class ||
+                type == double.class || type == Double.class ||
+                type == float.class || type == Float.class ||
+                type == byte.class || type == Byte.class ||
+                type == short.class || type == Short.class;
     }
 
     /**

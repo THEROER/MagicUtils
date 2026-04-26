@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,25 +49,13 @@ public class LoggerCore extends LoggerCoreMethods {
     @Getter @Setter
     private LanguageManager languageManager;
 
-    @Getter @Setter
-    private PrefixMode chatPrefixMode = PrefixMode.FULL;
-    @Getter @Setter
-    private PrefixMode consolePrefixMode = PrefixMode.SHORT;
-    @Getter @Setter
-    private String customPrefix = "[UAP]";
-
-    @Getter @Setter
-    private LogTarget defaultTarget = LogTarget.BOTH;
-    @Getter @Setter
-    private boolean consoleStripFormatting = false;
-    @Getter @Setter
-    private boolean consoleUseGradient = false;
-
     @Getter
     private final MiniMessage miniMessage = MiniMessage.builder().strict(false).build();
-    private final Map<String, PrefixedLoggerCore> prefixedLoggers = new HashMap<>();
+    private final Map<String, PrefixedLoggerCore> prefixedLoggers = new ConcurrentHashMap<>();
     @Getter
     private ExternalPlaceholderEngine externalPlaceholderEngine = ExternalPlaceholderEngine.NOOP;
+    @Getter
+    private boolean escapePlaceholders = false;
     private final MagicPlaceholders.PlaceholderDebugListener placeholderDebugListener = this::onPlaceholderResolved;
     private boolean placeholderDebugRegistered;
 
@@ -100,10 +89,7 @@ public class LoggerCore extends LoggerCoreMethods {
         loadConfiguration();
         configManager.save(LoggerConfig.class);
 
-        configManager.onChange(LoggerConfig.class, (cfg, sections) -> {
-            config = cfg;
-            loadConfiguration();
-        });
+        configManager.onChange(LoggerConfig.class, (cfg, sections) -> loadConfiguration());
     }
 
     /**
@@ -115,6 +101,20 @@ public class LoggerCore extends LoggerCoreMethods {
         this.externalPlaceholderEngine = externalPlaceholderEngine != null
                 ? externalPlaceholderEngine
                 : ExternalPlaceholderEngine.NOOP;
+    }
+
+    /**
+     * Controls whether inline {@code {placeholder}} values are escaped
+     * before MiniMessage parsing. When {@code true}, untrusted user
+     * input cannot inject MiniMessage tags through placeholders. When
+     * {@code false} (default), placeholder values can themselves contain
+     * MiniMessage markup. Recommended: {@code true} for chat output that
+     * may contain user-supplied data.
+     *
+     * @param escapePlaceholders true to escape placeholder values
+     */
+    public void setEscapePlaceholders(boolean escapePlaceholders) {
+        this.escapePlaceholders = escapePlaceholders;
     }
 
     /**
@@ -416,14 +416,54 @@ public class LoggerCore extends LoggerCoreMethods {
                      LogTarget target,
                      boolean broadcast,
                      Object... placeholders) {
-        Component component = parseMessage(message, level, target, audience, audiences, placeholders);
+        send(level, message, audience, audiences, target, broadcast, null, placeholders);
+    }
+
+    void send(LogLevel level,
+              Object message,
+              @Nullable Audience audience,
+              @Nullable Collection<? extends Audience> audiences,
+              LogTarget target,
+              boolean broadcast,
+              @Nullable ConsoleMessageMetadata consoleMetadata,
+              Object... placeholders) {
+        send(level, message, audience, audiences, target, broadcast, consoleMetadata, null, null, placeholders);
+    }
+
+    void send(LogLevel level,
+              Object message,
+              @Nullable Audience audience,
+              @Nullable Collection<? extends Audience> audiences,
+              LogTarget target,
+              boolean broadcast,
+              @Nullable ConsoleMessageMetadata consoleMetadata,
+              @Nullable String subLoggerPrefix,
+              @Nullable PrefixMode prefixOverride,
+              Object... placeholders) {
+        if (!isLevelEnabled(level, target, audience, audiences, broadcast)) {
+            return;
+        }
+        LogMessageFormatter.FormattedMessage formatted = LogMessageFormatter.formatDetailed(
+                this,
+                message,
+                level,
+                target,
+                prefixOverride,
+                subLoggerPrefix,
+                audience,
+                audiences,
+                placeholders
+        );
         Collection<Audience> recipients = LogDispatcher.determineRecipients(audience, audiences, broadcast, target, platform);
-        LogDispatcher.deliver(platform, component, recipients, target);
+        ConsoleMessageMetadata resolvedMetadata = consoleMetadata != null
+                ? consoleMetadata
+                : new ConsoleMessageMetadata(level, null);
+        LogDispatcher.deliver(platform, formatted.chatComponent(), formatted.consoleComponent(), recipients, target, resolvedMetadata);
     }
 
     @Override
     protected void send(LogLevel level, Object message) {
-        send(level, message, null, null, defaultTarget, false);
+        send(level, message, null, null, getDefaultTarget(), false);
     }
 
     @Override
@@ -433,7 +473,7 @@ public class LoggerCore extends LoggerCoreMethods {
 
     @Override
     protected void send(LogLevel level, Object message, Audience player, boolean all) {
-        send(level, message, player, null, defaultTarget, all);
+        send(level, message, player, null, getDefaultTarget(), all);
     }
 
     @Override
@@ -462,26 +502,115 @@ public class LoggerCore extends LoggerCoreMethods {
         return cfg.resolveColors(level, forConsole);
     }
 
+    /**
+     * Returns the chat prefix mode from the active configuration.
+     *
+     * @return chat prefix mode
+     */
+    public PrefixMode getChatPrefixMode() {
+        return config != null ? config.getChatPrefixMode() : PrefixMode.FULL;
+    }
+
+    /**
+     * Returns the console prefix mode from the active configuration.
+     *
+     * @return console prefix mode
+     */
+    public PrefixMode getConsolePrefixMode() {
+        return config != null ? config.getConsolePrefixMode() : PrefixMode.SHORT;
+    }
+
+    /**
+     * Returns the custom prefix text from the active configuration.
+     *
+     * @return custom prefix string
+     */
+    public String getCustomPrefix() {
+        return config != null ? config.getCustomPrefix() : "[UAP]";
+    }
+
+    /**
+     * Returns the default log target from the active configuration.
+     *
+     * @return default log target
+     */
+    public LogTarget getDefaultTarget() {
+        return config != null ? config.getDefaultTarget() : LogTarget.BOTH;
+    }
+
+    /**
+     * Returns whether a log level is enabled for the default target.
+     *
+     * @param level log level to check
+     * @return true when formatting and delivery should proceed
+     */
+    public boolean isLevelEnabled(LogLevel level) {
+        return isLevelEnabled(level, getDefaultTarget(), null, null, false);
+    }
+
+    /**
+     * Returns whether a log level is enabled for the provided target.
+     *
+     * @param level log level to check
+     * @param target target to evaluate
+     * @return true when formatting and delivery should proceed
+     */
+    public boolean isLevelEnabled(LogLevel level, LogTarget target) {
+        return isLevelEnabled(level, target, null, null, false);
+    }
+
+    private boolean isLevelEnabled(LogLevel level,
+                                   @Nullable LogTarget target,
+                                   @Nullable Audience audience,
+                                   @Nullable Collection<? extends Audience> audiences,
+                                   boolean broadcast) {
+        if (level == null) {
+            return true;
+        }
+
+        boolean hasChatRecipients = broadcast || audience != null || (audiences != null && !audiences.isEmpty());
+        LogTarget effectiveTarget = target != null ? target : getDefaultTarget();
+        if (hasChatRecipients && (effectiveTarget == LogTarget.CHAT || effectiveTarget == LogTarget.BOTH)) {
+            return true;
+        }
+
+        if (effectiveTarget == LogTarget.CHAT) {
+            return true;
+        }
+
+        if (platform == null || platform.logger() == null) {
+            return true;
+        }
+
+        return switch (level) {
+            case DEBUG -> platform.logger().isDebugEnabled();
+            case TRACE -> platform.logger().isTraceEnabled();
+            default -> true;
+        };
+    }
+
+    /**
+     * Returns whether console formatting should be stripped from messages.
+     *
+     * @return true if console formatting is stripped
+     */
+    public boolean isConsoleStripFormatting() {
+        return config != null && config.isConsoleStripFormatting();
+    }
+
+    /**
+     * Returns whether console messages should use gradient coloring.
+     *
+     * @return true if console gradient is enabled
+     */
+    public boolean isConsoleUseGradient() {
+        return config != null && config.isConsoleUseGradient();
+    }
+
     private void loadConfiguration() {
         if (config == null) {
             return;
         }
-
-        if (config.getPrefix() != null) {
-            chatPrefixMode = config.getChatPrefixMode();
-            consolePrefixMode = config.getConsolePrefixMode();
-            customPrefix = config.getPrefix().getCustom();
-            consoleUseGradient = config.getPrefix().isUseGradientConsole();
-        }
-
-        if (config.getDefaults() != null) {
-            defaultTarget = config.getDefaultTarget();
-        }
-
-        if (config.getConsole() != null) {
-            consoleStripFormatting = config.getConsole().isStripFormatting();
-        }
-
         loadSubLoggers();
         updatePlaceholderDebug();
     }

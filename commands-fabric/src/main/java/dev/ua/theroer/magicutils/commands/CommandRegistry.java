@@ -10,10 +10,12 @@ import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.platform.TaskSchedulers;
 import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.DimensionArgument;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Handles registration and initialization of commands in Fabric.
  */
-public final class CommandRegistry extends BrigadierCommandRegistry<ServerCommandSource> {
+public final class CommandRegistry extends BrigadierCommandRegistry<CommandSourceStack> {
     private static final Map<String, CommandRegistry> REGISTRIES = new ConcurrentHashMap<>();
     private static final AtomicBoolean ADAPTER_REGISTERED = new AtomicBoolean();
     private static final AtomicInteger ADAPTER_OP_LEVEL = new AtomicInteger(2);
@@ -46,13 +48,36 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
                     if (task == null) {
                         return;
                     }
-                    if (source == null || source.getServer() == null || source.getServer().isOnThread()) {
+                    if (source == null || source.getServer() == null || source.getServer().isSameThread()) {
                         task.run();
                         return;
                     }
                     source.getServer().execute(task);
                 },
-                TaskSchedulers.shared());
+                TaskSchedulers.shared(),
+                registry -> registry.register(new BrigadierArgumentResolver<>() {
+                    @Override
+                    public BrigadierArgumentShape resolve(CommandArgument argument) {
+                        if (argument == null) {
+                            return null;
+                        }
+                        Class<?> type = argument.getType();
+                        if (type == ServerPlayer.class) {
+                            return BrigadierArgumentShape.nativeSuggestions(EntityArgument.player())
+                                    .withLiteralAlternative("@sender");
+                        }
+                        if (type == ServerLevel.class) {
+                            return BrigadierArgumentShape.nativeSuggestions(DimensionArgument.dimension())
+                                    .withLiteralAlternative("@current");
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public int priority() {
+                        return 100;
+                    }
+                }));
         this.opLevel = opLevel;
         registerMagicSenderAdapter(opLevel);
     }
@@ -138,6 +163,29 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
     }
 
     /**
+     * Removes the registry entry for a mod.
+     *
+     * @param modName mod name
+     */
+    public static void shutdown(String modName) {
+        if (modName == null) {
+            return;
+        }
+        CommandRegistry registry = REGISTRIES.remove(registryKey(modName));
+        if (registry != null && defaultRegistry == registry) {
+            defaultRegistry = null;
+        }
+    }
+
+    /**
+     * Clears all registry references.
+     */
+    public static void clearRegistries() {
+        REGISTRIES.clear();
+        defaultRegistry = null;
+    }
+
+    /**
      * Returns the registry instance by mod name.
      *
      * @param modName mod name
@@ -157,7 +205,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param commands commands to register
      */
-    public static void registerAll(String modName, CommandDispatcher<ServerCommandSource> dispatcher,
+    public static void registerAll(String modName, CommandDispatcher<CommandSourceStack> dispatcher,
                                    MagicCommand... commands) {
         require(modName).registerAllCommands(dispatcher, commands);
     }
@@ -169,7 +217,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param specs command specs to register
      */
-    public static void registerAll(String modName, CommandDispatcher<ServerCommandSource> dispatcher,
+    public static void registerAll(String modName, CommandDispatcher<CommandSourceStack> dispatcher,
                                    CommandSpec<?>... specs) {
         require(modName).registerAllSpecs(dispatcher, specs);
     }
@@ -181,7 +229,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param command command to register
      */
-    public static void register(String modName, CommandDispatcher<ServerCommandSource> dispatcher,
+    public static void register(String modName, CommandDispatcher<CommandSourceStack> dispatcher,
                                 MagicCommand command) {
         require(modName).registerCommand(dispatcher, command);
     }
@@ -193,7 +241,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param spec command spec to register
      */
-    public static void register(String modName, CommandDispatcher<ServerCommandSource> dispatcher,
+    public static void register(String modName, CommandDispatcher<CommandSourceStack> dispatcher,
                                 CommandSpec<?> spec) {
         require(modName).registerSpec(dispatcher, spec);
     }
@@ -203,7 +251,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      *
      * @return command manager or null
      */
-    public static CommandManager<ServerCommandSource> getCommandManager() {
+    public static CommandManager<CommandSourceStack> getCommandManager() {
         CommandRegistry registry = defaultRegistry;
         return registry != null ? registry.commandManager() : null;
     }
@@ -214,7 +262,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param modName mod name
      * @return command manager or null
      */
-    public static CommandManager<ServerCommandSource> getCommandManager(String modName) {
+    public static CommandManager<CommandSourceStack> getCommandManager(String modName) {
         CommandRegistry registry = get(modName);
         return registry != null ? registry.commandManager() : null;
     }
@@ -245,7 +293,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param commands commands to register
      */
-    public static void registerAll(CommandDispatcher<ServerCommandSource> dispatcher, MagicCommand... commands) {
+    public static void registerAll(CommandDispatcher<CommandSourceStack> dispatcher, MagicCommand... commands) {
         requireDefault().registerAllCommands(dispatcher, commands);
     }
 
@@ -255,7 +303,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param specs command specs to register
      */
-    public static void registerAll(CommandDispatcher<ServerCommandSource> dispatcher, CommandSpec<?>... specs) {
+    public static void registerAll(CommandDispatcher<CommandSourceStack> dispatcher, CommandSpec<?>... specs) {
         requireDefault().registerAllSpecs(dispatcher, specs);
     }
 
@@ -265,7 +313,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param command command to register
      */
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, MagicCommand command) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, MagicCommand command) {
         requireDefault().registerCommand(dispatcher, command);
     }
 
@@ -275,7 +323,7 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
      * @param dispatcher dispatcher to register on
      * @param spec command spec to register
      */
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandSpec<?> spec) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandSpec<?> spec) {
         requireDefault().registerSpec(dispatcher, spec);
     }
 
@@ -287,17 +335,17 @@ public final class CommandRegistry extends BrigadierCommandRegistry<ServerComman
         MagicSenderAdapters.register("fabric", new MagicSenderAdapter() {
             @Override
             public boolean supports(Object sender) {
-                return sender instanceof ServerCommandSource || sender instanceof ServerPlayerEntity;
+                return sender instanceof CommandSourceStack || sender instanceof ServerPlayer;
             }
 
             @Override
             public MagicSender wrap(Object sender) {
                 int level = resolveAdapterOpLevel();
-                if (sender instanceof ServerCommandSource source) {
+                if (sender instanceof CommandSourceStack source) {
                     return FabricCommandPlatform.wrapMagicSender(source, level);
                 }
-                if (sender instanceof ServerPlayerEntity player) {
-                    return FabricCommandPlatform.wrapMagicSender(player.getCommandSource(), level);
+                if (sender instanceof ServerPlayer player) {
+                    return FabricCommandPlatform.wrapMagicSender(player.createCommandSourceStack(), level);
                 }
                 return null;
             }

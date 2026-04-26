@@ -36,6 +36,36 @@ MagicHttpClient client = MagicHttpClient.builder(platform, configManager)
 HttpResponse<String> response = client.get("status");
 ```
 
+## Runtime profiles
+
+When you already have a `MagicRuntime`, you can declare named HTTP/WebSocket
+profiles that rebuild automatically on config reload:
+
+```java
+MagicHttpClientProfile<ApiConfig> monitoring = MagicHttpClientProfile
+        .builder(runtime, "http.monitoring", ApiConfig.class)
+        .sections("monitoring")
+        .baseUrl(config -> config.monitoring.baseUrl)
+        .bearerAuth(config -> config.monitoring.token)
+        .build();
+
+MagicHttpClient client = monitoring.require();
+MagicHttpClient sameClient = runtime.requireNamedComponent("http.monitoring", MagicHttpClient.class);
+```
+
+```java
+MagicWebSocketClientProfile<ApiConfig> gateway = MagicWebSocketClientProfile
+        .builder(runtime, "ws.gateway", ApiConfig.class)
+        .sections("gateway")
+        .baseUrl(config -> config.gateway.baseUrl)
+        .bearerAuth(config -> config.gateway.token)
+        .subprotocols(config -> config.gateway.subprotocols)
+        .build();
+```
+
+This removes the usual `close old client -> build new client -> swap references`
+boilerplate from service reload paths.
+
 ## Smart methods
 
 Smart methods switch to async automatically on blocking-sensitive threads and
@@ -73,6 +103,80 @@ MultipartBody body = MultipartBody.builder()
 
 client.postMultipart("upload", body);
 ```
+
+## WebSocket client
+
+`MagicWebSocketClient` wraps `java.net.http.WebSocket` with the same builder
+pattern and config integration as the HTTP client.
+
+### Basic usage
+
+```java
+MagicWebSocketClient wsClient = MagicWebSocketClient.builder(platform, configManager)
+        .baseUrl("wss://api.example.com/ws")
+        .header("Authorization", "Bearer token")
+        .subprotocols(List.of("v1"))
+        .build();
+
+CompletableFuture<WebSocket> ws = wsClient.connectAsync("/events", myListener);
+```
+
+### Builder options
+
+The builder supports the same options as `MagicHttpClient.Builder`:
+
+- `baseUrl(...)` — base URL prepended to connect paths
+- `header(...)` / `headers(...)` — default headers
+- `userAgent(...)` — User-Agent header
+- `connectTimeout(...)` — connection timeout
+- `followRedirects(...)` — redirect policy
+- `subprotocols(...)` — WebSocket subprotocol list
+- `logger(...)` — platform logger for connection diagnostics
+- `config(...)` / `logging(...)` — shared `HttpClientConfig` settings
+- `mapper(...)` — custom Jackson `ObjectMapper`
+
+### Connect methods
+
+| Method | Description |
+| --- | --- |
+| `connect(path, listener)` | Synchronous connect (blocks). |
+| `connectAsync(path, listener)` | Returns `CompletableFuture<WebSocket>`. |
+| `connectSmart(path, listener)` | Async on blocking-sensitive threads, sync otherwise. |
+
+### Runtime profiles
+
+Use `MagicWebSocketClientProfile` for config-aware WebSocket clients that
+rebuild on config reload:
+
+```java
+MagicWebSocketClientProfile<ApiConfig> gateway = MagicWebSocketClientProfile
+        .builder(runtime, "ws.gateway", ApiConfig.class)
+        .sections("gateway")
+        .baseUrl(config -> config.gateway.wsUrl)
+        .bearerAuth(config -> config.gateway.token)
+        .subprotocols(config -> config.gateway.subprotocols)
+        .build();
+
+MagicWebSocketClient client = gateway.require();
+```
+
+### Cleanup
+
+Call `wsClient.close()` to release resources. When using runtime profiles, the
+profile handles cleanup automatically on config reload and runtime shutdown.
+
+## Async method variants
+
+Every convenience method on `MagicHttpClient` has three variants:
+
+| Suffix | Behaviour |
+| --- | --- |
+| _(none)_ | Synchronous. Throws on blocking-sensitive threads. |
+| `...Async(...)` | Returns `CompletableFuture`. Always non-blocking. |
+| `...Smart(...)` | Sync when safe, async when on a blocking-sensitive thread. |
+
+Available methods: `get`, `getJson`, `post`, `postJson`, `postMultipart`,
+`send`.
 
 ## Notes
 

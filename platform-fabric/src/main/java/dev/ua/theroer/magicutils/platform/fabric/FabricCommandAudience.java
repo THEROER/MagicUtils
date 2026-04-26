@@ -2,9 +2,8 @@ package dev.ua.theroer.magicutils.platform.fabric;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import net.kyori.adventure.text.Component;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.UUID;
 
 /**
@@ -21,7 +20,7 @@ public final class FabricCommandAudience implements Audience {
         ERROR
     }
 
-    private final ServerCommandSource source;
+    private final CommandSourceStack source;
     private final boolean broadcastToOps;
     private final Mode mode;
 
@@ -31,7 +30,7 @@ public final class FabricCommandAudience implements Audience {
      * @param source command source
      * @param broadcastToOps whether to broadcast feedback to ops
      */
-    public FabricCommandAudience(ServerCommandSource source, boolean broadcastToOps) {
+    public FabricCommandAudience(CommandSourceStack source, boolean broadcastToOps) {
         this(source, broadcastToOps, Mode.FEEDBACK);
     }
 
@@ -42,7 +41,7 @@ public final class FabricCommandAudience implements Audience {
      * @param broadcastToOps whether to broadcast feedback to ops
      * @param mode feedback mode
      */
-    public FabricCommandAudience(ServerCommandSource source, boolean broadcastToOps, Mode mode) {
+    public FabricCommandAudience(CommandSourceStack source, boolean broadcastToOps, Mode mode) {
         this.source = source;
         this.broadcastToOps = broadcastToOps;
         this.mode = mode != null ? mode : Mode.FEEDBACK;
@@ -53,7 +52,7 @@ public final class FabricCommandAudience implements Audience {
      *
      * @return command source
      */
-    public ServerCommandSource getSource() {
+    public CommandSourceStack getSource() {
         return source;
     }
 
@@ -62,7 +61,7 @@ public final class FabricCommandAudience implements Audience {
      *
      * @return player instance or null
      */
-    public ServerPlayerEntity getPlayer() {
+    public ServerPlayer getPlayer() {
         return source != null ? source.getPlayer() : null;
     }
 
@@ -72,9 +71,9 @@ public final class FabricCommandAudience implements Audience {
             return;
         }
         if (mode == Mode.ERROR) {
-            source.sendError(FabricComponentSerializer.toNative(component));
+            source.sendFailure(FabricComponentSerializer.toNative(component));
         } else {
-            source.sendFeedback(() -> FabricComponentSerializer.toNative(component), broadcastToOps);
+            source.sendSuccess(() -> FabricComponentSerializer.toNative(component), broadcastToOps);
         }
     }
 
@@ -83,7 +82,17 @@ public final class FabricCommandAudience implements Audience {
         if (source == null) {
             return null;
         }
-        ServerPlayerEntity player = source.getPlayer();
-        return player != null ? player.getUuid() : null;
+        ServerPlayer player = source.getPlayer();
+        return player != null ? player.getUUID() : null;
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return hasPermission(permission, 2);
+    }
+
+    @Override
+    public boolean hasPermission(String permission, int fallbackOpLevel) {
+        return FabricPermissionBridge.hasPermission(source, permission, fallbackOpLevel);
     }
 }

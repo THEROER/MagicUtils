@@ -1,53 +1,109 @@
 # Commands
 
-MagicUtils commands are annotation-first but can be combined with a builder
-API. Commands are registered per platform via `CommandRegistry`.
+MagicUtils commands are annotation-first, but the runtime model is registry
+based. Each platform exposes a `CommandRegistry` that owns parsers,
+permissions, and command registration for that plugin or mod.
 
 See [Commands Cheat Sheet](commands-cheatsheet.md) for a quick reference and
-[Permissions](permissions.md) for permission node details.
+[Permissions](permissions.md) for node generation details.
 
-## Registration
+## Registration Models
+
+There are three common ways to obtain a registry:
+
+1. Bootstrap helper creates it for you.
+2. `CommandRegistry.create(...)` returns an instance you keep explicitly.
+3. Legacy `CommandRegistry.initialize(...)` / `createDefault(...)` creates the
+   default registry for the current platform.
+
+For multi-plugin or multi-mod setups, prefer an explicit registry instance or
+the scoped static overloads. The no-arg `register(...)` methods operate on the
+default registry.
+
+## Platform Registration
 
 ### Bukkit/Paper
 
+Bootstrap-first:
+
 ```java
-CommandRegistry.initialize(plugin, "myplugin", logger);
-CommandRegistry.register(plugin, new DonateCommand());
+BukkitBootstrap.RuntimeResult magic = BukkitBootstrap.forPlugin(plugin)
+        .permissionPrefix("myplugin")
+        .enableCommands()
+        .configureCommands(registry -> registry.registerCommand(new DonateCommand()))
+        .buildRuntime();
 ```
 
-Register multiple commands at once:
+Manual registry:
 
 ```java
-CommandRegistry.registerAll(plugin, new DonateCommand(), new AdminCommand());
+CommandRegistry registry = CommandRegistry.create(plugin, "myplugin", logger);
+registry.registerCommand(new DonateCommand());
+registry.registerCommand(new AdminCommand());
 ```
 
 ### Fabric
 
+Bootstrap-first:
+
 ```java
-CommandRegistry.initialize("mymod", "mymod", logger);
+FabricBootstrap.RuntimeResult magic = FabricBootstrap.forMod("mymod", () -> server)
+        .permissionPrefix("mymod")
+        .enableCommands()
+        .buildRuntime();
 
 CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-    CommandRegistry.register("mymod", dispatcher, new DonateCommand());
+    if (magic.commandRegistry() != null) {
+        magic.commandRegistry().registerCommand(dispatcher, new DonateCommand());
+    }
 });
+```
+
+Manual registry:
+
+```java
+CommandRegistry registry = CommandRegistry.create("mymod", "mymod", logger, 2);
+
+CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+    registry.registerCommand(dispatcher, new DonateCommand());
+});
+```
+
+### Velocity
+
+Bootstrap-first:
+
+```java
+VelocityBootstrap.RuntimeResult magic = VelocityBootstrap.forPlugin(proxy, plugin, "MyPlugin", dataDirectory)
+        .permissionPrefix("myplugin")
+        .enableCommands()
+        .configureCommands(registry -> registry.registerCommand(new DonateCommand()))
+        .buildRuntime();
+```
+
+Manual registry:
+
+```java
+CommandRegistry registry = CommandRegistry.create(proxy, plugin, "myplugin", loggerCore);
+registry.registerCommand(new DonateCommand());
 ```
 
 ### NeoForge
 
+NeoForge currently uses the manual path:
+
 ```java
-CommandRegistry.initialize("mymod", "mymod", loggerCore);
+CommandRegistry registry = CommandRegistry.create("mymod", "mymod", loggerCore, 2);
 
 @SubscribeEvent
 public void onRegisterCommands(RegisterCommandsEvent event) {
-    CommandRegistry.register("mymod", event.getDispatcher(), new DonateCommand());
+    registry.registerCommand(event.getDispatcher(), new DonateCommand());
 }
 ```
 
-The second argument is the permission prefix used when building nodes.
+The second argument is always the permission prefix used when generating nodes.
 
-Use the overloads that accept a plugin or mod name to avoid cross-plugin
-collisions. The no-arg register methods use the default registry.
-
-## Annotation-based commands
+## Annotation-Based Commands
 
 Use `@CommandInfo` on the class and `@SubCommand` on methods. A method named
 `execute` without `@SubCommand` is treated as the root handler.
@@ -84,123 +140,113 @@ Nested subcommands are supported via `path`:
 public CommandResult addNpcCommand(...) { ... }
 ```
 
-### Common annotations
+### Common Annotations
 
 - `@ParamName` overrides argument names for help output.
 - `@OptionalArgument` or `@DefaultValue("...")` marks a parameter optional.
-- `@Greedy` captures the rest of the input (free-form text).
-- `@Suggest("source")` adds tab completion hints.
-- `@Sender` injects the command sender and hides it from usage/help.
+- `@Greedy` captures the rest of the input.
+- `@Suggest("source")` adds completion hints.
+- `@Sender` injects the sender and hides it from help output.
 - `@Option(shortNames = {"a"}, longNames = {"amount"})` enables `-a 5` and
-  `--amount 5`. Set `flag = true` for `-s`/`--silent` toggles.
+  `--amount 5`. Set `flag = true` for toggles such as `-s` / `--silent`.
 
-`@Sender` supports sender filtering via `AllowedSender` to restrict console,
-players, command blocks, etc.
-
-Allowed sender kinds:
+`@Sender` supports sender filtering via `AllowedSender`:
 
 - `ANY`, `PLAYER`, `CONSOLE`
 - `BLOCK`, `MINECART`, `PROXIED`, `REMOTE`
 
-### Suggestions
+Platform-specific sender types can also be injected directly:
+
+- Bukkit: `CommandSender`, `Player`
+- Fabric: `ServerCommandSource`, `ServerPlayerEntity`
+- Velocity: `CommandSource`, `Player`, `ConsoleCommandSource`
+- NeoForge: `CommandSourceStack`, `ServerPlayer`
+
+## Suggestions And Type Parsers
 
 Suggestions can come from:
 
-- Type parsers (players, worlds, enums, booleans).
-- Special sources like `@players`, `@worlds`, `@commands`.
-- Explicit lists: `@Suggest("{on,off,reset}")`.
-- Methods on the command class (`@Suggest("getItems")`).
+- Built-in type parsers (players, worlds, enums, booleans).
+- Special sources such as `@players`, `@worlds`, `@commands`.
+- Inline lists: `@Suggest("{on,off,reset}")`.
+- Methods on the command class: `@Suggest("getItems")`.
 
 Suggestion methods can be:
 
-- `String[] getItems()` or `List<String> getItems()`.
-- `getItems(Player player)` or `getItems(ServerCommandSource sender)` depending on platform.
+- `String[] getItems()` or `List<String> getItems()`
+- `getItems(Player player)`
+- `getItems(ServerCommandSource sender)`
+- `getItems(CommandSource sender)`
 
-Note: `@offlineplayers` and `@language_keys` exist on Bukkit only.
+Built-in sources:
 
-Built-in suggestion sources:
-
-- `@players`, `@player`, `@allplayers`, `@offlineplayers`
+- `@players`, `@player`, `@allplayers`
+- `@offlineplayers` (Bukkit only)
 - `@worlds`, `@world`
-- `@commands` (all registered command names + aliases)
+- `@language_keys` (Bukkit only)
+- `@commands`
 - `{a,b,c}` inline list syntax
 
-### Permissions
+Custom parsers are registered on the registry's parser registry:
 
-You can lock permissions at three levels:
+```java
+registry.commandManager()
+        .getTypeParserRegistry()
+        .register(new MyTypeParser());
+```
 
-- `@CommandInfo.permission` for the root command.
-- `@SubCommand.permission` for subcommands.
-- `@Permission` on parameters for argument-level checks.
+## Permissions
 
-Permission nodes are generated when annotations do not provide explicit values:
+Permissions can be defined at three levels:
+
+- `@CommandInfo.permission`
+- `@SubCommand.permission`
+- `@Permission` on parameters
+
+Generated nodes use this shape when you do not provide explicit values:
 
 - Command: `commands.<command>`
 - Subcommand: `commands.<command>.subcommand.<path>`
 - Argument: `commands.<command>.subcommand.<path>.argument.<name>`
 
-These are then prefixed by the permission prefix passed to
-`CommandRegistry.initialize(...)`.
+These nodes are prefixed by the registry permission prefix. See
+[Permissions](permissions.md) for the platform-specific behaviour.
 
-Example with prefix `donatemenu`:
+`MagicPermissionDefault` controls the default access policy:
 
-- `donatemenu.commands.donate`
-- `donatemenu.commands.donate.subcommand.give`
-- `donatemenu.commands.donate.subcommand.give.argument.player`
+- `TRUE`
+- `OP`
+- `NOT_OP`
+- `FALSE`
 
-### Default permission values
-
-Use `MagicPermissionDefault` to control who can execute by default:
-
-- `TRUE` -> everyone
-- `OP` -> operators (default)
-- `NOT_OP` -> non-operators
-- `FALSE` -> nobody (explicit permission required)
-
-On Bukkit, MagicUtils automatically registers these permissions with the
-chosen defaults and also creates wildcard nodes:
-
-- `...commands.<command>.*`
-- `...commands.<command>.subcommand.*`
-
-On Fabric, it uses `fabric-permissions-api` when available, otherwise falls
-back to op-level checks (configurable in `CommandRegistry.initialize`).
-On NeoForge, it falls back to op-level checks (configurable in `CommandRegistry.initialize`).
-
-Example with conditional permission:
+For manual checks outside annotation processing, use `MagicSender`:
 
 ```java
-public CommandResult grant(
-        @Sender MagicSender sender,
-        @Permission(when = "other(player)", message = "No permission")
-        @ParamName("player") Player target
-) {
-    return CommandResult.success("ok");
+MagicSender sender = MagicSender.wrap(rawSender);
+if (MagicSender.hasPermission(rawSender, "myplugin.admin")) {
+    // adapter-default fallback
+}
+if (sender != null && sender.hasPermission("myplugin.admin", 4)) {
+    // explicit fallback override for this check
 }
 ```
 
-Supported permission condition keywords:
+The overload with `fallbackOpLevel` is mainly useful on Fabric and NeoForge,
+where adapters may fall back to command-source permission levels.
 
-- `self(arg)` / `other(arg)` / `anyother(arg)`
-- `not_null(arg)` / `exists(arg)`
-- `distinct(a,b)` / `all_distinct(a,b)`
-- `equals(a,b)` / `not_equals(a,b)`
+## CommandResult
 
-Use `compare = CompareMode.UUID/NAME/EQUALS/AUTO` to control comparison rules.
+`CommandResult.success()` and `CommandResult.failure()` control whether MagicUtils
+sends feedback automatically.
 
-The permission prefix passed to `CommandRegistry.initialize(...)` is prepended
-automatically.
-
-### CommandResult
-
-`CommandResult.success()` and `CommandResult.failure()` control whether a
-message is sent back to the sender. Use `success()` to avoid output, or pass a
-message for automatic reply.
+- `CommandResult.success()` means success with no reply text.
+- `CommandResult.success("Done")` sends a success reply.
+- `CommandResult.failure("No permission")` sends a failure reply.
 
 ## Threading
 
 Commands run on the main thread by default. Use `CommandThreading.ASYNC` for
-heavy IO/CPU work:
+IO-heavy or CPU-heavy work:
 
 ```java
 @CommandInfo(name = "donate", threading = CommandThreading.ASYNC)
@@ -219,7 +265,7 @@ public final class DonateCommand extends MagicCommand {
 Builder equivalents:
 
 ```java
-CommandSpec.<CommandSender>builder("donate")
+MagicCommand.<CommandSender>builder("donate")
         .threading(CommandThreading.ASYNC)
         .execute(ctx -> CommandResult.success("done"))
         .build();
@@ -230,53 +276,50 @@ SubCommandSpec.<CommandSender>builder("give")
         .build();
 ```
 
-Only mark commands as async when your code is thread-safe. If you must touch
-platform APIs, switch back to the main thread via `Platform.runOnMain(...)` or
-`Tasks.runOnMain(...)`.
+Only mark commands as async when your code is thread-safe. When you need to
+touch platform APIs again, switch back to the main thread via
+`Platform.runOnMain(...)` or `Tasks.runOnMain(...)`.
 
-## Help output
+## Help Output
 
 The help renderer respects permissions and hides commands or arguments the
-sender cannot access. You can embed help into your command tree via
-`HelpCommandSupport` (see Recipes).
+sender cannot access. It is styled through `logger.{ext}` under the `help`
+section.
 
-## Help command
+### Standalone Help Command
 
-### Standalone command
-
-Register the built-in help command to expose `/mhelp` (alias `/help`):
+Bukkit and Fabric ship a ready-to-register `HelpCommand` wrapper:
 
 ```java
-CommandRegistry.register(plugin, new HelpCommand(logger));
+registry.registerCommand(new HelpCommand(logger, registry));
 ```
 
-You can rename or add aliases using runtime overrides:
+You can rename it at runtime:
 
 ```java
-CommandRegistry.register(plugin, new HelpCommand(logger)
+registry.registerCommand(new HelpCommand(logger, registry)
         .withName("donatehelp")
         .addAlias("dhelp"));
 ```
 
-### Subcommand
+### Help As A Subcommand
 
-Attach help as a subcommand to an existing command:
+Use `HelpCommandSupport` when you want help inside another command tree or on
+platforms that do not ship a dedicated wrapper:
 
 ```java
-CommandRegistry.register(plugin, new DonateCommand()
+registry.registerCommand(new DonateCommand()
         .addSubCommand(HelpCommandSupport.createHelpSubCommand(
                 "help",
-                logger.getCore(),
-                () -> CommandRegistry.getCommandManager(plugin)
+                loggerCore,
+                registry::commandManager
         )));
 ```
 
-Help formatting is controlled by `logger.yml` under the `help` section.
-
 ## MagicSender
 
-`MagicSender` is a platform-agnostic sender wrapper. You can use it directly
-in command signatures or wrap raw senders:
+`MagicSender` is the platform-neutral sender wrapper used throughout the
+command system:
 
 ```java
 MagicSender sender = MagicSender.wrap(rawSender);
@@ -285,12 +328,16 @@ if (MagicSender.hasPermission(rawSender, "my.permission")) {
 }
 ```
 
+Use it when you want shared command logic across Bukkit, Fabric, Velocity, and
+NeoForge without branching on raw sender types.
+
 ## Builder API
 
-Use the builder API when you need runtime composition:
+Use the builder API when you need runtime composition but still want a real
+`MagicCommand` instance:
 
 ```java
-CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
+MagicCommand donateCommand = MagicCommand.<CommandSender>builder("donate")
         .description("DonateMenu main command")
         .aliases("d")
         .execute(ctx -> CommandResult.success("Opened menu"))
@@ -302,16 +349,17 @@ CommandSpec<CommandSender> spec = CommandSpec.<CommandSender>builder("donate")
                 .build())
         .build();
 
-CommandRegistry.register(plugin, spec);
+registry.registerCommand(donateCommand);
 ```
 
-You can also mix annotations with dynamic overrides:
+You can mix annotations with runtime overrides:
 
 - `withName(...)`, `addAlias(...)`, `removeAlias(...)`
-- `addSubCommand(SubCommandSpec)` to inject new subcommands
-- `setExecute(...)` to override the root handler
+- `addSubCommand(SubCommandSpec<?>)`
+- `setExecute(...)`
+- `mount(MagicCommand)` / `mount("route", existingCommand)`
 
-Builder subcommands support nested paths as well:
+Nested builder subcommands are supported as well:
 
 ```java
 SubCommandSpec<CommandSender> npcAdd = SubCommandSpec.<CommandSender>builder("add")
@@ -321,12 +369,56 @@ SubCommandSpec<CommandSender> npcAdd = SubCommandSpec.<CommandSender>builder("ad
         .build();
 ```
 
-## Type parsers
+## Composing Existing Commands
 
-Custom parsers and suggestions are registered per registry:
+Already-authored annotation commands can be mounted under another command tree
+without rewriting them into `SubCommandSpec` form:
 
 ```java
-CommandRegistry.getCommandManager(plugin)
-        .getTypeParserRegistry()
-        .register(new MyTypeParser());
+MagicCommand adminCommand = MagicCommand.<CommandSender>builder("admin")
+        .mount("punish", new BanCommand())
+        .build();
+
+registry.registerCommand(adminCommand);
 ```
+
+This is intentionally different from `withName("punish")`:
+
+- `withName(...)` mutates the authored command instance itself
+- `mount("punish", command)` keeps the source command identity intact and only
+  changes the route segment inside the parent tree
+
+Mounting snapshots the child command structure at mount time. That means:
+
+- changing the child name or aliases later does not rewrite the already-mounted
+  parent tree
+- the mounted command still executes against the original child instance
+- when you override the mounted route, root aliases from the child are not
+  exposed automatically
+
+## Mutation Lifecycle
+
+`MagicCommand` is mutable only during definition and composition:
+
+```java
+MagicCommand command = MagicCommand.<CommandSender>builder("donate")
+        .execute(ctx -> CommandResult.success("ok"))
+        .build()
+        .addAlias("d");
+```
+
+After `registry.registerCommand(...)` or `commandManager.register(...)`, the
+command is frozen. Later calls to:
+
+- `withName(...)`
+- `addAlias(...)`
+- `removeAlias(...)`
+- `addSubCommand(...)`
+- `setExecute(...)`
+- `mount(...)`
+
+throw `IllegalStateException`. If you still use `registerSpec(...)`, it remains
+supported as a compatibility path and is internally converted into the same
+`MagicCommand` runtime model.
+
+For runtime diagnostics mounted the same way, see [Diagnostics](diagnostics.md).

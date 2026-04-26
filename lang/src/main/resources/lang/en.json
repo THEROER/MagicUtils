@@ -1,0 +1,111 @@
+{
+  // ============================================================
+  // MagicUtils — English translation
+  // ============================================================
+  //
+  // Format notes for translators:
+  //   * Keys use dot-delimited paths ("magicutils.commands.no_permission").
+  //     They match the structure of the generated lang/{code}.{ext} files
+  //     on the server and must stay identical across all languages.
+  //   * Values are MiniMessage + legacy "&"-color codes. Placeholders
+  //     use {curly_braces} and are documented in the comment above each
+  //     block.
+  //   * Lines starting with "//" are comments. Trailing commas are OK.
+  //   * The "language.*" block is metadata shown in admin UI/listings.
+  //
+  // To add a new language: copy this file to lang/<code>.json (for
+  // example lang/de.json), translate the values, and put the file on
+  // the classpath. MagicUtils picks it up automatically.
+  // ============================================================
+
+  // ---- Language metadata -------------------------------------
+  "language.name": "English",
+  "language.code": "en",
+  "language.author": "MagicUtils Team",
+  "language.version": "1.0",
+
+  // ---- Commands ----------------------------------------------
+  // Placeholders: {subcommands}, {subcommand}, {usage}
+  "magicutils.commands.no_permission": "&cYou don't have permission to execute this command!",
+  "magicutils.commands.execution_error": "&cAn error occurred while executing the command",
+  "magicutils.commands.executed": "&aCommand executed successfully",
+  "magicutils.commands.specify_subcommand": "&eSpecify a subcommand: &f{subcommands}",
+  "magicutils.commands.unknown_subcommand": "&cUnknown subcommand: &f{subcommand}",
+  "magicutils.commands.invalid_arguments": "&cInvalid command arguments. Usage: &7{usage}",
+  "magicutils.commands.not_found": "&cCommand not found",
+  "magicutils.commands.internal_error": "&cAn internal error occurred while executing the command",
+
+  // ---- Help command ------------------------------------------
+  // Placeholders: {value}, {values}, {aliases}, {argument}, {command}, {subcommandSuffix}
+  "magicutils.commands.help.command_description": "Shows available commands and usages",
+  "magicutils.commands.help.subcommand_description": "Shows available commands and usages",
+  "magicutils.commands.help.sender_unavailable": "Sender unavailable",
+  "magicutils.commands.help.unavailable": "Help unavailable (command manager not ready)",
+  "magicutils.commands.help.command_not_found": "Command not found.",
+  "magicutils.commands.help.title": "Help",
+  "magicutils.commands.help.available_commands": "Available commands:",
+  "magicutils.commands.help.no_commands_found": "No commands found.",
+  "magicutils.commands.help.label.command": "Command:",
+  "magicutils.commands.help.label.description": "Description:",
+  "magicutils.commands.help.label.aliases": "Aliases:",
+  "magicutils.commands.help.label.subcommands": "Subcommands:",
+  "magicutils.commands.help.label.arguments": "Arguments:",
+  "magicutils.commands.help.optional": "(Optional)",
+  "magicutils.commands.help.default_value": "(Default: {value})",
+  "magicutils.commands.help.values": "(Values: {values})",
+  "magicutils.commands.help.page_label": "Page",
+  "magicutils.commands.help.nav.previous": "Previous page",
+  "magicutils.commands.help.nav.next": "Next page",
+  "magicutils.commands.help.query_prefix": "Showing search results for query:",
+  "magicutils.commands.help.no_description": "No description",
+  "magicutils.commands.help.hover.show": "Click to show help for this command",
+  "magicutils.commands.help.aliases_inline": "(aliases: {aliases})",
+  "magicutils.commands.help.argument_permission": "Argument {argument} for /{command}{subcommandSuffix}",
+  "magicutils.commands.help.usage_or": "OR",
+
+  // ---- Settings command --------------------------------------
+  // Placeholders: {language}, {languages}, {key}, {value}
+  "magicutils.settings.language_not_initialized": "&cLanguage manager not initialized!",
+  "magicutils.settings.invalid_arguments": "&cInvalid arguments. First argument must be a language name when using 3 arguments.",
+  "magicutils.settings.current_language": "&aCurrent language: &f{language}",
+  "magicutils.settings.available_languages": "&aAvailable languages: &f{languages}",
+  "magicutils.settings.language_not_found": "&cLanguage '&f{language}&c' not found!",
+  "magicutils.settings.key_not_found": "&cKey '&f{key}&c' not found in language '&f{language}&c'",
+  "magicutils.settings.key_value": "&aLanguage: &f{language}\n&aKey: &f{key}\n&aValue: &f{value}",
+  "magicutils.settings.key_set": "&aSet key '&f{key}&a' to '&f{value}&a' in language '&f{language}&a'",
+
+  // ---- Reload command ----------------------------------------
+  // Placeholders: {command}, {section}, {setting}
+  "magicutils.reload.all_commands": "&aAll commands reloaded!",
+  "magicutils.reload.command": "&aCommand &f{command} &areloaded!",
+  "magicutils.reload.all_sections": "&aAll sections reloaded!",
+  "magicutils.reload.section": "&aSection &f{section} &areloaded!",
+  "magicutils.reload.global_settings": "&aGlobal settings reloaded!",
+  "magicutils.reload.global_setting": "&aGlobal setting &f{setting} &areloaded!",
+
+  // ---- System log messages -----------------------------------
+  // Shown in server console, not to players.
+  // Placeholders: {language}, {file}, {section}, {command}, {aliases}, {usage}, {alias}, {permissions}
+  "magicutils.system.loaded_language": "Loaded language: {language}",
+  "magicutils.system.failed_load_language": "Failed to load language: {language}",
+  "magicutils.system.failed_save_messages": "Failed to save custom messages for language: {language}",
+  "magicutils.system.created_default_config": "Created default config: {file}",
+  "magicutils.system.section_not_reloadable": "Section not reloadable: {section}",
+  "magicutils.system.command_registered": "Successfully registered command: {command} with aliases: {aliases}",
+  "magicutils.system.command_usage": "Command usage: {usage}",
+  "magicutils.system.subcommand_usages": "Subcommand usages:",
+  "magicutils.system.alias_registered": "Successfully registered alias: {alias} for command: {command}",
+  "magicutils.system.alias_usage": "Alias usage: {usage}",
+  "magicutils.system.generated_permissions": "Generated permissions for {command}: {permissions}",
+  "magicutils.system.unregistered_command": "Unregistered command: {command}",
+
+  // ---- Error messages ----------------------------------------
+  // Placeholders: {class}, {path}
+  "magicutils.errors.message_not_set": "Message must be set before sending",
+  "magicutils.errors.failed_get_commandmap": "Failed to get CommandMap",
+  "magicutils.errors.registry_not_initialized": "CommandRegistry not initialized! Call initialize() first.",
+  "magicutils.errors.commandmap_not_available": "CommandMap not available!",
+  "magicutils.errors.missing_commandinfo": "Command class must have @CommandInfo annotation: {class}",
+  "magicutils.errors.missing_configfile": "Class {class} must have @ConfigFile annotation",
+  "magicutils.errors.required_config_missing": "Missing required config value: {path}"
+}

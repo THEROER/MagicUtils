@@ -218,29 +218,7 @@ public class LogBuilderCore {
      * @param placeholders placeholder arguments
      */
     public void send(Object message, Object... placeholders) {
-        if (prefixOverride != null) {
-            PrefixMode savedChatMode = null;
-            PrefixMode savedConsoleMode = null;
-
-            try {
-                savedChatMode = logger.getChatPrefixMode();
-                savedConsoleMode = logger.getConsolePrefixMode();
-
-                logger.setChatPrefixMode(prefixOverride);
-                logger.setConsolePrefixMode(prefixOverride);
-
-                performSend(message, placeholders);
-            } finally {
-                if (savedChatMode != null) {
-                    logger.setChatPrefixMode(savedChatMode);
-                }
-                if (savedConsoleMode != null) {
-                    logger.setConsolePrefixMode(savedConsoleMode);
-                }
-            }
-        } else {
-            performSend(message, placeholders);
-        }
+        performSend(message, placeholders);
     }
 
     /**
@@ -257,6 +235,7 @@ public class LogBuilderCore {
             audienceRecipients = new ArrayList<>(recipients);
         }
 
-        logger.send(level, message, audience, audienceRecipients, finalTarget, broadcast, placeholders);
+        logger.send(level, message, audience, audienceRecipients, finalTarget, broadcast,
+                null, null, prefixOverride, placeholders);
     }
 }

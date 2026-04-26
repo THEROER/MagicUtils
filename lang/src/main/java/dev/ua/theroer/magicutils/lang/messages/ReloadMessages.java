@@ -1,11 +1,11 @@
 package dev.ua.theroer.magicutils.lang.messages;
 
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
-import dev.ua.theroer.magicutils.config.annotations.DefaultValue;
 import lombok.Getter;
 
 /**
- * Reload messages
+ * Reload messages. Defaults are loaded from bundled {@code lang/<code>.json}
+ * resources via {@link dev.ua.theroer.magicutils.lang.BundledTranslations}.
  */
 @Getter
 public class ReloadMessages {
@@ -16,26 +16,20 @@ public class ReloadMessages {
     }
 
     @ConfigValue("all_commands")
-    @DefaultValue("&aAll commands reloaded!")
     private String allCommands;
 
     @ConfigValue("command")
-    @DefaultValue("&aCommand &f{command} &areloaded!")
     private String command;
 
     @ConfigValue("all_sections")
-    @DefaultValue("&aAll sections reloaded!")
     private String allSections;
 
     @ConfigValue("section")
-    @DefaultValue("&aSection &f{section} &areloaded!")
     private String section;
 
     @ConfigValue("global_settings")
-    @DefaultValue("&aGlobal settings reloaded!")
     private String globalSettings;
 
     @ConfigValue("global_setting")
-    @DefaultValue("&aGlobal setting &f{setting} &areloaded!")
     private String globalSetting;
 }

@@ -1,6 +1,5 @@
 package dev.ua.theroer.magicutils.commands;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -11,6 +10,7 @@ import dev.ua.theroer.magicutils.logger.PrefixedLogger;
 import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -105,7 +105,9 @@ public class BukkitCommandWrapper extends Command {
 
             CommandResult result = commandManager.execute(commandLabel, sender, argList);
             sendResult(sender, result);
-            return result.isSuccess();
+            // Returning false makes Bukkit emit plugin usage text, even when the
+            // command already handled the failure and chose its own response.
+            return true;
         } catch (Exception e) {
             messageLogger.error("Error executing command " + commandLabel + ": " + e.getMessage());
             if (sender instanceof Player) {
@@ -133,11 +135,11 @@ public class BukkitCommandWrapper extends Command {
                 result = CommandResult.failure(InternalMessages.CMD_INTERNAL_ERROR.get());
             }
             CommandResult finalResult = result;
-            runOnMain(() -> sendResult(sender, finalResult));
+            runOnMain(sender, () -> sendResult(sender, finalResult));
         });
     }
 
-    private void runOnMain(Runnable task) {
+    private void runOnMain(CommandSender sender, Runnable task) {
         if (task == null) {
             return;
         }
@@ -145,7 +147,7 @@ public class BukkitCommandWrapper extends Command {
             task.run();
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, task);
+        BukkitThreading.runForSender(plugin, sender, task);
     }
 
     private void sendResult(CommandSender sender, CommandResult result) {
@@ -183,8 +185,10 @@ public class BukkitCommandWrapper extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias,
             @NotNull String[] args) {
         try {
-            commandLogger.debug(
-                    "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+            if (commandLogger.isLevelEnabled(dev.ua.theroer.magicutils.logger.LogLevel.DEBUG)) {
+                commandLogger.debug(
+                        "Tab complete for: " + alias + " with args: " + Arrays.toString(args) + " by " + sender.getName());
+            }
 
             List<String> suggestions = commandManager.getSuggestions(alias, sender, Arrays.asList(args));
 

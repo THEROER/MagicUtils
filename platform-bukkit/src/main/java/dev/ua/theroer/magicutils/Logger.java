@@ -118,6 +118,6 @@ public final class Logger extends LoggerMethods implements LoggerAdapter<Player,
     }
 
     public Audience wrapAudience(CommandSender sender) {
-        return sender != null ? new BukkitAudienceWrapper(sender) : null;
+        return sender != null ? new BukkitAudienceWrapper(plugin, sender) : null;
     }
 }

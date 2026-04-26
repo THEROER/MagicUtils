@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.platform.fabric;
 
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
+import dev.ua.theroer.magicutils.platform.Tasks;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -92,7 +93,11 @@ public final class FabricPlaceholderRegistrar implements MagicPlaceholders.Place
         if (logger == null || task == null) {
             return;
         }
-        logger.getPlatform().runOnMain(task);
+        Tasks.runOnMain(logger.getPlatform(), task).whenComplete((ignored, error) -> {
+            if (error != null) {
+                logger.warn("Failed to synchronize Fabric placeholder backends on the main thread", error);
+            }
+        });
     }
 
     private FabricPlaceholderBackend createBackend(String probeClass, String backendClass) {

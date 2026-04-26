@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Execution context for builder-defined commands.
+ * Execution context for runtime-defined command actions.
  *
  * @param <S> sender type
  */

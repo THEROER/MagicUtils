@@ -38,6 +38,30 @@ public interface TypeParser<S, T> {
     T parse(@Nullable String value, @NotNull Class<T> targetType, @NotNull S sender);
 
     /**
+     * Parses the given value with a detailed outcome.
+     *
+     * <p>This preserves the legacy {@link #parse(String, Class, Object)} contract while
+     * allowing command binding to distinguish omitted input from invalid user input.
+     *
+     * @param value the string value to parse
+     * @param targetType the target class type
+     * @param sender the command sender
+     * @return detailed parse result
+     */
+    @NotNull
+    default TypeParseResult<T> parseDetailed(@Nullable String value, @NotNull Class<T> targetType,
+            @NotNull S sender) {
+        T parsed = parse(value, targetType, sender);
+        if (parsed != null) {
+            return TypeParseResult.success(parsed);
+        }
+        if (value == null) {
+            return TypeParseResult.missing();
+        }
+        return TypeParseResult.invalid();
+    }
+
+    /**
      * Gets suggestions for this type.
      *
      * @param sender the command sender for context

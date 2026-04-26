@@ -98,4 +98,20 @@ public final class MagicSenderAdapters {
         MagicSender wrapped = wrap(sender);
         return wrapped != null && wrapped.hasPermission(permission);
     }
+
+    /**
+     * Checks permission for a raw sender using registered adapters and a custom op-level fallback.
+     *
+     * @param sender raw sender instance
+     * @param permission permission node
+     * @param fallbackOpLevel op level to treat as granted when no permission backend answers
+     * @return true if granted
+     */
+    public static boolean hasPermission(Object sender, String permission, int fallbackOpLevel) {
+        if (permission == null || permission.isEmpty()) {
+            return true;
+        }
+        MagicSender wrapped = wrap(sender);
+        return wrapped != null && wrapped.hasPermission(permission, fallbackOpLevel);
+    }
 }
