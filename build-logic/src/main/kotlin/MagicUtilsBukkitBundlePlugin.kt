@@ -15,6 +15,7 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
         val moduleName = project.magicUtilsModuleName()
+        val apiVersion = bukkitApiVersion(magicutilsTarget.minecraft.get())
 
         with(project) {
             val bundleShadow = configurations.create("bundleShadow")
@@ -62,12 +63,12 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
 
             tasks.named("processResources", ProcessResources::class.java).configure { resources ->
                 resources.inputs.property("version", version)
-                resources.inputs.property("apiVersion", magicutilsTarget.minecraft.get())
+                resources.inputs.property("apiVersion", apiVersion)
                 resources.filesMatching("plugin.yml") { details ->
                     details.expand(
                         mapOf(
                             "version" to version,
-                            "apiVersion" to magicutilsTarget.minecraft.get(),
+                            "apiVersion" to apiVersion,
                         )
                     )
                 }
@@ -107,5 +108,14 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
                 }
             }
         }
+    }
+}
+
+private fun bukkitApiVersion(minecraftVersion: String): String {
+    val parts = minecraftVersion.split('.')
+    return if (parts.size >= 3) {
+        "${parts[0]}.${parts[1]}"
+    } else {
+        minecraftVersion
     }
 }
