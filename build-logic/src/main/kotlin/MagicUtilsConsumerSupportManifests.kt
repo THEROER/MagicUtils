@@ -39,7 +39,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
     magicUtilsOrderedMap(
         "defaults" to magicUtilsDefaults(
             "javaVersion" to "21",
-            "magicutilsVersion" to "1.21.2",
+            "magicutilsVersion" to "1.21.3",
         ),
         "platforms" to magicUtilsOrderedMap(
             "bukkit" to magicUtilsOrderedMap(
@@ -55,14 +55,18 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
                         smokeValues = listOf("1.20", "1.20.4"),
                         gradleProperties = magicUtilsGradleProperties(
                             "javaVersion" to "17",
-                            "magicutilsVersion" to "1.21.2-mc1201",
+                            "magicutilsVersion" to "1.21.3-mc1201",
                             "paperVersion" to "1.20-R0.1-SNAPSHOT",
                         ),
                     ),
                     magicUtilsVersionMatrixEntry(
                         id = "paper-1205x",
+                        releaseArtifactId = "java21-mc1201",
                         versions = listOf("1.20.5-1.20.6"),
                         smokeValues = listOf("1.20.5", "1.20.6"),
+                        gradleProperties = magicUtilsGradleProperties(
+                            "magicutilsVersion" to "1.21.3-mc1201",
+                        ),
                     ),
                     magicUtilsVersionMatrixEntry(
                         id = "paper-121x",
@@ -76,7 +80,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
                         smokeValues = listOf("26.1", "26.1.2"),
                         gradleProperties = magicUtilsGradleProperties(
                             "javaVersion" to "25",
-                            "magicutilsVersion" to "1.21.2-mc2611",
+                            "magicutilsVersion" to "1.21.3-mc2611",
                             "paperVersion" to "26.1.2.build.19-alpha",
                         ),
                     ),
@@ -102,7 +106,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
             ),
             "fabric" to magicUtilsOrderedMap(
                 "defaults" to magicUtilsDefaults(
-                    "magicutilsFabricBundleVersion" to "1.21.2",
+                    "magicutilsFabricBundleVersion" to "1.21.3",
                     "fabricLoaderVersion" to "0.18.4",
                     "fabricApiVersion" to "0.102.0+1.21.1",
                     "fabricMinecraftVersion" to "1.21.1",
