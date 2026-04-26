@@ -54,10 +54,13 @@ jobs:
             :lang:publish \
             :logger:publish \
             :commands:publish \
+            :commands-brigadier:publish \
             :placeholders:publish \
             :http-client:publish \
             :config-yaml:publish \
             :config-toml:publish \
+            :diagnostics:publish \
+            :processor:publish \
             :platform-bukkit:publish \
             :bukkit-bundle:publish \
             :platform-fabric:publish \
@@ -87,9 +90,13 @@ jobs:
             :lang:publish \
             :logger:publish \
             :commands:publish \
+            :commands-brigadier:publish \
             :placeholders:publish \
             :http-client:publish \
             :config-yaml:publish \
+            :config-toml:publish \
+            :diagnostics:publish \
+            :processor:publish \
             :platform-bukkit:publish \
             :bukkit-bundle:publish \
             -Ppublish_repo=$GITHUB_WORKSPACE/maven \
