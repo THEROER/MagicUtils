@@ -148,11 +148,11 @@
         {
           "name": "magicutils-http-client-1.21.1-mc1201-all.jar",
           "url": "magicutils-http-client-1.21.1-mc1201-all.jar",
-          "size": 3500003,
-          "sha512": "5a2c47f7bc94b3d0de063e2b4577142cbdeabdcb0652363f46f1fc7ac29346c5d0fc297b51763b38efce77ea2d1125367705a9c866e8cc4df9a2e16b6a067282",
-          "sha256": "d100aee5842ef7afc721e960f257942ede1cc6642d5b7d58b2932a3e08bac75d",
-          "sha1": "7827adeb0c95eb7631d20037a86914bb6def006d",
-          "md5": "772f92230a983d05b586c29b5826c11b"
+          "size": 3499999,
+          "sha512": "6c6e95be2c0f05473f671ab14fb81d4de0f7c7549216bc36b7b27d5f35f93f3c33f2e2d8398169f64b75ebf0b16073e0cb44d2ce519a41f664ef19132701bd00",
+          "sha256": "fb9e2ed97039fcc5f02c529127747f0d6ee454a566b9ec669f1b8bbf99c980c2",
+          "sha1": "445cbb29452220080ee4847fd309ed39b9a09511",
+          "md5": "9904e4f4edab9d12d230bf8a323cdbb3"
         }
       ]
     }

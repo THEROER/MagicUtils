@@ -50,11 +50,11 @@
         {
           "name": "magicutils-commands-neoforge-1.21.1-mc1.21.jar",
           "url": "magicutils-commands-neoforge-1.21.1-mc1.21.jar",
-          "size": 49428,
-          "sha512": "cc7bb7d3c6929ef940829b8716232a4b222573ff328344c52810106efd152849e390405773149bd1f7679cbc8f23b272ee394fa628d5142cea32d35d465dbcb2",
-          "sha256": "c4bca0bda6ad66e671edb1520e883299c06174a29cdb3bceee70289da2f733c2",
-          "sha1": "d8db21f58fbd6622b607077a966f8deddfe4ffd2",
-          "md5": "e7b40218a93d041f57c90f46746d97af"
+          "size": 49424,
+          "sha512": "4bb5792de8aebc331ed8da83d70ec9c396771e6660e7e642ecc45cb0bd33d11ac87b98a81579f9c84ab2a6d309cadf2eb661573ff80d0ac49ed99eaf81e19643",
+          "sha256": "cdc717d884bf922fac5ea95320299de8b16cd224ab0534cbb96204ef67ec5bf6",
+          "sha1": "7be815d81c01b1c8e5c750a72a4d5270b293b6fa",
+          "md5": "f83f6dc66c0cd206c118d2c2e0daf7a1"
         }
       ]
     },
@@ -101,11 +101,11 @@
         {
           "name": "magicutils-commands-neoforge-1.21.1-mc1.21.jar",
           "url": "magicutils-commands-neoforge-1.21.1-mc1.21.jar",
-          "size": 49428,
-          "sha512": "cc7bb7d3c6929ef940829b8716232a4b222573ff328344c52810106efd152849e390405773149bd1f7679cbc8f23b272ee394fa628d5142cea32d35d465dbcb2",
-          "sha256": "c4bca0bda6ad66e671edb1520e883299c06174a29cdb3bceee70289da2f733c2",
-          "sha1": "d8db21f58fbd6622b607077a966f8deddfe4ffd2",
-          "md5": "e7b40218a93d041f57c90f46746d97af"
+          "size": 49424,
+          "sha512": "4bb5792de8aebc331ed8da83d70ec9c396771e6660e7e642ecc45cb0bd33d11ac87b98a81579f9c84ab2a6d309cadf2eb661573ff80d0ac49ed99eaf81e19643",
+          "sha256": "cdc717d884bf922fac5ea95320299de8b16cd224ab0534cbb96204ef67ec5bf6",
+          "sha1": "7be815d81c01b1c8e5c750a72a4d5270b293b6fa",
+          "md5": "f83f6dc66c0cd206c118d2c2e0daf7a1"
         }
       ]
     },
@@ -162,11 +162,11 @@
         {
           "name": "magicutils-commands-neoforge-1.21.1-all.jar",
           "url": "magicutils-commands-neoforge-1.21.1-all.jar",
-          "size": 40522266,
-          "sha512": "7e7be606ac92d74c134de4e4050c31cb4bb0f00ad419532640b8c492070ef83f129a114387ae13e7ded2ee9c6d0f7354dfd1fb9b4137d9559f88ab65bf27daa3",
-          "sha256": "7a46df404c8cfd969c997b47f6c33673629fbf67a914e8946b112ed9802111d3",
-          "sha1": "27e5b2f4cefcd732e590ac683b10f318980aeae3",
-          "md5": "68b72fbe1aa5a98855898dcdb56317bb"
+          "size": 40522262,
+          "sha512": "e533d9700aa536fd0a662cee5eaa5c9d9f68b2aecae8c774019b1e926a50ff52703d78cb7a3cf96a6419c55a610c32ba8714ce5d77f59734af1e1f34d32f6ad3",
+          "sha256": "0aafd4011abb5a65e4330f8bec50d5b66382761e7ec9a6402315d953fbd2f055",
+          "sha1": "8d2e73911dfeb0be56de8267faee022093e75404",
+          "md5": "63a1ac0e0b2a181f605020e3d9f55c20"
         }
       ]
     }
