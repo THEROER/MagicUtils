@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"dev.ua.theroer.magicutils.bukkit","l":"MagicUtilsBukkitBundlePlugin"},{"p":"dev.ua.theroer.magicutils.bukkit","l":"MagicUtilsBundleCommand"}];updateSearchResults();
