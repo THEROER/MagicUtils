@@ -104,7 +104,6 @@ public class LanguageManager {
             return true;
         }
         if (isBlockingSensitiveThread()) {
-            warnIfMainThread("loadLanguage");
             scheduleLanguageLoad(languageCode);
             return false;
         }
@@ -203,7 +202,6 @@ public class LanguageManager {
             return;
         }
         if (isBlockingSensitiveThread()) {
-            warnIfMainThread("loadLanguage");
             loadLanguageAsync(languageCode).thenAccept(success -> {
                 if (Boolean.TRUE.equals(success)) {
                     runOnMain(() -> applyFallback(languageCode), "apply fallback language " + languageCode);
@@ -237,7 +235,6 @@ public class LanguageManager {
         }
         if (!loadedLanguages.containsKey(languageCode)) {
             if (isBlockingSensitiveThread()) {
-                warnIfMainThread("loadLanguage");
                 CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                         .thenAccept(success -> {
                             if (Boolean.TRUE.equals(success)) {
@@ -921,7 +918,6 @@ public class LanguageManager {
 
         if (!loadedLanguages.containsKey(resolvedLanguageCode)) {
             if (isBlockingSensitiveThread()) {
-                warnIfMainThread("loadLanguage");
                 scheduleLanguageLoad(resolvedLanguageCode);
             } else if (!loadLanguageBlocking(resolvedLanguageCode)) {
                 return false;
