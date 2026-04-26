@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/permissions/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/diagnostics/">
       
       
-        <link rel="prev" href="../commands/">
+        <link rel="prev" href="../commands-cheatsheet/">
       
       
-        <link rel="next" href="../commands-cheatsheet/">
+        <link rel="next" href="../http-client/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Permissions - MagicUtils</title>
+        <title>Diagnostics - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#permissions" class="md-skip">
+        <a href="#diagnostics" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Permissions
+              Diagnostics
             
           </span>
         </div>
@@ -822,37 +822,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Permissions
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../permissions/" class="md-nav__link">
         
   
   
@@ -868,114 +841,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#permission-prefix" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Permission Prefix
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Generated Nodes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#default-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Default Access
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wildcards" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Wildcards
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#explicit-permission-annotations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Explicit Permission Annotations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#argument-permissions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Argument Permissions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#conditional-permission-keywords" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Conditional Permission Keywords
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#manual-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Checks
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1013,10 +878,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../diagnostics/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1032,6 +924,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bootstrap-wiring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap Wiring
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running Checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exporting-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exporting Reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-helper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command Helper
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1546,10 +1502,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#permission-prefix" class="md-nav__link">
+  <a href="#bootstrap-wiring" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Permission Prefix
+        Bootstrap Wiring
       
     </span>
   </a>
@@ -1557,10 +1513,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generated-nodes" class="md-nav__link">
+  <a href="#running-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Nodes
+        Running Checks
       
     </span>
   </a>
@@ -1568,10 +1524,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#default-access" class="md-nav__link">
+  <a href="#exporting-reports" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Default Access
+        Exporting Reports
       
     </span>
   </a>
@@ -1579,54 +1535,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#wildcards" class="md-nav__link">
+  <a href="#command-helper" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Wildcards
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#explicit-permission-annotations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Explicit Permission Annotations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#argument-permissions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Argument Permissions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#conditional-permission-keywords" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Conditional Permission Keywords
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#manual-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Checks
+        Command Helper
       
     </span>
   </a>
@@ -1653,127 +1565,79 @@
   
 
 
-<h1 id="permissions">Permissions<a class="headerlink" href="#permissions" title="Permanent link">&para;</a></h1>
-<p>MagicUtils commands generate and evaluate permission nodes automatically. The
-registry prefix controls namespacing, while annotations control explicit nodes,
-defaults, and conditional argument checks.</p>
-<h2 id="permission-prefix">Permission Prefix<a class="headerlink" href="#permission-prefix" title="Permanent link">&para;</a></h2>
-<p>Every command registry has a permission prefix. You set it either directly on
-the registry:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">CommandRegistry</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CommandRegistry</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">logger</span><span class="p">);</span>
+<h1 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Permanent link">&para;</a></h1>
+<p>MagicUtils diagnostics provide runtime self-checks that can be executed inside a
+live plugin or mod. The diagnostics service is built on top of <code>MagicRuntime</code>
+and ships with safe infrastructure-focused checks for runtime wiring,
+filesystem access, scheduler behavior, command registration exposure, and
+placeholder registry access.</p>
+<h2 id="bootstrap-wiring">Bootstrap Wiring<a class="headerlink" href="#bootstrap-wiring" title="Permanent link">&para;</a></h2>
+<p>Enable diagnostics from the platform bootstrap builder:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">        </span><span class="p">.</span><span class="na">enableDiagnostics</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="p">.</span><span class="na">configureDiagnostics</span><span class="p">(</span><span class="n">registry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">            </span><span class="n">registry</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">MyDatabaseCheck</span><span class="p">());</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="p">})</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">DiagnosticsService</span><span class="w"> </span><span class="n">diagnostics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">magic</span><span class="p">.</span><span class="na">diagnosticsService</span><span class="p">();</span>
 </code></pre></div>
-<p>or through the bootstrap helper:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="p">)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="p">.</span><span class="na">permissionPrefix</span><span class="p">(</span><span class="s">&quot;donatemenu&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<p>The service is also available from the runtime container:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">DiagnosticsService</span><span class="w"> </span><span class="n">diagnostics</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">().</span><span class="na">requireComponent</span><span class="p">(</span><span class="n">DiagnosticsService</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
-<p>MagicUtils prepends that prefix to all generated nodes.</p>
-<h2 id="generated-nodes">Generated Nodes<a class="headerlink" href="#generated-nodes" title="Permanent link">&para;</a></h2>
-<p>When annotations omit explicit permission strings, MagicUtils builds defaults:</p>
+<h2 id="running-checks">Running Checks<a class="headerlink" href="#running-checks" title="Permanent link">&para;</a></h2>
+<p>Execute the full report or a single suite:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">DiagnosticReport</span><span class="w"> </span><span class="n">safeReport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">diagnostics</span><span class="p">.</span><span class="na">runAll</span><span class="p">(</span><span class="n">DiagnosticRunRequest</span><span class="p">.</span><span class="na">safe</span><span class="p">());</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">DiagnosticReport</span><span class="w"> </span><span class="n">standardReport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">diagnostics</span><span class="p">.</span><span class="na">runSuite</span><span class="p">(</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="s">&quot;scheduler&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="n">DiagnosticRunRequest</span><span class="p">.</span><span class="na">standard</span><span class="p">()</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">);</span>
+</code></pre></div>
+<p>Built-in suites include:</p>
 <ul>
-<li>Command: <code>commands.&lt;command&gt;</code></li>
-<li>Subcommand: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;</code></li>
-<li>Argument: <code>commands.&lt;command&gt;.subcommand.&lt;path&gt;.argument.&lt;name&gt;</code></li>
+<li><code>runtime</code></li>
+<li><code>filesystem</code></li>
+<li><code>config</code></li>
+<li><code>scheduler</code></li>
+<li><code>threading</code></li>
+<li><code>commands</code></li>
+<li><code>placeholders</code></li>
 </ul>
-<p>With prefix <code>donatemenu</code>:</p>
+<p><code>SAFE</code> mode avoids temp-file writes and reload probes. <code>STANDARD</code> mode enables
+reversible probes such as temp-file writes and config reloadability checks.</p>
+<h2 id="exporting-reports">Exporting Reports<a class="headerlink" href="#exporting-reports" title="Permanent link">&para;</a></h2>
+<p>Reports can be rendered to text or exported as JSON:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DiagnosticReports</span><span class="p">.</span><span class="na">renderText</span><span class="p">(</span><span class="n">safeReport</span><span class="p">);</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">Path</span><span class="w"> </span><span class="n">exported</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">diagnostics</span><span class="p">.</span><span class="na">exportJson</span><span class="p">(</span><span class="n">safeReport</span><span class="p">);</span>
+</code></pre></div>
+<p>The default export path is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;configDir&gt;/diagnostics/latest.json
+</code></pre></div>
+<h2 id="command-helper">Command Helper<a class="headerlink" href="#command-helper" title="Permanent link">&para;</a></h2>
+<p>Mount diagnostics into an existing command tree the same way you mount help:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">MagicCommand</span><span class="w"> </span><span class="n">admin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicCommand</span><span class="p">.</span><span class="o">&lt;</span><span class="n">CommandSender</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">(</span><span class="s">&quot;admin&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">        </span><span class="p">.</span><span class="na">subCommand</span><span class="p">(</span><span class="n">HelpCommandSupport</span><span class="p">.</span><span class="na">createHelpSubCommand</span><span class="p">(</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">                </span><span class="n">logger</span><span class="p">.</span><span class="na">getCore</span><span class="p">(),</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">                </span><span class="n">registry</span><span class="p">::</span><span class="n">commandManager</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="p">))</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="p">.</span><span class="na">subCommand</span><span class="p">(</span><span class="n">DiagnosticsCommandSupport</span><span class="p">.</span><span class="na">createDiagnosticsSubCommand</span><span class="p">(</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">                </span><span class="n">logger</span><span class="p">.</span><span class="na">getCore</span><span class="p">(),</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">                </span><span class="n">magic</span><span class="p">::</span><span class="n">diagnosticsService</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="p">))</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+<p>Supported command forms:</p>
 <ul>
-<li><code>donatemenu.commands.donate</code></li>
-<li><code>donatemenu.commands.donate.subcommand.give</code></li>
-<li><code>donatemenu.commands.donate.subcommand.give.argument.player</code></li>
+<li><code>/plugin diagnostics</code></li>
+<li><code>/plugin diagnostics safe</code></li>
+<li><code>/plugin diagnostics standard</code></li>
+<li><code>/plugin diagnostics export</code></li>
+<li><code>/plugin diagnostics export standard</code></li>
+<li><code>/plugin diagnostics suite magicutils.scheduler</code></li>
+<li><code>/plugin diagnostics suite magicutils.scheduler standard</code></li>
 </ul>
-<h2 id="default-access">Default Access<a class="headerlink" href="#default-access" title="Permanent link">&para;</a></h2>
-<p><code>MagicPermissionDefault</code> controls what happens when the permission node is not
-granted explicitly:</p>
-<ul>
-<li><code>TRUE</code> -&gt; everyone</li>
-<li><code>OP</code> -&gt; operators or elevated senders</li>
-<li><code>NOT_OP</code> -&gt; non-operators / non-elevated senders</li>
-<li><code>FALSE</code> -&gt; nobody</li>
-</ul>
-<p>Platform behaviour differs slightly:</p>
-<ul>
-<li>Bukkit registers permission nodes with Bukkit's permission manager and uses
-  Bukkit permission defaults.</li>
-<li>Fabric checks <code>fabric-permissions-api-v0</code> when available and falls back to
-  op-level checks.</li>
-<li>NeoForge falls back to command-source permission level checks.</li>
-<li>Velocity relies on the proxy's permission checks and uses the default policy
-  only when the node itself is absent.</li>
-</ul>
-<h2 id="wildcards">Wildcards<a class="headerlink" href="#wildcards" title="Permanent link">&para;</a></h2>
-<p>On Bukkit, MagicUtils also registers wildcard nodes:</p>
-<ul>
-<li><code>...commands.&lt;command&gt;.*</code></li>
-<li><code>...commands.&lt;command&gt;.subcommand.*</code></li>
-</ul>
-<p>Velocity also honours prefix-style wildcard checks such as <code>prefix.*</code> and
-<code>prefix&lt;node&gt;.*</code> when the proxy reports them as granted.</p>
-<h2 id="explicit-permission-annotations">Explicit Permission Annotations<a class="headerlink" href="#explicit-permission-annotations" title="Permanent link">&para;</a></h2>
-<p>Use explicit nodes when you want stable names independent of the generated
-shape:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@CommandInfo</span><span class="p">(</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donate&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="n">permission</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donatemenu.open&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="n">permissionDefault</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPermissionDefault</span><span class="p">.</span><span class="na">TRUE</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DonateCommand</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MagicCommand</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}</span>
-</code></pre></div>
-<p>Subcommands support the same fields:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nd">@SubCommand</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;reload&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="n">permission</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;donatemenu.admin.reload&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">permissionDefault</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicPermissionDefault</span><span class="p">.</span><span class="na">OP</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">)</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">reload</span><span class="p">(</span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;Reloaded&quot;</span><span class="p">);</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="argument-permissions">Argument Permissions<a class="headerlink" href="#argument-permissions" title="Permanent link">&para;</a></h2>
-<p>Use <code>@Permission</code> on parameters to gate argument usage:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">public</span><span class="w"> </span><span class="n">CommandResult</span><span class="w"> </span><span class="nf">grant</span><span class="p">(</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">        </span><span class="nd">@Sender</span><span class="w"> </span><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nd">@Permission</span><span class="p">(</span><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;other(player)&quot;</span><span class="p">)</span><span class="w"> </span><span class="nd">@ParamName</span><span class="p">(</span><span class="s">&quot;player&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Player</span><span class="w"> </span><span class="n">target</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandResult</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="s">&quot;ok&quot;</span><span class="p">);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">}</span>
-</code></pre></div>
-<p>You can override the generated node segment:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@Permission</span><span class="p">(</span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">includeArgumentSegment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="conditional-permission-keywords">Conditional Permission Keywords<a class="headerlink" href="#conditional-permission-keywords" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>self(arg)</code> / <code>other(arg)</code> / <code>anyother(arg)</code></li>
-<li><code>not_null(arg)</code> / <code>exists(arg)</code></li>
-<li><code>distinct(a,b)</code> / <code>all_distinct(a,b)</code></li>
-<li><code>equals(a,b)</code> / <code>not_equals(a,b)</code></li>
-</ul>
-<p>Use <code>compare = CompareMode.UUID/NAME/EQUALS/AUTO</code> to control how values are
-compared.</p>
-<h2 id="manual-checks">Manual Checks<a class="headerlink" href="#manual-checks" title="Permanent link">&para;</a></h2>
-<p><code>MagicSender</code> exposes direct permission checks when you need custom logic
-outside annotation processing:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">MagicSender</span><span class="w"> </span><span class="n">sender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicSender</span><span class="p">.</span><span class="na">wrap</span><span class="p">(</span><span class="n">rawSender</span><span class="p">);</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">MagicSender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="n">rawSender</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;donatemenu.commands.donate&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="c1">// ...</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
-</code></pre></div>
-<p>When the platform adapter uses op-level fallback semantics, the two-argument
-form keeps the adapter default, while the three-argument form overrides it for
-that one check:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">MagicSender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="n">rawSender</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;leavepulse.whitelist.notify&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="c1">// ...</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">}</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sender</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">sender</span><span class="p">.</span><span class="na">hasPermission</span><span class="p">(</span><span class="s">&quot;leavepulse.admin&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="c1">// ...</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
-</code></pre></div>
-<p>This matters most on Fabric and NeoForge, where permission backends may fall
-back to command-source op levels when a node is unknown or no backend responds.</p>
-<p>You can also use the registry prefix when building related manual nodes so the
-manual and generated permissions stay in the same namespace.</p>
 
 
 

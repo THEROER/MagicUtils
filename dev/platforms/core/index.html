@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/platforms/bukkit/">
+        <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/platforms/core/">
       
       
-        <link rel="prev" href="../core/">
+        <link rel="prev" href="../../modules/placeholders-advanced/">
       
       
-        <link rel="next" href="../fabric/">
+        <link rel="next" href="../bukkit/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Bukkit/Paper - MagicUtils</title>
+        <title>Core / Common Logic - MagicUtils</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#bukkitpaper" class="md-skip">
+        <a href="#core-common-logic" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Bukkit/Paper
+              Core / Common Logic
             
           </span>
         </div>
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../core/" class="md-tabs__link">
+        <a href="./" class="md-tabs__link">
           
   
   
@@ -1133,34 +1133,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../core/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Core / Common Logic
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1180,7 +1152,7 @@
   <span class="md-ellipsis">
     
   
-    Bukkit/Paper
+    Core / Common Logic
   
 
     
@@ -1198,7 +1170,7 @@
   <span class="md-ellipsis">
     
   
-    Bukkit/Paper
+    Core / Common Logic
   
 
     
@@ -1224,10 +1196,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#recommended-bootstrap" class="md-nav__link">
+  <a href="#typical-module-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended Bootstrap
+        Typical Module Layout
       
     </span>
   </a>
@@ -1235,10 +1207,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#manual-wiring" class="md-nav__link">
+  <a href="#the-recommended-split" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Manual Wiring
+        The Recommended Split
       
     </span>
   </a>
@@ -1246,10 +1218,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
+  <a href="#common-code-should-depend-on-shared-abstractions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Commands
+        Common Code Should Depend On Shared Abstractions
       
     </span>
   </a>
@@ -1257,10 +1229,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#placeholders" class="md-nav__link">
+  <a href="#wiring-shared-services-from-the-platform-layer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Placeholders
+        Wiring Shared Services From The Platform Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-shared-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Shared Service
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-works-well-in-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Works Well In Common
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#player-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Player Events
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Player Events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#player-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Player Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#player-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Player Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-should-stay-out-of-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Should Stay Out Of Common
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#if-you-really-need-a-custom-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If You Really Need A Custom Platform
       
     </span>
   </a>
@@ -1271,6 +1326,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bukkit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bukkit/Paper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1502,10 +1585,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#recommended-bootstrap" class="md-nav__link">
+  <a href="#typical-module-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended Bootstrap
+        Typical Module Layout
       
     </span>
   </a>
@@ -1513,10 +1596,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#manual-wiring" class="md-nav__link">
+  <a href="#the-recommended-split" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Manual Wiring
+        The Recommended Split
       
     </span>
   </a>
@@ -1524,10 +1607,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
+  <a href="#common-code-should-depend-on-shared-abstractions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Commands
+        Common Code Should Depend On Shared Abstractions
       
     </span>
   </a>
@@ -1535,10 +1618,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#placeholders" class="md-nav__link">
+  <a href="#wiring-shared-services-from-the-platform-layer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Placeholders
+        Wiring Shared Services From The Platform Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-shared-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Shared Service
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-works-well-in-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Works Well In Common
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#player-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Player Events
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Player Events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#player-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Player Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#player-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Player Messages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-should-stay-out-of-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Should Stay Out Of Common
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#if-you-really-need-a-custom-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If You Really Need A Custom Platform
       
     </span>
   </a>
@@ -1565,51 +1731,185 @@
   
 
 
-<h1 id="bukkitpaper">Bukkit/Paper<a class="headerlink" href="#bukkitpaper" title="Permanent link">&para;</a></h1>
-<p>Use <code>magicutils-bukkit</code> to wire MagicUtils to Bukkit/Paper.</p>
-<p>If you want a shared install for multiple plugins, use
-<code>magicutils-bukkit-bundle</code> as a standalone plugin and add a dependency on it
-in your <code>plugin.yml</code> (<code>depend: [MagicUtils]</code> or <code>softdepend</code>).</p>
-<h2 id="recommended-bootstrap">Recommended Bootstrap<a class="headerlink" href="#recommended-bootstrap" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyPlugin</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">JavaPlugin</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="p">;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onEnable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="k">this</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">                </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">                </span><span class="p">.</span><span class="na">configureCommands</span><span class="p">(</span><span class="n">registry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">registry</span><span class="p">.</span><span class="na">registerCommand</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ExampleCommand</span><span class="p">()))</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">                </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onDisable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">magic</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">            </span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">().</span><span class="na">close</span><span class="p">();</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">            </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="p">}</span>
+<h1 id="core-common-logic">Core / Common Logic<a class="headerlink" href="#core-common-logic" title="Permanent link">&para;</a></h1>
+<p>Use this page when your plugin or mod has a thin platform entrypoint and most of
+the real logic lives in shared <code>common</code> or <code>core</code> code.</p>
+<p>That usually means:</p>
+<ul>
+<li>Bukkit/Fabric/Velocity/NeoForge only bootstrap the runtime</li>
+<li>config, lang, logger, HTTP, placeholders, and business logic live in common</li>
+<li>platform modules stay as adapters instead of owning the feature logic</li>
+</ul>
+<h2 id="typical-module-layout">Typical Module Layout<a class="headerlink" href="#typical-module-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my-plugin/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|- common/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|- bukkit/
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|- fabric/
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>`- velocity/
 </code></pre></div>
-<p><code>build()</code> returns the legacy bootstrap view. <code>buildRuntime()</code> additionally gives
-you a managed <code>MagicRuntime</code>.</p>
-<h2 id="manual-wiring">Manual Wiring<a class="headerlink" href="#manual-wiring" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BukkitPlatformProvider</span><span class="p">(</span><span class="n">plugin</span><span class="p">);</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigManager</span><span class="p">(</span><span class="n">platform</span><span class="p">);</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">Logger</span><span class="w"> </span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Logger</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">plugin</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">);</span>
+<p>In this structure:</p>
+<ul>
+<li><code>bukkit/</code>, <code>fabric/</code>, and <code>velocity/</code> bootstrap MagicUtils for their runtime</li>
+<li><code>common/</code> receives <code>MagicRuntime</code> and owns the actual feature logic</li>
+<li>platform modules do not reimplement the same services three times</li>
+</ul>
+<h2 id="the-recommended-split">The Recommended Split<a class="headerlink" href="#the-recommended-split" title="Permanent link">&para;</a></h2>
+<p>Keep these parts in the platform layer:</p>
+<ul>
+<li>bootstrap helpers such as <code>BukkitBootstrap</code>, <code>FabricBootstrap</code>,
+  <code>VelocityBootstrap</code></li>
+<li>platform event registration</li>
+<li>command registration against the platform dispatcher</li>
+<li>external placeholder bridge setup</li>
+<li>plugin or mod lifecycle entrypoints</li>
+</ul>
+<p>Keep these parts in <code>common</code> or other shared modules:</p>
+<ul>
+<li>services built on <code>MagicRuntime</code></li>
+<li>config models and reload logic</li>
+<li>logger and language driven messaging</li>
+<li>HTTP clients and runtime config bindings</li>
+<li>placeholder logic used by your own code</li>
+<li>business rules that should work across every platform</li>
+</ul>
+<h2 id="common-code-should-depend-on-shared-abstractions">Common Code Should Depend On Shared Abstractions<a class="headerlink" href="#common-code-should-depend-on-shared-abstractions" title="Permanent link">&para;</a></h2>
+<p>Inside common code, depend on <code>MagicRuntime</code> or the core services it exposes:</p>
+<ul>
+<li><code>Platform</code></li>
+<li><code>ConfigManager</code></li>
+<li><code>LoggerCore</code></li>
+<li><code>LanguageManager</code></li>
+<li>named runtime resources and config bindings</li>
+</ul>
+<p>This keeps the shared layer free from Bukkit, Fabric, Velocity, or NeoForge
+classes.</p>
+<h2 id="wiring-shared-services-from-the-platform-layer">Wiring Shared Services From The Platform Layer<a class="headerlink" href="#wiring-shared-services-from-the-platform-layer" title="Permanent link">&para;</a></h2>
+<p>The platform entrypoint should bootstrap MagicUtils and hand the runtime to your
+common services:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyPlugin</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">JavaPlugin</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">RuntimeResult</span><span class="w"> </span><span class="n">magic</span><span class="p">;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">CommonBootstrap</span><span class="w"> </span><span class="n">bootstrap</span><span class="p">;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onEnable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BukkitBootstrap</span><span class="p">.</span><span class="na">forPlugin</span><span class="p">(</span><span class="k">this</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="p">.</span><span class="na">enableCommands</span><span class="p">()</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">                </span><span class="p">.</span><span class="na">buildRuntime</span><span class="p">();</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="n">bootstrap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CommonBootstrap</span><span class="p">(</span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">());</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="n">bootstrap</span><span class="p">.</span><span class="na">start</span><span class="p">();</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">onDisable</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">magic</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">            </span><span class="n">magic</span><span class="p">.</span><span class="na">runtime</span><span class="p">().</span><span class="na">close</span><span class="p">();</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">            </span><span class="n">magic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="p">}</span>
 </code></pre></div>
-<p>Use the manual path only when you need full control over how the services are
-created.</p>
-<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
-<p><code>BukkitBootstrap.enableCommands()</code> creates a <code>CommandRegistry</code> for the plugin.
-The registry registers commands directly with the Bukkit <code>CommandMap</code>, so you do
-not need to declare them in <code>plugin.yml</code>.</p>
-<p>Permission nodes are resolved using the prefix passed to
-<code>permissionPrefix(...)</code> or, by default, the plugin name.</p>
-<h2 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h2>
-<p>When <a href="https://modrinth.com/plugin/placeholderapi">PlaceholderAPI</a> is installed,
-MagicUtils placeholders can be bridged into PlaceholderAPI through the Bukkit
-integration layer.</p>
+<p>The same structure works on Fabric, Velocity, and NeoForge: platform code
+creates the runtime, shared code consumes it.</p>
+<p><code>forPlugin(...)</code>, <code>forMod(...)</code>, and the other bootstrap helpers belong to the
+platform module only. <code>common</code> should consume the resulting runtime, not create
+it.</p>
+<h2 id="example-shared-service">Example Shared Service<a class="headerlink" href="#example-shared-service" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">CommonBootstrap</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">MagicRuntime</span><span class="w"> </span><span class="n">runtime</span><span class="p">;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ConfigManager</span><span class="w"> </span><span class="n">configManager</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">LoggerCore</span><span class="w"> </span><span class="n">logger</span><span class="p">;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">Optional</span><span class="o">&lt;</span><span class="n">LanguageManager</span><span class="o">&gt;</span><span class="w"> </span><span class="n">languages</span><span class="p">;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">CommonBootstrap</span><span class="p">(</span><span class="n">MagicRuntime</span><span class="w"> </span><span class="n">runtime</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">runtime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">configManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">configManager</span><span class="p">();</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">logger</span><span class="p">();</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">languages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">findComponent</span><span class="p">(</span><span class="n">LanguageManager</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Starting shared services&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="n">languages</span><span class="p">.</span><span class="na">ifPresent</span><span class="p">(</span><span class="n">manager</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Language manager is available&quot;</span><span class="p">));</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="n">runtime</span><span class="p">.</span><span class="na">bindConfig</span><span class="p">(</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">                </span><span class="s">&quot;http.backend&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">                </span><span class="n">BackendConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">                </span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">MagicHttpClient</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">runtime</span><span class="p">.</span><span class="na">platform</span><span class="p">(),</span><span class="w"> </span><span class="n">configManager</span><span class="p">)</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">                        </span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="n">config</span><span class="p">.</span><span class="na">baseUrl</span><span class="p">)</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">                        </span><span class="p">.</span><span class="na">build</span><span class="p">(),</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">                </span><span class="s">&quot;backend&quot;</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">        </span><span class="p">);</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="p">}</span>
+</code></pre></div>
+<p>This is the typical multi-platform pattern: the shared layer receives one
+runtime from the adapter layer and builds everything else on top of it.</p>
+<h2 id="what-works-well-in-common">What Works Well In Common<a class="headerlink" href="#what-works-well-in-common" title="Permanent link">&para;</a></h2>
+<p>The <code>magicutils-core</code> path is especially good for:</p>
+<ul>
+<li><code>MagicRuntime</code></li>
+<li><code>ConfigManager</code></li>
+<li><code>LoggerCore</code></li>
+<li>optional <code>LanguageManager</code></li>
+<li>runtime-managed HTTP or WebSocket clients</li>
+<li>shared placeholder evaluation</li>
+<li>reloadable services built with <code>bindConfig(...)</code></li>
+</ul>
+<p>If your modules already target multiple platforms, this is usually where the
+majority of the code should live.</p>
+<h2 id="player-events">Player Events<a class="headerlink" href="#player-events" title="Permanent link">&para;</a></h2>
+<p><code>Platform</code> provides normalized player lifecycle and message events that work
+across all platforms without importing Bukkit, Fabric, or Velocity types.</p>
+<h3 id="player-lifecycle">Player Lifecycle<a class="headerlink" href="#player-lifecycle" title="Permanent link">&para;</a></h3>
+<p>Subscribe to join/leave events:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ListenerSubscription</span><span class="w"> </span><span class="n">sub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">platform</span><span class="p">.</span><span class="na">subscribePlayerLifecycle</span><span class="p">(</span><span class="n">event</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="na">type</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">PlayerLifecycleType</span><span class="p">.</span><span class="na">JOIN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="na">playerName</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; joined&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">});</span>
+</code></pre></div>
+<p><code>PlayerLifecycle</code> contains:</p>
+<ul>
+<li><code>playerId()</code> — player UUID (when available)</li>
+<li><code>playerName()</code> — display/login name</li>
+<li><code>type()</code> — <code>JOIN</code> or <code>LEAVE</code></li>
+</ul>
+<h3 id="player-messages">Player Messages<a class="headerlink" href="#player-messages" title="Permanent link">&para;</a></h3>
+<p>Subscribe to chat messages and commands:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">ListenerSubscription</span><span class="w"> </span><span class="n">sub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">platform</span><span class="p">.</span><span class="na">subscribePlayerMessages</span><span class="p">(</span><span class="n">event</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="na">type</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">PlayerMessageType</span><span class="p">.</span><span class="na">CHAT</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="n">logger</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="na">playerName</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">event</span><span class="p">.</span><span class="na">message</span><span class="p">());</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">});</span>
+</code></pre></div>
+<p><code>PlayerMessage</code> contains:</p>
+<ul>
+<li><code>playerId()</code> — player UUID (when available)</li>
+<li><code>playerName()</code> — display/login name</li>
+<li><code>message()</code> — raw chat content or command line</li>
+<li><code>type()</code> — <code>CHAT</code> or <code>COMMAND</code></li>
+</ul>
+<p>Both subscriptions return <code>ListenerSubscription</code> which can be closed to
+unsubscribe. Both records expose <code>isValid()</code> for null-safety checks.</p>
+<h2 id="what-should-stay-out-of-common">What Should Stay Out Of Common<a class="headerlink" href="#what-should-stay-out-of-common" title="Permanent link">&para;</a></h2>
+<p>Try not to leak platform-specific APIs into the shared layer.</p>
+<p>Avoid putting these directly into <code>common</code>:</p>
+<ul>
+<li>Bukkit <code>JavaPlugin</code>, Fabric callbacks, Velocity annotations, NeoForge events</li>
+<li>platform command dispatcher registration</li>
+<li>direct calls to platform plugin managers or server APIs</li>
+<li>external bridge setup that only exists on one runtime</li>
+</ul>
+<p>Keep those in the platform module and pass only the shared abstractions
+downward.</p>
+<h2 id="if-you-really-need-a-custom-platform">If You Really Need A Custom Platform<a class="headerlink" href="#if-you-really-need-a-custom-platform" title="Permanent link">&para;</a></h2>
+<p>That is a separate case from normal <code>common</code> code.</p>
+<p>If you are actually building a new adapter around <code>Platform</code>,
+<code>ShutdownHookRegistrar</code>, or your own bootstrap path, use the Runtime guide and
+the platform API as the source of truth, but keep that adapter layer small and
+let the feature logic remain in shared services.</p>
 
 
 

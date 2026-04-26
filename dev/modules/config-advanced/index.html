@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
       
       
       
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/bukkit/" class="md-tabs__link">
+        <a href="../../platforms/core/" class="md-tabs__link">
           
   
   
@@ -545,6 +545,62 @@
     
   
     Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
   
 
     
@@ -825,6 +881,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../http-client/" class="md-nav__link">
         
   
@@ -944,7 +1028,7 @@
   <a href="#format-selection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format selection
+        Format Selection
       
     </span>
   </a>
@@ -955,7 +1039,7 @@
   <a href="#format-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format migration
+        Format Migration
       
     </span>
   </a>
@@ -966,7 +1050,7 @@
   <a href="#schema-migrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Schema migrations
+        Schema Migrations
       
     </span>
   </a>
@@ -977,7 +1061,7 @@
   <a href="#custom-adapters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom adapters
+        Custom Adapters
       
     </span>
   </a>
@@ -985,10 +1069,93 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#change-subscriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Change Subscriptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-resource-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Resource Binding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation And Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation And Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minvalue-maxvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @MinValue / @MaxValue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saveto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @SaveTo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configserializable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @ConfigSerializable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listprocessor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @ListProcessor
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#hot-reload" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hot reload
+        Hot Reload
       
     </span>
   </a>
@@ -1146,6 +1313,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1404,7 +1599,7 @@
   <a href="#format-selection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format selection
+        Format Selection
       
     </span>
   </a>
@@ -1415,7 +1610,7 @@
   <a href="#format-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format migration
+        Format Migration
       
     </span>
   </a>
@@ -1426,7 +1621,7 @@
   <a href="#schema-migrations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Schema migrations
+        Schema Migrations
       
     </span>
   </a>
@@ -1437,7 +1632,7 @@
   <a href="#custom-adapters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom adapters
+        Custom Adapters
       
     </span>
   </a>
@@ -1445,10 +1640,93 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#change-subscriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Change Subscriptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-resource-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Resource Binding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation And Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation And Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minvalue-maxvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @MinValue / @MaxValue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saveto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @SaveTo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configserializable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @ConfigSerializable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listprocessor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @ListProcessor
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#hot-reload" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hot reload
+        Hot Reload
       
     </span>
   </a>
@@ -1475,23 +1753,26 @@
   
 
 
-<h1 id="config-advanced">Config advanced<a class="headerlink" href="#config-advanced" title="Permanent link">&para;</a></h1>
-<p>This page covers advanced configuration features: format selection, migrations,
-and adapters.</p>
-<h2 id="format-selection">Format selection<a class="headerlink" href="#format-selection" title="Permanent link">&para;</a></h2>
+<h1 id="config-advanced">Config Advanced<a class="headerlink" href="#config-advanced" title="Permanent link">&para;</a></h1>
+<p>This page covers format selection, migrations, adapters, and runtime-aware
+reload patterns.</p>
+<h2 id="format-selection">Format Selection<a class="headerlink" href="#format-selection" title="Permanent link">&para;</a></h2>
 <p>If your <code>@ConfigFile</code> uses <code>{ext}</code>, MagicUtils can switch formats using:</p>
 <ul>
-<li><code>&lt;config&gt;.format</code> next to the config file (one line: <code>json</code>, <code>jsonc</code>, <code>yml</code>, <code>toml</code>)</li>
+<li><code>&lt;config&gt;.format</code> next to the config file</li>
 <li><code>magicutils.format</code> in the config root directory</li>
 <li><code>-Dmagicutils.config.format=...</code></li>
-<li><code>MAGICUTILS_CONFIG_FORMAT</code> environment variable</li>
+<li><code>MAGICUTILS_CONFIG_FORMAT</code></li>
 </ul>
-<p>If multiple formats exist, MagicUtils picks one and logs a warning.</p>
-<h2 id="format-migration">Format migration<a class="headerlink" href="#format-migration" title="Permanent link">&para;</a></h2>
-<p>When <code>&lt;config&gt;.format</code> changes and an older format file exists, MagicUtils can
-migrate the contents into the new format and keep both in sync.</p>
-<h2 id="schema-migrations">Schema migrations<a class="headerlink" href="#schema-migrations" title="Permanent link">&para;</a></h2>
-<p>Register <code>ConfigMigration</code> steps to evolve config schemas.</p>
+<p>Supported values include <code>json</code>, <code>jsonc</code>, <code>yml</code>, <code>yaml</code>, and <code>toml</code> depending
+on the installed format helpers.</p>
+<p>If multiple candidate files exist, MagicUtils picks one and logs a warning.</p>
+<h2 id="format-migration">Format Migration<a class="headerlink" href="#format-migration" title="Permanent link">&para;</a></h2>
+<p>When the selected format changes and an older format file exists, MagicUtils
+can migrate the data into the new target file. This is useful when moving from
+JSONC to YAML or TOML without forcing users to recreate their configs.</p>
+<h2 id="schema-migrations">Schema Migrations<a class="headerlink" href="#schema-migrations" title="Permanent link">&para;</a></h2>
+<p>Register ordered <code>ConfigMigration</code> steps to evolve config schemas:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">registerMigrations</span><span class="p">(</span><span class="n">MyConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigMigration</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">            </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">fromVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;0&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
@@ -1502,22 +1783,81 @@ migrate the contents into the new format and keep both in sync.</p>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="p">}</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">);</span>
 </code></pre></div>
-<p>MagicUtils stores the current schema in <code>config-version</code>.</p>
-<h2 id="custom-adapters">Custom adapters<a class="headerlink" href="#custom-adapters" title="Permanent link">&para;</a></h2>
+<p>MagicUtils stores the current schema version in <code>config-version</code>.</p>
+<h2 id="custom-adapters">Custom Adapters<a class="headerlink" href="#custom-adapters" title="Permanent link">&para;</a></h2>
 <p>Use <code>ConfigAdapters.register(...)</code> for custom value types:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ConfigAdapters</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigValueAdapter</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Duration</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="n">Duration</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">});</span>
 </code></pre></div>
-<h2 id="hot-reload">Hot reload<a class="headerlink" href="#hot-reload" title="Permanent link">&para;</a></h2>
+<p>Register adapters before the affected config class is first loaded.</p>
+<h2 id="change-subscriptions">Change Subscriptions<a class="headerlink" href="#change-subscriptions" title="Permanent link">&para;</a></h2>
+<p>Use <code>subscribeChanges(...)</code> when you want an unsubscribe handle:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ListenerSubscription</span><span class="w"> </span><span class="n">subscription</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">manager</span><span class="p">.</span><span class="na">subscribeChanges</span><span class="p">(</span><span class="n">MyConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">sections</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="c1">// apply live update</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">});</span>
+</code></pre></div>
+<p>Use <code>onChange(...)</code> when you only need fire-and-forget registration.</p>
+<h2 id="runtime-resource-binding">Runtime Resource Binding<a class="headerlink" href="#runtime-resource-binding" title="Permanent link">&para;</a></h2>
+<p><code>MagicRuntime</code> can rebuild managed resources on matching config changes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">MagicRuntimeConfigBinding</span><span class="o">&lt;</span><span class="n">ServiceConfig</span><span class="p">,</span><span class="w"> </span><span class="n">ReloadableClient</span><span class="o">&gt;</span><span class="w"> </span><span class="n">binding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">bindConfig</span><span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="s">&quot;service.client&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="n">ServiceConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ReloadableClient</span><span class="p">(</span><span class="n">config</span><span class="p">),</span><span class="w"> </span><span class="c1">// ReloadableClient implements AutoCloseable</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="s">&quot;service&quot;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">);</span>
+</code></pre></div>
+<p>Useful properties of this pattern:</p>
+<ul>
+<li>the latest resource is accessible via <code>binding.require()</code></li>
+<li>the same resource is exposed through
+  <code>runtime.requireNamedComponent("service.client", ReloadableClient.class)</code></li>
+<li>replaced resources are closed automatically</li>
+<li><code>binding.close()</code> removes the named runtime component and stops listening for
+  config changes</li>
+</ul>
+<h2 id="validation-and-constraints">Validation And Constraints<a class="headerlink" href="#validation-and-constraints" title="Permanent link">&para;</a></h2>
+<h3 id="minvalue-maxvalue"><code>@MinValue</code> / <code>@MaxValue</code><a class="headerlink" href="#minvalue-maxvalue" title="Permanent link">&para;</a></h3>
+<p>Clamp numeric config values to a safe range on load:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;interval_seconds&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nd">@MinValue</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nd">@MaxValue</span><span class="p">(</span><span class="mi">3600</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="kd">private</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">intervalSeconds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span><span class="p">;</span>
+</code></pre></div>
+<p>Out-of-range values are silently clamped. Set <code>warn = false</code> to suppress the
+log message.</p>
+<h3 id="saveto"><code>@SaveTo</code><a class="headerlink" href="#saveto" title="Permanent link">&para;</a></h3>
+<p>Store a field in a separate file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;secrets&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nd">@SaveTo</span><span class="p">(</span><span class="s">&quot;secrets.{ext}&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="kd">private</span><span class="w"> </span><span class="n">Secrets</span><span class="w"> </span><span class="n">secrets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Secrets</span><span class="p">();</span>
+</code></pre></div>
+<h3 id="configserializable"><code>@ConfigSerializable</code><a class="headerlink" href="#configserializable" title="Permanent link">&para;</a></h3>
+<p>Enable a class for use inside config lists or maps:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@ConfigSerializable</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ServerEntry</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="listprocessor"><code>@ListProcessor</code><a class="headerlink" href="#listprocessor" title="Permanent link">&para;</a></h3>
+<p>Apply per-item validation when loading lists:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nd">@ConfigValue</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nd">@ListProcessor</span><span class="p">(</span><span class="n">EntryProcessor</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="kd">private</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ServerEntry</span><span class="o">&gt;</span><span class="w"> </span><span class="n">entries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+</code></pre></div>
+<p>The processor implements <code>ListItemProcessor&lt;T&gt;</code> and returns <code>ProcessResult.ok()</code>,
+<code>ProcessResult.modified(value)</code>, or <code>ProcessResult.replaceWithDefault()</code>.</p>
+<h2 id="hot-reload">Hot Reload<a class="headerlink" href="#hot-reload" title="Permanent link">&para;</a></h2>
 <p>Mark reloadable sections and listen for updates:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@ConfigReloadable</span><span class="p">(</span><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;messages&quot;</span><span class="p">})</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyConfig</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">manager</span><span class="p">.</span><span class="na">onChange</span><span class="p">(</span><span class="n">MyConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">sections</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="c1">// apply live update</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">});</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nd">@ConfigReloadable</span><span class="p">(</span><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;messages&quot;</span><span class="p">})</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyConfig</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p>Use section-aware reloads to avoid rebuilding unrelated services:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">manager</span><span class="p">.</span><span class="na">reload</span><span class="p">(</span><span class="n">MyConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="p">);</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadAsync</span><span class="p">(</span><span class="n">MyConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="p">);</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">manager</span><span class="p">.</span><span class="na">reloadSmart</span><span class="p">(</span><span class="n">MyConfig</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="p">);</span>
 </code></pre></div>
 
 

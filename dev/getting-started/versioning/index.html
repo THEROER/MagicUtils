@@ -6,14 +6,14 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
       
       
       
         <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/getting-started/versioning/">
       
       
-        <link rel="prev" href="../quickstart/">
+        <link rel="prev" href="../migration/">
       
       
         <link rel="next" href="../../modules/overview/">
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/bukkit/" class="md-tabs__link">
+        <a href="../../platforms/core/" class="md-tabs__link">
           
   
   
@@ -550,6 +550,62 @@
     
   
     Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
   
 
     
@@ -905,6 +961,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../modules/diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../modules/http-client/" class="md-nav__link">
         
   
@@ -1124,6 +1208,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1443,18 +1555,26 @@ documentation version matches a MagicUtils release tag.</p>
 <p>Examples in the docs use <code>dev</code> which is automatically
 set to the active docs version.</p>
 <h2 id="tag-releases-for-maintainers">Tag releases (for maintainers)<a class="headerlink" href="#tag-releases-for-maintainers" title="Permanent link">&para;</a></h2>
-<p>When you tag a release (for example <code>v1.10.0</code>), the workflow deploys a new
-docs version and updates the <code>stable</code> alias.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># Local
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mike deploy --update-aliases 1.10.0 stable
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>mike set-default stable
+<p>Use the release helper to sync <code>gradle.properties</code>, push the release branch,
+and dispatch the tag workflow safely:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python3<span class="w"> </span>scripts/publish_release.py<span class="w"> </span><span class="m">1</span>.10.0<span class="w"> </span>--dry-run
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python3<span class="w"> </span>scripts/publish_release.py<span class="w"> </span><span class="m">1</span>.10.0
+</code></pre></div>
+<p>The helper waits until <code>origin/&lt;ref&gt;</code> resolves to the pushed local HEAD before
+dispatching <code>release.yml</code>, which avoids tagging an older commit when GitHub has
+not caught up with the branch update yet.</p>
+<p>When a release tag is created (for example <code>v1.10.0</code>), the workflow deploys a
+new docs version and updates the <code>stable</code> alias.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Local
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mike deploy --update-aliases 1.10.0 stable
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>mike set-default stable
 </code></pre></div>
 <h2 id="development-docs">Development docs<a class="headerlink" href="#development-docs" title="Permanent link">&para;</a></h2>
 <p>For development builds, the workflow deploys <code>dev</code> and sets <code>latest</code> as the
 default alias.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Local
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mike deploy --update-aliases dev latest
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>mike set-default latest
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Local
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mike deploy --update-aliases dev latest
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>mike set-default latest
 </code></pre></div>
 
 

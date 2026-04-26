@@ -6,14 +6,14 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
       
       
       
         <link rel="canonical" href="https://THEROER.github.io/MagicUtils/dev/modules/http-client/">
       
       
-        <link rel="prev" href="../commands-cheatsheet/">
+        <link rel="prev" href="../diagnostics/">
       
       
         <link rel="next" href="../config/">
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../platforms/bukkit/" class="md-tabs__link">
+        <a href="../../platforms/core/" class="md-tabs__link">
           
   
   
@@ -545,6 +545,62 @@
     
   
     Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
   
 
     
@@ -822,6 +878,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -918,6 +1002,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime profiles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#smart-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -955,6 +1050,89 @@
     <span class="md-ellipsis">
       
         Multipart upload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#websocket-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebSocket client
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WebSocket client">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#builder-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connect-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connect methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-profiles_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-method-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async method variants
       
     </span>
   </a>
@@ -1179,6 +1357,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../platforms/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1467,6 +1673,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime profiles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#smart-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1504,6 +1721,89 @@
     <span class="md-ellipsis">
       
         Multipart upload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#websocket-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebSocket client
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WebSocket client">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#builder-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Builder options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connect-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connect methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-profiles_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-method-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async method variants
       
     </span>
   </a>
@@ -1569,31 +1869,144 @@ JSON mapping, retries, and a small multipart helper.</p>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">HttpResponse</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">);</span>
 </code></pre></div>
+<h2 id="runtime-profiles">Runtime profiles<a class="headerlink" href="#runtime-profiles" title="Permanent link">&para;</a></h2>
+<p>When you already have a <code>MagicRuntime</code>, you can declare named HTTP/WebSocket
+profiles that rebuild automatically on config reload:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">MagicHttpClientProfile</span><span class="o">&lt;</span><span class="n">ApiConfig</span><span class="o">&gt;</span><span class="w"> </span><span class="n">monitoring</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicHttpClientProfile</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;http.monitoring&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ApiConfig</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="p">.</span><span class="na">sections</span><span class="p">(</span><span class="s">&quot;monitoring&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">monitoring</span><span class="p">.</span><span class="na">baseUrl</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="p">.</span><span class="na">bearerAuth</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">monitoring</span><span class="p">.</span><span class="na">token</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">MagicHttpClient</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">monitoring</span><span class="p">.</span><span class="na">require</span><span class="p">();</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">MagicHttpClient</span><span class="w"> </span><span class="n">sameClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runtime</span><span class="p">.</span><span class="na">requireNamedComponent</span><span class="p">(</span><span class="s">&quot;http.monitoring&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MagicHttpClient</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">MagicWebSocketClientProfile</span><span class="o">&lt;</span><span class="n">ApiConfig</span><span class="o">&gt;</span><span class="w"> </span><span class="n">gateway</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicWebSocketClientProfile</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ws.gateway&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ApiConfig</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="p">.</span><span class="na">sections</span><span class="p">(</span><span class="s">&quot;gateway&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">gateway</span><span class="p">.</span><span class="na">baseUrl</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="p">.</span><span class="na">bearerAuth</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">gateway</span><span class="p">.</span><span class="na">token</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="p">.</span><span class="na">subprotocols</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">gateway</span><span class="p">.</span><span class="na">subprotocols</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+</code></pre></div>
+<p>This removes the usual <code>close old client -&gt; build new client -&gt; swap references</code>
+boilerplate from service reload paths.</p>
 <h2 id="smart-methods">Smart methods<a class="headerlink" href="#smart-methods" title="Permanent link">&para;</a></h2>
 <p>Smart methods switch to async automatically on blocking-sensitive threads and
 return a <code>CompletableFuture</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">client</span><span class="p">.</span><span class="na">getSmart</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">).</span><span class="na">thenAccept</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="c1">// ...</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">});</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">client</span><span class="p">.</span><span class="na">getSmart</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">).</span><span class="na">thenAccept</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="c1">// ...</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">});</span>
 </code></pre></div>
 <h2 id="json-to-pojo">JSON to POJO<a class="headerlink" href="#json-to-pojo" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">StatusResponse</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">status</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">StatusResponse</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="na">getJson</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">StatusResponse</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">StatusResponse</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">status</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">StatusResponse</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="na">getJson</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">StatusResponse</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
 <h2 id="json-post">JSON POST<a class="headerlink" href="#json-post" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">CreateRequest</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">client</span><span class="p">.</span><span class="na">postJson</span><span class="p">(</span><span class="s">&quot;items&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CreateRequest</span><span class="p">(</span><span class="s">&quot;Test&quot;</span><span class="p">));</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">CreateRequest</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">client</span><span class="p">.</span><span class="na">postJson</span><span class="p">(</span><span class="s">&quot;items&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CreateRequest</span><span class="p">(</span><span class="s">&quot;Test&quot;</span><span class="p">));</span>
 </code></pre></div>
 <h2 id="multipart-upload">Multipart upload<a class="headerlink" href="#multipart-upload" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">MultipartBody</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MultipartBody</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">        </span><span class="p">.</span><span class="na">text</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">        </span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="s">&quot;file&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Path</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;logo.png&quot;</span><span class="p">))</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">client</span><span class="p">.</span><span class="na">postMultipart</span><span class="p">(</span><span class="s">&quot;upload&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">MultipartBody</span><span class="w"> </span><span class="n">body</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MultipartBody</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">        </span><span class="p">.</span><span class="na">text</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="p">.</span><span class="na">file</span><span class="p">(</span><span class="s">&quot;file&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Path</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;logo.png&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">client</span><span class="p">.</span><span class="na">postMultipart</span><span class="p">(</span><span class="s">&quot;upload&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">body</span><span class="p">);</span>
 </code></pre></div>
+<h2 id="websocket-client">WebSocket client<a class="headerlink" href="#websocket-client" title="Permanent link">&para;</a></h2>
+<p><code>MagicWebSocketClient</code> wraps <code>java.net.http.WebSocket</code> with the same builder
+pattern and config integration as the HTTP client.</p>
+<h3 id="basic-usage_1">Basic usage<a class="headerlink" href="#basic-usage_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">MagicWebSocketClient</span><span class="w"> </span><span class="n">wsClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicWebSocketClient</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span><span class="w"> </span><span class="n">configManager</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">        </span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="s">&quot;wss://api.example.com/ws&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">        </span><span class="p">.</span><span class="na">header</span><span class="p">(</span><span class="s">&quot;Authorization&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bearer token&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">        </span><span class="p">.</span><span class="na">subprotocols</span><span class="p">(</span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;v1&quot;</span><span class="p">))</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">WebSocket</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wsClient</span><span class="p">.</span><span class="na">connectAsync</span><span class="p">(</span><span class="s">&quot;/events&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">myListener</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="builder-options">Builder options<a class="headerlink" href="#builder-options" title="Permanent link">&para;</a></h3>
+<p>The builder supports the same options as <code>MagicHttpClient.Builder</code>:</p>
+<ul>
+<li><code>baseUrl(...)</code> — base URL prepended to connect paths</li>
+<li><code>header(...)</code> / <code>headers(...)</code> — default headers</li>
+<li><code>userAgent(...)</code> — User-Agent header</li>
+<li><code>connectTimeout(...)</code> — connection timeout</li>
+<li><code>followRedirects(...)</code> — redirect policy</li>
+<li><code>subprotocols(...)</code> — WebSocket subprotocol list</li>
+<li><code>logger(...)</code> — platform logger for connection diagnostics</li>
+<li><code>config(...)</code> / <code>logging(...)</code> — shared <code>HttpClientConfig</code> settings</li>
+<li><code>mapper(...)</code> — custom Jackson <code>ObjectMapper</code></li>
+</ul>
+<h3 id="connect-methods">Connect methods<a class="headerlink" href="#connect-methods" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>connect(path, listener)</code></td>
+<td>Synchronous connect (blocks).</td>
+</tr>
+<tr>
+<td><code>connectAsync(path, listener)</code></td>
+<td>Returns <code>CompletableFuture&lt;WebSocket&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>connectSmart(path, listener)</code></td>
+<td>Async on blocking-sensitive threads, sync otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="runtime-profiles_1">Runtime profiles<a class="headerlink" href="#runtime-profiles_1" title="Permanent link">&para;</a></h3>
+<p>Use <code>MagicWebSocketClientProfile</code> for config-aware WebSocket clients that
+rebuild on config reload:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">MagicWebSocketClientProfile</span><span class="o">&lt;</span><span class="n">ApiConfig</span><span class="o">&gt;</span><span class="w"> </span><span class="n">gateway</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MagicWebSocketClientProfile</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">        </span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ws.gateway&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ApiConfig</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">        </span><span class="p">.</span><span class="na">sections</span><span class="p">(</span><span class="s">&quot;gateway&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">        </span><span class="p">.</span><span class="na">baseUrl</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">gateway</span><span class="p">.</span><span class="na">wsUrl</span><span class="p">)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">        </span><span class="p">.</span><span class="na">bearerAuth</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">gateway</span><span class="p">.</span><span class="na">token</span><span class="p">)</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="p">.</span><span class="na">subprotocols</span><span class="p">(</span><span class="n">config</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">gateway</span><span class="p">.</span><span class="na">subprotocols</span><span class="p">)</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">MagicWebSocketClient</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gateway</span><span class="p">.</span><span class="na">require</span><span class="p">();</span>
+</code></pre></div>
+<h3 id="cleanup">Cleanup<a class="headerlink" href="#cleanup" title="Permanent link">&para;</a></h3>
+<p>Call <code>wsClient.close()</code> to release resources. When using runtime profiles, the
+profile handles cleanup automatically on config reload and runtime shutdown.</p>
+<h2 id="async-method-variants">Async method variants<a class="headerlink" href="#async-method-variants" title="Permanent link">&para;</a></h2>
+<p>Every convenience method on <code>MagicHttpClient</code> has three variants:</p>
+<table>
+<thead>
+<tr>
+<th>Suffix</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(none)</em></td>
+<td>Synchronous. Throws on blocking-sensitive threads.</td>
+</tr>
+<tr>
+<td><code>...Async(...)</code></td>
+<td>Returns <code>CompletableFuture</code>. Always non-blocking.</td>
+</tr>
+<tr>
+<td><code>...Smart(...)</code></td>
+<td>Sync when safe, async when on a blocking-sensitive thread.</td>
+</tr>
+</tbody>
+</table>
+<p>Available methods: <code>get</code>, <code>getJson</code>, <code>post</code>, <code>postJson</code>, <code>postMultipart</code>,
+<code>send</code>.</p>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Retries apply to the convenience methods (<code>get</code>, <code>post</code>, <code>postJson</code>, etc.).</li>

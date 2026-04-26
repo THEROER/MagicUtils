@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, and NeoForge.">
+        <meta name="description" content="Modular toolkit for Bukkit/Paper, Fabric, Velocity, and NeoForge.">
       
       
       
@@ -286,7 +286,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../platforms/bukkit/" class="md-tabs__link">
+        <a href="../platforms/core/" class="md-tabs__link">
           
   
   
@@ -563,6 +563,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../getting-started/runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../getting-started/versioning/" class="md-nav__link">
         
   
@@ -818,6 +874,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../modules/diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../modules/http-client/" class="md-nav__link">
         
   
@@ -1037,6 +1121,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../platforms/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core / Common Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1429,16 +1541,22 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>./gradlew<span class="w"> </span>build
 </code></pre></div>
 <h2 id="build-the-docs-locally">Build the docs locally<a class="headerlink" href="#build-the-docs-locally" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>mkdocs-material<span class="w"> </span>mkdocs-macros-plugin<span class="w"> </span>mike
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mkdocs<span class="w"> </span>serve
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-docs.txt
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>mkdocs<span class="w"> </span>serve
+</code></pre></div>
+<p>Preferred release/tag flow:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python3<span class="w"> </span>scripts/publish_release.py<span class="w"> </span><span class="m">1</span>.10.0<span class="w"> </span>--dry-run
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python3<span class="w"> </span>scripts/publish_release.py<span class="w"> </span><span class="m">1</span>.10.0
 </code></pre></div>
 <h2 id="deploy-versioned-docs-maintainers">Deploy versioned docs (maintainers)<a class="headerlink" href="#deploy-versioned-docs-maintainers" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span><span class="m">1</span>.10.0<span class="w"> </span>stable
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>stable
+<p>Manual docs deployment:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span><span class="m">1</span>.10.0<span class="w"> </span>stable
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>stable
 </code></pre></div>
 <p>For dev docs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span>dev<span class="w"> </span>latest
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>latest
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>mike<span class="w"> </span>deploy<span class="w"> </span>--update-aliases<span class="w"> </span>dev<span class="w"> </span>latest
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>mike<span class="w"> </span>set-default<span class="w"> </span>latest
 </code></pre></div>
 
 
