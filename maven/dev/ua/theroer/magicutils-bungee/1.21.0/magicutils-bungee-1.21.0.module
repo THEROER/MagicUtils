@@ -1,0 +1,174 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-bungee",
+    "version": "1.21.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.21.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-diagnostics",
+          "version": {
+            "requires": "1.21.0"
+          }
+        },
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-serializer-legacy",
+          "version": {
+            "requires": "4.24.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-bungee-1.21.0-mc1.21.jar",
+          "url": "magicutils-bungee-1.21.0-mc1.21.jar",
+          "size": 42404,
+          "sha512": "47e504e93b3f3ed208780b4bd2bcb2faed82f9038055b82c4a6784752891f2fafc5d98055fd77f9956163ae7d79408601014f43331803b75f17b584fa43e10f6",
+          "sha256": "7fab1946479194d9d29474ea1264d7262501af67aaebda021fa1a4838bebf1d7",
+          "sha1": "424f01e9d14782674674d446d27445a35f7f86c1",
+          "md5": "45433efe4c580a8dbca648226552d078"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-serializer-plain",
+          "version": {
+            "requires": "4.24.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.21.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-diagnostics",
+          "version": {
+            "requires": "1.21.0"
+          }
+        },
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-serializer-legacy",
+          "version": {
+            "requires": "4.24.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-bungee-1.21.0-mc1.21.jar",
+          "url": "magicutils-bungee-1.21.0-mc1.21.jar",
+          "size": 42404,
+          "sha512": "47e504e93b3f3ed208780b4bd2bcb2faed82f9038055b82c4a6784752891f2fafc5d98055fd77f9956163ae7d79408601014f43331803b75f17b584fa43e10f6",
+          "sha256": "7fab1946479194d9d29474ea1264d7262501af67aaebda021fa1a4838bebf1d7",
+          "sha1": "424f01e9d14782674674d446d27445a35f7f86c1",
+          "md5": "45433efe4c580a8dbca648226552d078"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-bungee-1.21.0-sources.jar",
+          "url": "magicutils-bungee-1.21.0-sources.jar",
+          "size": 16806,
+          "sha512": "038a7f651f83adde1cb4403b846921051c45a0a2f51b376aa13f27c7deeaa77a2a1164c386df971dfe1341168e43adb4a0413d294907796e1b568079795c32ea",
+          "sha256": "0e6323df58d45145207515cb68ffc024defa9712443293ce377eba5c3650036f",
+          "sha1": "4a73eef78c16c6462f82fd710fc4f3687975db44",
+          "md5": "838c7b3e13c8c3ba07deb471764ac3bb"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-bungee-1.21.0-javadoc.jar",
+          "url": "magicutils-bungee-1.21.0-javadoc.jar",
+          "size": 133655,
+          "sha512": "cb71b003b5ddba65e7f3441ee8bcf4d2d18ccaa413851a398ca96cc73dcc314f41512a32fd01b996f6dcb2377e847017fe9a2c0e1cd3b3cbd81e40028e84b355",
+          "sha256": "9f47c8ac1f6e3ea12c621bd9679178a20be275d9e652c2cbcf7e1399400da8a6",
+          "sha1": "1386466ce9be0ff020fdf6236f43461d41adceb1",
+          "md5": "91e137b9302a58dacc0004b55d3c947e"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-bungee-1.21.0-all.jar",
+          "url": "magicutils-bungee-1.21.0-all.jar",
+          "size": 3573519,
+          "sha512": "f268aebe060a97b635e22a02bd071f82030a598b5362596b1dffb653024d409f8754ebb263b4e35d61898e27b044293c1b1e5b9ab6065118bbd02384bf91f50c",
+          "sha256": "a4dd327def98e1c03619457efdea244e128c4860f696110b01323d183bd00525",
+          "sha1": "2533b97184257b696bc8b828c6956d50759c81d2",
+          "md5": "cf8266def8f5d1939e9d2b0b67549726"
+        }
+      ]
+    }
+  ]
+}

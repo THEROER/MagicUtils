@@ -3,11 +3,11 @@
   <groupId>dev.ua.theroer</groupId>
   <artifactId>magicutils-diagnostics</artifactId>
   <versioning>
-    <latest>1.20.0</latest>
-    <release>1.20.0</release>
+    <latest>1.21.0</latest>
+    <release>1.21.0</release>
     <versions>
-      <version>1.20.0</version>
+      <version>1.21.0</version>
     </versions>
-    <lastUpdated>20260424042822</lastUpdated>
+    <lastUpdated>20260426101319</lastUpdated>
   </versioning>
 </metadata>
