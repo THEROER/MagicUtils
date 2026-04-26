@@ -11,6 +11,7 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
@@ -85,6 +86,7 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
         if (cacheAudiences) {
             registerEventListener();
         }
+        AudienceResolver.registerFactory(obj -> obj instanceof Player p ? wrap(p) : null);
     }
 
     /**

@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.platform.neoforge;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
@@ -124,6 +125,7 @@ public class NeoForgePlatformProvider implements Platform, ConfigNamespaceProvid
         TaskScheduler scheduler = TaskSchedulers.create("MagicUtils-NeoForge", null);
         this.taskScheduler = scheduler;
         registerShutdownHookInternal(this.logger, scheduler::shutdown);
+        AudienceResolver.registerFactory(obj -> obj instanceof ServerPlayer sp ? new NeoForgePlayerAudience(sp) : null);
     }
 
     @Override

@@ -1,0 +1,89 @@
+{
+  // ============================================================
+  // MagicUtils — Ukrainian translation
+  // ============================================================
+
+  // ---- Language metadata -------------------------------------
+  "language.name": "Українська",
+  "language.code": "uk",
+  "language.author": "MagicUtils Team",
+  "language.version": "1.0",
+
+  // ---- Commands ----------------------------------------------
+  "magicutils.commands.no_permission": "&cУ вас немає прав для виконання цієї команди!",
+  "magicutils.commands.execution_error": "&cПід час виконання команди сталася помилка",
+  "magicutils.commands.executed": "&aКоманду виконано успішно",
+  "magicutils.commands.specify_subcommand": "&eВкажіть підкоманду: &f{subcommands}",
+  "magicutils.commands.unknown_subcommand": "&cНевідома підкоманда: &f{subcommand}",
+  "magicutils.commands.invalid_arguments": "&cНеправильні аргументи. Використання: &7{usage}",
+  "magicutils.commands.not_found": "&cКоманду не знайдено",
+  "magicutils.commands.internal_error": "&cСталася внутрішня помилка під час виконання команди",
+
+  // ---- Help command ------------------------------------------
+  "magicutils.commands.help.command_description": "Показує доступні команди та їх використання",
+  "magicutils.commands.help.subcommand_description": "Показує доступні команди та їх використання",
+  "magicutils.commands.help.sender_unavailable": "Відправник недоступний",
+  "magicutils.commands.help.unavailable": "Довідка недоступна (менеджер команд ще не готовий)",
+  "magicutils.commands.help.command_not_found": "Команду не знайдено.",
+  "magicutils.commands.help.title": "Довідка",
+  "magicutils.commands.help.available_commands": "Доступні команди:",
+  "magicutils.commands.help.no_commands_found": "Команд не знайдено.",
+  "magicutils.commands.help.label.command": "Команда:",
+  "magicutils.commands.help.label.description": "Опис:",
+  "magicutils.commands.help.label.aliases": "Аліаси:",
+  "magicutils.commands.help.label.subcommands": "Підкоманди:",
+  "magicutils.commands.help.label.arguments": "Аргументи:",
+  "magicutils.commands.help.optional": "(Необов'язково)",
+  "magicutils.commands.help.default_value": "(Типове значення: {value})",
+  "magicutils.commands.help.values": "(Значення: {values})",
+  "magicutils.commands.help.page_label": "Сторінка",
+  "magicutils.commands.help.nav.previous": "Попередня сторінка",
+  "magicutils.commands.help.nav.next": "Наступна сторінка",
+  "magicutils.commands.help.query_prefix": "Показано результати пошуку за запитом:",
+  "magicutils.commands.help.no_description": "Опис відсутній",
+  "magicutils.commands.help.hover.show": "Натисніть, щоб показати довідку для цієї команди",
+  "magicutils.commands.help.aliases_inline": "(аліаси: {aliases})",
+  "magicutils.commands.help.argument_permission": "Аргумент {argument} для /{command}{subcommandSuffix}",
+  "magicutils.commands.help.usage_or": "АБО",
+
+  // ---- Settings command --------------------------------------
+  "magicutils.settings.language_not_initialized": "&cМенеджер мов не ініціалізований!",
+  "magicutils.settings.invalid_arguments": "&cНеправильні аргументи. Перший аргумент повинен бути назвою мови при використанні 3 аргументів.",
+  "magicutils.settings.current_language": "&aПоточна мова: &f{language}",
+  "magicutils.settings.available_languages": "&aДоступні мови: &f{languages}",
+  "magicutils.settings.language_not_found": "&cМова '&f{language}&c' не знайдена!",
+  "magicutils.settings.key_not_found": "&cКлюч '&f{key}&c' не знайдений в мові '&f{language}&c'",
+  "magicutils.settings.key_value": "&aМова: &f{language}\n&aКлюч: &f{key}\n&aЗначення: &f{value}",
+  "magicutils.settings.key_set": "&aКлюч '&f{key}&a' встановлено в '&f{value}&a' для мови '&f{language}&a'",
+
+  // ---- Reload command ----------------------------------------
+  "magicutils.reload.all_commands": "&aВсі команди перезавантажені!",
+  "magicutils.reload.command": "&aКоманда &f{command} &aперезавантажена!",
+  "magicutils.reload.all_sections": "&aВсі секції перезавантажені!",
+  "magicutils.reload.section": "&aСекція &f{section} &aперезавантажена!",
+  "magicutils.reload.global_settings": "&aГлобальні налаштування перезавантажені!",
+  "magicutils.reload.global_setting": "&aГлобальне налаштування &f{setting} &aперезавантажене!",
+
+  // ---- System log messages -----------------------------------
+  "magicutils.system.loaded_language": "Завантажено мову: {language}",
+  "magicutils.system.failed_load_language": "Не вдалося завантажити мову: {language}",
+  "magicutils.system.failed_save_messages": "Не вдалося зберегти користувацькі повідомлення для мови: {language}",
+  "magicutils.system.created_default_config": "Створено конфіг за замовчуванням: {file}",
+  "magicutils.system.section_not_reloadable": "Секція не перезавантажувана: {section}",
+  "magicutils.system.command_registered": "Успішно зареєстровано команду: {command} з аліасами: {aliases}",
+  "magicutils.system.command_usage": "Використання команди: {usage}",
+  "magicutils.system.subcommand_usages": "Використання підкоманд:",
+  "magicutils.system.alias_registered": "Успішно зареєстровано аліас: {alias} для команди: {command}",
+  "magicutils.system.alias_usage": "Використання аліасу: {usage}",
+  "magicutils.system.generated_permissions": "Згенеровані права для {command}: {permissions}",
+  "magicutils.system.unregistered_command": "Скасовано реєстрацію команди: {command}",
+
+  // ---- Error messages ----------------------------------------
+  "magicutils.errors.message_not_set": "Повідомлення повинно бути встановлено перед відправкою",
+  "magicutils.errors.failed_get_commandmap": "Не вдалося отримати CommandMap",
+  "magicutils.errors.registry_not_initialized": "CommandRegistry не ініціалізований! Спочатку викличте initialize().",
+  "magicutils.errors.commandmap_not_available": "CommandMap недоступний!",
+  "magicutils.errors.missing_commandinfo": "Клас команди повинен мати анотацію @CommandInfo: {class}",
+  "magicutils.errors.missing_configfile": "Клас {class} повинен мати анотацію @ConfigFile",
+  "magicutils.errors.required_config_missing": "Відсутнє обов'язкове значення конфігу: {path}"
+}

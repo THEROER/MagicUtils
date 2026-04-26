@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.platform.bungee;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
@@ -84,6 +85,7 @@ public final class BungeePlatformProvider implements Platform, ShutdownHookRegis
         if (cacheAudiences) {
             registerEventListener();
         }
+        AudienceResolver.registerFactory(obj -> obj instanceof ProxiedPlayer p ? wrap(p) : null);
     }
 
     /**

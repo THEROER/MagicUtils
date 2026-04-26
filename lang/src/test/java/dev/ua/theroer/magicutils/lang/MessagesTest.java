@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.lang.reflect.Field;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,8 +22,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessagesTest {
 
@@ -38,70 +39,122 @@ class MessagesTest {
 
     @Test
     void registerNormalizesScopeAndScopedViewUsesScopedManager() throws Exception {
-        try (TestLanguageManager defaultManager = TestLanguageManager.create(
-                tempDir.resolve("default"), "default", "en");
-             TestLanguageManager scopedManager = TestLanguageManager.create(
-                     tempDir.resolve("scoped"), "scoped", "uk")) {
-            Messages.setLanguageManager(defaultManager);
-            Messages.register(" PluginA ", scopedManager);
+        try (TestEnv defaultEnv = TestEnv.create(tempDir.resolve("default"));
+             TestEnv scopedEnv = TestEnv.create(tempDir.resolve("scoped"))) {
 
-            assertSame(defaultManager, Messages.getLanguageManager());
-            assertSame(scopedManager, Messages.getLanguageManager("plugina"));
-            assertEquals("default:sample.key", Messages.getRaw("sample.key"));
-            assertEquals("default:escaped:sample.key", Messages.getRawEscaped("sample.key", "name", "<value>"));
-            assertEquals("scoped:sample.key", Messages.view(" PLUGINA ").getRaw("sample.key"));
-            assertEquals(
-                    "scoped:escaped:sample.key",
-                    Messages.view(" PLUGINA ").getRawEscaped("sample.key", "name", "<value>")
-            );
+            defaultEnv.manager.registerTranslations("en", Map.of("plugin.welcome", "Hi"));
+            defaultEnv.manager.init("en");
+            scopedEnv.manager.registerTranslations("en", Map.of("plugin.welcome", "ScopedHi"));
+            scopedEnv.manager.init("en");
+
+            Messages.setLanguageManager(defaultEnv.manager);
+            Messages.register(" PluginA ", scopedEnv.manager);
+
+            assertSame(defaultEnv.manager, Messages.getLanguageManager());
+            assertSame(scopedEnv.manager, Messages.getLanguageManager("plugina"));
+            assertEquals("Hi", Messages.getRaw("plugin.welcome"));
+            assertEquals("ScopedHi", Messages.view(" PLUGINA ").getRaw("plugin.welcome"));
         }
     }
 
     @Test
-    void unregisterDefaultScopeClearsLegacyManagerAndFallsBackToRawKey() throws Exception {
-        try (TestLanguageManager defaultManager = TestLanguageManager.create(
-                tempDir.resolve("default"), "default", "en")) {
-            Messages.setLanguageManager(defaultManager);
+    void unregisterDefaultScopeFallsBackToRawKey() throws Exception {
+        try (TestEnv env = TestEnv.create(tempDir.resolve("default"))) {
+            env.manager.init("en");
+            Messages.setLanguageManager(env.manager);
 
             Messages.unregister(" default ");
 
             assertNull(Messages.getLanguageManager());
-            assertNull(Messages.getLanguageManager("default"));
             assertEquals("missing.key", Messages.getRaw("missing.key"));
             assertEquals("missing.key", Messages.view("default").getRaw("missing.key"));
         }
     }
 
     @Test
-    void scopedViewsResolveEscapedAudienceAndPlaceholderCalls() throws Exception {
-        try (TestLanguageManager defaultManager = TestLanguageManager.create(
-                tempDir.resolve("default"), "default", "en");
-             TestLanguageManager scopedManager = TestLanguageManager.create(
-                     tempDir.resolve("scoped"), "scoped", "uk")) {
-            Messages.setLanguageManager(defaultManager);
-            Messages.register("verified", scopedManager);
+    void getRawWithVarargsAppliesPlaceholders() throws Exception {
+        try (TestEnv env = TestEnv.create(tempDir.resolve("default"))) {
+            env.manager.registerTranslations("en", Map.of("greet", "Hello {name}, score {score}"));
+            env.manager.init("en");
+            Messages.setLanguageManager(env.manager);
 
-            Audience audience = NoOpAudience.INSTANCE;
-
-            assertEquals(
-                    "scoped:escaped:sample.key",
-                    Messages.view("verified").getRawEscaped(audience, "sample.key", "name", "<value>")
-            );
-            assertEquals(
-                    "scoped:escaped:sample.key",
-                    Messages.view("verified").getRawEscaped("sample.key", Map.of("name", "<value>"))
-            );
+            assertEquals("Hello Alice, score 42",
+                    Messages.getRaw(null, "greet", "name", "Alice", "score", "42"));
+            assertEquals("Hello Bob, score 7",
+                    Messages.getRaw(null, "greet", Map.of("name", "Bob", "score", "7")));
         }
     }
 
     @Test
-    void scopedViewFallsBackToRawKeyWhenScopeIsMissing() throws Exception {
-        try (TestLanguageManager defaultManager = TestLanguageManager.create(
-                tempDir.resolve("default"), "default", "en")) {
-            Messages.setLanguageManager(defaultManager);
+    void getEscapesPlaceholderValuesIntoComponent() throws Exception {
+        try (TestEnv env = TestEnv.create(tempDir.resolve("default"))) {
+            env.manager.registerTranslations("en", Map.of("warn", "<red>{msg}</red>"));
+            env.manager.init("en");
+            Messages.setLanguageManager(env.manager);
 
-            assertEquals("unknown.key", Messages.view("missing").getRawEscaped("unknown.key", "name", "value"));
-            assertEquals("unknown.key", Messages.view("missing").getRawEscaped(NoOpAudience.INSTANCE, "unknown.key"));
+            Component component = Messages.get(null, "warn", "msg", "<bold>injected</bold>");
+
+            assertNotNull(component);
+            // The escaped placeholder must be present as literal text in the
+            // component's flattened content, not parsed as a <bold> child.
+            StringBuilder flattened = new StringBuilder();
+            component.iterator(net.kyori.adventure.text.ComponentIteratorType.DEPTH_FIRST)
+                    .forEachRemaining(node -> {
+                        if (node instanceof net.kyori.adventure.text.TextComponent text) {
+                            flattened.append(text.content());
+                        }
+                    });
+            assertTrue(flattened.toString().contains("<bold>injected</bold>"),
+                    "Escaped tags must appear as literal text, got: " + flattened);
+        }
+    }
+
+    @Test
+    void isOverrideDetectsConfiguredCustomValue() throws Exception {
+        try (TestEnv env = TestEnv.create(tempDir.resolve("default"))) {
+            env.manager.init("en");
+            Messages.setLanguageManager(env.manager);
+
+            String englishDefault = BundledTranslations.getTranslations("en")
+                    .get("magicutils.commands.no_permission");
+            assertNotNull(englishDefault);
+
+            assertTrue(Messages.isOverride("custom value", "magicutils.commands.no_permission"));
+            assertEquals(false, Messages.isOverride(englishDefault, "magicutils.commands.no_permission"));
+            assertEquals(false, Messages.isOverride(null, "magicutils.commands.no_permission"));
+            assertEquals(false, Messages.isOverride("", "magicutils.commands.no_permission"));
+        }
+    }
+
+    @Test
+    void resolveOverridePicksConfiguredWhenSet() throws Exception {
+        try (TestEnv env = TestEnv.create(tempDir.resolve("default"))) {
+            env.manager.registerTranslations("en", Map.of("greet", "Hi {name}"));
+            env.manager.init("en");
+            Messages.setLanguageManager(env.manager);
+
+            assertEquals("Custom Alice",
+                    Messages.resolveOverride(null, "Custom {name}", "greet", "name", "Alice"));
+            assertEquals("Hi Alice",
+                    Messages.resolveOverride(null, null, "greet", "name", "Alice"));
+        }
+    }
+
+    @Test
+    void englishUltimateFallbackResolvesBundledKey() throws Exception {
+        try (TestEnv env = TestEnv.create(tempDir.resolve("default"))) {
+            env.manager.init("uk");
+            Messages.setLanguageManager(env.manager);
+
+            String englishDefault = BundledTranslations.getTranslations("en")
+                    .get("magicutils.commands.no_permission");
+            String resolved = Messages.getRaw("magicutils.commands.no_permission");
+
+            assertNotNull(englishDefault);
+            assertNotNull(resolved);
+            assertTrue(resolved.length() > 0);
+            assertTrue(!resolved.equals("magicutils.commands.no_permission"),
+                    "English fallback must resolve the key");
         }
     }
 
@@ -115,108 +168,23 @@ class MessagesTest {
         managerField.set(null, null);
     }
 
-    private static final class TestLanguageManager extends LanguageManager implements AutoCloseable {
-        private final TestPlatform platform;
-        private final ConfigManager configManager;
-        private final String prefix;
-        private final String languageCode;
+    private static final class TestEnv implements AutoCloseable {
+        final TestPlatform platform;
+        final ConfigManager configManager;
+        final LanguageManager manager;
 
-        private TestLanguageManager(TestPlatform platform,
-                                    ConfigManager configManager,
-                                    String prefix,
-                                    String languageCode) {
-            super(platform, configManager);
+        private TestEnv(TestPlatform platform, ConfigManager configManager, LanguageManager manager) {
             this.platform = platform;
             this.configManager = configManager;
-            this.prefix = prefix;
-            this.languageCode = languageCode;
+            this.manager = manager;
         }
 
-        private static TestLanguageManager create(Path configDir, String prefix, String languageCode) throws Exception {
-            Files.createDirectories(configDir);
+        static TestEnv create(Path configDir) throws Exception {
+            java.nio.file.Files.createDirectories(configDir);
             TestPlatform platform = new TestPlatform(configDir);
             ConfigManager configManager = new ConfigManager(platform);
-            return new TestLanguageManager(platform, configManager, prefix, languageCode);
-        }
-
-        @Override
-        public String getMessage(String key) {
-            return prefix + ":" + key;
-        }
-
-        @Override
-        public String getMessage(String key, Map<String, String> placeholders) {
-            return prefix + ":" + key;
-        }
-
-        @Override
-        public String getMessage(String key, String... replacements) {
-            return prefix + ":" + key;
-        }
-
-        @Override
-        public boolean hasMessage(String key) {
-            return true;
-        }
-
-        @Override
-        public String getMessageForLanguage(String languageCode, String key) {
-            return prefix + ":" + languageCode + ":" + key;
-        }
-
-        @Override
-        public String getMessageForLanguage(String languageCode, String key, Map<String, String> placeholders) {
-            return prefix + ":" + languageCode + ":" + key;
-        }
-
-        @Override
-        public String getMessageForLanguage(String languageCode, String key, String... replacements) {
-            return prefix + ":" + languageCode + ":" + key;
-        }
-
-        @Override
-        public String getMessageEscaped(String key, Map<String, String> placeholders) {
-            return prefix + ":escaped:" + key;
-        }
-
-        @Override
-        public String getMessageEscaped(String key, String... replacements) {
-            return prefix + ":escaped:" + key;
-        }
-
-        @Override
-        public String getPlayerLanguage(UUID playerId) {
-            return languageCode;
-        }
-
-        @Override
-        public String getMessageForAudience(Audience audience, String key) {
-            return prefix + ":" + key;
-        }
-
-        @Override
-        public String getMessageForAudience(Audience audience, String key, Map<String, String> placeholders) {
-            return prefix + ":" + key;
-        }
-
-        @Override
-        public String getMessageForAudience(Audience audience, String key, String... replacements) {
-            return prefix + ":" + key;
-        }
-
-        @Override
-        public String getMessageForAudienceEscaped(Audience audience, String key, Map<String, String> placeholders) {
-            return prefix + ":escaped:" + key;
-        }
-
-        @Override
-        public String getMessageForAudienceEscaped(Audience audience, String key, String... replacements) {
-            return prefix + ":escaped:" + key;
-        }
-
-        @Override
-        public String getCurrentLanguage() {
-            return languageCode;
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            return new TestEnv(platform, configManager, manager);
         }
 
         @Override
@@ -340,6 +308,11 @@ class MessagesTest {
 
     private enum NoOpAudience implements Audience {
         INSTANCE;
+
+        @Override
+        public UUID id() {
+            return null;
+        }
 
         @Override
         public void send(Component component) {

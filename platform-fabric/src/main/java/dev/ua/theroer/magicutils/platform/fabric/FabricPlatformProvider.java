@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.platform.fabric;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ConfigFormatProvider;
 import dev.ua.theroer.magicutils.platform.ConfigNamespaceProvider;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
@@ -89,6 +90,7 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         this.useConfigNamespace = isDefaultConfigDir(resolvedConfig);
         this.configNamespace = effective.getName();
         this.taskScheduler = TaskSchedulers.create("MagicUtils-Fabric", this);
+        AudienceResolver.registerFactory(obj -> obj instanceof ServerPlayer sp ? wrap(sp) : null);
     }
 
     @Override

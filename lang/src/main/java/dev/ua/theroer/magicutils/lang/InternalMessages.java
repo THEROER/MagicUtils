@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.utils.MsgFmt;
 
 import java.util.Map;
 
@@ -150,7 +151,7 @@ public enum InternalMessages {
     /** Required config value absent. */
     ERR_REQUIRED_CONFIG_MISSING("errors.required_config_missing");
 
-    private static final Map<String, String> DEFAULT_MESSAGES = LanguageDefaults.englishTranslations();
+    private static final Map<String, String> DEFAULT_MESSAGES = BundledTranslations.getTranslations("en");
 
     private final String key;
 
@@ -227,14 +228,14 @@ public enum InternalMessages {
     public String getScoped(String scope, Audience audience, String... replacements) {
         LanguageManager manager = findLanguageManager(scope);
         if (manager != null) {
-            String message = audience != null
-                    ? manager.getMessageForAudience(audience, getKey(), replacements)
-                    : manager.getMessage(getKey(), replacements);
-            if (message != null && !message.equals(getKey()) && !message.startsWith("magicutils.")) {
-                return message;
+            String resolved = audience != null
+                    ? manager.getMessageFor(audience, getKey())
+                    : manager.getMessage(getKey());
+            if (resolved != null && !resolved.equals(getKey()) && !resolved.startsWith("magicutils.")) {
+                return MsgFmt.apply(resolved, (Object[]) replacements);
             }
         }
-        return applyPlaceholders(getDefaultMessage(), replacements);
+        return MsgFmt.apply(getDefaultMessage(), (Object[]) replacements);
     }
 
     private static LanguageManager findLanguageManager(String scope) {
@@ -247,18 +248,5 @@ public enum InternalMessages {
 
     private String getDefaultMessage() {
         return DEFAULT_MESSAGES.getOrDefault(getKey(), getKey());
-    }
-
-    private static String applyPlaceholders(String message, String... replacements) {
-        if (message == null || replacements == null) {
-            return message;
-        }
-        String result = message;
-        for (int i = 0; i < replacements.length - 1; i += 2) {
-            String placeholder = replacements[i];
-            String value = replacements[i + 1];
-            result = result.replace("{" + placeholder + "}", value);
-        }
-        return result;
     }
 }

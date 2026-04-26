@@ -7,16 +7,17 @@ import lombok.Getter;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Language configuration using MagicUtils config system.
- * This class manages language-specific messages for MagicUtils including
- * commands, settings, reload operations, system messages, and errors.
- * 
- * Constructor initializes all message categories with their default values.
+ * Language configuration using the MagicUtils config system.
+ *
+ * <p>After load, a flat {@code key -> value} cache is built from all
+ * configured sections so runtime {@link #getMessage(String)} lookups are
+ * plain {@code Map.get} calls and never touch reflection.</p>
  */
 @Getter
 @ConfigFile("lang/{lang}.{ext}")
@@ -27,7 +28,7 @@ public class LanguageConfig {
     private static final Map<String, Function<LanguageConfig, Object>> SECTION_ACCESSORS;
 
     static {
-        Map<String, Function<LanguageConfig, Object>> accessors = new HashMap<>();
+        Map<String, Function<LanguageConfig, Object>> accessors = new LinkedHashMap<>();
         accessors.put("commands", LanguageConfig::getCommands);
         accessors.put("settings", LanguageConfig::getSettings);
         accessors.put("reload", LanguageConfig::getReload);
@@ -70,6 +71,8 @@ public class LanguageConfig {
     @Comment("Custom messages defined by plugins")
     private Map<String, String> customMessages = new HashMap<>();
 
+    private transient volatile Map<String, String> flatMessageCache;
+
     /**
      * Adds or updates a custom message entry.
      *
@@ -88,52 +91,65 @@ public class LanguageConfig {
     }
 
     /**
-     * Gets a message by its key. First checks custom messages, then internal
-     * messages.
-     * For internal messages, the key format should be 'magicutils.category.key'.
-     * 
-     * @param key the message key in format 'magicutils.category.key' or custom key
-     * @return the message string or null if not found
+     * Resolves a message by key. Custom plugin messages take precedence
+     * over the built-in sectioned messages.
+     *
+     * <p>Built-in keys follow the {@code magicutils.<section>.<field>}
+     * pattern. The resolution uses a flat cache built lazily on first
+     * access so there is no reflection on the hot path.</p>
+     *
+     * @param key message key
+     * @return resolved value or {@code null} when no entry exists
      */
     public String getMessage(String key) {
-        // Check custom messages first
-        if (customMessages.containsKey(key)) {
-            return customMessages.get(key);
-        }
-
-        // Check internal messages
-        String[] parts = key.split("\\.", 3);
-        if (parts.length < 3 || !parts[0].equals("magicutils")) {
+        if (key == null) {
             return null;
         }
-
-        Function<LanguageConfig, Object> accessor = SECTION_ACCESSORS.get(parts[1]);
-        if (accessor == null) {
-            return null;
+        String custom = customMessages.get(key);
+        if (custom != null) {
+            return custom;
         }
-
-        Object section = accessor.apply(this);
-        return resolveSectionValue(section, parts[2]);
+        return getFlatMessages().get(key);
     }
 
-    private String resolveSectionValue(Object section, String key) {
-        if (section == null || key == null) {
-            return null;
+    private Map<String, String> getFlatMessages() {
+        Map<String, String> cached = flatMessageCache;
+        if (cached != null) {
+            return cached;
         }
+        synchronized (this) {
+            if (flatMessageCache == null) {
+                flatMessageCache = buildFlatMessages();
+            }
+            return flatMessageCache;
+        }
+    }
 
-        Map<String, Field> fieldMap = SECTION_FIELD_CACHE.computeIfAbsent(section.getClass(),
-                LanguageConfig::mapSectionFields);
-        Field field = fieldMap.get(key);
-        if (field == null) {
-            return null;
+    private Map<String, String> buildFlatMessages() {
+        Map<String, String> flat = new HashMap<>();
+        for (Map.Entry<String, Function<LanguageConfig, Object>> entry : SECTION_ACCESSORS.entrySet()) {
+            Object section = entry.getValue().apply(this);
+            if (section == null) {
+                continue;
+            }
+            String prefix = "magicutils." + entry.getKey() + ".";
+            Map<String, Field> fields = SECTION_FIELD_CACHE.computeIfAbsent(
+                    section.getClass(), LanguageConfig::mapSectionFields);
+            for (Map.Entry<String, Field> fieldEntry : fields.entrySet()) {
+                try {
+                    Object value = fieldEntry.getValue().get(section);
+                    if (value != null) {
+                        flat.put(prefix + fieldEntry.getKey(), value.toString());
+                    }
+                } catch (IllegalAccessException ignored) {
+                }
+            }
         }
+        return Collections.unmodifiableMap(flat);
+    }
 
-        try {
-            Object value = field.get(section);
-            return value != null ? value.toString() : null;
-        } catch (IllegalAccessException e) {
-            return null;
-        }
+    private void invalidateFlatCache() {
+        flatMessageCache = null;
     }
 
     private static Map<String, Field> mapSectionFields(Class<?> type) {
@@ -155,6 +171,7 @@ public class LanguageConfig {
         if (translations == null || translations.isEmpty()) {
             return;
         }
+        boolean changed = false;
         for (Map.Entry<String, Map<String, String>> sectionEntry : translations.entrySet()) {
             String sectionPath = sectionEntry.getKey();
             Map<String, String> values = sectionEntry.getValue();
@@ -179,9 +196,13 @@ public class LanguageConfig {
                         continue;
                     }
                     field.set(section, entry.getValue());
+                    changed = true;
                 } catch (IllegalAccessException ignored) {
                 }
             }
+        }
+        if (changed) {
+            invalidateFlatCache();
         }
     }
 

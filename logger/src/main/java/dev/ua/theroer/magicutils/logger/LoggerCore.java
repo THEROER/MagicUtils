@@ -54,6 +54,8 @@ public class LoggerCore extends LoggerCoreMethods {
     private final Map<String, PrefixedLoggerCore> prefixedLoggers = new ConcurrentHashMap<>();
     @Getter
     private ExternalPlaceholderEngine externalPlaceholderEngine = ExternalPlaceholderEngine.NOOP;
+    @Getter
+    private boolean escapePlaceholders = false;
     private final MagicPlaceholders.PlaceholderDebugListener placeholderDebugListener = this::onPlaceholderResolved;
     private boolean placeholderDebugRegistered;
 
@@ -99,6 +101,20 @@ public class LoggerCore extends LoggerCoreMethods {
         this.externalPlaceholderEngine = externalPlaceholderEngine != null
                 ? externalPlaceholderEngine
                 : ExternalPlaceholderEngine.NOOP;
+    }
+
+    /**
+     * Controls whether inline {@code {placeholder}} values are escaped
+     * before MiniMessage parsing. When {@code true}, untrusted user
+     * input cannot inject MiniMessage tags through placeholders. When
+     * {@code false} (default), placeholder values can themselves contain
+     * MiniMessage markup. Recommended: {@code true} for chat output that
+     * may contain user-supplied data.
+     *
+     * @param escapePlaceholders true to escape placeholder values
+     */
+    public void setEscapePlaceholders(boolean escapePlaceholders) {
+        this.escapePlaceholders = escapePlaceholders;
     }
 
     /**

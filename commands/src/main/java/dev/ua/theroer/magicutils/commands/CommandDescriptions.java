@@ -180,7 +180,7 @@ public final class CommandDescriptions {
             return description;
         }
         String key = description.substring(1);
-        return audience != null ? manager.getMessageForAudience(audience, key) : manager.getMessage(key);
+        return audience != null ? manager.getMessageFor(audience, key) : manager.getMessage(key);
     }
 
     private static String resolveImplicit(@Nullable LanguageManager manager,
@@ -190,7 +190,7 @@ public final class CommandDescriptions {
             return "";
         }
         String resolved = audience != null
-                ? manager.getMessageForAudience(audience, implicitKey)
+                ? manager.getMessageFor(audience, implicitKey)
                 : manager.getMessage(implicitKey);
         return implicitKey.equals(resolved) ? "" : resolved;
     }

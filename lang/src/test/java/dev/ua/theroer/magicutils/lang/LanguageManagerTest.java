@@ -106,7 +106,7 @@ class LanguageManagerTest {
             ));
 
             assertTrue(manager.loadLanguage("uk"));
-            assertEquals("<green>Привіт</green>", manager.getMessageForLanguage("uk", "plugin.welcome"));
+            assertEquals("<green>Привіт</green>", manager.getMessageIn("uk", "plugin.welcome"));
         } finally {
             configManager.shutdown();
             platform.shutdown();

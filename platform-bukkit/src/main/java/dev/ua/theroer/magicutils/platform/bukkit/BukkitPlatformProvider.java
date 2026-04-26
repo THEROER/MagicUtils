@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.platform.bukkit;
 
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
@@ -74,6 +75,7 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         registerShutdownHookInternal(this.plugin, this.logger, this.shutdownHooks, this.shutdownListenerRegistered,
                 scheduler::shutdown);
         AdaptersBootstrap.registerDefaults();
+        AudienceResolver.registerFactory(obj -> obj instanceof CommandSender sender ? wrap(sender) : null);
     }
 
     @Override

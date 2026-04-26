@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.lang;
 
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.platform.Audience;
+import dev.ua.theroer.magicutils.platform.AudienceResolver;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.PlatformLogger;
@@ -11,8 +12,6 @@ import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.Tasks;
 import lombok.Getter;
 import lombok.Setter;
-
-import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -27,8 +26,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Platform-agnostic language manager.
@@ -44,8 +41,6 @@ public class LanguageManager {
     private final Map<UUID, String> autoDetectedPlayerLanguages = new ConcurrentHashMap<>();
     private final Map<String, Map<String, String>> registeredTranslations = new ConcurrentHashMap<>();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
-    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
-    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([^{}]+)}");
     private static final Set<String> LANGUAGE_EXTENSIONS = Set.of("jsonc", "json", "yml", "yaml", "toml");
     @Getter
     private String currentLanguage = "en";
@@ -343,6 +338,39 @@ public class LanguageManager {
     }
 
     /**
+     * Loads every {@code /lang/<namespace>/<code>.json} file the
+     * classpath exposes and registers them as bundled translations for
+     * this language manager. Plugins use this to ship default
+     * translations alongside their jar without each plugin re-implementing
+     * resource loading.
+     *
+     * <p>Existing custom (user-edited) values on disk are preserved.
+     * Files are scanned via {@link BundledTranslations#availableNamespacedCodes(String)}.</p>
+     *
+     * @param namespace plugin namespace (e.g. {@code "leavepulse"})
+     * @return number of language codes that contributed at least one key
+     */
+    public int registerBundledTranslations(String namespace) {
+        if (namespace == null || namespace.isBlank()) {
+            return 0;
+        }
+        Set<String> codes = BundledTranslations.availableNamespacedCodes(namespace);
+        int registered = 0;
+        for (String code : codes) {
+            Map<String, String> translations = BundledTranslations.getNamespacedTranslations(namespace, code);
+            if (translations.isEmpty()) {
+                continue;
+            }
+            registerTranslations(code, translations);
+            registered++;
+        }
+        if (registered == 0) {
+            logger.warn("No bundled translations found on classpath for namespace: " + namespace);
+        }
+        return registered;
+    }
+
+    /**
      * Set fallback language used when a key is missing in the current language.
      *
      * @param languageCode fallback language code
@@ -433,144 +461,60 @@ public class LanguageManager {
     }
 
     /**
-     * Resolve a message with named placeholders.
+     * Resolve a message in the audience's preferred language.
      *
+     * @param audience target audience (may be null → falls back to current language)
      * @param key message key
-     * @param placeholders placeholder map
-     * @return message with substitutions applied
+     * @return resolved message or key if missing
      */
-    public String getMessage(String key, Map<String, String> placeholders) {
-        String message = resolveMessage(currentLanguage, key);
-        return applyPlaceholders(message, placeholders);
+    public String getMessageFor(Audience audience, String key) {
+        if (audience == null || audience.id() == null) {
+            return resolveMessage(currentLanguage, key);
+        }
+        return resolveMessage(getPlayerLanguage(audience.id()), key);
     }
 
     /**
-     * Resolve a message with positional replacements (name/value pairs).
+     * Resolve a message in a specific language code.
      *
+     * @param languageCode language code to use
      * @param key message key
-     * @param replacements placeholder/value pairs
-     * @return message with substitutions applied
+     * @return resolved message or key if missing
      */
-    public String getMessage(String key, String... replacements) {
-        String message = resolveMessage(currentLanguage, key);
-        return applyReplacements(message, replacements);
+    public String getMessageIn(String languageCode, String key) {
+        return resolveMessage(languageCode, key);
     }
 
     /**
-     * Check whether the current language (or fallback) has a message for the key.
-     *
      * @param key message key
-     * @return true if present
+     * @return true if the current language (or fallback chain) has this key
      */
     public boolean hasMessage(String key) {
         if (hasMessage(currentConfig, key)) {
             return true;
         }
         ensureFallbackLoaded();
-        return hasMessage(fallbackConfig, key);
+        if (hasMessage(fallbackConfig, key)) {
+            return true;
+        }
+        return BundledTranslations.getTranslations("en").containsKey(key);
     }
 
     /**
-     * Check whether a specific language (or fallback) has a message for the key.
-     *
-     * @param languageCode language to inspect
+     * @param languageCode language code
      * @param key message key
-     * @return true if present
+     * @return true if this language (or the fallback chain) has the key
      */
-    public boolean hasMessageForLanguage(String languageCode, String key) {
+    public boolean hasMessageIn(String languageCode, String key) {
         LanguageConfig primary = getOrLoadLanguage(languageCode);
         if (hasMessage(primary, key)) {
             return true;
         }
         ensureFallbackLoaded();
-        return hasMessage(fallbackConfig, key);
-    }
-
-    /**
-     * Resolve a message for a specific language code.
-     *
-     * @param languageCode language to use
-     * @param key message key
-     * @return resolved message or key if missing
-     */
-    public String getMessageForLanguage(String languageCode, String key) {
-        return resolveMessage(languageCode, key);
-    }
-
-    /**
-     * Resolve a message with placeholders for a specific language code.
-     *
-     * @param languageCode language to use
-     * @param key message key
-     * @param placeholders placeholder map
-     * @return resolved message
-     */
-    public String getMessageForLanguage(String languageCode, String key, Map<String, String> placeholders) {
-        String message = resolveMessage(languageCode, key);
-        return applyPlaceholders(message, placeholders);
-    }
-
-    /**
-     * Resolve a message with placeholders safely escaped for MiniMessage parsing.
-     *
-     * @param key message key
-     * @param placeholders placeholder map
-     * @return resolved message with escaped placeholder values
-     */
-    public String getMessageEscaped(String key, Map<String, String> placeholders) {
-        String message = resolveMessage(currentLanguage, key);
-        return applyPlaceholders(message, placeholders, true);
-    }
-
-    /**
-     * Resolve a message with positional replacements escaped for MiniMessage parsing.
-     *
-     * @param key message key
-     * @param replacements placeholder/value pairs
-     * @return resolved message with escaped replacement values
-     */
-    public String getMessageEscaped(String key, String... replacements) {
-        String message = resolveMessage(currentLanguage, key);
-        return applyReplacements(message, true, replacements);
-    }
-
-    /**
-     * Resolve a message with positional replacements for a specific language code.
-     *
-     * @param languageCode language to use
-     * @param key message key
-     * @param replacements placeholder/value pairs
-     * @return resolved message
-     */
-    public String getMessageForLanguage(String languageCode, String key, String... replacements) {
-        String message = resolveMessage(languageCode, key);
-        return applyReplacements(message, replacements);
-    }
-
-    /**
-     * Resolve a message with placeholders for a specific language code, escaping values for MiniMessage.
-     *
-     * @param languageCode language to use
-     * @param key message key
-     * @param placeholders placeholder map
-     * @return resolved message with escaped placeholder values
-     */
-    public String getMessageForLanguageEscaped(String languageCode, String key, Map<String, String> placeholders) {
-        String message = resolveMessage(languageCode, key);
-        return applyPlaceholders(message, placeholders, true);
-    }
-
-    /**
-     * Resolve a message with replacements for a specific language code, escaping values for MiniMessage.
-     *
-     * @param languageCode language to use
-     * @param key message key
-     * @param replacements placeholder/value pairs
-     * @return resolved message with escaped replacement values
-     */
-    public String getMessageForLanguageEscaped(String languageCode, String key, String... replacements) {
-        String message = resolveMessage(languageCode, key);
-        return applyReplacements(message, true, replacements);
+        if (hasMessage(fallbackConfig, key)) {
+            return true;
+        }
+        return BundledTranslations.getTranslations("en").containsKey(key);
     }
 
     /**
@@ -603,7 +547,7 @@ public class LanguageManager {
      * @return true if updated
      */
     public boolean setPlayerLanguage(Object player, String languageCode) {
-        UUID id = extractUuid(player);
+        UUID id = AudienceResolver.extractUuid(player);
         return setPlayerLanguage(id, languageCode);
     }
 
@@ -659,7 +603,7 @@ public class LanguageManager {
      * @param player player object
      */
     public void clearAutoDetectedPlayerLanguage(Object player) {
-        UUID id = extractUuid(player);
+        UUID id = AudienceResolver.extractUuid(player);
         clearAutoDetectedPlayerLanguage(id);
     }
 
@@ -669,7 +613,7 @@ public class LanguageManager {
      * @param player player object
      */
     public void clearPlayerLanguage(Object player) {
-        UUID id = extractUuid(player);
+        UUID id = AudienceResolver.extractUuid(player);
         clearPlayerLanguage(id);
     }
 
@@ -701,7 +645,7 @@ public class LanguageManager {
      * @return language code
      */
     public String getPlayerLanguage(Object player) {
-        UUID id = extractUuid(player);
+        UUID id = AudienceResolver.extractUuid(player);
         return id != null ? getPlayerLanguage(id) : currentLanguage;
     }
 
@@ -772,72 +716,6 @@ public class LanguageManager {
             lifecycleSubscription.close();
             localeSubscription.close();
         };
-    }
-
-    /**
-     * Resolve a message for an audience respecting per-player language overrides.
-     *
-     * @param audience target audience
-     * @param key message key
-     * @return resolved message
-     */
-    public String getMessageForAudience(Audience audience, String key) {
-        if (audience == null || audience.id() == null) {
-            return getMessage(key);
-        }
-        return resolveMessage(getPlayerLanguage(audience.id()), key);
-    }
-
-    /**
-     * Resolve a message for an audience with placeholders.
-     *
-     * @param audience target audience
-     * @param key message key
-     * @param placeholders placeholder map
-     * @return resolved message
-     */
-    public String getMessageForAudience(Audience audience, String key, Map<String, String> placeholders) {
-        String message = getMessageForAudience(audience, key);
-        return applyPlaceholders(message, placeholders);
-    }
-
-    /**
-     * Resolve a message for an audience with positional replacements.
-     *
-     * @param audience target audience
-     * @param key message key
-     * @param replacements placeholder/value pairs
-     * @return resolved message
-     */
-    public String getMessageForAudience(Audience audience, String key, String... replacements) {
-        String message = getMessageForAudience(audience, key);
-        return applyReplacements(message, replacements);
-    }
-
-    /**
-     * Resolve a message for an audience with placeholders escaped for MiniMessage.
-     *
-     * @param audience target audience
-     * @param key message key
-     * @param placeholders placeholder map
-     * @return resolved message with escaped placeholder values
-     */
-    public String getMessageForAudienceEscaped(Audience audience, String key, Map<String, String> placeholders) {
-        String message = getMessageForAudience(audience, key);
-        return applyPlaceholders(message, placeholders, true);
-    }
-
-    /**
-     * Resolve a message for an audience with replacements escaped for MiniMessage.
-     *
-     * @param audience target audience
-     * @param key message key
-     * @param replacements placeholder/value pairs
-     * @return resolved message with escaped replacement values
-     */
-    public String getMessageForAudienceEscaped(Audience audience, String key, String... replacements) {
-        String message = getMessageForAudience(audience, key);
-        return applyReplacements(message, true, replacements);
     }
 
     /**
@@ -1195,6 +1073,11 @@ public class LanguageManager {
             }
         }
 
+        String englishBundled = BundledTranslations.getTranslations("en").get(key);
+        if (englishBundled != null) {
+            return englishBundled;
+        }
+
         logMissing(languageCode, key);
         return key;
     }
@@ -1249,57 +1132,6 @@ public class LanguageManager {
         }
     }
 
-    private String applyPlaceholders(String message, Map<String, String> placeholders) {
-        return applyPlaceholders(message, placeholders, false);
-    }
-
-    private String applyPlaceholders(String message, Map<String, String> placeholders, boolean escapeTags) {
-        if (message == null || placeholders == null || placeholders.isEmpty()) {
-            return message;
-        }
-        Matcher matcher = PLACEHOLDER_PATTERN.matcher(message);
-        StringBuffer buffer = new StringBuffer(message.length());
-        while (matcher.find()) {
-            String key = matcher.group(1);
-            if (key == null || !placeholders.containsKey(key)) {
-                matcher.appendReplacement(buffer, Matcher.quoteReplacement(matcher.group(0)));
-                continue;
-            }
-            String value = placeholders.get(key);
-            if (value == null) {
-                value = "";
-            } else if (escapeTags) {
-                value = MINI_MESSAGE.escapeTags(value);
-            }
-            matcher.appendReplacement(buffer, Matcher.quoteReplacement(value));
-        }
-        matcher.appendTail(buffer);
-        return buffer.toString();
-    }
-
-    private String applyReplacements(String message, String... replacements) {
-        return applyReplacements(message, false, replacements);
-    }
-
-    private String applyReplacements(String message, boolean escapeTags, String... replacements) {
-        if (message == null || replacements == null || replacements.length == 0) {
-            return message;
-        }
-        String result = message;
-        for (int i = 0; i < replacements.length - 1; i += 2) {
-            String placeholder = replacements[i];
-            String value = replacements[i + 1];
-            if (value == null) {
-                value = "";
-            } else if (escapeTags) {
-                value = MINI_MESSAGE.escapeTags(value);
-            }
-            result = result.replace("{" + placeholder + "}", value);
-            result = result.replace(placeholder, value);
-        }
-        return result;
-    }
-
     private Map<String, String> normalizeTranslations(Map<String, String> translations) {
         LinkedHashMap<String, String> normalized = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : translations.entrySet()) {
@@ -1316,23 +1148,7 @@ public class LanguageManager {
     }
 
     private Map<String, Map<String, String>> createTranslations(String languageCode) {
-        return LanguageDefaults.localizedSections(languageCode);
-    }
-
-    private UUID extractUuid(Object obj) {
-        if (obj == null) return null;
-        if (obj instanceof Audience audience) {
-            return audience.id();
-        }
-        try {
-            var m = obj.getClass().getMethod("getUniqueId");
-            Object res = m.invoke(obj);
-            if (res instanceof UUID uuid) {
-                return uuid;
-            }
-        } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
-        }
-        return null;
+        return BundledTranslations.getSections(languageCode);
     }
 
     private static Platform resolvePlatform(Object platformOrPlugin) {

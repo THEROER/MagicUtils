@@ -22,9 +22,6 @@ core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:116:.
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:31:Class.forName(
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:71:.getMethod(
 http-client/src/main/java/dev/ua/theroer/magicutils/http/HttpClientLifecycle.java:51:.getMethod(
-lang/src/main/java/dev/ua/theroer/magicutils/lang/LanguageManager.java:1328:.getMethod(
-lang/src/main/java/dev/ua/theroer/magicutils/lang/Messages.java:226:.getMethod(
-lang/src/main/java/dev/ua/theroer/magicutils/lang/MessagesView.java:173:.getMethod(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:62:Class.forName(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:64:.getMethod(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:65:.getMethod(
@@ -33,6 +30,7 @@ placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/Fabr
 placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/MiniPlaceholdersBackend.java:100:.getMethod(
 placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/MiniPlaceholdersBackend.java:102:.getDeclaredMethod(
 placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/MiniPlaceholdersBackend.java:254:.getMethod(
+platform-api/src/main/java/dev/ua/theroer/magicutils/platform/AudienceResolver.java:130:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:782:.getDeclaredField(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:816:.getDeclaredField(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/gui/MagicItem.java:233:.getMethod(
@@ -60,5 +58,5 @@ platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitTh
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:211:.getMethod(
 platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgeComponentSerializer.java:78:Class.forName(
 platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgeComponentSerializer.java:87:.getMethod(
-platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:448:.getMethod(
-platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:461:.getMethod(
+platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:450:.getMethod(
+platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:463:.getMethod(

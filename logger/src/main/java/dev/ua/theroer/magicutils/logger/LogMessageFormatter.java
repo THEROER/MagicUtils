@@ -184,7 +184,7 @@ public final class LogMessageFormatter {
 
     private static String applyPipeline(LoggerCore logger, String messageStr, @Nullable Audience audience, Object[] args) {
         String processed = safeApplyLocalization(logger, messageStr, audience);
-        processed = applyInlinePlaceholders(processed, args);
+        processed = applyInlinePlaceholders(processed, args, logger.isEscapePlaceholders());
         PlaceholderContext context = PlaceholderContext.builder()
                 .audience(audience)
                 .ownerKey(logger.getPlaceholderOwner())
@@ -210,11 +210,14 @@ public final class LogMessageFormatter {
         return null;
     }
 
-    private static String applyInlinePlaceholders(String messageStr, Object[] args) {
+    private static final java.util.function.Function<String, String> ESCAPE_TAGS =
+            net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()::escapeTags;
+
+    private static String applyInlinePlaceholders(String messageStr, Object[] args, boolean escapeTags) {
         if (messageStr == null || messageStr.isEmpty() || args == null || args.length == 0) {
             return messageStr;
         }
-        return MsgFmt.apply(messageStr, args);
+        return MsgFmt.apply(messageStr, escapeTags ? ESCAPE_TAGS : null, args);
     }
 
     private static String safeApplyExternal(LoggerCore logger, @Nullable Audience audience, String input) {
@@ -324,7 +327,7 @@ public final class LogMessageFormatter {
         if (lang != null && messageStr != null && messageStr.startsWith("@")) {
             String key = messageStr.substring(1);
             String localized = audience != null
-                    ? lang.getMessageForAudience(audience, key)
+                    ? lang.getMessageFor(audience, key)
                     : lang.getMessage(key);
             if (!localized.equals(messageStr)) {
                 return localized;
