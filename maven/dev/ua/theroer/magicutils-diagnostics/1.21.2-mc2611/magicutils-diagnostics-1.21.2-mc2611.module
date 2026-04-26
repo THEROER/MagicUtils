@@ -1,0 +1,146 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-diagnostics",
+    "version": "1.21.2-mc2611",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.21.2-mc2611"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-diagnostics-1.21.2-mc2611-mc26.1.jar",
+          "url": "magicutils-diagnostics-1.21.2-mc2611-mc26.1.jar",
+          "size": 60917,
+          "sha512": "a3af237914045b5f44716b4576183c0003ea21193bdffa1c3123f58242534e81d61bc3326b408ca4327821d82f7a4a0fde532ff4d61529b99e416c8427650a12",
+          "sha256": "767e4cd84bf0a7adef968883b121269fd043d3975ce10ae0c45bb88a23272b9c",
+          "sha1": "40c29c84636063c8f269c1917c75661a8d0a10dd",
+          "md5": "85a6d1fa5207ee8dc9e80136e5dc8961"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.fasterxml.jackson.core",
+          "module": "jackson-databind",
+          "version": {
+            "requires": "2.17.1"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-core",
+          "version": {
+            "requires": "1.21.2-mc2611"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-diagnostics-1.21.2-mc2611-mc26.1.jar",
+          "url": "magicutils-diagnostics-1.21.2-mc2611-mc26.1.jar",
+          "size": 60917,
+          "sha512": "a3af237914045b5f44716b4576183c0003ea21193bdffa1c3123f58242534e81d61bc3326b408ca4327821d82f7a4a0fde532ff4d61529b99e416c8427650a12",
+          "sha256": "767e4cd84bf0a7adef968883b121269fd043d3975ce10ae0c45bb88a23272b9c",
+          "sha1": "40c29c84636063c8f269c1917c75661a8d0a10dd",
+          "md5": "85a6d1fa5207ee8dc9e80136e5dc8961"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-diagnostics-1.21.2-mc2611-sources.jar",
+          "url": "magicutils-diagnostics-1.21.2-mc2611-sources.jar",
+          "size": 25570,
+          "sha512": "bf1bf971429d2dde57dfd3d93f1fb15a3a68fe5170ba37ebaf51de9cd9e82946f72525e34a4759030a9718ab12b6fefc598f2e2ff2acdd8d46ceb0ea455dd72a",
+          "sha256": "7eb04daf0a6018fe354e44ad851e3a124106faf431fd17c5d6634e154676ab80",
+          "sha1": "bd353cf97eb2f2a6e4ecdbd129cacacfac9944e0",
+          "md5": "80d76ce16f395f6bc5ba377f237d9cb2"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-diagnostics-1.21.2-mc2611-javadoc.jar",
+          "url": "magicutils-diagnostics-1.21.2-mc2611-javadoc.jar",
+          "size": 4205556,
+          "sha512": "2aa70c09060ce54d666a0122e35670f9690b307dc073201f6885bd7c6bf6ff7ab11c3a12ded79827bddf1611c748f24c141bc280589092dc542075db7a7725f7",
+          "sha256": "9c996864d46f4b69a7c219181cd0bde42cc8f08e934b214d53dfc3e84fee7c7b",
+          "sha1": "3d8b83a17c31a299f1fc9864f2fa7870cf28909c",
+          "md5": "70248148fd02d02d3bdf18dc19d79cca"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-diagnostics-1.21.2-mc2611-all.jar",
+          "url": "magicutils-diagnostics-1.21.2-mc2611-all.jar",
+          "size": 3502941,
+          "sha512": "95b1585c918e3aabcaa06e543f0ee7f32521e5e7316a79b572b408e5dc4080236f4614a1cbbf6a0b17909298d2bddee75c0ccda78dcdb79b87b1c9ee2e171868",
+          "sha256": "64c3c1bbd1cef6751d616c4c1c1521bd80e71632cfd55f21b18153d002dfb20d",
+          "sha1": "e189fad8b8e845961531a7ed76a2cbc43fecdf21",
+          "md5": "b422df5e73b27485a69e77c2f951cff8"
+        }
+      ]
+    }
+  ]
+}

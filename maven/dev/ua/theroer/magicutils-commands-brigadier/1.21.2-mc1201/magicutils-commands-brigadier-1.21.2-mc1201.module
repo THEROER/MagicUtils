@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-commands-brigadier",
+    "version": "1.21.2-mc1201",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-commands",
+          "version": {
+            "requires": "1.21.2-mc1201"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-commands-brigadier-1.21.2-mc1201-mc1.20.jar",
+          "url": "magicutils-commands-brigadier-1.21.2-mc1201-mc1.20.jar",
+          "size": 22466,
+          "sha512": "14fc27c123ed8000d3368b304bfe8956070b5e72d00087d75138ffdafccd9c709a32ad05804a8798fc2b6d85a7a527892930528075b1d6c29ffa48e12f35af6b",
+          "sha256": "45d13fc110e21059014e2f7b0e06e8b179bc08e9975d1c29466d381cbe8a33da",
+          "sha1": "e99d0dda729aa11fcbd4286e67aeb7428cba9c5a",
+          "md5": "31e8b4de5680e42d0ae24dd2d62c1f15"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-commands",
+          "version": {
+            "requires": "1.21.2-mc1201"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-commands-brigadier-1.21.2-mc1201-mc1.20.jar",
+          "url": "magicutils-commands-brigadier-1.21.2-mc1201-mc1.20.jar",
+          "size": 22466,
+          "sha512": "14fc27c123ed8000d3368b304bfe8956070b5e72d00087d75138ffdafccd9c709a32ad05804a8798fc2b6d85a7a527892930528075b1d6c29ffa48e12f35af6b",
+          "sha256": "45d13fc110e21059014e2f7b0e06e8b179bc08e9975d1c29466d381cbe8a33da",
+          "sha1": "e99d0dda729aa11fcbd4286e67aeb7428cba9c5a",
+          "md5": "31e8b4de5680e42d0ae24dd2d62c1f15"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-brigadier-1.21.2-mc1201-sources.jar",
+          "url": "magicutils-commands-brigadier-1.21.2-mc1201-sources.jar",
+          "size": 8154,
+          "sha512": "25f9dd6bed138735d89c5c631f16d9706c5aeaef73fd2f6be4b6c34d10bfe7c7915b5099946b5ef3f97c4000678c1fc3f691fd5c14e40c3fa1bcfb5414eb0a92",
+          "sha256": "88be7c5f9e2f69a9aebcab3f464f144eca700f8317649f6fbf8a8686ae449ee6",
+          "sha1": "0c17dbc0cb33d0b3a7d067480b123cead0c45f03",
+          "md5": "57137a65b952bdc8d20269aed9abf9a0"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-brigadier-1.21.2-mc1201-javadoc.jar",
+          "url": "magicutils-commands-brigadier-1.21.2-mc1201-javadoc.jar",
+          "size": 96650,
+          "sha512": "51aed099b291dff399c67f0e06c8ecde92914c1810fb46854eb11e0e3f1d619125b5803732b3f38d63e893f7795a3b19845c2434fb6883d98f937edb430bb1b4",
+          "sha256": "b73b50e840577bbc5bf0dedb29f780ac81946abfc34fbc39ad8fdb9502e6effa",
+          "sha1": "b8376f71089cfdb6dfa3e528787f9c2549c8eae9",
+          "md5": "542fab7f4e1c9f822c78e68966398a28"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-commands-brigadier-1.21.2-mc1201-all.jar",
+          "url": "magicutils-commands-brigadier-1.21.2-mc1201-all.jar",
+          "size": 3442860,
+          "sha512": "11829b191a35b0c606cd495bdb215601776ab21dfcec9bddf6610d88df6d56eb07e5ea61a36c17549a05c7d3fe054a03bbb55d9f75389a89a0fd23544b059a38",
+          "sha256": "08141f6a5bf76e3b5ae9f4e8efc2dcea742c891d1a905475ad6547ce4586d08d",
+          "sha1": "345a3e26691d0ba50cb0f599fed0fc95b2fb61f5",
+          "md5": "edec9d99de54111ca2dc01b0f020ecd5"
+        }
+      ]
+    }
+  ]
+}
