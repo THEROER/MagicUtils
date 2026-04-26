@@ -141,11 +141,11 @@
         {
           "name": "magicutils-lang-1.21.3-all.jar",
           "url": "magicutils-lang-1.21.3-all.jar",
-          "size": 3201771,
-          "sha512": "82593e2bc7283e53aa37c17c57a0a2808bc6d56550f66974d96eb6a9c39d9046e55933a5ec81e82038a1cb26a97a72e083c8f8808e2d9c72aa32ae634c59a76c",
-          "sha256": "9767ad90835f0e1819b84d782d9a1a95847d6c9ef0fb233c677912d627562e3d",
-          "sha1": "c4cccf47b5e5a6ebbfd99aae0685a6f36712b050",
-          "md5": "63591542f607e14a3e2acb1493d343b8"
+          "size": 3202005,
+          "sha512": "45cceeaef89577793752bdedf902b63ce5f18ca691703be9f8a236f11074ed0f9a423df61848cdbe29ec5fbcad81d2b479bde37ed304a91669db9346314fdf69",
+          "sha256": "f2ffc83800080db8144b79e0c1f30d08063480f0ffa269822be7630db097c7ed",
+          "sha1": "8241b3d498372337ffd3ff177349f3620818f43f",
+          "md5": "63cbb9f799958fc6e7770535e1467f32"
         }
       ]
     }

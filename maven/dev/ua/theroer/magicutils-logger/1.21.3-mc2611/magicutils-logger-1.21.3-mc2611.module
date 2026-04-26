@@ -57,11 +57,11 @@
         {
           "name": "magicutils-logger-1.21.3-mc2611-mc26.1.jar",
           "url": "magicutils-logger-1.21.3-mc2611-mc26.1.jar",
-          "size": 77321,
-          "sha512": "27db7e9129f96d8f0907ecfe824942c847e1f2983c22cabb053a6d341cfadd23d6a0892018858816552f3864341870c777fbe957e0538a79ccf658935ed8b53c",
-          "sha256": "89d0293b64d672b7b8eca978d4a5648509a0ae9490381471709de4f3c2a0f58e",
-          "sha1": "2434c93ed3a70547b5938d74832daa9ffa41e104",
-          "md5": "b9a145c803f6ffd5bf557dadf7be1834"
+          "size": 77320,
+          "sha512": "4412093c4bc596da6a5a24994a7e1c777b7dc7eec1237b4cbe672d3fca99fbaf5098ae9d695d9251e4918e786ad801451c5d0a7bcef62a0399c5694c8bbd0283",
+          "sha256": "e12b70292686d16bd06fefbb1e1a9363b185dde1903f2eb739e87861e9c62e47",
+          "sha1": "c1b8de3b797241d11e6f466027c044b36b40281e",
+          "md5": "8eb78154eff5e269dadd28a025da2fa8"
         }
       ]
     },
@@ -115,11 +115,11 @@
         {
           "name": "magicutils-logger-1.21.3-mc2611-mc26.1.jar",
           "url": "magicutils-logger-1.21.3-mc2611-mc26.1.jar",
-          "size": 77321,
-          "sha512": "27db7e9129f96d8f0907ecfe824942c847e1f2983c22cabb053a6d341cfadd23d6a0892018858816552f3864341870c777fbe957e0538a79ccf658935ed8b53c",
-          "sha256": "89d0293b64d672b7b8eca978d4a5648509a0ae9490381471709de4f3c2a0f58e",
-          "sha1": "2434c93ed3a70547b5938d74832daa9ffa41e104",
-          "md5": "b9a145c803f6ffd5bf557dadf7be1834"
+          "size": 77320,
+          "sha512": "4412093c4bc596da6a5a24994a7e1c777b7dc7eec1237b4cbe672d3fca99fbaf5098ae9d695d9251e4918e786ad801451c5d0a7bcef62a0399c5694c8bbd0283",
+          "sha256": "e12b70292686d16bd06fefbb1e1a9363b185dde1903f2eb739e87861e9c62e47",
+          "sha1": "c1b8de3b797241d11e6f466027c044b36b40281e",
+          "md5": "8eb78154eff5e269dadd28a025da2fa8"
         }
       ]
     },
@@ -176,11 +176,11 @@
         {
           "name": "magicutils-logger-1.21.3-mc2611-all.jar",
           "url": "magicutils-logger-1.21.3-mc2611-all.jar",
-          "size": 3240086,
-          "sha512": "9b65009b6690ffe2cdb83de6e3f3bf4b4a08c9c01fcef820b1665ef2801bb7f5ca3863ca41cf1d9112e7e62726270c4f5d7edf96404f3c0d986958c470e6485e",
-          "sha256": "989f6ffc089867859f12cd5e559d361b8e64d89b1bd3e70fe73558339d55d109",
-          "sha1": "326651e4e8acd20880c7d0ae1e8953f928485e35",
-          "md5": "b2a51568c3177c0ed862a1a1195fcf77"
+          "size": 3240327,
+          "sha512": "d0ed25b1fb45adf44f2b58999b26c22fcbb8330208b747e8e94429b82384cd146ffc73d026cad2d31e4d8a95d584f91902126515699160892df1aa0933510fcb",
+          "sha256": "80d1a5f747cd0677f44461d35365bb4ce0881ad7ecf39d9e81f90e468b2b9298",
+          "sha1": "43d4ded72003f6265642eed79b96190c0a0f7c4d",
+          "md5": "fe6f7f00ddb80bcc1d361a80c92aadeb"
         }
       ]
     }

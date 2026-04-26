@@ -134,11 +134,11 @@
         {
           "name": "magicutils-diagnostics-1.21.3-mc2611-all.jar",
           "url": "magicutils-diagnostics-1.21.3-mc2611-all.jar",
-          "size": 3502941,
-          "sha512": "2a0e07055715cf64101cc5d077befc366b7c2011099ee21477e181f4e523428a78b1210ccb73cf60590080cfb5526ee45d5c8f42914313dbcd8e85636d740660",
-          "sha256": "cca0d98e4cece1b21d951e97c63253708a63a44221c15e951da90f61b4b6e144",
-          "sha1": "42fd7d42a5ba585b675d92b8a287d6c31ae51211",
-          "md5": "94e6d923f765923f65304d9d41999e2c"
+          "size": 3503182,
+          "sha512": "c811348a4eb35d903aae9a8e0aca124e6e2a4260982a67b98d97054280f3ce635a9e48199fb45d8c05d0c49edec6e7dd32a296edf22656a8393a1763c1ef1a5c",
+          "sha256": "501028ed5b69ddbd83c4cf3b14cc6d62814bc194c34eb5436fa065e678891c27",
+          "sha1": "252571072c2834066bc1b2bf7b6dbfaab3f00eb8",
+          "md5": "fc31318d25643952e9c3fbeb5750bcdd"
         }
       ]
     }

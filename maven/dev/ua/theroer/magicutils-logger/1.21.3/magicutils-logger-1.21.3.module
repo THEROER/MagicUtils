@@ -176,11 +176,11 @@
         {
           "name": "magicutils-logger-1.21.3-all.jar",
           "url": "magicutils-logger-1.21.3-all.jar",
-          "size": 3240046,
-          "sha512": "46f6943244f0cc69715d858be331d1788e18e56c40e53204ee920f5e25da7e555a572bc4d039c1433f41509c8a2f03c64b329d5c41d8a5e1c1565931053ef419",
-          "sha256": "6f18e36ecfcd934ecee52a58fc5b1b9e35530e59cc05614dfc01de6d4bbfbc5a",
-          "sha1": "16c5822137f7baf4c215ca89b4a5259c78d332cf",
-          "md5": "d14c1ae8416b0f9a8bfe0595a9b2e66f"
+          "size": 3240283,
+          "sha512": "27305bdf7f89ce1c9488e3f996741994220d71352c0e1c2641fc71e4369d92ce96e3105a193767dd9877185e83022455b6bd5b86f57f21321c0f46feaa6bc86e",
+          "sha256": "ecdcc4195df9b51bfdaf3d431b2bf5371479afabc6d8c8bfc92d95ca6a3809ce",
+          "sha1": "76ea0d73969b3e7507ee9e69c2d2f3f7348617dd",
+          "md5": "da1032e5c2101d561cec4c47b82ef1f3"
         }
       ]
     }

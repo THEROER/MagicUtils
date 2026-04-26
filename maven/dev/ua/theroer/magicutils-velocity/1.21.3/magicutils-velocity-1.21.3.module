@@ -141,11 +141,11 @@
         {
           "name": "magicutils-velocity-1.21.3-all.jar",
           "url": "magicutils-velocity-1.21.3-all.jar",
-          "size": 3541867,
-          "sha512": "7336f8db5260afb694032c840f84d6bce9b21dddf46096f4ecaa440a12265d439f07c89283abceffb03223d165de53dd1dc0e1752813249943323d2c7bc23438",
-          "sha256": "857e2af3fb8d16a4e74870febedaf59e3ac615bb92c51a341e7330ae6a631f1c",
-          "sha1": "72e288cece96b9c10a254bb33198c9bc6cdeabd2",
-          "md5": "ac560b362412296063a2555530d60e16"
+          "size": 3542104,
+          "sha512": "4d624a3ada2aef5b1d67c1b7876387a8595d78b9fe7790818e535855d3945c928be7651494af8d74837be944df00f5aabb53763c58eb46d75e6843446459e585",
+          "sha256": "f0b813de06d39ed736743fb778228275a010678c24fad1f235c71ae21b69d306",
+          "sha1": "a1daaac74079cd9310c79a03d602954bbabd88cb",
+          "md5": "40c9fab1c445f4a427fbf17988ede99f"
         }
       ]
     }

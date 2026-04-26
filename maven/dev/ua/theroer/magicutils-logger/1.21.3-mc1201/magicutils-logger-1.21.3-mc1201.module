@@ -58,10 +58,10 @@
           "name": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
           "url": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
           "size": 77291,
-          "sha512": "f33c49bca368299f209bb0cea9609b0ec9e7762a8719bde314e3da98701104c4b3b4d48f18bdb69a532f46aa7ebdaa151681095ec7058ba5f9c18255f93183bd",
-          "sha256": "c8def82fcae54b0d87fdb4f92f286e1c8f02a9364c790c0e601ac72fc8ca3ce1",
-          "sha1": "1ecf5ecc35fbdc8fd6130cfafb3643d2af5645b5",
-          "md5": "92796a90d9b24fa98c9e05a7d46ba4c5"
+          "sha512": "a7fd28d083833c257257f81425d451b9d196ee7668bf617a36f573f71a43f463e308a73db62dc5dc3ff89df8533dbc63f444feae6ea6f59b46279b7a47148ebc",
+          "sha256": "13a676a86c92ea0c004a8f909c64a69076b6973757f25f58ba0c77ff7b5fbab3",
+          "sha1": "89b5b10b53f30bb186859030b54b2d198d7eeca2",
+          "md5": "e9a420b6f5d1a97779e2d03b1ef5cb9d"
         }
       ]
     },
@@ -116,10 +116,10 @@
           "name": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
           "url": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
           "size": 77291,
-          "sha512": "f33c49bca368299f209bb0cea9609b0ec9e7762a8719bde314e3da98701104c4b3b4d48f18bdb69a532f46aa7ebdaa151681095ec7058ba5f9c18255f93183bd",
-          "sha256": "c8def82fcae54b0d87fdb4f92f286e1c8f02a9364c790c0e601ac72fc8ca3ce1",
-          "sha1": "1ecf5ecc35fbdc8fd6130cfafb3643d2af5645b5",
-          "md5": "92796a90d9b24fa98c9e05a7d46ba4c5"
+          "sha512": "a7fd28d083833c257257f81425d451b9d196ee7668bf617a36f573f71a43f463e308a73db62dc5dc3ff89df8533dbc63f444feae6ea6f59b46279b7a47148ebc",
+          "sha256": "13a676a86c92ea0c004a8f909c64a69076b6973757f25f58ba0c77ff7b5fbab3",
+          "sha1": "89b5b10b53f30bb186859030b54b2d198d7eeca2",
+          "md5": "e9a420b6f5d1a97779e2d03b1ef5cb9d"
         }
       ]
     },
@@ -176,11 +176,11 @@
         {
           "name": "magicutils-logger-1.21.3-mc1201-all.jar",
           "url": "magicutils-logger-1.21.3-mc1201-all.jar",
-          "size": 3240129,
-          "sha512": "54be0ff62a47ecac8c26fc7c776b4d6df50725f30efa2ccc6d8432bc718aace0d95c38c7056b18c281b0215df65e764735abbe5366658b75b6780322df7a1277",
-          "sha256": "9f25de4f067d82e0cb1ef81336c05dcafa5c061da61ce18984e6d65180c493fe",
-          "sha1": "31f10e9dc484a198858a1921757c763fec28b284",
-          "md5": "129f51849267c36932031c11a1092472"
+          "size": 3240373,
+          "sha512": "463e2cbcaf2dc49d47cb356d4759cae503949c4a495efdb7156d55c96c777af29104931b2f2da193742c65cf0bf21d5004e8bda6c71f7fe5516cd27f45e83f5e",
+          "sha256": "08ec82260581038573235a979b1e5f162a4feeeb63cdf62b1ae0686af1ec6dad",
+          "sha1": "81a934198a563f3b0042e8708818617bdab98cfc",
+          "md5": "1daae2bd0594db5f7078b2ee27853fdd"
         }
       ]
     }

@@ -134,11 +134,11 @@
         {
           "name": "magicutils-config-yaml-1.21.3-all.jar",
           "url": "magicutils-config-yaml-1.21.3-all.jar",
-          "size": 3349316,
-          "sha512": "e479fa7c8235896f8f1432b7a4bf56c402c1c54f9ba6207d23fa1af4be41ee7c4945d26277dd9ab0c53b256f4bc6916c20736186c1ca4b21ce2368a3daeaf002",
-          "sha256": "1e1b23a1bd8264904b246ede7e5a95ea1b293ae5ca37655c2b827efc78aa8127",
-          "sha1": "4364196e2c1927b5de97f62f23f6f4994d4ff7cc",
-          "md5": "522de846ed11a1668522ab34e0e03cd9"
+          "size": 3349550,
+          "sha512": "5e826620f6d40dd07da60123da34eadd8ac1d17a9191505a291fbf57c6a3576f92384b4dc986bc3e32813fb4c89ab33c1e48ac8a0efb5df33516579ad1f50cdb",
+          "sha256": "dde3d6632fdbe35253ac9654611f7da75389940d8002953feafb55e57d704651",
+          "sha1": "9b7a062a74ba83e9bbd04bdeb60d33e4c883cf7a",
+          "md5": "914c89ad65336b8653aa16df4ebd63c7"
         }
       ]
     }

@@ -36,11 +36,11 @@
         {
           "name": "magicutils-config-1.21.3-mc1201-mc1.20.jar",
           "url": "magicutils-config-1.21.3-mc1201-mc1.20.jar",
-          "size": 78128,
-          "sha512": "4b13e1a26b11a6059400bf7031d37b225b79bac0532640068b493757c3967aa3ba50c4a5fea76c1655948365d2d19895eadff9634ffdbe9790b88afb109a0b0d",
-          "sha256": "1f5a52ee9ea84d196bec1336429763e4626b8aae31578dedb8c5a7125d5e60d3",
-          "sha1": "68c915f81af3d603a38de92e553584d121802c0b",
-          "md5": "df3cffc9c783e2011882049686126760"
+          "size": 78372,
+          "sha512": "e84df783cd7413375ccf114c6452c6c9b008a37715443428597c87733779d1c98c2eb7f7b954abee51799b67e0053036e1f4ac2a2d77794749d0425c926f0de0",
+          "sha256": "dd14f1ff7726269bfc307d725f258edf813fb252044e1979170935f54c15f8be",
+          "sha1": "3f6a6ac3acd4ba5793af7d42250360a5fa7b2186",
+          "md5": "8948f029303a5769dad2bf5c08c95a59"
         }
       ]
     },
@@ -73,11 +73,11 @@
         {
           "name": "magicutils-config-1.21.3-mc1201-mc1.20.jar",
           "url": "magicutils-config-1.21.3-mc1201-mc1.20.jar",
-          "size": 78128,
-          "sha512": "4b13e1a26b11a6059400bf7031d37b225b79bac0532640068b493757c3967aa3ba50c4a5fea76c1655948365d2d19895eadff9634ffdbe9790b88afb109a0b0d",
-          "sha256": "1f5a52ee9ea84d196bec1336429763e4626b8aae31578dedb8c5a7125d5e60d3",
-          "sha1": "68c915f81af3d603a38de92e553584d121802c0b",
-          "md5": "df3cffc9c783e2011882049686126760"
+          "size": 78372,
+          "sha512": "e84df783cd7413375ccf114c6452c6c9b008a37715443428597c87733779d1c98c2eb7f7b954abee51799b67e0053036e1f4ac2a2d77794749d0425c926f0de0",
+          "sha256": "dd14f1ff7726269bfc307d725f258edf813fb252044e1979170935f54c15f8be",
+          "sha1": "3f6a6ac3acd4ba5793af7d42250360a5fa7b2186",
+          "md5": "8948f029303a5769dad2bf5c08c95a59"
         }
       ]
     },
@@ -93,11 +93,11 @@
         {
           "name": "magicutils-config-1.21.3-mc1201-sources.jar",
           "url": "magicutils-config-1.21.3-mc1201-sources.jar",
-          "size": 36597,
-          "sha512": "921e6f0523cdfe0a84a1e0feec2797e773c11df0f2242c25cf578243113cafdc2fc126b50130ba4a271f1b775ebefa83734b9c4335ce1a9ed4e69a86e2c352c0",
-          "sha256": "9d06955f260b52eb66f342abefa84ac0186f309d8d54d6f3c7af8a7fa4796880",
-          "sha1": "eda17a2dd1c6959cf559127d40e25a643590e4d5",
-          "md5": "84e122178ab8c4cff174eafea74385bb"
+          "size": 37256,
+          "sha512": "63dc0ef787b091790945cf85f94b22f955b01911bfb32a287d6425be58571b609b403207559b04982e46f07c52bf92dd865465419b09e5f47877d414bf226b4e",
+          "sha256": "65049a214719af417f1e2b25839f9c8b07aa682b31a60436f08a58770ef0b6df",
+          "sha1": "6b5544ab5393238ff5c49bdcf4b100e9be7262b0",
+          "md5": "225e154a78687284fd724e8ddc37c9e4"
         }
       ]
     },
@@ -134,11 +134,11 @@
         {
           "name": "magicutils-config-1.21.3-mc1201-all.jar",
           "url": "magicutils-config-1.21.3-mc1201-all.jar",
-          "size": 2962764,
-          "sha512": "4d5457938137279b88b0e6ccb31e76c364593719296e6f552b6862fc22894aab880fc2a6e6a80bd592476c8d26a34fda5a1739375da63703a21dc8beb298c61c",
-          "sha256": "9fe1b314cf1b4cad8f0887f363cff83b5e3be96060982ae0a362a5f5e835b43a",
-          "sha1": "79f5f054f96d46648096209779709dc0a4587ee6",
-          "md5": "5896154b601e63e265c0996ecadb7b10"
+          "size": 2963006,
+          "sha512": "3b001c069efc84eba53d40be821fa08e7c5139b512ab0047c62e0d207ae3c48700bf2036b40d6c119a44267907170e6710c308d43814cf8f3af8b3e0d8d22015",
+          "sha256": "827cfc54558fc21d05968d93ed9259640832083cf8ab70589317eaa094e238c6",
+          "sha1": "2b90dd86744eb5d72879a4589dbc1a34b5c5d286",
+          "md5": "ab3f8ca4bfb79bd2d4c77010e720dccb"
         }
       ]
     }

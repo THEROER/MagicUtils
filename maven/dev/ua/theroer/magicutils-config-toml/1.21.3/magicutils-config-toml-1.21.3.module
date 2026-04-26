@@ -134,11 +134,11 @@
         {
           "name": "magicutils-config-toml-1.21.3-all.jar",
           "url": "magicutils-config-toml-1.21.3-all.jar",
-          "size": 3018220,
-          "sha512": "9594ce2ba0f6879b57523fdae4abf0053b53f109076dbd0b1f0953a34e4f33f7c6bc0958116abd6edb9469ab73cc3fc3c78fe00b3d72d2fa80fad0e6ba318acc",
-          "sha256": "6a30955e33ca1a797b57377870738252f5509e3d51d465d404a90c0454a81b0b",
-          "sha1": "6c4f42cbc2621bae09651732de53c78afe6260bd",
-          "md5": "21cff044675aef1e338ed33e7c1291e0"
+          "size": 3018454,
+          "sha512": "4c2f4f9f4ca13f74090c50f38a761ec194bce5fed9b4768cee514b62e5921f51db691766902bd308d6b7524d4935d7949b36b856f387ad20e1ae2412be773d73",
+          "sha256": "a078e985f8168fd352b61d2bd9c2ee35546284e221b1c5d890291b32a383a8d7",
+          "sha1": "bea731a81217daef115648a3697a262e75f8f1d2",
+          "md5": "4b26af901ace4eb981e132813c1c66e7"
         }
       ]
     }

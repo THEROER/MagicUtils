@@ -141,11 +141,11 @@
         {
           "name": "magicutils-neoforge-1.21.3-all.jar",
           "url": "magicutils-neoforge-1.21.3-all.jar",
-          "size": 40391307,
-          "sha512": "fe510976ad77f97f9233fa574222d441a62f779b661d4abc33810fd3b5983ac4b3a29ec1237204c6fe16867fb967e001e307729355930c2e3f0014ef3c289737",
-          "sha256": "492dbb6c0266724d553e3809efb4c2c7bd9aa37d5bf04ab0ca8efea17205f3dc",
-          "sha1": "df26fdbe8b8b052086118e3e7ebbf6aab09b22e1",
-          "md5": "50e9772b148f2667365c8e7d27642faa"
+          "size": 40391544,
+          "sha512": "c8dfe9f505b4421a75437e15acf89e8f95a1c2eaf7cf104dbe2f873a9854e58aaf1ab9b06bf26a0ff815029c1a5760b9e2c1ee6e444a1022b72cf7aa69b7caf5",
+          "sha256": "8ab4086257ae47843fce8cab8c0f4645b3503e18cb46123924633a12057524d2",
+          "sha1": "b551deafccb3dd9aab409b4ec20fca43942253fe",
+          "md5": "4e0025ece3ac657c8ebcf35e2df6f2c7"
         }
       ]
     }

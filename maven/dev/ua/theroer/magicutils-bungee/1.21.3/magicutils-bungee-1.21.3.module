@@ -162,11 +162,11 @@
         {
           "name": "magicutils-bungee-1.21.3-all.jar",
           "url": "magicutils-bungee-1.21.3-all.jar",
-          "size": 3573488,
-          "sha512": "38df2e7b47837fd37c557afef023808494b7fc308b34af759a29d710bc19a896e500eaa2a29e1ac789cefb5d9255758edaa6d9de00d56c6c2e1fa68444618dd5",
-          "sha256": "bf3cb8affc178b2a65826a131f95a5a5c49185c7ab07ebe835224687dacc3a2c",
-          "sha1": "f933017c5de453f9b2f15bcd0622175315859272",
-          "md5": "53f48bae11b487f0ed6736fd889fc3f2"
+          "size": 3573725,
+          "sha512": "8f00e25d99a44a6f9b4ee480b2a38a0204680ce5396c5ebd56a8400caa29f94e95f2f38207f9c8bb76076c2a0bb58e6e9d5a9a4f4222acc4b5c192f4ffa2624c",
+          "sha256": "3862eb5769ed1f0b64f20484379c9dc7cf74331edbacffe985320cf89a87e4bb",
+          "sha1": "1d1553730d70524cd6ae5a627a77d55ad2aa7fc8",
+          "md5": "8a4a66832b416c629423617d70dcbf40"
         }
       ]
     }
