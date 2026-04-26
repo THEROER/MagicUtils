@@ -1,0 +1,188 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.ua.theroer",
+    "module": "magicutils-logger",
+    "version": "1.21.3-mc1201",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.2.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.21.3-mc1201"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-lang",
+          "version": {
+            "requires": "1.21.3-mc1201"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-placeholders",
+          "version": {
+            "requires": "1.21.3-mc1201"
+          }
+        },
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-minimessage",
+          "version": {
+            "requires": "4.24.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
+          "url": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
+          "size": 77291,
+          "sha512": "f33c49bca368299f209bb0cea9609b0ec9e7762a8719bde314e3da98701104c4b3b4d48f18bdb69a532f46aa7ebdaa151681095ec7058ba5f9c18255f93183bd",
+          "sha256": "c8def82fcae54b0d87fdb4f92f286e1c8f02a9364c790c0e601ac72fc8ca3ce1",
+          "sha1": "1ecf5ecc35fbdc8fd6130cfafb3643d2af5645b5",
+          "md5": "92796a90d9b24fa98c9e05a7d46ba4c5"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-serializer-plain",
+          "version": {
+            "requires": "4.24.0"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-config",
+          "version": {
+            "requires": "1.21.3-mc1201"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-lang",
+          "version": {
+            "requires": "1.21.3-mc1201"
+          }
+        },
+        {
+          "group": "dev.ua.theroer",
+          "module": "magicutils-placeholders",
+          "version": {
+            "requires": "1.21.3-mc1201"
+          }
+        },
+        {
+          "group": "net.kyori",
+          "module": "adventure-text-minimessage",
+          "version": {
+            "requires": "4.24.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
+          "url": "magicutils-logger-1.21.3-mc1201-mc1.20.jar",
+          "size": 77291,
+          "sha512": "f33c49bca368299f209bb0cea9609b0ec9e7762a8719bde314e3da98701104c4b3b4d48f18bdb69a532f46aa7ebdaa151681095ec7058ba5f9c18255f93183bd",
+          "sha256": "c8def82fcae54b0d87fdb4f92f286e1c8f02a9364c790c0e601ac72fc8ca3ce1",
+          "sha1": "1ecf5ecc35fbdc8fd6130cfafb3643d2af5645b5",
+          "md5": "92796a90d9b24fa98c9e05a7d46ba4c5"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.21.3-mc1201-sources.jar",
+          "url": "magicutils-logger-1.21.3-mc1201-sources.jar",
+          "size": 35251,
+          "sha512": "fb897db17baadb42f711f76483f1384132753ea660dc056b714d16313bebdc466a4554ece221851150d28112b5963057af6982cdf57b7269518e842a5110dea2",
+          "sha256": "5b3032ca147e41cebb07b060147495acf50d7865e8dc6de2791aaa15a9ec9bbc",
+          "sha1": "3e3c73b102e2b0892885c3ede99623beeff994db",
+          "md5": "7a802ef6011516fc85e3dd9b3543c493"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.21.3-mc1201-javadoc.jar",
+          "url": "magicutils-logger-1.21.3-mc1201-javadoc.jar",
+          "size": 190747,
+          "sha512": "0ad983de9dd3398a50015ce738c822e86860838f35be22223fbef9090d559ca9da617a82a01d96907f1228ea3a0f095e26e77c1e2c654ef246462fd5bc8988fe",
+          "sha256": "121061e74018545ec1dba78572494fa35f0deaef9acbbf76b7963b8576a180d6",
+          "sha1": "9e790503c2ae350dd3ae99658b6dc7a2f67e43d6",
+          "md5": "dafde779eec4c6b3adc4c414111bb2a8"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "magicutils-logger-1.21.3-mc1201-all.jar",
+          "url": "magicutils-logger-1.21.3-mc1201-all.jar",
+          "size": 3240129,
+          "sha512": "54be0ff62a47ecac8c26fc7c776b4d6df50725f30efa2ccc6d8432bc718aace0d95c38c7056b18c281b0215df65e764735abbe5366658b75b6780322df7a1277",
+          "sha256": "9f25de4f067d82e0cb1ef81336c05dcafa5c061da61ce18984e6d65180c493fe",
+          "sha1": "31f10e9dc484a198858a1921757c763fec28b284",
+          "md5": "129f51849267c36932031c11a1092472"
+        }
+      ]
+    }
+  ]
+}
