@@ -1,12 +1,12 @@
 package dev.ua.theroer.magicutils.platform.fabric.codec;
 
 import com.google.gson.JsonElement;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.function.Consumer;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
@@ -59,19 +59,15 @@ public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
         if (tree == null) {
             return null;
         }
-        DataResult<Component> result;
+        Object result;
         try {
-            @SuppressWarnings("unchecked")
-            DataResult<Component> parsed = (DataResult<Component>) parseMethod.invoke(codec, JsonOps.INSTANCE, tree);
-            result = parsed;
+            result = parseMethod.invoke(codec, JsonOps.INSTANCE, tree);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Failed to parse Text via codec " + resolvedClassName, error);
         }
 
-        if (onError != null) {
-            result.error().ifPresent(error -> onError.accept(error.message()));
-        }
-        return result.result().orElse(null);
+        reportError(result, onError);
+        return dataResultValue(result, Component.class).orElse(null);
     }
 
     @Override
@@ -82,19 +78,56 @@ public final class YarnTextCodecsAdapter implements TextSerializationAdapter {
         DynamicOps<JsonElement> ops = registries != null
                 ? (DynamicOps<JsonElement>) RegistryOps.create(JsonOps.INSTANCE, registries)
                 : JsonOps.INSTANCE;
-        DataResult<JsonElement> result;
+        Object result;
         try {
-            @SuppressWarnings("unchecked")
-            DataResult<JsonElement> encoded = (DataResult<JsonElement>) encodeStartMethod.invoke(codec, ops, text);
-            result = encoded;
+            result = encodeStartMethod.invoke(codec, ops, text);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Failed to encode Text via codec " + resolvedClassName, error);
         }
-        return result.result().orElse(null);
+        return dataResultValue(result, JsonElement.class).orElse(null);
     }
 
     @Override
     public String name() {
         return resolvedClassName + ".CODEC";
+    }
+
+    private static void reportError(Object dataResult, Consumer<String> onError) {
+        if (onError == null) {
+            return;
+        }
+        dataResultOptional(dataResult, "error")
+                .ifPresent(error -> onError.accept(dataResultErrorMessage(error)));
+    }
+
+    private static <T> Optional<T> dataResultValue(Object dataResult, Class<T> expectedType) {
+        return dataResultOptional(dataResult, "result")
+                .flatMap(value -> ReflectiveAccess.cast(value, expectedType));
+    }
+
+    private static Optional<Object> dataResultOptional(Object dataResult, String methodName) {
+        if (dataResult == null) {
+            return Optional.empty();
+        }
+        Optional<Method> method = ReflectiveAccess.publicMethod(dataResult.getClass(), methodName);
+        if (method.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<Object> invoked = ReflectiveAccess.invoke(method.get(), dataResult);
+        if (invoked.isEmpty() || !(invoked.get() instanceof Optional<?> optional)) {
+            return Optional.empty();
+        }
+        return optional.map(Object.class::cast);
+    }
+
+    private static String dataResultErrorMessage(Object error) {
+        if (error == null) {
+            return "unknown codec error";
+        }
+        Optional<Method> messageMethod = ReflectiveAccess.publicMethod(error.getClass(), "message");
+        return messageMethod
+                .flatMap(method -> ReflectiveAccess.invoke(method, error))
+                .map(String::valueOf)
+                .orElseGet(error::toString);
     }
 }

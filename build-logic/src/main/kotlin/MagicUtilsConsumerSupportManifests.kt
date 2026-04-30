@@ -40,6 +40,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
         "defaults" to magicUtilsDefaults(
             "javaVersion" to "21",
             "magicutilsVersion" to "1.21.3",
+            "target" to "mc12110",
         ),
         "platforms" to magicUtilsOrderedMap(
             "bukkit" to magicUtilsOrderedMap(
@@ -57,6 +58,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
                             "javaVersion" to "17",
                             "magicutilsVersion" to "1.21.3-mc1201",
                             "paperVersion" to "1.20-R0.1-SNAPSHOT",
+                            "target" to "mc1201",
                         ),
                     ),
                     magicUtilsVersionMatrixEntry(
@@ -66,6 +68,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
                         smokeValues = listOf("1.20.5", "1.20.6"),
                         gradleProperties = magicUtilsGradleProperties(
                             "magicutilsVersion" to "1.21.3-mc1201",
+                            "target" to "mc1201",
                         ),
                     ),
                     magicUtilsVersionMatrixEntry(
@@ -82,6 +85,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
                             "javaVersion" to "25",
                             "magicutilsVersion" to "1.21.3-mc2611",
                             "paperVersion" to "26.1.2.build.19-alpha",
+                            "target" to "mc2611",
                         ),
                     ),
                 ),
@@ -123,6 +127,7 @@ internal fun verifiedPluginSupportManifest(): Map<String, Any> =
                             "fabricApiVersion" to "0.92.8+1.20.1",
                             "fabricMinecraftVersion" to "1.20.1",
                             "fabricMinecraftVersionPredicate" to "1.20.x",
+                            "target" to "mc1201",
                         ),
                         smokeGradleProperties = mapOf(
                             "1.20.6" to magicUtilsGradleProperties(
