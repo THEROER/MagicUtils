@@ -104,6 +104,17 @@ jobs:
             -Ptarget=mc2611 \
             -Ppublish_target_suffix=true
 
+      - name: Stamp last-publish marker
+        run: |
+          # Encourages GitHub Pages to rebuild promptly after this push,
+          # which usually shortens the CDN cache window for newly published
+          # Maven artifacts. The file content is informational — see RELEASING.md.
+          {
+            echo "timestamp: $(date -u +%FT%TZ)"
+            echo "commit: ${{ github.sha }}"
+            echo "run: ${{ github.run_id }}"
+          } > "$GITHUB_WORKSPACE/maven/.last-publish"
+
       - name: Generate Maven index
         run: |
           cat > "$GITHUB_WORKSPACE/maven/index.html" <<'HTML'

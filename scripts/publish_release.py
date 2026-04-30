@@ -1,11 +1,29 @@
 #!/usr/bin/env python3
+"""Validate and dispatch a MagicUtils release.
+
+Workflow:
+  1. Preflight: clean tree, semver bump, no duplicate tag.
+  2. Sync gradle.properties (commit + push) on the current branch.
+  3. Dispatch release.yml on the default branch.
+  4. Optionally watch every workflow in the chain to completion.
+  5. Optionally smoke-test the published Maven artifact.
+
+The chain release.yml -> docs.yml -> publish-maven.yml + javadoc.yml
+auto-dispatches without us — release.yml's dispatch-downstream job uses
+gh workflow run for docs/javadoc, which lets workflow_run on
+publish-maven fire normally (the GITHUB_TOKEN-pushed-tag block does not
+apply to workflow_dispatch).
+"""
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,10 +35,19 @@ GRADLE_PROPERTIES_PATH = REPO_ROOT / "gradle.properties"
 SEMVER_PATTERN = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 TAG_PATTERN = re.compile(r"^v(?P<version>(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))$")
 RELEASE_WORKFLOW = "release.yml"
-JAVADOC_WORKFLOW = "javadoc.yml"
+DOCS_WORKFLOW = "docs.yml"
 PUBLISH_MAVEN_WORKFLOW = "publish-maven.yml"
+JAVADOC_WORKFLOW = "javadoc.yml"
+WATCHED_WORKFLOWS = (RELEASE_WORKFLOW, DOCS_WORKFLOW, PUBLISH_MAVEN_WORKFLOW, JAVADOC_WORKFLOW)
 RELEASE_REF_WAIT_SECONDS = 30
 RELEASE_REF_POLL_SECONDS = 2
+WORKFLOW_DETECT_TIMEOUT_SECONDS = 60
+SMOKE_TIMEOUT_SECONDS = 20 * 60
+SMOKE_POLL_SECONDS = 30
+SMOKE_ARTIFACT_URL = (
+    "https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/"
+    "magicutils-lang/{version}/magicutils-lang-{version}.pom"
+)
 
 
 class CliError(RuntimeError):
@@ -37,14 +64,8 @@ class Version:
     def parse(cls, raw: str) -> "Version":
         match = SEMVER_PATTERN.fullmatch(raw)
         if match is None:
-            raise CliError(
-                "Version must use plain semver format X.Y.Z, for example 1.19.2"
-            )
-        return cls(
-            major=int(match.group(1)),
-            minor=int(match.group(2)),
-            patch=int(match.group(3)),
-        )
+            raise CliError("Version must use plain semver format X.Y.Z, for example 1.21.4")
+        return cls(int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
     def __str__(self) -> str:
         return f"{self.major}.{self.minor}.{self.patch}"
@@ -52,80 +73,39 @@ class Version:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "Validate a MagicUtils release version, optionally sync "
-            "gradle.properties, and dispatch the GitHub Actions release workflow."
-        )
+        description="Validate, sync, and dispatch a MagicUtils release.",
     )
     parser.add_argument("version", help="Release version in X.Y.Z format")
-    parser.add_argument(
-        "--ref",
-        help="Git ref for workflow_dispatch. Defaults to the current branch.",
-    )
-    parser.add_argument(
-        "--repo",
-        help="GitHub repository in owner/name format. Defaults to origin remote.",
-    )
-    parser.add_argument(
-        "--allow-dirty",
-        action="store_true",
-        help="Allow dispatch even when the local worktree has uncommitted changes.",
-    )
+    parser.add_argument("--ref", help="Git ref for workflow_dispatch (defaults to repo default branch).")
+    parser.add_argument("--repo", help="GitHub repository in owner/name format (defaults to origin remote).")
+    parser.add_argument("--allow-dirty", action="store_true",
+                        help="Skip the clean-worktree check.")
     parser.set_defaults(sync_gradle_version=True)
+    parser.add_argument("--no-sync-gradle-version", dest="sync_gradle_version", action="store_false",
+                        help="Skip gradle.properties sync (assume someone bumped it already).")
+    parser.set_defaults(wait=True)
+    parser.add_argument("--no-wait", dest="wait", action="store_false",
+                        help="Don't watch downstream workflows after dispatch.")
+    parser.set_defaults(smoke_test=True)
+    parser.add_argument("--no-smoke-test", dest="smoke_test", action="store_false",
+                        help="Don't poll the Maven artifact after publish.")
     parser.add_argument(
-        "--sync-gradle-version",
-        dest="sync_gradle_version",
-        action="store_true",
-        help="Update gradle.properties, commit it, and push the branch before dispatch.",
+        "--remote-ref-wait-seconds", type=int, default=RELEASE_REF_WAIT_SECONDS,
+        help=f"Seconds to wait for origin/<ref> to catch up before dispatch (default: {RELEASE_REF_WAIT_SECONDS}).",
     )
     parser.add_argument(
-        "--no-sync-gradle-version",
-        dest="sync_gradle_version",
-        action="store_false",
-        help="Skip gradle.properties sync and dispatch the workflow without branch prep.",
+        "--smoke-timeout-seconds", type=int, default=SMOKE_TIMEOUT_SECONDS,
+        help=f"Smoke test timeout in seconds (default: {SMOKE_TIMEOUT_SECONDS}).",
     )
-    parser.add_argument(
-        "--dispatch-javadoc",
-        action="store_true",
-        help="Also dispatch javadoc.yml manually for the same version after release dispatch.",
-    )
-    parser.add_argument(
-        "--dispatch-publish-maven",
-        action="store_true",
-        help=(
-            "Also dispatch publish-maven.yml manually after release dispatch. "
-            "Use this as a fallback when workflow_run does not trigger."
-        ),
-    )
-    parser.add_argument(
-        "--remote-ref-wait-seconds",
-        type=int,
-        default=RELEASE_REF_WAIT_SECONDS,
-        help=(
-            "How long to wait for origin/<ref> to resolve to the pushed local HEAD "
-            f"before dispatch. Default: {RELEASE_REF_WAIT_SECONDS}s."
-        ),
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Validate and print the workflow commands without dispatching them.",
-    )
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Validate and print actions without making any changes.")
     return parser.parse_args()
 
 
 def run_command(*args: str, check: bool = True) -> str:
-    completed = subprocess.run(
-        args,
-        cwd=REPO_ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    completed = subprocess.run(args, cwd=REPO_ROOT, text=True, capture_output=True, check=False)
     if check and completed.returncode != 0:
-        stderr = completed.stderr.strip()
-        stdout = completed.stdout.strip()
-        details = stderr or stdout or f"exit code {completed.returncode}"
+        details = completed.stderr.strip() or completed.stdout.strip() or f"exit code {completed.returncode}"
         raise CliError(f"Command failed: {' '.join(args)}\n{details}")
     return completed.stdout.strip()
 
@@ -133,21 +113,14 @@ def run_command(*args: str, check: bool = True) -> str:
 def require_clean_worktree(allow_dirty: bool) -> None:
     if allow_dirty:
         return
-    status = run_command("git", "status", "--short")
-    if status:
-        raise CliError(
-            "Working tree is not clean. Commit or stash changes before releasing, "
-            "or rerun with --allow-dirty if you explicitly want to dispatch the "
-            "workflow from the remote ref only."
-        )
+    if run_command("git", "status", "--short"):
+        raise CliError("Working tree is not clean. Commit or stash, or rerun with --allow-dirty.")
 
 
 def detect_current_branch() -> str:
     branch = run_command("git", "rev-parse", "--abbrev-ref", "HEAD")
     if branch == "HEAD":
-        raise CliError(
-            "Detached HEAD detected. Pass --ref <branch> only after checking out a branch."
-        )
+        raise CliError("Detached HEAD detected. Pass --ref <branch> only after checking out a branch.")
     return branch
 
 
@@ -155,8 +128,7 @@ def read_gradle_version() -> Version:
     try:
         for line in GRADLE_PROPERTIES_PATH.read_text(encoding="utf-8").splitlines():
             if line.startswith("version="):
-                raw_version = line.split("=", 1)[1].strip()
-                return Version.parse(raw_version)
+                return Version.parse(line.split("=", 1)[1].strip())
     except FileNotFoundError as error:
         raise CliError(f"Missing {GRADLE_PROPERTIES_PATH}.") from error
     raise CliError(f"Could not find 'version=' entry in {GRADLE_PROPERTIES_PATH}.")
@@ -164,33 +136,23 @@ def read_gradle_version() -> Version:
 
 def write_gradle_version(version: Version) -> None:
     content = GRADLE_PROPERTIES_PATH.read_text(encoding="utf-8")
-    updated_content, replacements = re.subn(
-        r"(?m)^version=.*$",
-        f"version={version}",
-        content,
-        count=1,
-    )
+    updated, replacements = re.subn(r"(?m)^version=.*$", f"version={version}", content, count=1)
     if replacements != 1:
         raise CliError(f"Could not update 'version=' entry in {GRADLE_PROPERTIES_PATH}.")
-    GRADLE_PROPERTIES_PATH.write_text(updated_content, encoding="utf-8")
+    GRADLE_PROPERTIES_PATH.write_text(updated, encoding="utf-8")
 
 
 def detect_repo_slug(explicit_repo: str | None) -> str:
     if explicit_repo:
         return explicit_repo
-
     remote_url = run_command("git", "remote", "get-url", "origin")
     if remote_url.startswith("git@github.com:"):
         slug = remote_url.split(":", 1)[1]
     else:
         parsed = urlparse(remote_url)
         if parsed.hostname != "github.com":
-            raise CliError(
-                "Could not detect a GitHub repository from origin remote. "
-                "Pass --repo owner/name explicitly."
-            )
+            raise CliError("Could not detect a GitHub repository from origin remote. Pass --repo owner/name explicitly.")
         slug = parsed.path.lstrip("/")
-
     if slug.endswith(".git"):
         slug = slug[:-4]
     if "/" not in slug:
@@ -198,16 +160,23 @@ def detect_repo_slug(explicit_repo: str | None) -> str:
     return slug
 
 
-def detect_ref(explicit_ref: str | None) -> str:
+def detect_default_branch(repo_slug: str) -> str:
+    output = run_command("gh", "api", f"repos/{repo_slug}", "--jq", ".default_branch")
+    if not output:
+        raise CliError(f"Could not detect default branch for {repo_slug}.")
+    return output
+
+
+def detect_ref(explicit_ref: str | None, repo_slug: str) -> str:
     if explicit_ref:
         return explicit_ref
-    return detect_current_branch()
+    return detect_default_branch(repo_slug)
 
 
 def normalize_tag(raw: str) -> str | None:
     tag = raw.strip()
     if tag.startswith("refs/tags/"):
-        tag = tag[len("refs/tags/") :]
+        tag = tag[len("refs/tags/"):]
     if tag.endswith("^{}"):
         tag = tag[:-3]
     return tag or None
@@ -218,40 +187,18 @@ def parse_tag_version(tag: str) -> Version | None:
     if normalized is None:
         return None
     match = TAG_PATTERN.fullmatch(normalized)
-    if match is None:
-        return None
-    return Version.parse(match.group("version"))
-
-
-def load_local_tags() -> set[str]:
-    output = run_command("git", "tag", "--list", "v*")
-    return {tag.strip() for tag in output.splitlines() if tag.strip()}
-
-
-def load_remote_tags(repo_slug: str) -> set[str]:
-    output = run_command(
-        "gh",
-        "api",
-        "--paginate",
-        "--jq",
-        ".[].ref",
-        f"repos/{repo_slug}/git/matching-refs/tags/v",
-    )
-    return {
-        normalized
-        for raw in output.splitlines()
-        if (normalized := normalize_tag(raw)) is not None
-    }
+    return Version.parse(match.group("version")) if match else None
 
 
 def collect_known_versions(repo_slug: str) -> tuple[set[str], list[Version]]:
-    tags = load_local_tags() | load_remote_tags(repo_slug)
-    versions: list[Version] = []
-    for tag in tags:
-        version = parse_tag_version(tag)
-        if version is not None:
-            versions.append(version)
-    versions.sort()
+    local = {tag.strip() for tag in run_command("git", "tag", "--list", "v*").splitlines() if tag.strip()}
+    remote_raw = run_command(
+        "gh", "api", "--paginate", "--jq", ".[].ref",
+        f"repos/{repo_slug}/git/matching-refs/tags/v",
+    )
+    remote = {n for raw in remote_raw.splitlines() if (n := normalize_tag(raw)) is not None}
+    tags = local | remote
+    versions = sorted(v for tag in tags if (v := parse_tag_version(tag)) is not None)
     return tags, versions
 
 
@@ -261,221 +208,192 @@ def local_head_sha() -> str:
 
 def remote_ref_sha(ref: str) -> str | None:
     output = run_command("git", "ls-remote", "origin", f"refs/heads/{ref}")
-    if not output:
-        return None
-    return output.split()[0].strip()
+    return output.split()[0].strip() if output else None
 
 
-def wait_for_remote_ref(ref: str, expected_sha: str, timeout_seconds: int) -> None:
-    deadline = time.monotonic() + timeout_seconds
+def wait_for_remote_ref(ref: str, expected_sha: str, timeout: int) -> None:
+    deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if remote_ref_sha(ref) == expected_sha:
             return
         time.sleep(RELEASE_REF_POLL_SECONDS)
-    actual = remote_ref_sha(ref)
-    raise CliError(
-        f"origin/{ref} did not resolve to {expected_sha} within {timeout_seconds}s. "
-        f"Current remote sha: {actual or 'missing'}"
-    )
+    actual = remote_ref_sha(ref) or "missing"
+    raise CliError(f"origin/{ref} did not resolve to {expected_sha} within {timeout}s. Current: {actual}")
 
 
-def build_release_command(repo_slug: str, ref: str, version: Version) -> list[str]:
-    return [
-        "gh",
-        "workflow",
-        "run",
-        RELEASE_WORKFLOW,
-        "--repo",
-        repo_slug,
-        "--ref",
-        ref,
-        "-f",
-        f"version={version}",
-    ]
-
-
-def build_javadoc_command(repo_slug: str, ref: str, version: Version) -> list[str]:
-    return [
-        "gh",
-        "workflow",
-        "run",
-        JAVADOC_WORKFLOW,
-        "--repo",
-        repo_slug,
-        "--ref",
-        ref,
-        "-f",
-        f"version={version}",
-    ]
-
-
-def build_publish_maven_command(repo_slug: str, ref: str) -> list[str]:
-    return [
-        "gh",
-        "workflow",
-        "run",
-        PUBLISH_MAVEN_WORKFLOW,
-        "--repo",
-        repo_slug,
-        "--ref",
-        ref,
-    ]
-
-
-def render_command(command: list[str]) -> str:
-    return " ".join(command)
-
-
-def prepare_release_ref(
-    requested_version: Version,
-    current_gradle_version: Version,
-    ref: str,
-    dry_run: bool,
-    remote_ref_wait_seconds: int,
-) -> None:
+def prepare_release_ref(requested: Version, current: Version, ref: str, dry_run: bool, wait_seconds: int) -> None:
     current_branch = detect_current_branch()
     if ref != current_branch:
         raise CliError(
-            f"gradle.properties sync requires --ref to match the current branch "
-            f"({current_branch})."
+            f"gradle.properties sync requires --ref to match the current branch ({current_branch}). "
+            f"Switch to {ref} or pass --no-sync-gradle-version."
         )
-
-    if requested_version != current_gradle_version:
+    if requested != current:
         if dry_run:
-            print(
-                f"Release ref prep: would update gradle.properties from "
-                f"{current_gradle_version} to {requested_version}"
-            )
-            print(
-                f"Release ref prep: would commit "
-                f"'chore(release): bump version to {requested_version}'"
-            )
+            print(f"[dry-run] would bump gradle.properties from {current} to {requested}")
+            print(f"[dry-run] would commit 'chore(release): bump version to {requested}'")
         else:
-            write_gradle_version(requested_version)
+            write_gradle_version(requested)
             run_command("git", "add", str(GRADLE_PROPERTIES_PATH))
-            run_command(
-                "git",
-                "commit",
-                "-m",
-                f"chore(release): bump version to {requested_version}",
-            )
-            print(
-                f"Release ref prep: committed gradle.properties bump to {requested_version}"
-            )
-
+            run_command("git", "commit", "-m", f"chore(release): bump version to {requested}")
+            print(f"Committed gradle.properties bump to {requested}")
     if dry_run:
-        print(f"Release ref prep: would push HEAD to origin/{ref}")
-        print(
-            "Release ref prep: would wait for origin/"
-            f"{ref} to resolve to the pushed local HEAD before dispatch"
-        )
+        print(f"[dry-run] would push HEAD to origin/{ref}")
         return
-
-    expected_sha = local_head_sha()
+    expected = local_head_sha()
     run_command("git", "push", "origin", f"HEAD:{ref}")
-    print(f"Release ref prep: pushed HEAD to origin/{ref}")
-    wait_for_remote_ref(ref, expected_sha, remote_ref_wait_seconds)
-    print(f"Release ref prep: confirmed origin/{ref} -> {expected_sha}")
+    print(f"Pushed HEAD to origin/{ref}")
+    wait_for_remote_ref(ref, expected, wait_seconds)
+    print(f"Confirmed origin/{ref} -> {expected}")
+
+
+def dispatch_release(repo_slug: str, ref: str, version: Version, dry_run: bool) -> None:
+    cmd = ["gh", "workflow", "run", RELEASE_WORKFLOW, "--repo", repo_slug, "--ref", ref, "-f", f"version={version}"]
+    if dry_run:
+        print(f"[dry-run] would run: {' '.join(cmd)}")
+        return
+    subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+    print(f"Dispatched {RELEASE_WORKFLOW} on {ref} for {version}")
+
+
+def latest_run_id(repo_slug: str, workflow: str, since: float) -> int | None:
+    """Latest run id for ``workflow`` created at-or-after ``since`` (unix seconds)."""
+    output = run_command(
+        "gh", "api", f"repos/{repo_slug}/actions/workflows/{workflow}/runs",
+        "--jq", ".workflow_runs[0:5] | map({id, created_at})",
+    )
+    if not output:
+        return None
+    try:
+        runs = json.loads(output)
+    except json.JSONDecodeError:
+        return None
+    for run in runs:
+        created = run.get("created_at", "")
+        try:
+            ts = time.mktime(time.strptime(created, "%Y-%m-%dT%H:%M:%SZ"))
+        except ValueError:
+            continue
+        if ts >= since - 5:  # small clock skew tolerance
+            return int(run["id"])
+    return None
+
+
+def wait_for_run(repo_slug: str, workflow: str, since: float) -> bool:
+    print(f"Waiting for {workflow}...")
+    deadline = time.monotonic() + WORKFLOW_DETECT_TIMEOUT_SECONDS
+    run_id: int | None = None
+    while time.monotonic() < deadline and run_id is None:
+        run_id = latest_run_id(repo_slug, workflow, since)
+        if run_id is None:
+            time.sleep(3)
+    if run_id is None:
+        print(f"  could not detect a run for {workflow} within "
+              f"{WORKFLOW_DETECT_TIMEOUT_SECONDS}s — skipping")
+        return False
+    print(f"  watching run {run_id} (https://github.com/{repo_slug}/actions/runs/{run_id})")
+    completed = subprocess.run(
+        ["gh", "run", "watch", str(run_id), "--repo", repo_slug, "--exit-status"],
+        cwd=REPO_ROOT, check=False,
+    )
+    if completed.returncode == 0:
+        print(f"  {workflow} run {run_id}: success")
+        return True
+    print(f"  {workflow} run {run_id}: failed (exit {completed.returncode})")
+    return False
+
+
+def smoke_test(version: Version, timeout: int) -> bool:
+    url = SMOKE_ARTIFACT_URL.format(version=version)
+    print(f"Smoke test: polling {url} (timeout {timeout}s)")
+    deadline = time.monotonic() + timeout
+    attempt = 0
+    while time.monotonic() < deadline:
+        attempt += 1
+        try:
+            req = urllib.request.Request(url, method="HEAD")
+            with urllib.request.urlopen(req, timeout=10) as response:
+                if response.status == 200:
+                    print(f"  attempt {attempt}: 200 OK — artifact available")
+                    return True
+                print(f"  attempt {attempt}: HTTP {response.status}")
+        except urllib.error.HTTPError as exc:
+            print(f"  attempt {attempt}: HTTP {exc.code}")
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            print(f"  attempt {attempt}: {exc}")
+        time.sleep(SMOKE_POLL_SECONDS)
+    print(f"  smoke test timed out after {timeout}s")
+    print(f"  GitHub Pages CDN can lag — verify directly: "
+          f"git ls-tree origin/gh-pages -- maven/dev/ua/theroer/magicutils-lang/{version}/")
+    return False
 
 
 def main() -> int:
     try:
         args = parse_args()
-        requested_version = Version.parse(args.version)
-        current_gradle_version = read_gradle_version()
-        if requested_version < current_gradle_version:
-            raise CliError(
-                f"Version {requested_version} must not be lower than "
-                f"gradle.properties version {current_gradle_version}."
-            )
+        requested = Version.parse(args.version)
+        current = read_gradle_version()
+        if requested < current:
+            raise CliError(f"Version {requested} must not be lower than gradle.properties {current}.")
         require_clean_worktree(args.allow_dirty)
         repo_slug = detect_repo_slug(args.repo)
-        ref = detect_ref(args.ref)
+        ref = detect_ref(args.ref, repo_slug)
+        tag = f"v{requested}"
 
-        requested_tag = f"v{requested_version}"
         known_tags, known_versions = collect_known_versions(repo_slug)
-        if requested_tag in known_tags:
-            raise CliError(f"Release tag {requested_tag!r} already exists.")
+        if tag in known_tags:
+            raise CliError(f"Release tag {tag!r} already exists.")
+        latest = known_versions[-1] if known_versions else None
+        if latest is not None and requested <= latest:
+            raise CliError(f"Version {requested} must be greater than latest release {latest}.")
 
-        latest_version = known_versions[-1] if known_versions else None
-        if latest_version is not None and requested_version <= latest_version:
-            raise CliError(
-                f"Version {requested_version} must be greater than the latest "
-                f"release {latest_version}."
-            )
-
-        release_command = build_release_command(repo_slug, ref, requested_version)
-        javadoc_command = build_javadoc_command(repo_slug, ref, requested_version)
-        publish_maven_command = build_publish_maven_command(repo_slug, ref)
-
-        print(f"Repository: {repo_slug}")
-        print(f"Ref: {ref}")
-        print(f"Version: {requested_version}")
-        print(f"Tag: {requested_tag}")
-        print(f"gradle.properties version: {current_gradle_version}")
-        print(f"Latest release: {latest_version or 'none'}")
-        if args.sync_gradle_version:
-            if requested_version == current_gradle_version:
-                print("gradle.properties sync: release ref already has the requested version locally")
-            else:
-                print(
-                    "gradle.properties sync: will update gradle.properties before dispatch "
-                    f"and push the branch to origin/{ref}"
-                )
-        else:
-            print("gradle.properties sync: disabled")
-        print(f"Dispatch javadoc: {'yes' if args.dispatch_javadoc else 'no'}")
-        print(
-            "Dispatch publish-maven fallback: "
-            + ("yes" if args.dispatch_publish_maven else "no")
-        )
-        print("Release workflow command:")
-        print("  " + render_command(release_command))
-        if args.dispatch_javadoc:
-            print("Javadoc workflow command:")
-            print("  " + render_command(javadoc_command))
-        if args.dispatch_publish_maven:
-            print("Publish Maven workflow command:")
-            print("  " + render_command(publish_maven_command))
+        print(f"Repository:        {repo_slug}")
+        print(f"Ref:               {ref} (default branch detection: {'manual' if args.ref else 'auto'})")
+        print(f"Version:           {requested}")
+        print(f"Tag:               {tag}")
+        print(f"gradle.properties: {current}")
+        print(f"Latest release:    {latest or 'none'}")
+        print(f"Sync gradle:       {'yes' if args.sync_gradle_version else 'no'}")
+        print(f"Wait for chain:    {'yes' if args.wait else 'no'}")
+        print(f"Smoke test:        {'yes' if args.smoke_test else 'no'}")
 
         if args.dry_run:
             if args.sync_gradle_version:
-                prepare_release_ref(
-                    requested_version=requested_version,
-                    current_gradle_version=current_gradle_version,
-                    ref=ref,
-                    dry_run=True,
-                    remote_ref_wait_seconds=args.remote_ref_wait_seconds,
-                )
-            print("Dry run only, workflows were not dispatched.")
+                prepare_release_ref(requested, current, ref, dry_run=True,
+                                    wait_seconds=args.remote_ref_wait_seconds)
+            dispatch_release(repo_slug, ref, requested, dry_run=True)
+            print("[dry-run] would wait for release/docs/publish-maven/javadoc")
+            print("[dry-run] would smoke-test artifact" if args.smoke_test else "")
             return 0
 
         if args.sync_gradle_version:
-            prepare_release_ref(
-                requested_version=requested_version,
-                current_gradle_version=current_gradle_version,
-                ref=ref,
-                dry_run=False,
-                remote_ref_wait_seconds=args.remote_ref_wait_seconds,
-            )
-        subprocess.run(release_command, cwd=REPO_ROOT, check=True)
-        print("Release workflow dispatched successfully.")
+            prepare_release_ref(requested, current, ref, dry_run=False,
+                                wait_seconds=args.remote_ref_wait_seconds)
+        dispatch_start = time.time()
+        dispatch_release(repo_slug, ref, requested, dry_run=False)
 
-        if args.dispatch_javadoc:
-            subprocess.run(javadoc_command, cwd=REPO_ROOT, check=True)
-            print("Javadoc workflow dispatched successfully.")
-        if args.dispatch_publish_maven:
-            subprocess.run(publish_maven_command, cwd=REPO_ROOT, check=True)
-            print("Publish Maven workflow dispatched successfully.")
-        return 0
+        if not args.wait:
+            print("Skipping wait — release dispatched. Track in GitHub Actions tab.")
+            return 0
+
+        all_ok = True
+        for wf in WATCHED_WORKFLOWS:
+            if not wait_for_run(repo_slug, wf, dispatch_start):
+                all_ok = False
+
+        if args.smoke_test:
+            if smoke_test(requested, args.smoke_timeout_seconds):
+                print("Release verified.")
+            else:
+                print("Release dispatched but smoke verification failed. See pointers above.")
+                all_ok = False
+
+        return 0 if all_ok else 1
     except CliError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
     except subprocess.CalledProcessError as error:
-        print(
-            f"Error: workflow dispatch failed with exit code {error.returncode}.",
-            file=sys.stderr,
-        )
+        print(f"Error: workflow dispatch failed with exit code {error.returncode}.", file=sys.stderr)
         return error.returncode
     except KeyboardInterrupt:
         print("Interrupted.", file=sys.stderr)
