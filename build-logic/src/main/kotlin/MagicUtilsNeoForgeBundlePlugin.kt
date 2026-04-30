@@ -4,6 +4,7 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 
@@ -58,6 +59,10 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
             tasks.named("jar", Jar::class.java).configure { jarTask ->
                 jarTask.archiveBaseName.set(moduleName)
                 jarTask.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                jarTask.dependsOn(bundleContents)
+                jarTask.inputs.files(bundleContents)
+                    .withPropertyName("bundleContents")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
                 jarTask.from(provider {
                     bundleContents.files.map { file ->
                         if (file.isDirectory) file else zipTree(file)
