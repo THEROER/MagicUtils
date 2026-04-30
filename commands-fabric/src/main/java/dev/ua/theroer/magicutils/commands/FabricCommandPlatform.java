@@ -3,19 +3,18 @@ package dev.ua.theroer.magicutils.commands;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricCommandAudience;
 import dev.ua.theroer.magicutils.platform.fabric.FabricPermissionBridge;
-import dev.ua.theroer.magicutils.reflect.ReflectiveAccess;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
  * Fabric-specific platform hooks for the command engine.
  */
 public class FabricCommandPlatform implements CommandPlatform<CommandSourceStack> {
+    private static final int DENIED_PERMISSION_LEVEL = 5;
     private static final String MODERN_MINECART_COMMAND_BLOCK_CLASS =
             "net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock";
     private static final String LEGACY_MINECART_COMMAND_BLOCK_CLASS =
@@ -80,7 +79,12 @@ public class FabricCommandPlatform implements CommandPlatform<CommandSourceStack
         if (sender == null) {
             return false;
         }
-        return FabricPermissionDefaults.check(sender, permission, defaultValue, opLevel);
+        return FabricPermissionBridge.hasPermission(
+                (Object) sender,
+                permission,
+                fallbackAllowed(sender, defaultValue, opLevel),
+                fallbackPermissionLevel(sender, defaultValue, opLevel)
+        );
     }
 
     @Override
@@ -152,7 +156,7 @@ public class FabricCommandPlatform implements CommandPlatform<CommandSourceStack
 
         @Override
         public boolean hasPermission(String permission, int fallbackOpLevel) {
-            return FabricPermissionDefaults.check(sender, permission, fallbackOpLevel);
+            return FabricPermissionBridge.hasPermission((Object) sender, permission, fallbackOpLevel);
         }
 
         @Override
@@ -172,109 +176,24 @@ public class FabricCommandPlatform implements CommandPlatform<CommandSourceStack
         }
     }
 
-    private static final class FabricPermissionDefaults {
-        private static final String PERMISSIONS_CLASS = "me.lucko.fabric.api.permissions.v0.Permissions";
-        private static final Method CHECK_BOOLEAN;
-        private static final Method CHECK_INT;
-        private static final Method CHECK_SIMPLE;
+    private static boolean fallbackAllowed(CommandSourceStack sender, MagicPermissionDefault defaultValue, int opLevel) {
+        MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
+        return switch (effective) {
+            case TRUE -> true;
+            case FALSE -> false;
+            case NOT_OP -> !FabricPermissionBridge.hasCommandLevel((Object) sender, opLevel);
+            case OP -> FabricPermissionBridge.hasCommandLevel((Object) sender, opLevel);
+        };
+    }
 
-        static {
-            Class<?> permissions = ReflectiveAccess.loadClass(PERMISSIONS_CLASS).orElse(null);
-            CHECK_BOOLEAN = permissions != null ? findMethod(permissions, boolean.class) : null;
-            CHECK_INT = permissions != null ? findMethod(permissions, int.class) : null;
-            CHECK_SIMPLE = permissions != null ? findMethod(permissions, null) : null;
-        }
-
-        private FabricPermissionDefaults() {
-        }
-
-        static boolean check(CommandSourceStack sender, String permission, int opLevel) {
-            return FabricPermissionBridge.hasPermission(sender, permission, opLevel);
-        }
-
-        static boolean check(CommandSourceStack sender, String permission, MagicPermissionDefault defaultValue,
-                             int opLevel) {
-            if (permission == null || permission.isEmpty()) {
-                return true;
-            }
-            if (sender == null) {
-                return false;
-            }
-            Boolean result = tryInvoke(sender, permission, defaultValue, opLevel);
-            if (result != null) {
-                return result;
-            }
-            return fallback(sender, defaultValue, opLevel);
-        }
-
-        private static Boolean tryInvoke(CommandSourceStack sender, String permission,
-                                         MagicPermissionDefault defaultValue, int opLevel) {
-            if (CHECK_BOOLEAN != null) {
-                try {
-                    boolean fallback = fallback(sender, defaultValue, opLevel);
-                    Object res = ReflectiveAccess.invoke(CHECK_BOOLEAN, null, sender, permission, fallback).orElse(null);
-                    return res instanceof Boolean value ? value : null;
-                } catch (RuntimeException ignored) {
-                }
-            }
-            if (CHECK_INT != null) {
-                try {
-                    int fallback = fallbackLevel(defaultValue, opLevel);
-                    Object res = ReflectiveAccess.invoke(CHECK_INT, null, sender, permission, fallback).orElse(null);
-                    return res instanceof Boolean value ? value : null;
-                } catch (RuntimeException ignored) {
-                }
-            }
-            if (CHECK_SIMPLE != null) {
-                try {
-                    Object res = ReflectiveAccess.invoke(CHECK_SIMPLE, null, sender, permission).orElse(null);
-                    return res instanceof Boolean value ? value : null;
-                } catch (RuntimeException ignored) {
-                }
-            }
-            return null;
-        }
-
-        private static boolean fallback(CommandSourceStack sender, MagicPermissionDefault defaultValue, int opLevel) {
-            MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
-            return switch (effective) {
-                case TRUE -> true;
-                case FALSE -> false;
-                case NOT_OP -> !FabricPermissionBridge.hasCommandLevel(sender, opLevel);
-                case OP -> FabricPermissionBridge.hasCommandLevel(sender, opLevel);
-            };
-        }
-
-        private static int fallbackLevel(MagicPermissionDefault defaultValue, int opLevel) {
-            MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
-            return switch (effective) {
-                case TRUE -> 0;
-                case FALSE -> opLevel + 1;
-                case NOT_OP -> 0;
-                case OP -> opLevel;
-            };
-        }
-
-        private static Method findMethod(Class<?> permissionsClass, Class<?> defaultType) {
-            for (Method method : permissionsClass.getMethods()) {
-                if (!method.getName().equals("check")) {
-                    continue;
-                }
-                Class<?>[] params = method.getParameterTypes();
-                if (defaultType == null) {
-                    if (params.length == 2 && params[1] == String.class
-                            && params[0].isAssignableFrom(CommandSourceStack.class)) {
-                        return method;
-                    }
-                } else {
-                    if (params.length == 3 && params[1] == String.class && params[2] == defaultType
-                            && params[0].isAssignableFrom(CommandSourceStack.class)) {
-                        return method;
-                    }
-                }
-            }
-            return null;
-        }
+    private static int fallbackPermissionLevel(CommandSourceStack sender, MagicPermissionDefault defaultValue, int opLevel) {
+        MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
+        return switch (effective) {
+            case TRUE -> 0;
+            case FALSE -> DENIED_PERMISSION_LEVEL;
+            case NOT_OP -> FabricPermissionBridge.hasCommandLevel((Object) sender, opLevel) ? DENIED_PERMISSION_LEVEL : 0;
+            case OP -> opLevel;
+        };
     }
 
     private ServerPlayer getPlayerSafe(CommandSourceStack sender) {

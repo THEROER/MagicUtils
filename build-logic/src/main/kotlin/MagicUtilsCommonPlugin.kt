@@ -26,6 +26,7 @@ class MagicUtilsCommonPlugin : Plugin<Project> {
                 "placeholders-fabric" to "magicutils-placeholders-fabric",
                 "fabric-bundle" to "magicutils-fabric-bundle",
                 "bukkit-bundle" to "magicutils-bukkit-bundle",
+                "neoforge-bundle" to "magicutils-neoforge-bundle",
                 "config-yaml" to "magicutils-config-yaml",
                 "config-toml" to "magicutils-config-toml",
                 "processor" to "magicutils-processor"

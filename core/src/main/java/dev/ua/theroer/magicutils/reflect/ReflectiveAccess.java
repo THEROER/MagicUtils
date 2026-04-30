@@ -4,7 +4,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 /**
@@ -14,7 +16,72 @@ import java.util.function.Predicate;
  * instead of throwing reflective exceptions.</p>
  */
 public final class ReflectiveAccess {
+    private static final List<NameResolver> NAME_RESOLVERS = new CopyOnWriteArrayList<>();
+
     private ReflectiveAccess() {
+    }
+
+    /**
+     * Maps source names from an external namespace to names visible in the current runtime.
+     */
+    public interface NameResolver {
+        /**
+         * Maps a class name from the supplied namespace.
+         *
+         * @param namespace source namespace for the provided name
+         * @param className fully qualified source class name
+         * @return mapped runtime class name, or empty when unsupported
+         */
+        default Optional<String> mapClassName(String namespace, String className) {
+            return Optional.empty();
+        }
+
+        /**
+         * Maps a method name from the supplied namespace.
+         *
+         * @param namespace source namespace for the provided name
+         * @param ownerClassName fully qualified source owner class name
+         * @param methodName source method name
+         * @param descriptor JVM descriptor in the source namespace, when available
+         * @return mapped runtime method name, or empty when unsupported
+         */
+        default Optional<String> mapMethodName(
+                String namespace,
+                String ownerClassName,
+                String methodName,
+                String descriptor
+        ) {
+            return Optional.empty();
+        }
+
+        /**
+         * Maps a field name from the supplied namespace.
+         *
+         * @param namespace source namespace for the provided name
+         * @param ownerClassName fully qualified source owner class name
+         * @param fieldName source field name
+         * @param descriptor JVM descriptor in the source namespace, when available
+         * @return mapped runtime field name, or empty when unsupported
+         */
+        default Optional<String> mapFieldName(
+                String namespace,
+                String ownerClassName,
+                String fieldName,
+                String descriptor
+        ) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Registers a runtime name resolver used by mapped lookup helpers.
+     *
+     * @param resolver resolver to add
+     */
+    public static void registerNameResolver(NameResolver resolver) {
+        if (resolver != null && !NAME_RESOLVERS.contains(resolver)) {
+            NAME_RESOLVERS.add(resolver);
+        }
     }
 
     /**
@@ -27,11 +94,55 @@ public final class ReflectiveAccess {
         if (className == null || className.isBlank()) {
             return Optional.empty();
         }
-        try {
-            return Optional.of(Class.forName(className));
-        } catch (ClassNotFoundException ignored) {
+        Optional<Class<?>> contextClass = loadClass(className, Thread.currentThread().getContextClassLoader());
+        if (contextClass.isPresent()) {
+            return contextClass;
+        }
+        return loadClass(className, ReflectiveAccess.class.getClassLoader());
+    }
+
+    private static Optional<Class<?>> loadClass(String className, ClassLoader loader) {
+        if (loader == null) {
             return Optional.empty();
         }
+        try {
+            return Optional.of(Class.forName(className, false, loader));
+        } catch (ClassNotFoundException | LinkageError ignored) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Attempts to load a class directly and then through registered name resolvers.
+     *
+     * @param className class name to load
+     * @return an Optional containing the class if found, otherwise empty
+     */
+    public static Optional<Class<?>> loadMappedClass(String className) {
+        return loadMappedClass(null, className);
+    }
+
+    /**
+     * Attempts to load a class directly and then through registered name resolvers.
+     *
+     * @param namespace source namespace for mapped lookup
+     * @param className class name to load
+     * @return an Optional containing the class if found, otherwise empty
+     */
+    public static Optional<Class<?>> loadMappedClass(String namespace, String className) {
+        Optional<Class<?>> direct = loadClass(className);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        for (NameResolver resolver : NAME_RESOLVERS) {
+            Optional<Class<?>> mapped = mapClassName(resolver, namespace, className)
+                    .filter(name -> !name.equals(className))
+                    .flatMap(ReflectiveAccess::loadClass);
+            if (mapped.isPresent()) {
+                return mapped;
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -71,9 +182,55 @@ public final class ReflectiveAccess {
             Method method = type.getMethod(name, parameterTypes != null ? parameterTypes : new Class<?>[0]);
             method.setAccessible(true);
             return Optional.of(method);
-        } catch (ReflectiveOperationException ignored) {
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Attempts to find a public method directly and then through registered name resolvers.
+     *
+     * @param type the class to search in
+     * @param name method name to find
+     * @param parameterTypes the parameter types of the method
+     * @return an Optional containing the method if found, otherwise empty
+     */
+    public static Optional<Method> publicMappedMethod(Class<?> type, String name, Class<?>... parameterTypes) {
+        return publicMappedMethod(type, null, type != null ? type.getName() : null, name, null, parameterTypes);
+    }
+
+    /**
+     * Attempts to find a public method directly and then through registered name resolvers.
+     *
+     * @param type the class to search in
+     * @param namespace source namespace for mapped lookup
+     * @param ownerClassName fully qualified source owner class name
+     * @param methodName method name to find
+     * @param descriptor JVM method descriptor in the source namespace, when available
+     * @param parameterTypes runtime parameter types of the method
+     * @return an Optional containing the method if found, otherwise empty
+     */
+    public static Optional<Method> publicMappedMethod(
+            Class<?> type,
+            String namespace,
+            String ownerClassName,
+            String methodName,
+            String descriptor,
+            Class<?>... parameterTypes
+    ) {
+        Optional<Method> direct = publicMethod(type, methodName, parameterTypes);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        for (NameResolver resolver : NAME_RESOLVERS) {
+            Optional<Method> mapped = mapMethodName(resolver, namespace, ownerClassName, methodName, descriptor)
+                    .filter(name -> !name.equals(methodName))
+                    .flatMap(name -> publicMethod(type, name, parameterTypes));
+            if (mapped.isPresent()) {
+                return mapped;
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -90,12 +247,16 @@ public final class ReflectiveAccess {
         if (type == null || predicate == null) {
             return Optional.empty();
         }
-        Method[] methods = type.getMethods();
-        for (Method method : methods) {
-            if (predicate.test(method)) {
-                method.setAccessible(true);
-                return Optional.of(method);
+        try {
+            Method[] methods = type.getMethods();
+            for (Method method : methods) {
+                if (predicate.test(method)) {
+                    method.setAccessible(true);
+                    return Optional.of(method);
+                }
             }
+        } catch (RuntimeException | LinkageError ignored) {
+            return Optional.empty();
         }
         return Optional.empty();
     }
@@ -116,9 +277,52 @@ public final class ReflectiveAccess {
             Field field = type.getField(name);
             field.setAccessible(true);
             return Optional.of(field);
-        } catch (ReflectiveOperationException ignored) {
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Attempts to find a public field directly and then through registered name resolvers.
+     *
+     * @param type the class to search in
+     * @param name field name to find
+     * @return an Optional containing the field if found, otherwise empty
+     */
+    public static Optional<Field> publicMappedField(Class<?> type, String name) {
+        return publicMappedField(type, null, type != null ? type.getName() : null, name, null);
+    }
+
+    /**
+     * Attempts to find a public field directly and then through registered name resolvers.
+     *
+     * @param type the class to search in
+     * @param namespace source namespace for mapped lookup
+     * @param ownerClassName fully qualified source owner class name
+     * @param fieldName field name to find
+     * @param descriptor JVM field descriptor in the source namespace, when available
+     * @return an Optional containing the field if found, otherwise empty
+     */
+    public static Optional<Field> publicMappedField(
+            Class<?> type,
+            String namespace,
+            String ownerClassName,
+            String fieldName,
+            String descriptor
+    ) {
+        Optional<Field> direct = publicField(type, fieldName);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        for (NameResolver resolver : NAME_RESOLVERS) {
+            Optional<Field> mapped = mapFieldName(resolver, namespace, ownerClassName, fieldName, descriptor)
+                    .filter(name -> !name.equals(fieldName))
+                    .flatMap(name -> publicField(type, name));
+            if (mapped.isPresent()) {
+                return mapped;
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -135,16 +339,20 @@ public final class ReflectiveAccess {
         if (type == null || predicate == null) {
             return Optional.empty();
         }
-        Field[] fields = type.getFields();
-        for (Field field : fields) {
-            int modifiers = field.getModifiers();
-            if (!Modifier.isPublic(modifiers) || !Modifier.isStatic(modifiers)) {
-                continue;
+        try {
+            Field[] fields = type.getFields();
+            for (Field field : fields) {
+                int modifiers = field.getModifiers();
+                if (!Modifier.isPublic(modifiers) || !Modifier.isStatic(modifiers)) {
+                    continue;
+                }
+                if (predicate.test(field)) {
+                    field.setAccessible(true);
+                    return Optional.of(field);
+                }
             }
-            if (predicate.test(field)) {
-                field.setAccessible(true);
-                return Optional.of(field);
-            }
+        } catch (RuntimeException | LinkageError ignored) {
+            return Optional.empty();
         }
         return Optional.empty();
     }
@@ -162,7 +370,7 @@ public final class ReflectiveAccess {
         }
         try {
             return Optional.ofNullable(field.get(target));
-        } catch (ReflectiveOperationException ignored) {
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             return Optional.empty();
         }
     }
@@ -181,7 +389,7 @@ public final class ReflectiveAccess {
         }
         try {
             return Optional.ofNullable(method.invoke(target, args != null ? args : new Object[0]));
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             return Optional.empty();
         }
     }
@@ -264,5 +472,52 @@ public final class ReflectiveAccess {
             return Character.class;
         }
         return type;
+    }
+
+    private static Optional<String> mapClassName(NameResolver resolver, String namespace, String className) {
+        if (resolver == null || className == null || className.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return resolver.mapClassName(namespace, className).filter(name -> !name.isBlank());
+        } catch (RuntimeException | LinkageError ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<String> mapMethodName(
+            NameResolver resolver,
+            String namespace,
+            String ownerClassName,
+            String methodName,
+            String descriptor
+    ) {
+        if (resolver == null || ownerClassName == null || methodName == null || methodName.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return resolver.mapMethodName(namespace, ownerClassName, methodName, descriptor)
+                    .filter(name -> !name.isBlank());
+        } catch (RuntimeException | LinkageError ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<String> mapFieldName(
+            NameResolver resolver,
+            String namespace,
+            String ownerClassName,
+            String fieldName,
+            String descriptor
+    ) {
+        if (resolver == null || ownerClassName == null || fieldName == null || fieldName.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return resolver.mapFieldName(namespace, ownerClassName, fieldName, descriptor)
+                    .filter(name -> !name.isBlank());
+        } catch (RuntimeException | LinkageError ignored) {
+            return Optional.empty();
+        }
     }
 }

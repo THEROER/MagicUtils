@@ -38,7 +38,7 @@ class MagicCommandCompositionTest {
         assertEquals(List.of("target"), schema.directAction().arguments().stream()
                 .map(CommandArgument::getName)
                 .toList());
-        assertEquals("reload", schema.subCommands().children().getFirst().name());
+        assertEquals("reload", schema.subCommands().children().get(0).name());
 
         CommandResult result = manager.execute("demo", new TestSender("tester"), List.of("payload"));
         assertTrue(result.isSuccess());

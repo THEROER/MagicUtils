@@ -4,7 +4,7 @@
 
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:384:.getMethod(
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:397:.getMethod(
-commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/NeoForgeCommandPlatform.java:295:.getMethod(
+commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/NeoForgeCommandPlatform.java:313:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1871:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:15:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:18:.getMethod(
@@ -18,10 +18,10 @@ config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2878:.g
 config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2889:.getMethod(
 config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2901:Class.forName(
 config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2903:.getMethod(
-core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:116:.getField(
-core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:31:Class.forName(
-core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:71:.getMethod(
-http-client/src/main/java/dev/ua/theroer/magicutils/http/HttpClientLifecycle.java:51:.getMethod(
+core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:109:Class.forName(
+core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:182:.getMethod(
+core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:277:.getField(
+http-client/src/main/java/dev/ua/theroer/magicutils/http/HttpClientLifecycle.java:44:.getMethod(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:62:Class.forName(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:64:.getMethod(
 logger/src/main/java/dev/ua/theroer/magicutils/logger/ConsoleColorSerializer.java:65:.getMethod(

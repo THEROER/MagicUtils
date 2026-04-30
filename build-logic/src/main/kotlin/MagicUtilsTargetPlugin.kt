@@ -25,14 +25,16 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
             val targetSpec = if (resolvedContext != null) {
                 resolvedContext.target
             } else {
+                val explicitTarget = if (project.hasProperty("target")) {
+                    project.property("target") as String
+                } else {
+                    project.findProperty("magicutils.target") as? String
+                        ?: System.getProperty("magicutils.target")
+                }
                 resolveMagicUtilsTargetSpec(
                     targetsFile = File(rootDir, "gradle/targets.properties"),
                     defaultTarget = "mc12110",
-                    explicitTarget = if (project.hasProperty("target")) {
-                        project.property("target") as String
-                    } else {
-                        null
-                    },
+                    explicitTarget = explicitTarget,
                 )
             }
 

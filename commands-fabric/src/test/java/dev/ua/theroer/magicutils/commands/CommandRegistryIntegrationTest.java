@@ -120,6 +120,21 @@ class CommandRegistryIntegrationTest {
         }
     }
 
+    @Test
+    void opOnlyCommandsUseModernPermissionSources() throws Exception {
+        try (TestHarness harness = new TestHarness(tempDir, "PermissionMod", 2)) {
+            CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+            assertNotNull(harness.registry);
+
+            CommandRegistry.register(dispatcher, new RestrictedCommand());
+
+            CommandNode<CommandSourceStack> restricted = dispatcher.getRoot().getChild("restricted");
+            assertNotNull(restricted);
+            assertTrue(restricted.canUse(commandSourceWithPermissionLevel(2)));
+            assertFalse(restricted.canUse(commandSourceWithPermissionLevel(0)));
+        }
+    }
+
     @CommandInfo(name = "demo", aliases = {"alias"})
     private static final class DemoCommand extends MagicCommand {
         @SuppressWarnings("unused")
@@ -133,6 +148,14 @@ class CommandRegistryIntegrationTest {
         @SuppressWarnings("unused")
         public CommandResult execute(@ParamName("player") ServerPlayer player) {
             return CommandResult.success(player.getName().getString());
+        }
+    }
+
+    @CommandInfo(name = "restricted")
+    private static final class RestrictedCommand extends MagicCommand {
+        @SuppressWarnings("unused")
+        public CommandResult execute() {
+            return CommandResult.success("ok");
         }
     }
 
@@ -186,6 +209,85 @@ class CommandRegistryIntegrationTest {
         return ((AtomicInteger) field.get(null)).get();
     }
 
+    private static CommandSourceStack commandSourceWithPermissionLevel(int permissionLevel) throws Exception {
+        sun.misc.Unsafe unsafe = unsafe();
+        CommandSourceStack source = (CommandSourceStack) unsafe.allocateInstance(CommandSourceStack.class);
+        if (putPermissionSetIfPresent(unsafe, source, permissionLevel)) {
+            return source;
+        }
+        if (putIntPermissionLevelIfPresent(unsafe, source, permissionLevel)) {
+            return source;
+        }
+        throw new IllegalStateException("Unsupported CommandSourceStack permission model");
+    }
+
+    private static boolean putPermissionSetIfPresent(
+            sun.misc.Unsafe unsafe,
+            CommandSourceStack source,
+            int permissionLevel
+    ) throws Exception {
+        Object permissionSet = permissionSet(permissionLevel);
+        if (permissionSet == null) {
+            return false;
+        }
+        Field field = findFieldByTypeName(CommandSourceStack.class, "net.minecraft.server.permissions.PermissionSet");
+        if (field == null) {
+            return false;
+        }
+        putObject(unsafe, source, field, permissionSet);
+        return true;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static boolean putIntPermissionLevelIfPresent(
+            sun.misc.Unsafe unsafe,
+            CommandSourceStack source,
+            int permissionLevel
+    ) {
+        Field field = findFieldByType(CommandSourceStack.class, int.class, "permissionLevel");
+        if (field == null) {
+            return false;
+        }
+        long offset = unsafe.objectFieldOffset(field);
+        unsafe.putInt(source, offset, permissionLevel);
+        return true;
+    }
+
+    private static Object permissionSet(int permissionLevel) throws Exception {
+        try {
+            Class<?> permissionSet = Class.forName("net.minecraft.server.permissions.PermissionSet");
+            String fieldName = permissionLevel > 0 ? "ALL_PERMISSIONS" : "NO_PERMISSIONS";
+            return permissionSet.getField(fieldName).get(null);
+        } catch (ClassNotFoundException ignored) {
+            return null;
+        }
+    }
+
+    private static Field findFieldByType(Class<?> owner, Class<?> type, String preferredName) {
+        Field fallback = null;
+        for (Field field : owner.getDeclaredFields()) {
+            if (field.getType() != type) {
+                continue;
+            }
+            if (preferredName != null && preferredName.equals(field.getName())) {
+                return field;
+            }
+            if (fallback == null) {
+                fallback = field;
+            }
+        }
+        return fallback;
+    }
+
+    private static Field findFieldByTypeName(Class<?> owner, String typeName) {
+        for (Field field : owner.getDeclaredFields()) {
+            if (field.getType().getName().equals(typeName)) {
+                return field;
+            }
+        }
+        return null;
+    }
+
     private static void resetRegistryState() throws Exception {
         MagicSenderAdapters.clear();
 
@@ -212,6 +314,12 @@ class CommandRegistryIntegrationTest {
         putObject(unsafe, Logger.class, logger, "core", core);
         putObject(unsafe, Logger.class, logger, "prefixedLoggers", new HashMap<>());
         return logger;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void putObject(sun.misc.Unsafe unsafe, Object target, Field field, Object value) {
+        long offset = unsafe.objectFieldOffset(field);
+        unsafe.putObject(target, offset, value);
     }
 
     @SuppressWarnings("deprecation")

@@ -219,11 +219,14 @@ private fun resolveMatrixContext(
     definition: MagicUtilsMatrixDefinition,
 ): MagicUtilsMatrixResolvedContext {
     val projectProperties = settings.gradle.startParameter.projectProperties
+    val explicitTarget = projectProperties["target"]
+        ?: projectProperties["magicutils.target"]
+        ?: System.getProperty("magicutils.target")
     val targetsFile = File(settings.rootDir, definition.targetsFile)
     val target = resolveMagicUtilsTargetSpec(
         targetsFile = targetsFile,
         defaultTarget = definition.defaultTarget,
-        explicitTarget = projectProperties["target"],
+        explicitTarget = explicitTarget,
     )
 
     val availablePlatforms = definition.platforms.values
@@ -315,7 +318,7 @@ private fun applyMagicUtilsMatrixDefaults(extension: MagicUtilsMatrixSettingsExt
         "placeholders-fabric",
         "fabric-bundle",
     ), listOf("mc26"))
-    extension.platform("neoforge", listOf("platform-neoforge", "commands-neoforge"))
+    extension.platform("neoforge", listOf("platform-neoforge", "commands-neoforge", "neoforge-bundle"), listOf("mc1201"))
 
     extension.scenario("workspace", listOf("bukkit", "bungee", "velocity", "fabric", "neoforge"), "Full multi-platform workspace")
     extension.scenario("bukkit", listOf("bukkit"), "Bukkit and Paper modules")

@@ -19,6 +19,7 @@ import net.neoforged.neoforge.server.permission.nodes.PermissionTypes;
  * registered, this bridge falls back to command-level op checks to preserve existing behavior.</p>
  */
 public final class NeoForgePermissionBridge {
+    private static final int MAX_COMMAND_PERMISSION_LEVEL = 4;
     private static final String DEFAULT_MOD_ID = "magicutils";
     private static final Map<String, PermissionNode<Boolean>> REGISTERED_NODES = new ConcurrentHashMap<>();
     private static final Method LEGACY_HAS_PERMISSION_METHOD =
@@ -75,14 +76,32 @@ public final class NeoForgePermissionBridge {
         if (player == null) {
             return false;
         }
+        return hasPermission(player, permission, hasPermissionLevel(player.createCommandSourceStack(), fallbackOpLevel));
+    }
+
+    /**
+     * Checks player permission using NeoForge PermissionAPI with an explicit fallback value.
+     *
+     * @param player player instance
+     * @param permission permission string
+     * @param fallbackAllowed fallback result when the node is not registered or the backend fails
+     * @return true when allowed
+     */
+    public static boolean hasPermission(ServerPlayer player, String permission, boolean fallbackAllowed) {
+        if (permission == null || permission.isBlank()) {
+            return true;
+        }
+        if (player == null) {
+            return false;
+        }
         PermissionNode<Boolean> node = REGISTERED_NODES.get(permission);
         if (node == null) {
-            return hasPermissionLevel(player.createCommandSourceStack(), fallbackOpLevel);
+            return fallbackAllowed;
         }
         try {
             return PermissionAPI.getPermission(player, node);
         } catch (RuntimeException ignored) {
-            return hasPermissionLevel(player.createCommandSourceStack(), fallbackOpLevel);
+            return fallbackAllowed;
         }
     }
 
@@ -102,11 +121,29 @@ public final class NeoForgePermissionBridge {
         if (source == null) {
             return false;
         }
+        return hasPermission(source, permission, hasPermissionLevel(source, fallbackOpLevel));
+    }
+
+    /**
+     * Checks command source permission with an explicit fallback value.
+     *
+     * @param source command source
+     * @param permission permission string
+     * @param fallbackAllowed fallback result when a backend cannot answer
+     * @return true when allowed
+     */
+    public static boolean hasPermission(CommandSourceStack source, String permission, boolean fallbackAllowed) {
+        if (permission == null || permission.isBlank()) {
+            return true;
+        }
+        if (source == null) {
+            return false;
+        }
         ServerPlayer player = getPlayerSafe(source);
         if (player != null) {
-            return hasPermission(player, permission, fallbackOpLevel);
+            return hasPermission(player, permission, fallbackAllowed);
         }
-        return hasPermissionLevel(source, fallbackOpLevel);
+        return fallbackAllowed;
     }
 
     /**
@@ -123,6 +160,9 @@ public final class NeoForgePermissionBridge {
         if (fallbackOpLevel <= 0) {
             return true;
         }
+        if (fallbackOpLevel > MAX_COMMAND_PERMISSION_LEVEL) {
+            return false;
+        }
         Boolean legacyResult = ReflectiveAccess.invoke(LEGACY_HAS_PERMISSION_METHOD, source, fallbackOpLevel)
                 .flatMap(value -> ReflectiveAccess.cast(value, Boolean.class))
                 .orElse(null);
@@ -130,7 +170,7 @@ public final class NeoForgePermissionBridge {
             return legacyResult;
         }
         Object permissionSet = ReflectiveAccess.invoke(SOURCE_PERMISSIONS_METHOD, source).orElse(null);
-        Object commandLevelPermission = PermissionApiCompat.commandLevelPermission(Math.min(fallbackOpLevel, 4));
+        Object commandLevelPermission = PermissionApiCompat.commandLevelPermission(fallbackOpLevel);
         if (permissionSet == null || commandLevelPermission == null) {
             return false;
         }

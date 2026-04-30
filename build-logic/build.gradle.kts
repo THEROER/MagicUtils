@@ -89,5 +89,9 @@ gradlePlugin {
             id = "magicutils.bukkit-bundle"
             implementationClass = "MagicUtilsBukkitBundlePlugin"
         }
+        register("magicutilsNeoForgeBundle") {
+            id = "magicutils.neoforge-bundle"
+            implementationClass = "MagicUtilsNeoForgeBundlePlugin"
+        }
     }
 }
