@@ -3,12 +3,12 @@
   <groupId>dev.ua.theroer</groupId>
   <artifactId>magicutils-fabric-bundle</artifactId>
   <versioning>
-    <latest>1.21.3-mc1201</latest>
-    <release>1.21.3-mc1201</release>
+    <latest>1.21.4-mc1201</latest>
+    <release>1.21.4-mc1201</release>
     <versions>
-      <version>1.21.3</version>
-      <version>1.21.3-mc1201</version>
+      <version>1.21.4</version>
+      <version>1.21.4-mc1201</version>
     </versions>
-    <lastUpdated>20260426185047</lastUpdated>
+    <lastUpdated>20260430085350</lastUpdated>
   </versioning>
 </metadata>
