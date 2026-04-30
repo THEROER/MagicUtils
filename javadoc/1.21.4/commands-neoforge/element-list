@@ -1,0 +1,5 @@
+dev.ua.theroer.magicutils
+dev.ua.theroer.magicutils.bootstrap
+dev.ua.theroer.magicutils.commands
+dev.ua.theroer.magicutils.commands.parsers
+dev.ua.theroer.magicutils.logger
