@@ -15,21 +15,15 @@ class MagicUtilsPublishingPlugin : Plugin<Project> {
 
         val skipShadowPublish = project.hasProperty("skip_shadow_publish")
 
-        val isFabricOrBundle = project.name in setOf(
-            "platform-fabric", "commands-fabric", "logger-fabric", "placeholders-fabric", "fabric-bundle"
-        )
-
-        if (!isFabricOrBundle) {
-            project.extensions.configure(org.gradle.api.publish.PublishingExtension::class.java) { publishing ->
-                publishing.publications.create("mavenJava", MavenPublication::class.java) { publication ->
-                    publication.artifactId = moduleName
-                    publication.from(project.components.getByName("java"))
-                }
-                if (project.name != "processor" && !skipShadowPublish) {
-                    publishing.publications.create("mavenShadow", MavenPublication::class.java) { publication ->
-                        publication.artifactId = "${moduleName}-all"
-                        publication.artifact(project.tasks.named("shadowJar", ShadowJar::class.java).get())
-                    }
+        project.extensions.configure(org.gradle.api.publish.PublishingExtension::class.java) { publishing ->
+            publishing.publications.create("mavenJava", MavenPublication::class.java) { publication ->
+                publication.artifactId = moduleName
+                publication.from(project.components.getByName("java"))
+            }
+            if (project.name != "processor" && !skipShadowPublish) {
+                publishing.publications.create("mavenShadow", MavenPublication::class.java) { publication ->
+                    publication.artifactId = "${moduleName}-all"
+                    publication.artifact(project.tasks.named("shadowJar", ShadowJar::class.java).get())
                 }
             }
         }

@@ -3,6 +3,10 @@ plugins {
     id 'magicutils.annotation-processing'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.FABRIC_MATRIX
+}
+
 dependencies {
     api project(':logger')
     api project(':platform-fabric')

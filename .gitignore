@@ -117,6 +117,9 @@ generated-test-sources/
 site/
 __pycache__/
 *.pyc
+.venv/
+.venv-docs/
+venv/
 
 # Maven (if used alongside Gradle)
 target/

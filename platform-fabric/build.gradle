@@ -2,6 +2,10 @@ plugins {
     id 'magicutils.fabric-module'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.FABRIC_MATRIX
+}
+
 dependencies {
     api project(':core')
 

@@ -32,6 +32,7 @@ from urllib.parse import urlparse
 SCRIPT_PATH = Path(__file__).resolve()
 REPO_ROOT = SCRIPT_PATH.parent.parent
 GRADLE_PROPERTIES_PATH = REPO_ROOT / "gradle.properties"
+PUBLISHING_PROPERTIES_PATH = REPO_ROOT / "gradle" / "publishing.properties"
 SEMVER_PATTERN = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 TAG_PATTERN = re.compile(r"^v(?P<version>(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))$")
 RELEASE_WORKFLOW = "release.yml"
@@ -44,10 +45,32 @@ RELEASE_REF_POLL_SECONDS = 2
 WORKFLOW_DETECT_TIMEOUT_SECONDS = 60
 SMOKE_TIMEOUT_SECONDS = 20 * 60
 SMOKE_POLL_SECONDS = 30
-SMOKE_ARTIFACT_URL = (
-    "https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/"
-    "magicutils-lang/{version}/magicutils-lang-{version}.pom"
-)
+
+
+@dataclass(frozen=True)
+class PublishingProps:
+    group: str
+    repo_url: str
+    repo_owner: str
+    repo_name: str
+    smoke_artifact: str
+
+    @property
+    def group_path(self) -> str:
+        return self.group.replace(".", "/")
+
+    @property
+    def gh_repo_slug(self) -> str:
+        return f"{self.repo_owner}/{self.repo_name}"
+
+    def smoke_artifact_url(self, version: "Version") -> str:
+        return (
+            f"{self.repo_url}/{self.group_path}/{self.smoke_artifact}/"
+            f"{version}/{self.smoke_artifact}-{version}.pom"
+        )
+
+    def gh_pages_artifact_path(self, version: "Version") -> str:
+        return f"maven/{self.group_path}/{self.smoke_artifact}/{version}/"
 
 
 class CliError(RuntimeError):
@@ -132,6 +155,40 @@ def read_gradle_version() -> Version:
     except FileNotFoundError as error:
         raise CliError(f"Missing {GRADLE_PROPERTIES_PATH}.") from error
     raise CliError(f"Could not find 'version=' entry in {GRADLE_PROPERTIES_PATH}.")
+
+
+def read_publishing_props() -> PublishingProps:
+    """Parse the publishing.properties single source of truth.
+
+    Mirrors loadPublishingSpec() in build-logic so Gradle, the publish
+    workflow, and this script all read the same file.
+    """
+    try:
+        text = PUBLISHING_PROPERTIES_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError as error:
+        raise CliError(f"Missing {PUBLISHING_PROPERTIES_PATH}.") from error
+
+    values: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        values[key.strip()] = value.strip()
+
+    def require(key: str) -> str:
+        value = values.get(key, "").strip()
+        if not value:
+            raise CliError(f"Missing or empty '{key}' in {PUBLISHING_PROPERTIES_PATH}.")
+        return value
+
+    return PublishingProps(
+        group=require("group"),
+        repo_url=require("repo.url").rstrip("/"),
+        repo_owner=require("repo.owner"),
+        repo_name=require("repo.name"),
+        smoke_artifact=require("smoke.artifact"),
+    )
 
 
 def write_gradle_version(version: Version) -> None:
@@ -303,8 +360,8 @@ def wait_for_run(repo_slug: str, workflow: str, since: float) -> bool:
     return False
 
 
-def smoke_test(version: Version, timeout: int) -> bool:
-    url = SMOKE_ARTIFACT_URL.format(version=version)
+def smoke_test(props: PublishingProps, version: Version, timeout: int) -> bool:
+    url = props.smoke_artifact_url(version)
     print(f"Smoke test: polling {url} (timeout {timeout}s)")
     deadline = time.monotonic() + timeout
     attempt = 0
@@ -324,7 +381,7 @@ def smoke_test(version: Version, timeout: int) -> bool:
         time.sleep(SMOKE_POLL_SECONDS)
     print(f"  smoke test timed out after {timeout}s")
     print(f"  GitHub Pages CDN can lag — verify directly: "
-          f"git ls-tree origin/gh-pages -- maven/dev/ua/theroer/magicutils-lang/{version}/")
+          f"git ls-tree origin/gh-pages -- {props.gh_pages_artifact_path(version)}")
     return False
 
 
@@ -333,6 +390,7 @@ def main() -> int:
         args = parse_args()
         requested = Version.parse(args.version)
         current = read_gradle_version()
+        publishing_props = read_publishing_props()
         if requested < current:
             raise CliError(f"Version {requested} must not be lower than gradle.properties {current}.")
         require_clean_worktree(args.allow_dirty)
@@ -363,7 +421,9 @@ def main() -> int:
                                     wait_seconds=args.remote_ref_wait_seconds)
             dispatch_release(repo_slug, ref, requested, dry_run=True)
             print("[dry-run] would wait for release/docs/publish-maven/javadoc")
-            print("[dry-run] would smoke-test artifact" if args.smoke_test else "")
+            if args.smoke_test:
+                print(f"[dry-run] would smoke-test artifact at "
+                      f"{publishing_props.smoke_artifact_url(requested)}")
             return 0
 
         if args.sync_gradle_version:
@@ -382,7 +442,7 @@ def main() -> int:
                 all_ok = False
 
         if args.smoke_test:
-            if smoke_test(requested, args.smoke_timeout_seconds):
+            if smoke_test(publishing_props, requested, args.smoke_timeout_seconds):
                 print("Release verified.")
             else:
                 print("Release dispatched but smoke verification failed. See pointers above.")

@@ -1,3 +1,7 @@
 plugins {
     id 'magicutils.neoforge-bundle'
 }
+
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.DEFAULT_ONLY
+}

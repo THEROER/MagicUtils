@@ -22,6 +22,24 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
+      - name: Read publishing coordinates
+        id: publishing
+        run: |
+          # Source single-source-of-truth coordinates from gradle/publishing.properties.
+          # Anything else in this workflow that references the public repo URL or
+          # owner/name pulls from these outputs — never hardcode.
+          PROPS=gradle/publishing.properties
+          REPO_URL=$(grep -E '^repo\.url=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
+          REPO_OWNER=$(grep -E '^repo\.owner=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
+          REPO_NAME=$(grep -E '^repo\.name=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
+          GROUP=$(grep -E '^group=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
+          {
+            echo "repo_url=$REPO_URL"
+            echo "repo_owner=$REPO_OWNER"
+            echo "repo_name=$REPO_NAME"
+            echo "group=$GROUP"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Set up Java 21
         uses: actions/setup-java@v5
         with:
@@ -34,7 +52,9 @@ jobs:
       - name: Publish default target to local gh-pages folder
         run: |
           chmod +x ./gradlew
-          ./gradlew clean publish --rerun-tasks -Ppublish_repo=$GITHUB_WORKSPACE/maven -Pskip_shadow_publish=true
+          ./gradlew clean publishDefaultMatrix --rerun-tasks \
+            -Ppublish_repo=$GITHUB_WORKSPACE/maven \
+            -Pskip_shadow_publish=true
           ./gradlew --stop
 
       - uses: actions/setup-java@v5
@@ -48,26 +68,7 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --rerun-tasks \
-            :platform-api:publish \
-            :core:publish \
-            :config:publish \
-            :lang:publish \
-            :logger:publish \
-            :commands:publish \
-            :commands-brigadier:publish \
-            :placeholders:publish \
-            :http-client:publish \
-            :config-yaml:publish \
-            :config-toml:publish \
-            :diagnostics:publish \
-            :processor:publish \
-            :platform-bukkit:publish \
-            :bukkit-bundle:publish \
-            :platform-fabric:publish \
-            :logger-fabric:publish \
-            :commands-fabric:publish \
-            :placeholders-fabric:publish \
-            :fabric-bundle:publish \
+            publishCommonMatrix publishFabricMatrix \
             -Ppublish_repo=$GITHUB_WORKSPACE/maven \
             -Pskip_shadow_publish=true \
             -Ptarget=mc1201 \
@@ -84,21 +85,7 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --rerun-tasks \
-            :platform-api:publish \
-            :core:publish \
-            :config:publish \
-            :lang:publish \
-            :logger:publish \
-            :commands:publish \
-            :commands-brigadier:publish \
-            :placeholders:publish \
-            :http-client:publish \
-            :config-yaml:publish \
-            :config-toml:publish \
-            :diagnostics:publish \
-            :processor:publish \
-            :platform-bukkit:publish \
-            :bukkit-bundle:publish \
+            publishCommonMatrix \
             -Ppublish_repo=$GITHUB_WORKSPACE/maven \
             -Pskip_shadow_publish=true \
             -Ptarget=mc2611 \
@@ -116,8 +103,12 @@ jobs:
           } > "$GITHUB_WORKSPACE/maven/.last-publish"
 
       - name: Generate Maven index
+        env:
+          REPO_URL: ${{ steps.publishing.outputs.repo_url }}
+          GROUP: ${{ steps.publishing.outputs.group }}
         run: |
-          cat > "$GITHUB_WORKSPACE/maven/index.html" <<'HTML'
+          GROUP_PATH="${GROUP//.//}"
+          cat > "$GITHUB_WORKSPACE/maven/index.html" <<HTML
           <!doctype html>
           <html lang="en">
           <head>
@@ -134,9 +125,9 @@ jobs:
             <h1>MagicUtils Maven Repository</h1>
             <p>Use this repository in Gradle:</p>
             <pre>repositories {
-              maven { url "https://theroer.github.io/MagicUtils/maven" }
+              maven { url "${REPO_URL}" }
             }</pre>
-            <p>Artifacts live under <code>dev/ua/theroer</code>.</p>
+            <p>Artifacts live under <code>${GROUP_PATH}</code>.</p>
           </body>
           </html>
           HTML

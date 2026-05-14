@@ -5,6 +5,10 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.139'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.DEFAULT_ONLY
+}
+
 def target = project.extensions.getByType(MagicUtilsTargetExtension)
 
 neoForge {

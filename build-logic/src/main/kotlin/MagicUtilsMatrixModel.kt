@@ -47,6 +47,14 @@ data class MagicUtilsMatrixResolvedContext(
     val requestedTaskNames: List<String>,
 )
 
+data class MagicUtilsPublishingSpec(
+    val group: String,
+    val repoUrl: String,
+    val repoOwner: String,
+    val repoName: String,
+    val smokeArtifact: String,
+)
+
 internal fun normalizeProjectPath(path: String): String =
     path.trim().removeSuffix(":").let {
         when {
@@ -73,6 +81,30 @@ internal fun loadTargetProperties(targetsFile: File): Properties {
     return Properties().also { properties ->
         targetsFile.inputStream().use(properties::load)
     }
+}
+
+internal fun loadPublishingSpec(publishingFile: File): MagicUtilsPublishingSpec {
+    if (!publishingFile.isFile) {
+        throw GradleException("Missing publishing file: ${publishingFile.absolutePath}")
+    }
+
+    val properties = Properties().also { properties ->
+        publishingFile.inputStream().use(properties::load)
+    }
+
+    fun requireValue(key: String): String =
+        properties.getProperty(key)?.trim()?.takeIf(String::isNotEmpty)
+            ?: throw GradleException(
+                "Missing or empty '$key' in ${publishingFile.absolutePath}"
+            )
+
+    return MagicUtilsPublishingSpec(
+        group = requireValue("group"),
+        repoUrl = requireValue("repo.url").trimEnd('/'),
+        repoOwner = requireValue("repo.owner"),
+        repoName = requireValue("repo.name"),
+        smokeArtifact = requireValue("smoke.artifact"),
+    )
 }
 
 internal fun resolveMagicUtilsTargetSpec(

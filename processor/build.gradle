@@ -5,6 +5,10 @@ plugins {
     id 'magicutils.shadow' // Shadow plugin is applied in this project to disable shadowJar
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.COMMON_MATRIX
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)

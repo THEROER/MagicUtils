@@ -1,4 +1,3 @@
-import groovy.json.JsonOutput
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -18,8 +17,42 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         registerListBuildMatrixTask(project, resolvedContext)
         registerScenarioAggregateTasks(project, resolvedContext)
         registerSelectedScenarioTasks(project, resolvedContext)
-        registerConsumerManifestTasks(project)
+        registerPublishCategoryTasks(project)
     }
+}
+
+private fun registerPublishCategoryTasks(project: Project) {
+    fun aggregate(taskName: String, description: String, categories: Set<MagicUtilsPublishCategory>) {
+        project.tasks.register(taskName) { task ->
+            task.group = "publishing"
+            task.description = description
+            task.dependsOn(project.provider {
+                project.rootProject.subprojects
+                    .filter { it.magicUtilsPublishCategory() in categories }
+                    .map { "${it.path}:publish" }
+            })
+        }
+    }
+
+    aggregate(
+        taskName = "publishDefaultMatrix",
+        description = "Publish every publishable module on the default Minecraft target.",
+        categories = setOf(
+            MagicUtilsPublishCategory.DEFAULT_ONLY,
+            MagicUtilsPublishCategory.COMMON_MATRIX,
+            MagicUtilsPublishCategory.FABRIC_MATRIX,
+        ),
+    )
+    aggregate(
+        taskName = "publishCommonMatrix",
+        description = "Publish modules whose category is COMMON_MATRIX (use with -Ptarget=mcXXXX).",
+        categories = setOf(MagicUtilsPublishCategory.COMMON_MATRIX),
+    )
+    aggregate(
+        taskName = "publishFabricMatrix",
+        description = "Publish modules whose category is FABRIC_MATRIX (use with -Ptarget=mcXXXX).",
+        categories = setOf(MagicUtilsPublishCategory.FABRIC_MATRIX),
+    )
 }
 
 private fun registerListBuildMatrixTask(
@@ -120,25 +153,6 @@ private fun registerSelectedScenarioTasks(
         targetTaskName = "publishToMavenLocal",
         scenarioProjects = selectedScenarioProjects,
     )
-}
-
-private fun registerConsumerManifestTasks(project: Project) {
-    val verifiedPluginSupportJson = project.layout.buildDirectory.file(
-        "generated/support-manifests/verified-plugin/release-support.json"
-    )
-
-    project.tasks.register("writeVerifiedPluginSupportJson") { task ->
-        task.group = "help"
-        task.description = "Write the verified-plugin compatibility manifest maintained in MagicUtils."
-        task.outputs.file(verifiedPluginSupportJson)
-        task.doLast {
-            val outputFile = verifiedPluginSupportJson.get().asFile
-            outputFile.parentFile.mkdirs()
-            val manifestJson = JsonOutput.prettyPrint(JsonOutput.toJson(verifiedPluginSupportManifest()))
-            outputFile.writeText("$manifestJson\n", Charsets.UTF_8)
-            project.logger.lifecycle("Generated ${project.rootDir.toPath().relativize(outputFile.toPath())}")
-        }
-    }
 }
 
 private fun registerAggregateTask(

@@ -10,8 +10,10 @@ def targetVersion = publishTargetSuffix
         ? "${baseVersion}-${project.extensions.extraProperties.get('magicutilsTargetName')}"
         : baseVersion
 
+def publishingSpec = gradle.extensions.extraProperties.get('magicutilsPublishingSpec') as MagicUtilsPublishingSpec
+
 allprojects {
-    group = 'dev.ua.theroer'
+    group = publishingSpec.group
     version = targetVersion
 }
 

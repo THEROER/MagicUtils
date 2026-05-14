@@ -24,7 +24,7 @@ final class HttpClientLifecycle {
             PlatformLogger logger,
             String failureMessage
     ) {
-        Method method = resolveMethod(client, methodName);
+        Method method = resolveMethod(methodName);
         if (method == null) {
             return false;
         }
@@ -39,9 +39,9 @@ final class HttpClientLifecycle {
         }
     }
 
-    private static Method resolveMethod(HttpClient client, String methodName) {
+    private static Method resolveMethod(String methodName) {
         try {
-            return client.getClass().getMethod(methodName);
+            return HttpClient.class.getMethod(methodName);
         } catch (NoSuchMethodException ignored) {
             return null;
         }

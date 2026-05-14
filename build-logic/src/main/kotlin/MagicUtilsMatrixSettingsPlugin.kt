@@ -5,6 +5,7 @@ import java.io.File
 
 open class MagicUtilsMatrixSettingsExtension {
     var targetsFile: String = "gradle/targets.properties"
+    var publishingFile: String = "gradle/publishing.properties"
     var defaultTarget: String = "mc12110"
 
     private val commonProjectPaths = linkedSetOf<String>()
@@ -119,6 +120,9 @@ private val QUERY_OR_FULL_GRAPH_TASKS = setOf(
     "projects",
     "properties",
     "publish",
+    "publishcommonmatrix",
+    "publishdefaultmatrix",
+    "publishfabricmatrix",
     "publishtomavenlocal",
     "tasks",
     "test",
@@ -339,9 +343,11 @@ class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
         settings.gradle.settingsEvaluated {
             val definition = extension.toDefinition()
             val resolvedContext = resolveMatrixContext(settings, definition)
+            val publishingSpec = loadPublishingSpec(File(settings.rootDir, extension.publishingFile))
 
             settings.gradle.extensions.extraProperties.set("magicutilsMatrixDefinition", definition)
             settings.gradle.extensions.extraProperties.set("magicutilsMatrixResolved", resolvedContext)
+            settings.gradle.extensions.extraProperties.set("magicutilsPublishingSpec", publishingSpec)
 
             resolvedContext.includedProjects.forEach { projectPath ->
                 settings.include(projectPath.removePrefix(":"))

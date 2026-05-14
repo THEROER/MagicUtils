@@ -4,6 +4,10 @@ plugins {
     id 'magicutils.publishing'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.COMMON_MATRIX
+}
+
 dependencies {
     api project(':config')
     api project(':lang')

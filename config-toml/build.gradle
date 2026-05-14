@@ -5,6 +5,10 @@ plugins {
     id 'magicutils.shaded-module'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.COMMON_MATRIX
+}
+
 dependencies {
     api project(':config')
     implementation libs.jackson.dataformat.toml

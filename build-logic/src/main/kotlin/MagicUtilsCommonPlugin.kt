@@ -35,6 +35,14 @@ class MagicUtilsCommonPlugin : Plugin<Project> {
             project.extensions.extraProperties.set("getModuleName", { projectName: String ->
                 moduleNameMap.getOrDefault(projectName, projectName)
             })
+
+            if (extensions.findByName(MAGICUTILS_PUBLISH_EXTENSION_NAME) == null) {
+                val publishExtension = extensions.create(
+                    MAGICUTILS_PUBLISH_EXTENSION_NAME,
+                    MagicUtilsPublishExtension::class.java,
+                )
+                publishExtension.category.convention(MagicUtilsPublishCategory.DEFAULT_ONLY)
+            }
         }
     }
 }
