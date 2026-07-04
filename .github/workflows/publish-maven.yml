@@ -6,136 +6,97 @@ on:
     types: [completed]
   workflow_dispatch:
 
+# Publishing targets the self-hosted Reposilite (maven.theroer.dev) over HTTPS,
+# so no repository write access to this GitHub repo is needed anymore.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: gh-pages
+  group: publish-maven
   cancel-in-progress: true
 
 jobs:
-  publish:
+  # Single source of truth: every (target -> publish tasks) unit comes from
+  # targets.properties via printPublishMatrix. Adding a Minecraft target is a
+  # one-line edit to targets.properties — this workflow never lists targets.
+  resolve-matrix:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      units: ${{ steps.matrix.outputs.units }}
+      repo_url: ${{ steps.coords.outputs.repo_url }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-
-      - name: Read publishing coordinates
-        id: publishing
-        run: |
-          # Source single-source-of-truth coordinates from gradle/publishing.properties.
-          # Anything else in this workflow that references the public repo URL or
-          # owner/name pulls from these outputs — never hardcode.
-          PROPS=gradle/publishing.properties
-          REPO_URL=$(grep -E '^repo\.url=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
-          REPO_OWNER=$(grep -E '^repo\.owner=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
-          REPO_NAME=$(grep -E '^repo\.name=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
-          GROUP=$(grep -E '^group=' "$PROPS" | head -n1 | cut -d= -f2- | tr -d '[:space:]')
-          {
-            echo "repo_url=$REPO_URL"
-            echo "repo_owner=$REPO_OWNER"
-            echo "repo_name=$REPO_NAME"
-            echo "group=$GROUP"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
-
-      - uses: gradle/actions/setup-gradle@v3
-
-      - name: Publish default target to local gh-pages folder
-        run: |
-          chmod +x ./gradlew
-          ./gradlew clean publishDefaultMatrix --rerun-tasks \
-            -Ppublish_repo=$GITHUB_WORKSPACE/maven \
-            -Pskip_shadow_publish=true
-          ./gradlew --stop
-
       - uses: actions/setup-java@v5
-        name: Set up Java 21 for mc1201 build JVM
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
-
-      - name: Publish mc1201 target to local gh-pages folder
-        run: |
-          chmod +x ./gradlew
-          ./gradlew --rerun-tasks \
-            publishCommonMatrix publishFabricMatrix \
-            -Ppublish_repo=$GITHUB_WORKSPACE/maven \
-            -Pskip_shadow_publish=true \
-            -Ptarget=mc1201 \
-            -Ppublish_target_suffix=true
-
-      - uses: actions/setup-java@v5
-        name: Set up Java 25
         with:
           distribution: 'temurin'
           java-version: '25'
           cache: 'gradle'
-
-      - name: Publish mc2611 Bukkit/common target to local gh-pages folder
+      - uses: gradle/actions/setup-gradle@v3
+      - id: matrix
         run: |
           chmod +x ./gradlew
-          ./gradlew --rerun-tasks \
-            publishCommonMatrix \
-            -Ppublish_repo=$GITHUB_WORKSPACE/maven \
-            -Pskip_shadow_publish=true \
-            -Ptarget=mc2611 \
-            -Ppublish_target_suffix=true
-
-      - name: Stamp last-publish marker
+          echo "units=$(./gradlew -q printPublishMatrix)" >> "$GITHUB_OUTPUT"
+      - id: coords
         run: |
-          # Encourages GitHub Pages to rebuild promptly after this push,
-          # which usually shortens the CDN cache window for newly published
-          # Maven artifacts. The file content is informational — see RELEASING.md.
-          {
-            echo "timestamp: $(date -u +%FT%TZ)"
-            echo "commit: ${{ github.sha }}"
-            echo "run: ${{ github.run_id }}"
-          } > "$GITHUB_WORKSPACE/maven/.last-publish"
+          REPO_URL=$(grep -E '^repo\.url=' gradle/publishing.properties | head -n1 | cut -d= -f2- | tr -d '[:space:]')
+          echo "repo_url=$REPO_URL" >> "$GITHUB_OUTPUT"
 
-      - name: Generate Maven index
-        env:
-          REPO_URL: ${{ steps.publishing.outputs.repo_url }}
-          GROUP: ${{ steps.publishing.outputs.group }}
-        run: |
-          GROUP_PATH="${GROUP//.//}"
-          cat > "$GITHUB_WORKSPACE/maven/index.html" <<HTML
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <title>MagicUtils Maven Repository</title>
-            <style>
-              body { font-family: sans-serif; margin: 2rem; line-height: 1.5; }
-              code { background: #f4f4f4; padding: 0.15rem 0.35rem; border-radius: 4px; }
-              pre { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; }
-            </style>
-          </head>
-          <body>
-            <h1>MagicUtils Maven Repository</h1>
-            <p>Use this repository in Gradle:</p>
-            <pre>repositories {
-              maven { url "${REPO_URL}" }
-            }</pre>
-            <p>Artifacts live under <code>${GROUP_PATH}</code>.</p>
-          </body>
-          </html>
-          HTML
-
-      - name: Publish to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+  # Each unit publishes its artifacts straight into the Reposilite releases repo.
+  # Units run in parallel and write to disjoint artifact paths, so no assembly /
+  # single-push step is needed. Credentials come from repo secrets and are read
+  # by the build-logic publish helper via PUBLISH_USER / PUBLISH_TOKEN.
+  publish:
+    needs: resolve-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.resolve-matrix.outputs.units) }}
+    env:
+      PUBLISH_USER: ${{ secrets.MAVEN_PUBLISH_USER }}
+      PUBLISH_TOKEN: ${{ secrets.MAVEN_PUBLISH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: maven
-          destination_dir: maven
-          keep_files: true
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'gradle'
+      - uses: gradle/actions/setup-gradle@v3
+      - name: Publish ${{ matrix.unit.target }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean ${{ matrix.unit.tasks }} --rerun-tasks \
+            -Ppublish_repo=${{ needs.resolve-matrix.outputs.repo_url }} \
+            -Pskip_shadow_publish=true \
+            -Ptarget=${{ matrix.unit.target }} \
+            ${{ matrix.unit.suffix && '-Ppublish_target_suffix=true' || '' }}
+
+  # Publish the reusable build-logic plugins (independently versioned) into the
+  # same Reposilite repo, so external consumers resolve them alongside the library.
+  publish-plugins:
+    needs: resolve-matrix
+    runs-on: ubuntu-latest
+    env:
+      PUBLISH_USER: ${{ secrets.MAVEN_PUBLISH_USER }}
+      PUBLISH_TOKEN: ${{ secrets.MAVEN_PUBLISH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'gradle'
+      - uses: gradle/actions/setup-gradle@v3
+      - name: Publish build-logic plugins
+        run: |
+          chmod +x ./gradlew
+          ./gradlew -p build-logic publish \
+            -Ppublish_repo=${{ needs.resolve-matrix.outputs.repo_url }}
