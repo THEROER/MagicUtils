@@ -58,12 +58,21 @@ dependencies {
 // the bundle/pom stays untouched. On deobfuscated targets (26.x) the no-remap
 // Loom plugin has no `modLocalRuntime` — use plain `localRuntime`; obfuscated
 // targets keep the remapping `modLocalRuntime`.
+// Attach the built bundle jar as a dev mod for runServer only. It must NOT be a
+// plain `files(<jar provider>)` dependency: Loom eagerly resolves the mod
+// configuration and sha256s the not-yet-built jar during configuration, which
+// fails every project-wide configuration (release, preflight) with "Failed to
+// compute checksum". Only add it when this project's runServer is the build's
+// start task, and gate on the property so normal builds/releases stay clean.
 def bundleJarProvider = isDeobfuscated
         ? tasks.named('shadowJar').flatMap { it.archiveFile }   // 26.x: no remap
         : tasks.named('remapJar').flatMap { it.archiveFile }    // <26: remapped jar
 def devRuntimeConfig = isDeobfuscated ? 'localRuntime' : 'modLocalRuntime'
-dependencies {
-    add(devRuntimeConfig, files(bundleJarProvider))
+def wantsRun = gradle.startParameter.taskNames.any { it.endsWith('runServer') || it.endsWith('runClient') }
+if (wantsRun) {
+    dependencies {
+        add(devRuntimeConfig, files(bundleJarProvider))
+    }
 }
 
 // `./gradlew :fabric-bundle:runServer` — Loom downloads and starts a Fabric
