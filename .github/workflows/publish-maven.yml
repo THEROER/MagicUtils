@@ -3,8 +3,15 @@ name: publish-maven
 on:
   # Dispatched by release.yml after the tag is created (documentation moved to
   # the separate MagicUtilsWebsite project, so there is no docs workflow to chain
-  # from anymore). Also runnable manually.
+  # from anymore). Also runnable manually. The version is resolved from the
+  # checked-out gradle.properties; the input exists only so release.yml can pass
+  # it through for traceability without a dispatch error.
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version being published (informational)"
+        required: false
+        default: ""
 
 # Publishing targets the self-hosted Reposilite (maven.theroer.dev) over HTTPS,
 # so no repository write access to this GitHub repo is needed anymore.
