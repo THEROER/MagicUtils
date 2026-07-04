@@ -1,9 +1,9 @@
 name: publish-maven
 
 on:
-  workflow_run:
-    workflows: ["docs"]
-    types: [completed]
+  # Dispatched by release.yml after the tag is created (documentation moved to
+  # the separate MagicUtilsWebsite project, so there is no docs workflow to chain
+  # from anymore). Also runnable manually.
   workflow_dispatch:
 
 # Publishing targets the self-hosted Reposilite (maven.theroer.dev) over HTTPS,
@@ -21,14 +21,13 @@ jobs:
   # one-line edit to targets.properties — this workflow never lists targets.
   resolve-matrix:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
       units: ${{ steps.matrix.outputs.units }}
       repo_url: ${{ steps.coords.outputs.repo_url }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -61,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -88,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
