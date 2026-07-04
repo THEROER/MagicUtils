@@ -14,10 +14,66 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
                 "MagicUtils matrix context is missing. Apply magicutils.matrix-settings in settings.gradle."
             )
 
+        val publishingSpec = project.gradle.extensions.extraProperties.properties["magicutilsPublishingSpec"]
+            as? MagicUtilsPublishingSpec
+            ?: throw GradleException(
+                "MagicUtils publishing spec is missing. Apply magicutils.matrix-settings in settings.gradle."
+            )
+
         registerListBuildMatrixTask(project, resolvedContext)
+        registerMatrixJsonTasks(project, resolvedContext)
         registerScenarioAggregateTasks(project, resolvedContext)
         registerSelectedScenarioTasks(project, resolvedContext)
         registerPublishCategoryTasks(project)
+        registerReleaseTasks(project, publishingSpec)
+
+        @Suppress("UNCHECKED_CAST")
+        val smokeSpecs = project.gradle.extensions.extraProperties.properties["magicutilsSmokeSpecs"]
+            as? List<SmokePlatformSpec> ?: emptyList()
+        registerSmokeTasks(project, smokeSpecs.toSmokeCases())
+
+        val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
+            as? ModrinthReleaseSpec
+        registerModrinthTasks(project, modrinthSpec)
+    }
+}
+
+/**
+ * Machine-readable matrix outputs consumed by CI (`fromJson` in a GitHub
+ * Actions `strategy.matrix`). Both print a single JSON line to stdout so
+ * they can be captured with `./gradlew -q print...`.
+ *
+ * - `printBuildMatrix`: every declared target, for build+check fan-out.
+ * - `printPublishMatrix`: every target with its publish tasks + classifier
+ *   suffix flag, for the publish fan-out.
+ *
+ * The target list and per-target platform availability come from
+ * `targets.properties` via [loadAllTargetNames]/[MagicUtilsMatrixDefinition.publishUnits],
+ * so workflows never hardcode a target list.
+ */
+private fun registerMatrixJsonTasks(
+    project: Project,
+    resolvedContext: MagicUtilsMatrixResolvedContext,
+) {
+    val definition = resolvedContext.definition
+    val targetsFile = project.rootProject.file(definition.targetsFile)
+
+    project.tasks.register("printPublishMatrix") { task ->
+        task.group = "help"
+        task.description = "Print the publish matrix (target + publish tasks) as JSON for CI."
+        task.doLast {
+            val units = definition.publishUnits(loadAllTargetNames(targetsFile))
+            println(units.toMatrixJson())
+        }
+    }
+
+    project.tasks.register("printBuildMatrix") { task ->
+        task.group = "help"
+        task.description = "Print the build matrix (list of targets) as JSON for CI."
+        task.doLast {
+            val targets = loadAllTargetNames(targetsFile)
+            println(targets.joinToString(prefix = "[", postfix = "]", separator = ",") { "\"$it\"" })
+        }
     }
 }
 

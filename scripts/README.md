@@ -1,11 +1,19 @@
-Release helpers for MagicUtils live in this directory.
+Release helpers for MagicUtils are now Gradle tasks (Kotlin), not scripts.
 
-Current entrypoint:
+The former `publish_release.py` has been replaced by tasks in the `release`
+group, implemented in `build-logic/src/main/kotlin/MagicUtilsReleaseTasks.kt`
+(pure logic in `MagicUtilsReleaseModel.kt`):
 
-- `publish_release.py`: validates a new version, optionally bumps
-  `gradle.properties`, pushes the selected branch, dispatches the GitHub
-  Actions release workflow, watches the chain to completion, and smoke-tests
-  the published artifact.
+- `./gradlew releasePreflight -Pversion=X.Y.Z` — validate the version against
+  `gradle.properties` and existing tags (no changes).
+- `./gradlew bumpVersion -Pversion=X.Y.Z` — bump `gradle.properties` + commit.
+- `./gradlew dispatchRelease -Pversion=X.Y.Z [-Pref=<branch>]` — `gh workflow
+  run release.yml`.
+- `./gradlew smokeTest -Pversion=X.Y.Z` — poll the published POM.
+- `./gradlew release -Pversion=X.Y.Z` — preflight → bump → dispatch.
 
-For the full release process — flags, pipeline diagram, troubleshooting,
-and verification commands — see [`../RELEASING.md`](../RELEASING.md).
+The server-side chain (tagging, docs/javadoc dispatch, gh-pages publish) still
+lives in `.github/workflows/release.yml`.
+
+For the full release process — pipeline diagram, troubleshooting, and
+verification commands — see [`../RELEASING.md`](../RELEASING.md).
