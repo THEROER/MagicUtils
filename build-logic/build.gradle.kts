@@ -19,13 +19,26 @@ repositories {
 }
 
 publishing {
-    // Publish to the same gh-pages Maven repo as the library when -Ppublish_repo
+    // Publish to the same Reposilite Maven repo as the library when -Ppublish_repo
     // is set (CI); always available via mavenLocal for dogfooding/consumers.
+    // This build script can't use the magicUtilsPublishRepository helper (that's
+    // part of the plugins it builds), so it mirrors the same credential handling:
+    // user/password from PUBLISH_USER/PUBLISH_TOKEN, applied only when supplied.
     if (project.hasProperty("publish_repo")) {
+        val publishUser = (findProperty("publish_user") as? String)?.takeIf { it.isNotBlank() }
+            ?: System.getenv("PUBLISH_USER")?.takeIf { it.isNotBlank() }
+        val publishPassword = (findProperty("publish_password") as? String)?.takeIf { it.isNotBlank() }
+            ?: System.getenv("PUBLISH_TOKEN")?.takeIf { it.isNotBlank() }
         repositories {
             maven {
-                name = "ghPages"
+                name = "magicutilsPublish"
                 url = uri(project.property("publish_repo") as String)
+                if (publishUser != null && publishPassword != null) {
+                    credentials {
+                        username = publishUser
+                        password = publishPassword
+                    }
+                }
             }
         }
     }
