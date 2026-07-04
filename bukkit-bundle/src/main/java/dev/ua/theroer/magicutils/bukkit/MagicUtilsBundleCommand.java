@@ -9,6 +9,9 @@ import dev.ua.theroer.magicutils.commands.CommandResult;
 import dev.ua.theroer.magicutils.commands.MagicCommand;
 import dev.ua.theroer.magicutils.commands.MagicPermissionDefault;
 import dev.ua.theroer.magicutils.commands.MagicSender;
+import dev.ua.theroer.magicutils.commands.SubCommandSpec;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsCommandSupport;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.logger.LogBuilderCore;
 import dev.ua.theroer.magicutils.logger.LogLevel;
 import dev.ua.theroer.magicutils.logger.LogTarget;
@@ -23,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -43,8 +47,24 @@ public final class MagicUtilsBundleCommand extends MagicCommand {
     private final @Nullable LoggerCore logger;
 
     public MagicUtilsBundleCommand(MagicUtilsBukkitBundlePlugin bundlePlugin, @Nullable LoggerCore logger) {
+        this(bundlePlugin, logger, null);
+    }
+
+    public MagicUtilsBundleCommand(
+            MagicUtilsBukkitBundlePlugin bundlePlugin,
+            @Nullable LoggerCore logger,
+            @Nullable Supplier<DiagnosticsService> diagnosticsServiceSupplier
+    ) {
         this.bundlePlugin = Objects.requireNonNull(bundlePlugin, "bundlePlugin");
         this.logger = logger;
+        if (diagnosticsServiceSupplier != null) {
+            // Adds `/magicutils diagnostics`, `/magicutils diagnostics export`
+            // and `/magicutils diagnostics suite <name>`.
+            for (SubCommandSpec<?> spec :
+                    DiagnosticsCommandSupport.<Object>createDiagnosticsSubCommands(logger, diagnosticsServiceSupplier)) {
+                addSubCommand(spec);
+            }
+        }
     }
 
     public CommandResult execute(@Sender MagicSender sender) {

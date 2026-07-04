@@ -1,7 +1,25 @@
 plugins {
     id 'magicutils.bukkit-bundle'
+    // Local-only dev runner. Not part of the published build; provides `runServer`.
+    // 3.x uses the PaperMC v3 download API (v2 is gone / HTTP 410).
+    id 'xyz.jpenilla.run-paper' version '3.0.2'
 }
 
 magicutilsPublish {
     category = MagicUtilsPublishCategory.COMMON_MATRIX
+}
+
+// `./gradlew :bukkit-bundle:runServer -Pscenario=bukkit`
+// Downloads Paper for the default target (1.21.10) and starts it with the
+// freshly built MagicUtils plugin jar (the classifier-less shadowJar).
+tasks.named('runServer', xyz.jpenilla.runpaper.task.RunServer) {
+    minecraftVersion('1.21.10')
+    pluginJars(tasks.named('shadowJar').flatMap { it.archiveFile })
+    // Auto-accept the Minecraft EULA for unattended smoke runs (dev/test only).
+    def runDir = layout.projectDirectory.dir('run')
+    doFirst {
+        def dir = runDir.asFile
+        dir.mkdirs()
+        new File(dir, 'eula.txt').text = 'eula=true\n'
+    }
 }

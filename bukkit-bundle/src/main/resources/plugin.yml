@@ -4,5 +4,5 @@ version: ${version}
 api-version: "${apiVersion}"
 author: THEROER
 description: Shared MagicUtils runtime for Bukkit/Paper.
-website: https://theroer.github.io/MagicUtils/
+website: https://magicutils.theroer.dev/
 folia-supported: true
