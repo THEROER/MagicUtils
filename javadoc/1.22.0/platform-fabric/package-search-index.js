@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html","k":"18"},{"l":"dev.ua.theroer.magicutils.platform.fabric"},{"l":"dev.ua.theroer.magicutils.platform.fabric.codec"}];updateSearchResults();

@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"},{"p":"dev.ua.theroer.magicutils.fabric","l":"MagicUtilsFabricBundleCommand"},{"p":"dev.ua.theroer.magicutils.fabric","l":"MagicUtilsFabricBundleMod"}];updateSearchResults();

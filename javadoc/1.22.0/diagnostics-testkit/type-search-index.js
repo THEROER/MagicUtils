@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"},{"p":"dev.ua.theroer.magicutils.diagnostics.testkit","l":"DiagnosticsTestHarness"},{"p":"dev.ua.theroer.magicutils.diagnostics.testkit","l":"NoOpPlatformLogger","k":"9"},{"p":"dev.ua.theroer.magicutils.diagnostics.testkit","l":"TestPlatform"}];updateSearchResults();
