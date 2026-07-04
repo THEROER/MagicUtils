@@ -8,8 +8,14 @@
     "THEROER"
   ],
   "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.ua.theroer.magicutils.fabric.MagicUtilsFabricBundleMod"
+    ]
+  },
   "depends": {
     "fabricloader": ">=0.14.0",
+    "fabric-api": "*",
     "minecraft": "*",
     "java": ">=21"
   }

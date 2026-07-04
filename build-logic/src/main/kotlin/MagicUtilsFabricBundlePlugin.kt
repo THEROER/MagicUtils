@@ -12,15 +12,20 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 class MagicUtilsFabricBundlePlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.pluginManager.apply("magicutils.java-library")
-        project.pluginManager.apply("fabric-loom")
         project.pluginManager.apply("magicutils.target")
+
+        val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
+        // 26.x is deobfuscated: new no-remap Loom id, no mappings, `jar` is the
+        // artifact. Older obfuscated targets keep classic remapping.
+        val isDeobfuscated = target.minecraft.get().substringBefore('.').toInt() >= 26
+
+        project.pluginManager.apply("magicutils.java-library")
+        project.pluginManager.apply(if (isDeobfuscated) "net.fabricmc.fabric-loom" else "fabric-loom")
         project.pluginManager.apply("magicutils.common")
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
         val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
-        val moduleNameMap = project.extensions.extraProperties.get("moduleNameMap") as? Map<*, *>
-        val moduleName = moduleNameMap?.get(project.name) as? String ?: project.name
+        val moduleName = project.magicUtilsModuleName()
 
         with(project) {
 
@@ -63,8 +68,11 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
             )
 
             project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")
-            project.dependencies.add("mappings", loom.officialMojangMappings())
-            project.dependencies.add("modImplementation", "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
+            if (!isDeobfuscated) {
+                project.dependencies.add("mappings", loom.officialMojangMappings())
+            }
+            val modImpl = if (isDeobfuscated) "implementation" else "modImplementation"
+            project.dependencies.add(modImpl, "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
 
             project.dependencies.add("include", "net.kyori:adventure-api:4.24.0")
             project.dependencies.add("include", "net.kyori:adventure-key:4.24.0")
@@ -100,29 +108,45 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 val depDependency = project.dependencies.add("bundleShadow", depProject) as org.gradle.api.artifacts.ProjectDependency
                 depDependency.targetConfiguration = "shadedElements"
             }
+            // On 26.x there is no Loom `namedElements` (no remap); the deobfuscated
+            // `jiJRemap` (plain jar) output is what feeds the bundle instead.
+            val bundledFabricConfig = if (isDeobfuscated) "jiJRemap" else "namedElements"
             bundleNamedProjects.forEach { dep ->
                 val depProject = project(dep.path)
                 val depDependency = project.dependencies.add("bundleShadow", depProject) as org.gradle.api.artifacts.ProjectDependency
-                depDependency.targetConfiguration = "namedElements"
+                depDependency.targetConfiguration = bundledFabricConfig
             }
 
             val shadowJar = tasks.named("shadowJar", ShadowJar::class.java)
+            val classifier = "mc${magicutilsTarget.minecraft.get().substringBeforeLast('.')}"
 
-            tasks.named("remapJar", RemapJarTask::class.java).configure { remapJarTask ->
-                remapJarTask.archiveClassifier.set("mc${magicutilsTarget.minecraft.get().substringBeforeLast('.')}")
-                remapJarTask.archiveBaseName.set(moduleName)
-                remapJarTask.inputFile.set(shadowJar.get().archiveFile)
-            }
+            if (isDeobfuscated) {
+                // No remap on 26.x: the shadow jar is the published artifact and
+                // carries the classifier directly.
+                shadowJar.configure { shadowJarTask ->
+                    shadowJarTask.archiveBaseName.set(moduleName)
+                    shadowJarTask.archiveClassifier.set(classifier)
+                    shadowJarTask.configurations.set(
+                        setOf(project.configurations.getByName("bundleShadow"))
+                    )
+                    shadowJarTask.from(project.extensions.getByType(SourceSetContainer::class.java).getByName("main").output)
+                    shadowJarTask.mergeServiceFiles()
+                }
+            } else {
+                tasks.named("remapJar", RemapJarTask::class.java).configure { remapJarTask ->
+                    remapJarTask.archiveClassifier.set(classifier)
+                    remapJarTask.archiveBaseName.set(moduleName)
+                    remapJarTask.inputFile.set(shadowJar.get().archiveFile)
+                }
 
-            shadowJar.configure { shadowJarTask ->
-                shadowJarTask.archiveClassifier.set("dev")
-            
-                shadowJarTask.configurations.set(
-                    setOf(project.configurations.getByName("bundleShadow"))
-                )
-            
-                shadowJarTask.from(project.extensions.getByType(SourceSetContainer::class.java).getByName("main").output)
-                shadowJarTask.mergeServiceFiles()
+                shadowJar.configure { shadowJarTask ->
+                    shadowJarTask.archiveClassifier.set("dev")
+                    shadowJarTask.configurations.set(
+                        setOf(project.configurations.getByName("bundleShadow"))
+                    )
+                    shadowJarTask.from(project.extensions.getByType(SourceSetContainer::class.java).getByName("main").output)
+                    shadowJarTask.mergeServiceFiles()
+                }
             }
 
             tasks.configureEach {
@@ -135,13 +159,22 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
         project.extensions.configure(org.gradle.api.publish.PublishingExtension::class.java) { publishing ->
             publishing.publications.create("mavenJava", MavenPublication::class.java) { publication ->
                 publication.artifactId = moduleName
-                publication.artifact(project.tasks.named("remapJar", RemapJarTask::class.java).get()) { artifact ->
-                    artifact.builtBy(project.tasks.named("remapJar").get())
-                }
-                publication.artifact(project.tasks.named("sourcesJar", Jar::class.java).get())
-                publication.artifact(project.tasks.named("javadocJar", Jar::class.java).get())
-                publication.artifact(project.tasks.named("shadowJar", ShadowJar::class.java).get()) { artifact ->
-                    artifact.classifier = "dev"
+                if (isDeobfuscated) {
+                    // The classifier-carrying shadow jar is the primary artifact.
+                    publication.artifact(project.tasks.named("shadowJar", ShadowJar::class.java).get()) { artifact ->
+                        artifact.builtBy(project.tasks.named("shadowJar").get())
+                    }
+                    publication.artifact(project.tasks.named("sourcesJar", Jar::class.java).get())
+                    publication.artifact(project.tasks.named("javadocJar", Jar::class.java).get())
+                } else {
+                    publication.artifact(project.tasks.named("remapJar", RemapJarTask::class.java).get()) { artifact ->
+                        artifact.builtBy(project.tasks.named("remapJar").get())
+                    }
+                    publication.artifact(project.tasks.named("sourcesJar", Jar::class.java).get())
+                    publication.artifact(project.tasks.named("javadocJar", Jar::class.java).get())
+                    publication.artifact(project.tasks.named("shadowJar", ShadowJar::class.java).get()) { artifact ->
+                        artifact.classifier = "dev"
+                    }
                 }
                 publication.pom.withXml { xml ->
                     xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
@@ -150,12 +183,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 }
             }
 
-            if (project.hasProperty("publish_repo")) {
-                publishing.repositories.maven { repo ->
-                    repo.name = "ghPages"
-                    repo.url = project.uri(project.property("publish_repo") as String)
-                }
-            }
+            project.magicUtilsPublishRepository(publishing)
         }
     }
 }
