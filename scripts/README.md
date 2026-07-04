@@ -12,8 +12,8 @@ group, implemented in `build-logic/src/main/kotlin/MagicUtilsReleaseTasks.kt`
 - `./gradlew smokeTest -Pversion=X.Y.Z` — poll the published POM.
 - `./gradlew release -Pversion=X.Y.Z` — preflight → bump → dispatch.
 
-The server-side chain (tagging, docs/javadoc dispatch, gh-pages publish) still
-lives in `.github/workflows/release.yml`.
+The server-side chain (tagging, docs/javadoc dispatch, Reposilite Maven publish)
+lives in `.github/workflows/release.yml` and `publish-maven.yml`.
 
 For the full release process — pipeline diagram, troubleshooting, and
 verification commands — see [`../RELEASING.md`](../RELEASING.md).

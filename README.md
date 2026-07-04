@@ -43,7 +43,10 @@ dependencies {
 }
 ```
 
-Shared bundle install:
+Standalone install: `magicutils-fabric-bundle` is also a runnable Fabric mod on
+its own — drop the jar into `mods/` and it boots the shared MagicUtils runtime
+and registers the `/magicutils` (alias `/mu`) command with diagnostics
+sub-commands, no host mod required. Depend on it from your mod with:
 
 ```kotlin
 dependencies {
@@ -124,8 +127,9 @@ https://magicutils.theroer.dev/getting-started/quickstart/
 
 ## Notes
 
-- GitHub Pages Maven does not host `*-all` shaded artifacts. Use the thin jars
-  from Maven or build shaded jars locally when you need them.
+- Artifacts are published to the self-hosted Reposilite at
+  `https://maven.theroer.dev/releases`. Both the thin jars and the `*-all`
+  shaded jars (where produced) are available there.
 
 ## Reflection Automation
 
@@ -142,14 +146,14 @@ new reflection usage automatically.
 
 ## Release Helper
 
-Maintainers can prepare and dispatch a tagged release with:
+Maintainers cut a tagged release with the Gradle release tasks (the former
+`scripts/publish_release.py` is deprecated):
 
 ```bash
-python3 scripts/publish_release.py 1.19.2 --dry-run
-python3 scripts/publish_release.py 1.19.2
+./gradlew releasePreflight -Pversion=X.Y.Z   # validate version + tags, no changes
+./gradlew release -Pversion=X.Y.Z            # preflight → bump → dispatch release.yml
 ```
 
-The helper mirrors the GitHub Actions flow: it can sync `gradle.properties`,
-push the selected branch, wait until `origin/<ref>` resolves to the pushed
-commit, and then dispatch `release.yml`. Optional flags are available for
-manual `javadoc.yml` and `publish-maven.yml` dispatches when needed.
+`release` validates the version, bumps `gradle.properties`, commits, and
+dispatches `release.yml`. CI then tags `vX.Y.Z`, builds docs/javadoc, and
+publishes the artifacts to Reposilite. See `RELEASING.md` for the full flow.

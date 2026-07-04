@@ -88,20 +88,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: [resolve, tag]
     steps:
-      - name: Dispatch docs and javadoc workflows
+      - name: Dispatch Maven publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.resolve.outputs.version }}"
           TAG="${{ needs.resolve.outputs.tag }}"
-          # Use workflow_dispatch (not the tag push) to launch docs.yml.
-          # This avoids GitHub's GITHUB_TOKEN-pushed-tag rule that suppresses
-          # downstream workflow_run events — publish-maven.yml will then see
-          # docs as a workflow_dispatch source and trigger correctly.
-          gh workflow run docs.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" \
-            -f version="$VERSION" \
-            -f alias=stable \
-            -f set_default=true
-          gh workflow run javadoc.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" \
+          # Documentation lives in the separate MagicUtilsWebsite (Nuxt) project,
+          # so the release only dispatches the Maven publish. Use workflow_dispatch
+          # (not the tag push) to avoid GitHub's GITHUB_TOKEN-pushed-tag rule that
+          # suppresses downstream workflow_run events.
+          gh workflow run publish-maven.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" \
             -f version="$VERSION"
-          echo "Dispatched docs.yml and javadoc.yml for $TAG"
+          echo "Dispatched publish-maven.yml for $TAG"

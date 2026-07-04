@@ -12,8 +12,8 @@ land on `dev`, then `dev` is fast-forwarded into `main` before a release.
 
 `release` chains `releasePreflight` → `bumpVersion` → `dispatchRelease`:
 it validates the version, bumps `gradle.properties` and commits, then
-dispatches `release.yml`. The server-side chain (tag, docs/javadoc,
-gh-pages publish) runs from CI. Verify afterwards with `./gradlew
+dispatches `release.yml`. The server-side chain (tag, Reposilite Maven
+publish) runs from CI. Verify afterwards with `./gradlew
 smokeTest -Pversion=1.21.4` (polls the published POM).
 
 ## Release tasks
@@ -89,40 +89,29 @@ release.yml
    ├── resolve      version + tag string outputs
    ├── tag          git tag vX.Y.Z && git push origin vX.Y.Z
    └── dispatch-downstream
-         gh workflow run docs.yml --ref vX.Y.Z -f alias=stable -f set_default=true
-         gh workflow run javadoc.yml --ref vX.Y.Z
+         gh workflow run publish-maven.yml --ref vX.Y.Z -f version=X.Y.Z
 
-docs.yml (from workflow_dispatch)
-   └── mkdocs build → mike deploy → push gh-pages
-
-publish-maven.yml (workflow_run after docs success)
+publish-maven.yml (from workflow_dispatch)
    ├── resolve-matrix  ./gradlew printPublishMatrix   (targets from targets.properties)
    ├── publish (matrix) ./gradlew <tasks> -Ptarget=<t> → PUT into Reposilite releases
    └── publish-plugins  ./gradlew -p build-logic publish → Reposilite releases
-
-javadoc.yml (from workflow_dispatch)
-   └── javadoc per module → push gh-pages under javadoc/X.Y.Z/
 
 verify (manual)
    └── ./gradlew smokeTest -Pversion=X.Y.Z
        HEAD-polls https://maven.theroer.dev/releases/.../magicutils-core-X.Y.Z.pom
 ```
 
-The chain is fully automatic. If a previous release used the manual
-`--dispatch-publish-maven` flag, you no longer need it — release.yml's
-`dispatch-downstream` job replaces that fallback.
+Documentation is not part of this pipeline — the docs site lives in the separate
+MagicUtilsWebsite (Nuxt) project. Javadoc jars are published to Reposilite
+alongside the artifacts.
 
 ## Why workflow_dispatch instead of tag-push triggers
 
-GitHub suppresses downstream workflows whose source push was made with
-the runner's `GITHUB_TOKEN`. The tag we push from `release.yml` is one
-of those, so a `workflow_run` trigger that listens for the docs build
-will not fire if docs were started by the tag push.
-
-`release.yml` instead calls `gh workflow run docs.yml` from
-`dispatch-downstream`. That is a `workflow_dispatch` event, which has
-no such restriction — `publish-maven.yml` then fires through
-`workflow_run` as designed.
+GitHub suppresses downstream workflows whose source push was made with the
+runner's `GITHUB_TOKEN`. The tag pushed from `release.yml` is one of those, so a
+`workflow_run` trigger would not fire. Instead `release.yml`'s
+`dispatch-downstream` job calls `gh workflow run publish-maven.yml` directly —
+a `workflow_dispatch` event, which has no such restriction.
 
 ## Branch model
 
@@ -138,8 +127,8 @@ no such restriction — `publish-maven.yml` then fires through
 |-------|---------|--------|
 | `validate` | `./gradlew buildScenario` fails | Fix the failing tests on `main`, then re-run `./gradlew release` with the same version. |
 | `tag` | "Tag vX.Y.Z already exists" | Either bump to a new patch number or delete the stale tag remotely (`git push origin :refs/tags/vX.Y.Z`) and re-run. |
-| `dispatch-downstream` | docs/javadoc not started | Re-run the failed job from the Actions UI; gh CLI: `gh workflow run docs.yml --ref vX.Y.Z -f version=X.Y.Z -f alias=stable -f set_default=true`. |
-| `publish-maven` | Maven artifact missing | Inspect `gh run list -w publish-maven.yml`. The job uses `workflow_run` from docs success — if docs failed, fix and rerun docs first. Manual fallback: `gh workflow run publish-maven.yml`. |
+| `dispatch-downstream` | publish-maven not started | Re-run the failed job from the Actions UI; gh CLI: `gh workflow run publish-maven.yml --ref vX.Y.Z -f version=X.Y.Z`. |
+| `publish-maven` | Maven artifact missing | Inspect `gh run list -w publish-maven.yml`. Manual run: `gh workflow run publish-maven.yml -f version=X.Y.Z`. Check the `MAVEN_PUBLISH_USER`/`MAVEN_PUBLISH_TOKEN` secrets are set. |
 | smoke poll timeout | `404` persists | The publish job failed or its credentials were wrong. Check `gh run list -w publish-maven.yml` and that the `MAVEN_PUBLISH_USER`/`MAVEN_PUBLISH_TOKEN` secrets are set. Reposilite serves artifacts immediately (no CDN lag) — a lasting 404 means it wasn't uploaded. |
 
 To roll back a release that was tagged but not yet usable:
@@ -157,9 +146,7 @@ usually isn't worth removing — bump the next version instead.
 ```bash
 # Was the chain successful?
 gh run list -R THEROER/MagicUtils -w release.yml --limit 1
-gh run list -R THEROER/MagicUtils -w docs.yml --limit 1
 gh run list -R THEROER/MagicUtils -w publish-maven.yml --limit 1
-gh run list -R THEROER/MagicUtils -w javadoc.yml --limit 1
 
 # Is the artifact visible?
 curl -fI https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-lang/X.Y.Z/magicutils-lang-X.Y.Z.pom
@@ -192,6 +179,5 @@ it for genuine emergencies.
 - `build-logic/src/main/kotlin/MagicUtilsReleaseTasks.kt` — the `release`
   group tasks (pure logic in `MagicUtilsReleaseModel.kt`).
 - `.github/workflows/release.yml` — orchestrator.
-- `.github/workflows/docs.yml`, `publish-maven.yml`, `javadoc.yml` — the
-  three downstream workflows.
+- `.github/workflows/publish-maven.yml` — the downstream Maven publish.
 - `scripts/README.md` — short pointer back here.
