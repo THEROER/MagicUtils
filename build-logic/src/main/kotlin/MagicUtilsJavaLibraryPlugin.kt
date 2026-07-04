@@ -1,4 +1,3 @@
-import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
@@ -9,6 +8,14 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.api.file.FileCopyDetails
 import org.gradle.kotlin.dsl.*
 import org.gradle.jvm.toolchain.JavaLanguageVersion
+
+/**
+ * Single JDK used to compile every target. Bytecode compatibility with a
+ * target's minimum Java is governed per-target by `options.release`
+ * (see below), so one modern toolchain compiles all targets — no need to
+ * provision a separate JDK per Minecraft version.
+ */
+const val MAGICUTILS_BUILD_JDK = 25
 
 class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -22,9 +29,9 @@ class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
 
         project.extensions.configure(JavaPluginExtension::class.java) { javaExtension ->
-            javaExtension.toolchain.languageVersion.set(JavaLanguageVersion.of(magicutilsTarget.java.get()))
-            javaExtension.sourceCompatibility = JavaVersion.toVersion(magicutilsTarget.java.get())
-            javaExtension.targetCompatibility = JavaVersion.toVersion(magicutilsTarget.java.get())
+            // One fixed toolchain for all targets; per-target bytecode level is
+            // set via options.release below, not via source/targetCompatibility.
+            javaExtension.toolchain.languageVersion.set(JavaLanguageVersion.of(MAGICUTILS_BUILD_JDK))
 
             javaExtension.withSourcesJar()
             javaExtension.withJavadocJar()

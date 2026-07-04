@@ -12,6 +12,40 @@ open class MagicUtilsMatrixSettingsExtension {
     private val platformSpecs = linkedMapOf<String, MagicUtilsPlatformSpec>()
     private val scenarioSpecs = linkedMapOf<String, MagicUtilsScenarioSpec>()
 
+    private var moduleNamePrefixValue: String = ""
+    private val moduleNameOverrides = linkedMapOf<String, String>()
+
+    /** Prefix prepended to a subproject name to form its artifact id. */
+    fun moduleNamePrefix(prefix: String) {
+        moduleNamePrefixValue = prefix
+    }
+
+    /** Pins [projectName]'s artifact id to [artifactName], overriding the prefix rule. */
+    fun moduleName(projectName: String, artifactName: String) {
+        moduleNameOverrides[projectName.trim()] = artifactName.trim()
+    }
+
+    internal fun toModuleNamingSpec(): MagicUtilsModuleNamingSpec =
+        MagicUtilsModuleNamingSpec(moduleNamePrefixValue, moduleNameOverrides.toMap())
+
+    private val smokeDsl = MagicUtilsSmokeDsl()
+
+    /** Declares the compatibility smoke matrix (server-launch + diagnostics gate). */
+    fun smoke(action: org.gradle.api.Action<MagicUtilsSmokeDsl>) {
+        action.execute(smokeDsl)
+    }
+
+    internal fun toSmokeSpecs(): List<SmokePlatformSpec> = smokeDsl.toSpecs()
+
+    private val modrinthDsl = MagicUtilsModrinthDsl()
+
+    /** Declares the Modrinth release (project + per-artifact loaders/game_versions). */
+    fun modrinth(action: org.gradle.api.Action<MagicUtilsModrinthDsl>) {
+        action.execute(modrinthDsl)
+    }
+
+    internal fun toModrinthSpec(): ModrinthReleaseSpec? = modrinthDsl.toSpec()
+
     fun commonProject(path: String) {
         commonProjectPaths += normalizeProjectPath(path)
     }
@@ -72,13 +106,22 @@ open class MagicUtilsMatrixSettingsExtension {
 
     internal fun toDefinition(): MagicUtilsMatrixDefinition {
         if (commonProjectPaths.isEmpty()) {
-            throw GradleException("MagicUtils matrix must declare common projects.")
+            throw GradleException(
+                "MagicUtils matrix must declare common projects via " +
+                    "magicMatrix { commonProjects(...) } in settings.gradle."
+            )
         }
         if (platformSpecs.isEmpty()) {
-            throw GradleException("MagicUtils matrix must declare platforms.")
+            throw GradleException(
+                "MagicUtils matrix must declare platforms via " +
+                    "magicMatrix { platform(...) } in settings.gradle."
+            )
         }
         if (scenarioSpecs.isEmpty()) {
-            throw GradleException("MagicUtils matrix must declare scenarios.")
+            throw GradleException(
+                "MagicUtils matrix must declare scenarios via " +
+                    "magicMatrix { scenario(...) } in settings.gradle."
+            )
         }
 
         val unknownPlatforms = scenarioSpecs.values
@@ -189,9 +232,15 @@ private fun inferTaskSelection(
         if (canonicalTaskName == "buildscenario" ||
             canonicalTaskName == "checkscenario" ||
             canonicalTaskName == "publishscenariotomavenlocal") {
+            // These generic aggregates should build whatever the current
+            // target actually supports — never fail because the default
+            // "workspace" scenario references a platform disabled for this
+            // target (e.g. fabric on mc26). preferAllAvailable resolves to
+            // the target's available platforms downstream.
             return MagicUtilsTaskSelection(
                 scenarioName = if ("workspace" in definition.scenarios) "workspace" else null,
                 platforms = null,
+                preferAllAvailable = true,
             )
         }
 
@@ -295,50 +344,15 @@ private fun resolveMatrixContext(
     )
 }
 
-private fun applyMagicUtilsMatrixDefaults(extension: MagicUtilsMatrixSettingsExtension) {
-    extension.commonProjects(
-        "platform-api",
-        "core",
-        "config",
-        "lang",
-        "logger",
-        "commands",
-        "commands-brigadier",
-        "placeholders",
-        "http-client",
-        "config-yaml",
-        "config-toml",
-        "diagnostics",
-        "processor",
-    )
-
-    extension.platform("bukkit", listOf("platform-bukkit", "bukkit-bundle"))
-    extension.platform("bungee", listOf("platform-bungee"))
-    extension.platform("velocity", listOf("platform-velocity"))
-    extension.platform("fabric", listOf(
-        "platform-fabric",
-        "commands-fabric",
-        "logger-fabric",
-        "placeholders-fabric",
-        "fabric-bundle",
-    ), listOf("mc26"))
-    extension.platform("neoforge", listOf("platform-neoforge", "commands-neoforge", "neoforge-bundle"), listOf("mc1201"))
-
-    extension.scenario("workspace", listOf("bukkit", "bungee", "velocity", "fabric", "neoforge"), "Full multi-platform workspace")
-    extension.scenario("bukkit", listOf("bukkit"), "Bukkit and Paper modules")
-    extension.scenario("bungee", listOf("bungee"), "BungeeCord modules")
-    extension.scenario("velocity", listOf("velocity"), "Velocity modules")
-    extension.scenario("fabric", listOf("fabric"), "Fabric modules")
-    extension.scenario("neoforge", listOf("neoforge"), "NeoForge modules")
-}
-
 class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
     override fun apply(settings: Settings) {
         val extension = settings.extensions.create(
             "magicMatrix",
             MagicUtilsMatrixSettingsExtension::class.java,
         )
-        applyMagicUtilsMatrixDefaults(extension)
+        // The matrix (common projects, platforms, scenarios, module naming) is
+        // configured entirely by the consumer via the `magicMatrix { ... }` DSL
+        // in settings.gradle — the plugin ships no project-specific defaults.
 
         settings.gradle.settingsEvaluated {
             val definition = extension.toDefinition()
@@ -348,6 +362,9 @@ class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
             settings.gradle.extensions.extraProperties.set("magicutilsMatrixDefinition", definition)
             settings.gradle.extensions.extraProperties.set("magicutilsMatrixResolved", resolvedContext)
             settings.gradle.extensions.extraProperties.set("magicutilsPublishingSpec", publishingSpec)
+            settings.gradle.extensions.extraProperties.set("magicutilsModuleNaming", extension.toModuleNamingSpec())
+            settings.gradle.extensions.extraProperties.set("magicutilsSmokeSpecs", extension.toSmokeSpecs())
+            settings.gradle.extensions.extraProperties.set("magicutilsModrinthSpec", extension.toModrinthSpec())
 
             resolvedContext.includedProjects.forEach { projectPath ->
                 settings.include(projectPath.removePrefix(":"))

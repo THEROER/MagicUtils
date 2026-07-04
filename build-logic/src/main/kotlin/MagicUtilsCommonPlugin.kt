@@ -4,36 +4,16 @@ import org.gradle.api.Project
 class MagicUtilsCommonPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         with(project) {
-            val moduleNameMap = mapOf(
-                "platform-api" to "magicutils-api",
-                "platform-neoforge" to "magicutils-neoforge",
-                "platform-bukkit" to "magicutils-bukkit",
-                "platform-bungee" to "magicutils-bungee",
-                "platform-velocity" to "magicutils-velocity",
-                "platform-fabric" to "magicutils-fabric",
-                "core" to "magicutils-core",
-                "config" to "magicutils-config",
-                "lang" to "magicutils-lang",
-                "logger" to "magicutils-logger",
-                "commands" to "magicutils-commands",
-                "commands-brigadier" to "magicutils-commands-brigadier",
-                "commands-neoforge" to "magicutils-commands-neoforge",
-                "placeholders" to "magicutils-placeholders",
-                "http-client" to "magicutils-http-client",
-                "diagnostics" to "magicutils-diagnostics",
-                "commands-fabric" to "magicutils-commands-fabric",
-                "logger-fabric" to "magicutils-logger-fabric",
-                "placeholders-fabric" to "magicutils-placeholders-fabric",
-                "fabric-bundle" to "magicutils-fabric-bundle",
-                "bukkit-bundle" to "magicutils-bukkit-bundle",
-                "neoforge-bundle" to "magicutils-neoforge-bundle",
-                "config-yaml" to "magicutils-config-yaml",
-                "config-toml" to "magicutils-config-toml",
-                "processor" to "magicutils-processor"
-            )
-            project.extensions.extraProperties.set("moduleNameMap", moduleNameMap)
+            // Module naming is configured by the matrix settings DSL and shared
+            // via gradle extraProperties. Consumers that apply this plugin without
+            // the settings plugin get an identity mapping (artifactId == projectName).
+            val namingSpec = project.gradle.extensions.extraProperties
+                .let { if (it.has("magicutilsModuleNaming")) it.get("magicutilsModuleNaming") else null }
+                    as? MagicUtilsModuleNamingSpec
+                ?: MagicUtilsModuleNamingSpec()
+            project.extensions.extraProperties.set("magicutilsModuleNaming", namingSpec)
             project.extensions.extraProperties.set("getModuleName", { projectName: String ->
-                moduleNameMap.getOrDefault(projectName, projectName)
+                namingSpec.moduleName(projectName)
             })
 
             if (extensions.findByName(MAGICUTILS_PUBLISH_EXTENSION_NAME) == null) {
