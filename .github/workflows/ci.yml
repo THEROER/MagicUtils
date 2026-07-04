@@ -21,7 +21,11 @@ jobs:
           cache: 'gradle'
       - uses: gradle/actions/setup-gradle@v3
       - run: chmod +x ./gradlew
-      - run: ./gradlew :build-logic:test
+      # Run inside the included build so only build-logic is configured — running
+      # `:build-logic:test` from the root configures every module (incl. the
+      # Fabric/Loom ones), which needlessly fetches Minecraft and flakes on the
+      # Loom cache/checksum in CI.
+      - run: ./gradlew -p build-logic test
 
   # Single source of truth: the target list comes from targets.properties
   # via printBuildMatrix — never hardcoded here.
