@@ -23,24 +23,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
           cache: 'gradle'
 
       - uses: gradle/actions/setup-gradle@v3
 
-      - name: Build (excluding Fabric loom modules)
+      - name: Build (non-Fabric platforms)
         run: |
+          # Fabric/Loom modules are validated by the matrix ci.yml; here we
+          # cover the non-Loom platforms via the scenario aggregate so no
+          # module list is hardcoded.
           chmod +x ./gradlew
-          ./gradlew build \
-            -x :platform-fabric:build \
-            -x :logger-fabric:build \
-            -x :placeholders-fabric:build \
-            -x :commands-fabric:build \
-            -x :fabric-bundle:build
+          ./gradlew buildScenario -PincludePlatforms=bukkit,bungee,velocity,neoforge
 
   resolve:
     runs-on: ubuntu-latest

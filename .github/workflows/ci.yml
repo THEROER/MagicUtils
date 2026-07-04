@@ -4,16 +4,58 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  # Fast unit/functional tests of the build-logic plugins (matrix generation,
+  # target parsing, release helpers). Independent of any Minecraft target.
+  build-logic-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
           cache: 'gradle'
       - uses: gradle/actions/setup-gradle@v3
       - run: chmod +x ./gradlew
-      - run: ./gradlew build
+      - run: ./gradlew :build-logic:test
+
+  # Single source of truth: the target list comes from targets.properties
+  # via printBuildMatrix — never hardcoded here.
+  resolve-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.matrix.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'gradle'
+      - uses: gradle/actions/setup-gradle@v3
+      - id: matrix
+        run: |
+          chmod +x ./gradlew
+          echo "targets=$(./gradlew -q printBuildMatrix)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.resolve-matrix.outputs.targets) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'gradle'
+      - uses: gradle/actions/setup-gradle@v3
+      - run: chmod +x ./gradlew
+      - run: ./gradlew buildScenario checkScenario -Ptarget=${{ matrix.target }}

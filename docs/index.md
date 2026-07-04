@@ -50,7 +50,7 @@ only bootstrap `MagicRuntime` and the real feature logic lives in shared
 
 ```kotlin
 repositories {
-    maven("https://theroer.github.io/MagicUtils/maven/")
+    maven("https://maven.theroer.dev/releases/")
 }
 ```
 
