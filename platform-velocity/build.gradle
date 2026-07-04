@@ -4,6 +4,10 @@ plugins {
     id 'magicutils.publishing'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.DEFAULT_ONLY
+}
+
 dependencies {
     api project(':core')
     api project(':diagnostics')

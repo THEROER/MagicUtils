@@ -5,9 +5,6 @@ import java.lang.reflect.Method;
 import java.net.http.HttpClient;
 
 final class HttpClientLifecycle {
-    private static final Method CLOSE_METHOD = resolveMethod("close");
-    private static final Method SHUTDOWN_METHOD = resolveMethod("shutdown");
-
     private HttpClientLifecycle() {
     }
 
@@ -27,11 +24,7 @@ final class HttpClientLifecycle {
             PlatformLogger logger,
             String failureMessage
     ) {
-        Method method = switch (methodName) {
-            case "close" -> CLOSE_METHOD;
-            case "shutdown" -> SHUTDOWN_METHOD;
-            default -> resolveMethod(methodName);
-        };
+        Method method = resolveMethod(methodName);
         if (method == null) {
             return false;
         }

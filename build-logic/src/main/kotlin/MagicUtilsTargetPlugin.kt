@@ -9,6 +9,7 @@ abstract class MagicUtilsTargetExtension {
     abstract val java: Property<Int>
     abstract val yarn: Property<String>
     abstract val loader: Property<String>
+    abstract val fabric_api: Property<String>
     abstract val paper: Property<String>
     abstract val miniplaceholders_api: Property<String>
     abstract val pb4_placeholder_api: Property<String>
@@ -25,14 +26,16 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
             val targetSpec = if (resolvedContext != null) {
                 resolvedContext.target
             } else {
+                val explicitTarget = if (project.hasProperty("target")) {
+                    project.property("target") as String
+                } else {
+                    project.findProperty("magicutils.target") as? String
+                        ?: System.getProperty("magicutils.target")
+                }
                 resolveMagicUtilsTargetSpec(
                     targetsFile = File(rootDir, "gradle/targets.properties"),
                     defaultTarget = "mc12110",
-                    explicitTarget = if (project.hasProperty("target")) {
-                        project.property("target") as String
-                    } else {
-                        null
-                    },
+                    explicitTarget = explicitTarget,
                 )
             }
 
@@ -41,6 +44,7 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
             extension.java.set(targetSpec.java)
             extension.yarn.set(targetSpec.yarn)
             extension.loader.set(targetSpec.loader)
+            extension.fabric_api.set(targetSpec.fabricApi)
             extension.pb4_placeholder_api.set(targetSpec.pb4PlaceholderApi)
             extension.miniplaceholders_api.set(targetSpec.miniplaceholdersApi)
             extension.paper.set(targetSpec.paper)

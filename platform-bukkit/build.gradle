@@ -5,6 +5,10 @@ plugins {
     id 'magicutils.target'
 }
 
+magicutilsPublish {
+    category = MagicUtilsPublishCategory.COMMON_MATRIX
+}
+
 def target = project.extensions.getByType(MagicUtilsTargetExtension)
 
 dependencies {

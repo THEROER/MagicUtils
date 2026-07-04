@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.diagnostics;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -93,6 +94,59 @@ public record DiagnosticReport(
      */
     public boolean hasFailures() {
         return failCount() > 0;
+    }
+
+    /**
+     * Returns the publish-readiness verdict using the default severity threshold
+     * ({@link DiagnosticSeverity#CRITICAL}).
+     *
+     * <p>The report is publishable when no check with status {@code FAIL} carries a
+     * severity greater than or equal to {@link DiagnosticSeverity#CRITICAL}.
+     *
+     * @return true when the report is ready for publication
+     */
+    public boolean isPublishable() {
+        return isPublishable(DiagnosticSeverity.CRITICAL);
+    }
+
+    /**
+     * Returns the publish-readiness verdict using a custom severity threshold.
+     *
+     * <p>The report is publishable when it contains no result whose status is
+     * {@link DiagnosticStatus#FAIL} and whose severity is greater than or equal to
+     * the given {@code threshold} (compared by enum order:
+     * {@code INFO < WARNING < CRITICAL}). Non-{@code FAIL} statuses (including
+     * {@code WARN}) never block publication.
+     *
+     * @param threshold minimal blocking severity; defaults to
+     *                  {@link DiagnosticSeverity#CRITICAL} when {@code null}
+     * @return true when the report is ready for publication
+     */
+    public boolean isPublishable(DiagnosticSeverity threshold) {
+        return blockingResults(threshold).isEmpty();
+    }
+
+    /**
+     * Returns the results that block publication for the given severity threshold.
+     *
+     * <p>A result blocks publication when its status is {@link DiagnosticStatus#FAIL}
+     * and its severity is greater than or equal to the {@code threshold} (compared by
+     * enum order: {@code INFO < WARNING < CRITICAL}).
+     *
+     * @param threshold minimal blocking severity; defaults to
+     *                  {@link DiagnosticSeverity#CRITICAL} when {@code null}
+     * @return immutable list of blocking results, empty when publishable
+     */
+    public List<DiagnosticResult> blockingResults(DiagnosticSeverity threshold) {
+        DiagnosticSeverity effective = threshold != null ? threshold : DiagnosticSeverity.CRITICAL;
+        List<DiagnosticResult> blocking = new ArrayList<>();
+        for (DiagnosticResult result : results) {
+            if (result.status() == DiagnosticStatus.FAIL
+                    && result.severity().compareTo(effective) >= 0) {
+                blocking.add(result);
+            }
+        }
+        return List.copyOf(blocking);
     }
 
     private int count(DiagnosticStatus status) {

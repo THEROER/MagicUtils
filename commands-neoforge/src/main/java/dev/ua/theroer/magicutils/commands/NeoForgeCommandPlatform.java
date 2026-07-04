@@ -16,6 +16,7 @@ import java.util.Locale;
  * NeoForge-specific platform hooks for the command engine.
  */
 public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceStack> {
+    private static final int DENIED_PERMISSION_LEVEL = 5;
     private static final Method GET_TEXT_NAME = resolveMethod(CommandSourceStack.class, "getTextName");
     private static final Method GET_DISPLAY_NAME = resolveMethod(CommandSourceStack.class, "getDisplayName");
     private static final Method GET_NAME = resolveMethod(CommandSourceStack.class, "getName");
@@ -84,12 +85,19 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         if (sender == null) {
             return false;
         }
-        return fallback(sender, defaultValue, opLevel);
+        return NeoForgePermissionBridge.hasPermission(
+                sender,
+                permission,
+                fallbackAllowed(sender, defaultValue, opLevel)
+        );
     }
 
     @Override
     public void ensurePermissionRegistered(String node, MagicPermissionDefault defaultValue, String description) {
-        // No permission registry on NeoForge by default.
+        if (defaultValue == MagicPermissionDefault.NOT_OP) {
+            return;
+        }
+        NeoForgePermissionBridge.register(node, fallbackPermissionLevel(defaultValue, opLevel));
     }
 
     @Override
@@ -177,13 +185,23 @@ public class NeoForgeCommandPlatform implements CommandPlatform<CommandSourceSta
         }
     }
 
-    private static boolean fallback(CommandSourceStack sender, MagicPermissionDefault defaultValue, int opLevel) {
+    private static boolean fallbackAllowed(CommandSourceStack sender, MagicPermissionDefault defaultValue, int opLevel) {
         MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
         return switch (effective) {
             case TRUE -> true;
             case FALSE -> false;
             case NOT_OP -> !hasPermissionLevel(sender, opLevel);
             case OP -> hasPermissionLevel(sender, opLevel);
+        };
+    }
+
+    private static int fallbackPermissionLevel(MagicPermissionDefault defaultValue, int opLevel) {
+        MagicPermissionDefault effective = defaultValue != null ? defaultValue : MagicPermissionDefault.OP;
+        return switch (effective) {
+            case TRUE -> 0;
+            case FALSE -> DENIED_PERMISSION_LEVEL;
+            case NOT_OP -> DENIED_PERMISSION_LEVEL;
+            case OP -> opLevel;
         };
     }
 

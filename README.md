@@ -4,8 +4,8 @@ Modular toolkit for Bukkit/Paper, BungeeCord, Fabric, Velocity, and NeoForge. It
 shared building blocks for configuration, localisation, commands, logging,
 placeholders, HTTP clients, and platform adapters.
 
-Docs: https://theroer.github.io/MagicUtils/
-Maven: https://theroer.github.io/MagicUtils/maven/
+Docs: https://magicutils.theroer.dev/
+Maven: https://maven.theroer.dev/releases/
 
 ## Installation
 
@@ -13,7 +13,7 @@ Add the repository:
 
 ```kotlin
 repositories {
-    maven("https://theroer.github.io/MagicUtils/maven/")
+    maven("https://maven.theroer.dev/releases/")
 }
 ```
 
@@ -120,7 +120,7 @@ Enable diagnostics with `.enableDiagnostics()` and fetch the service from
 result accessor.
 
 See the full setup guide in the docs:
-https://theroer.github.io/MagicUtils/getting-started/quickstart/
+https://magicutils.theroer.dev/getting-started/quickstart/
 
 ## Notes
 

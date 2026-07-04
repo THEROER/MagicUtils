@@ -34,7 +34,7 @@ public final class FabricAudience implements Audience {
         if (player == null) {
             return;
         }
-        player.displayClientMessage(FabricComponentSerializer.toNative(component), false);
+        player.sendSystemMessage(FabricComponentSerializer.toNative(component), false);
     }
 
     @Override

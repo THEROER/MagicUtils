@@ -4,6 +4,8 @@ import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.bootstrap.BukkitBootstrap;
 import dev.ua.theroer.magicutils.bootstrap.MagicRuntime;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsCommandSupport;
+import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitMagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitMagicUtilsConsumerRegistry.ConsumerInfo;
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
                 .registerMessages(false)
                 .addMagicUtilsMessages(false)
                 .enableCommands()
+                .enableDiagnostics()
                 .permissionPrefix("magicutils")
                 .buildRuntime();
         runtime = bootstrap.runtime();
@@ -45,7 +48,12 @@ public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
         Logger logger = bootstrap.logger();
         CommandRegistry commandRegistry = bootstrap.commandRegistry();
         if (commandRegistry != null) {
-            commandRegistry.registerCommand(new MagicUtilsBundleCommand(this, logger != null ? logger.getCore() : null));
+            // Register the diagnostics suite-name parser so `/magicutils diagnostics suite <name>` resolves.
+            DiagnosticsCommandSupport.registerTypeParsers(commandRegistry.commandManager());
+            commandRegistry.registerCommand(new MagicUtilsBundleCommand(
+                    this,
+                    logger != null ? logger.getCore() : null,
+                    this::diagnosticsService));
         }
         getLogger().info("MagicUtils Bukkit bundle loaded.");
     }
@@ -78,6 +86,19 @@ public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
         List<ConsumerInfo> consumers = new ArrayList<>(sharedRuntimeConsumers.values());
         consumers.sort(Comparator.comparing(ConsumerInfo::pluginName, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(consumers);
+    }
+
+    /**
+     * Returns the diagnostics service from the shared runtime, or {@code null} when unavailable.
+     *
+     * @return the diagnostics service or {@code null}
+     */
+    public @Nullable DiagnosticsService diagnosticsService() {
+        MagicRuntime current = runtime;
+        if (current == null) {
+            return null;
+        }
+        return current.findComponent(DiagnosticsService.class).orElse(null);
     }
 
     public @Nullable ConsumerInfo findSharedRuntimeConsumer(String pluginName) {

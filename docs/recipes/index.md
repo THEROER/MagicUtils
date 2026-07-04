@@ -11,7 +11,7 @@ Install `magicutils-fabric-bundle` in `mods/` and use `modImplementation`
 without `include(...)`.
 
 Download link:
-[`magicutils-fabric-bundle-{{ magicutils_version }}.jar`](https://theroer.github.io/MagicUtils/maven/dev/ua/theroer/magicutils-fabric-bundle/{{ magicutils_version }}/magicutils-fabric-bundle-{{ magicutils_version }}.jar)
+[`magicutils-fabric-bundle-{{ magicutils_version }}.jar`](https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-fabric-bundle/{{ magicutils_version }}/magicutils-fabric-bundle-{{ magicutils_version }}.jar)
 
 ## Register The Built-In Help Command
 

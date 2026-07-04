@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.http;
 
+import dev.ua.theroer.magicutils.platform.PlatformLogger;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
@@ -72,6 +73,49 @@ class MagicHttpClientTest {
         client.close();
 
         assertTrue(owned.closed.get());
+    }
+
+    @Test
+    void closesJdkHttpClientWithoutReflectingIntoInternalFacade() {
+        CapturingLogger logger = new CapturingLogger();
+
+        HttpClientLifecycle.closeOwnedClient(
+                HttpClient.newHttpClient(),
+                logger,
+                "Failed to close HTTP client"
+        );
+
+        assertFalse(logger.warned.get());
+    }
+
+    private static final class CapturingLogger implements PlatformLogger {
+        private final AtomicBoolean warned = new AtomicBoolean(false);
+
+        @Override
+        public void info(String message) {
+        }
+
+        @Override
+        public void warn(String message) {
+            warned.set(true);
+        }
+
+        @Override
+        public void warn(String message, Throwable throwable) {
+            warned.set(true);
+        }
+
+        @Override
+        public void error(String message) {
+        }
+
+        @Override
+        public void error(String message, Throwable throwable) {
+        }
+
+        @Override
+        public void debug(String message) {
+        }
     }
 
     private static final class TestHttpClient extends HttpClient {

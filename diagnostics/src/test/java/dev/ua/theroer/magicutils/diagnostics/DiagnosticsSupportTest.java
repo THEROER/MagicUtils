@@ -132,7 +132,7 @@ class DiagnosticsSupportTest {
         assertEquals(6, json.get("technical").get("selection").get("selectedCheckCount").asInt());
         assertEquals(6, json.get("technical").get("checks").size());
         assertTrue(DiagnosticReports.summaryLine(report).contains("<green>"));
-        assertTrue(DiagnosticReports.renderText(report).getFirst().contains("<aqua>Diagnostics</aqua>"));
+        assertTrue(DiagnosticReports.renderText(report).get(0).contains("<aqua>Diagnostics</aqua>"));
 
         runtime.close();
         configManager.shutdown();
@@ -179,8 +179,8 @@ class DiagnosticsSupportTest {
                 new DiagnosticRunRequest(DiagnosticMode.SAFE, false, Duration.ofMillis(50), null));
 
         assertEquals(1, report.failCount());
-        assertEquals(DiagnosticStatus.FAIL, report.results().getFirst().status());
-        assertTrue(report.results().getFirst().message().contains("timed out"));
+        assertEquals(DiagnosticStatus.FAIL, report.results().get(0).status());
+        assertTrue(report.results().get(0).message().contains("timed out"));
         Path exported = service.exportJson(report);
         JsonNode json = OBJECT_MAPPER.readTree(Files.readString(exported));
         JsonNode error = json.get("results").get(0).get("error");
@@ -243,9 +243,9 @@ class DiagnosticsSupportTest {
         DiagnosticReport checksReport = service.runChecks(List.of("custom.beta"), DiagnosticRunRequest.safe());
 
         assertEquals(1, suiteReport.results().size());
-        assertEquals("custom.alpha", suiteReport.results().getFirst().checkId());
+        assertEquals("custom.alpha", suiteReport.results().get(0).checkId());
         assertEquals(1, checksReport.results().size());
-        assertEquals("custom.beta", checksReport.results().getFirst().checkId());
+        assertEquals("custom.beta", checksReport.results().get(0).checkId());
 
         runtime.close();
         configManager.shutdown();
@@ -272,9 +272,9 @@ class DiagnosticsSupportTest {
 
         List<String> lines = DiagnosticReports.renderVerboseText(report);
 
-        assertTrue(lines.getFirst().contains("<aqua>Diagnostics</aqua>"));
+        assertTrue(lines.get(0).contains("<aqua>Diagnostics</aqua>"));
         assertTrue(lines.get(1).contains("<red>[FAIL]</red>"));
-        assertTrue(lines.get(1).contains("Magic\\<Utils\\>") || lines.getFirst().contains("Magic\\<Utils\\>"));
+        assertTrue(lines.get(1).contains("Magic\\<Utils\\>") || lines.get(0).contains("Magic\\<Utils\\>"));
         assertTrue(lines.get(1).contains("check\\<danger\\>"));
         assertTrue(lines.get(1).contains("Failure with \\<red\\>tag\\</red\\>"));
     }
@@ -313,7 +313,7 @@ class DiagnosticsSupportTest {
 
         List<String> lines = DiagnosticReports.renderText(report);
 
-        assertTrue(lines.getFirst().contains("<aqua>Diagnostics</aqua>"));
+        assertTrue(lines.get(0).contains("<aqua>Diagnostics</aqua>"));
         assertTrue(lines.stream().anyMatch(line -> line.contains("Showing non-OK checks only")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("Suites:")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("whitelist.service")));
