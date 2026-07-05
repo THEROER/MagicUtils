@@ -1,3 +1,5 @@
+package dev.ua.theroer.magicutils.build.release
+
 /**
  * Modrinth publishing model. Ports the reusable upload mechanism of the former
  * verified-plugin `publish_to_modrinth.sh` (project/token/channel + one version

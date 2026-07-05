@@ -1,3 +1,7 @@
+package dev.ua.theroer.magicutils.build.support
+
+import dev.ua.theroer.magicutils.build.module.*
+
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 

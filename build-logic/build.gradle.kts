@@ -57,6 +57,23 @@ dependencies {
     implementation("fabric-loom:fabric-loom.gradle.plugin:${project.property("fabricLoomVersion")}")
     implementation("net.fabricmc.fabric-loom:net.fabricmc.fabric-loom.gradle.plugin:${project.property("fabricLoomVersion")}")
 
+    // jpenilla run-* task plugins, applied by the consumer-* plugins only when a
+    // consumer opts into `devServer {}`. run-paper carries the Paper+Folia
+    // runners; run-velocity/run-waterfall carry the proxy runners. Applied via
+    // their plugin *marker* artifacts (same mechanism as Loom above) so
+    // `pluginManager.apply(id)` resolves them; their task types are configured
+    // by name, with no compile-time API import into build-logic.
+    val runPaperVersion = project.property("runPaperVersion")
+    val runProxyVersion = project.property("runProxyVersion")
+    implementation("xyz.jpenilla.run-paper:xyz.jpenilla.run-paper.gradle.plugin:$runPaperVersion")
+    implementation("xyz.jpenilla.run-velocity:xyz.jpenilla.run-velocity.gradle.plugin:$runPaperVersion")
+    implementation("xyz.jpenilla.run-waterfall:xyz.jpenilla.run-waterfall.gradle.plugin:$runProxyVersion")
+
+    // ModDevGradle marker, applied by consumer-neoforge via pluginManager.apply(id).
+    // Its API is not imported into build-logic; the neoForge extension is reached
+    // reflectively so only the marker (not moddev's types) is needed here.
+    implementation("net.neoforged.moddev:net.neoforged.moddev.gradle.plugin:${project.property("neoForgeModdevVersion")}")
+
     testImplementation(platform("org.junit:junit-bom:5.11.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -82,59 +99,85 @@ gradlePlugin {
     plugins {
         register("magicutilsTarget") {
             id = "magicutils.target"
-            implementationClass = "MagicUtilsTargetPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.matrix.MagicUtilsTargetPlugin"
         }
         register("magicutilsMatrixSettings") {
             id = "magicutils.matrix-settings"
-            implementationClass = "MagicUtilsMatrixSettingsPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixSettingsPlugin"
         }
         register("magicutilsMatrixRoot") {
             id = "magicutils.matrix-root"
-            implementationClass = "MagicUtilsMatrixRootPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixRootPlugin"
         }
         register("magicutilsRepositories") {
             id = "magicutils.repositories"
-            implementationClass = "MagicUtilsRepositoriesPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.support.MagicUtilsRepositoriesPlugin"
         }
         register("magicutilsCommon") {
             id = "magicutils.common"
-            implementationClass = "MagicUtilsCommonPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsCommonPlugin"
         }
         register("magicutilsJavaLibrary") {
             id = "magicutils.java-library"
-            implementationClass = "MagicUtilsJavaLibraryPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsJavaLibraryPlugin"
         }
         register("magicutilsAnnotationProcessing") {
             id = "magicutils.annotation-processing"
-            implementationClass = "MagicUtilsAnnotationProcessingPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsAnnotationProcessingPlugin"
         }
         register("magicutilsShadow") {
             id = "magicutils.shadow"
-            implementationClass = "MagicUtilsShadowPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsShadowPlugin"
         }
         register("magicutilsShadedModule") {
             id = "magicutils.shaded-module"
-            implementationClass = "MagicUtilsShadedModulePlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsShadedModulePlugin"
         }
         register("magicutilsPublishing") {
             id = "magicutils.publishing"
-            implementationClass = "MagicUtilsPublishingPlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.publish.MagicUtilsPublishingPlugin"
         }
         register("magicutilsFabricModule") {
             id = "magicutils.fabric-module"
-            implementationClass = "MagicUtilsFabricModulePlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsFabricModulePlugin"
         }
         register("magicutilsFabricBundle") {
             id = "magicutils.fabric-bundle"
-            implementationClass = "MagicUtilsFabricBundlePlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsFabricBundlePlugin"
         }
         register("magicutilsBukkitBundle") {
             id = "magicutils.bukkit-bundle"
-            implementationClass = "MagicUtilsBukkitBundlePlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsBukkitBundlePlugin"
+        }
+        // Consumer-facing plugins for downstream plugins/mods (not MagicUtils'
+        // own library modules): hide Loom/obf/classifier/toolchain selection.
+        register("magicutilsConsumerCommon") {
+            id = "magicutils.consumer-common"
+            implementationClass = "dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerCommonPlugin"
+        }
+        register("magicutilsConsumerBukkit") {
+            id = "magicutils.consumer-bukkit"
+            implementationClass = "dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerBukkitPlugin"
+        }
+        register("magicutilsConsumerFabric") {
+            id = "magicutils.consumer-fabric"
+            implementationClass = "dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerFabricPlugin"
+        }
+        register("magicutilsConsumerVelocity") {
+            id = "magicutils.consumer-velocity"
+            implementationClass = "dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerVelocityPlugin"
+        }
+        register("magicutilsConsumerBungee") {
+            id = "magicutils.consumer-bungee"
+            implementationClass = "dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerBungeePlugin"
+        }
+        register("magicutilsConsumerNeoForge") {
+            id = "magicutils.consumer-neoforge"
+            implementationClass = "dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerNeoForgePlugin"
         }
         register("magicutilsNeoForgeBundle") {
             id = "magicutils.neoforge-bundle"
-            implementationClass = "MagicUtilsNeoForgeBundlePlugin"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsNeoForgeBundlePlugin"
         }
     }
 }

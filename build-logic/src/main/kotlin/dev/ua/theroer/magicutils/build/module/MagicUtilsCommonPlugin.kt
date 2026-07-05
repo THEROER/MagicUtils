@@ -1,3 +1,7 @@
+package dev.ua.theroer.magicutils.build.module
+
+import dev.ua.theroer.magicutils.build.target.*
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 

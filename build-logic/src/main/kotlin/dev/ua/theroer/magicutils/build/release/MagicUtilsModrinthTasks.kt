@@ -1,3 +1,5 @@
+package dev.ua.theroer.magicutils.build.release
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project

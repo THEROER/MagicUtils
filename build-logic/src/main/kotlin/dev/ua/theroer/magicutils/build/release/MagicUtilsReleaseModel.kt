@@ -1,3 +1,7 @@
+package dev.ua.theroer.magicutils.build.release
+
+import dev.ua.theroer.magicutils.build.publish.*
+
 import org.gradle.api.GradleException
 
 /**

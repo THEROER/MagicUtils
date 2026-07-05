@@ -1,3 +1,5 @@
+package dev.ua.theroer.magicutils.build.module
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar

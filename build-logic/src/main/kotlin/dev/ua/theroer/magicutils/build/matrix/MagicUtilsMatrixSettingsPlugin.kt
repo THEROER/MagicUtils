@@ -1,3 +1,11 @@
+package dev.ua.theroer.magicutils.build.matrix
+
+import dev.ua.theroer.magicutils.build.module.*
+import dev.ua.theroer.magicutils.build.publish.*
+import dev.ua.theroer.magicutils.build.release.*
+import dev.ua.theroer.magicutils.build.smoke.*
+import dev.ua.theroer.magicutils.build.target.*
+
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.GradleException
@@ -36,6 +44,8 @@ open class MagicUtilsMatrixSettingsExtension {
     }
 
     internal fun toSmokeSpecs(): List<SmokePlatformSpec> = smokeDsl.toSpecs()
+
+    internal fun smokeGate(): SmokeGate = smokeDsl.gate
 
     private val modrinthDsl = MagicUtilsModrinthDsl()
 
@@ -364,6 +374,7 @@ class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
             settings.gradle.extensions.extraProperties.set("magicutilsPublishingSpec", publishingSpec)
             settings.gradle.extensions.extraProperties.set("magicutilsModuleNaming", extension.toModuleNamingSpec())
             settings.gradle.extensions.extraProperties.set("magicutilsSmokeSpecs", extension.toSmokeSpecs())
+            settings.gradle.extensions.extraProperties.set("magicutilsSmokeGate", extension.smokeGate())
             settings.gradle.extensions.extraProperties.set("magicutilsModrinthSpec", extension.toModrinthSpec())
 
             resolvedContext.includedProjects.forEach { projectPath ->

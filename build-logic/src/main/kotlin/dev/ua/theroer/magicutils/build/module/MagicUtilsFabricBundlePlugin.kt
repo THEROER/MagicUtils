@@ -1,3 +1,8 @@
+package dev.ua.theroer.magicutils.build.module
+
+import dev.ua.theroer.magicutils.build.support.*
+import dev.ua.theroer.magicutils.build.target.*
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Usage
@@ -6,7 +11,6 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.language.jvm.tasks.ProcessResources
-import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
@@ -15,16 +19,14 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.target")
 
         val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        // 26.x is deobfuscated: new no-remap Loom id, no mappings, `jar` is the
-        // artifact. Older obfuscated targets keep classic remapping.
-        val isDeobfuscated = target.minecraft.get().substringBefore('.').toInt() >= 26
+        // Obfuscation boundary / Loom flavour / classifier from shared conventions.
+        val isDeobfuscated = target.isDeobfuscated
 
         project.pluginManager.apply("magicutils.java-library")
-        project.pluginManager.apply(if (isDeobfuscated) "net.fabricmc.fabric-loom" else "fabric-loom")
+        project.pluginManager.apply(target.loomPluginId)
         project.pluginManager.apply("magicutils.common")
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
         val moduleName = project.magicUtilsModuleName()
 
         with(project) {
@@ -37,7 +39,8 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
             val bundleLibProjects = listOf(
                 project(":platform-api"),
                 project(":commands-brigadier"),
-                project(":core")
+                project(":core"),
+                project(":diagnostics")
             )
 
             val bundleModProjects = listOf(
@@ -67,12 +70,13 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 project(":placeholders-fabric")
             )
 
-            project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")
-            if (!isDeobfuscated) {
-                project.dependencies.add("mappings", loom.officialMojangMappings())
-            }
-            val modImpl = if (isDeobfuscated) "implementation" else "modImplementation"
-            project.dependencies.add(modImpl, "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
+            // Minecraft + Mojang mappings (obfuscated only); the runnable bundle
+            // takes the loader on the implementation configuration.
+            applyMinecraftAndMappings(project, magicutilsTarget)
+            project.dependencies.add(
+                magicutilsTarget.implementationConfiguration,
+                "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}",
+            )
 
             project.dependencies.add("include", "net.kyori:adventure-api:4.24.0")
             project.dependencies.add("include", "net.kyori:adventure-key:4.24.0")
@@ -103,6 +107,26 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
             bundleLibProjects.forEach { dep ->
                 project.dependencies.add("bundleShadow", project(dep.path))
             }
+            if (isDeobfuscated) {
+                // 26.x publishes the shadow jar directly (no remapJar) and runs it
+                // from the dev launcher, which does not explode JiJ'd libraries.
+                // Shade adventure + diagnostics into the classifier jar so it is
+                // self-contained for both publish and dev runtime (on <26 these
+                // reach the fat `:dev` jar transitively via `namedElements`).
+                listOf(
+                    "net.kyori:adventure-api:4.24.0",
+                    "net.kyori:adventure-key:4.24.0",
+                    "net.kyori:adventure-text-minimessage:4.24.0",
+                    "net.kyori:adventure-text-serializer-plain:4.24.0",
+                    "net.kyori:adventure-text-serializer-gson:4.24.0",
+                    "net.kyori:adventure-text-serializer-ansi:4.24.0",
+                    "net.kyori:adventure-text-serializer-json:4.24.0",
+                    "net.kyori:ansi:1.1.1",
+                    "net.kyori:examination-api:1.3.0",
+                    "net.kyori:examination-string:1.3.0",
+                    "net.kyori:option:1.1.0",
+                ).forEach { project.dependencies.add("bundleShadow", it) }
+            }
             bundleShadedProjects.forEach { dep ->
                 val depProject = project(dep.path)
                 val depDependency = project.dependencies.add("bundleShadow", depProject) as org.gradle.api.artifacts.ProjectDependency
@@ -118,14 +142,13 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
             }
 
             val shadowJar = tasks.named("shadowJar", ShadowJar::class.java)
-            val classifier = "mc${magicutilsTarget.minecraft.get().substringBeforeLast('.')}"
 
+            // Branch is in the version, so the shipped bundle jar is classifier-less.
             if (isDeobfuscated) {
-                // No remap on 26.x: the shadow jar is the published artifact and
-                // carries the classifier directly.
+                // No remap on 26.x: the shadow jar is the shipped artifact.
                 shadowJar.configure { shadowJarTask ->
                     shadowJarTask.archiveBaseName.set(moduleName)
-                    shadowJarTask.archiveClassifier.set(classifier)
+                    shadowJarTask.archiveClassifier.set("")
                     shadowJarTask.configurations.set(
                         setOf(project.configurations.getByName("bundleShadow"))
                     )
@@ -133,8 +156,10 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                     shadowJarTask.mergeServiceFiles()
                 }
             } else {
+                // remapJar is shipped (classifier-less); the fat `dev` shadow jar is
+                // the named compile/dev-runtime variant.
                 tasks.named("remapJar", RemapJarTask::class.java).configure { remapJarTask ->
-                    remapJarTask.archiveClassifier.set(classifier)
+                    remapJarTask.archiveClassifier.set("")
                     remapJarTask.archiveBaseName.set(moduleName)
                     remapJarTask.inputFile.set(shadowJar.get().archiveFile)
                 }

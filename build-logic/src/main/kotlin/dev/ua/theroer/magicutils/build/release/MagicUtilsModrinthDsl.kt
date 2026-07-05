@@ -1,3 +1,5 @@
+package dev.ua.theroer.magicutils.build.release
+
 import org.gradle.api.Action
 
 /**

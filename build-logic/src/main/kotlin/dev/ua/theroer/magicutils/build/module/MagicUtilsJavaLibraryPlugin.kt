@@ -1,3 +1,8 @@
+package dev.ua.theroer.magicutils.build.module
+
+import dev.ua.theroer.magicutils.build.support.*
+import dev.ua.theroer.magicutils.build.target.*
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
@@ -42,6 +47,23 @@ class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
             javaCompileTask.options.compilerArgs.addAll(listOf("-Xlint:all,-processing", "-parameters"))
         }
 
+        // Bytecode is compiled with `options.release = target.java`, but Gradle
+        // derives the published `org.gradle.jvm.version` metadata attribute from
+        // the *toolchain* (MAGICUTILS_BUILD_JDK = 25), not from `release`. That
+        // mismatch makes consumers on the target's own Java (e.g. 21 for 1.21.x)
+        // reject the artifact as "only compatible with JVM 25". Pin the
+        // TargetJvmVersion attribute on the consumable JVM variants to the
+        // target's Java so metadata matches the actual bytecode level.
+        val targetJvm = magicutilsTarget.java.get()
+        listOf("apiElements", "runtimeElements").forEach { configName ->
+            project.configurations.matching { it.name == configName }.configureEach { configuration ->
+                configuration.attributes.attribute(
+                    org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE,
+                    targetJvm,
+                )
+            }
+        }
+
         project.tasks.withType(Test::class.java).configureEach { testTask ->
             testTask.useJUnitPlatform()
         }
@@ -55,14 +77,11 @@ class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
 
         val moduleName = project.magicUtilsModuleName()
 
+        // The Minecraft branch lives in the published version (`+<minecraft>`),
+        // so the main jar carries no classifier — same as fabric-api. Classifiers
+        // are reserved for genuinely different jars (`all`, `dev`, sources).
         project.tasks.withType(Jar::class.java).configureEach { jarTask ->
             jarTask.archiveBaseName.set(moduleName)
-        }
-
-        project.tasks.named("jar", Jar::class.java).configure { jarTask ->
-            if (project.name != "processor" && !project.plugins.hasPlugin("fabric-loom")) {
-                jarTask.archiveClassifier.set("mc${magicutilsTarget.minecraft.get().substringBeforeLast('.')}")
-            }
         }
     }
 }

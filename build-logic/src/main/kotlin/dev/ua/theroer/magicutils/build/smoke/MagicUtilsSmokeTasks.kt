@@ -1,3 +1,5 @@
+package dev.ua.theroer.magicutils.build.smoke
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -30,12 +32,15 @@ private val FAILURE_PATTERNS = listOf(
 private val DIAGNOSTICS_EXPORT_PATTERN = Regex("""Saved diagnostics report to\s+(.+)""")
 private const val POST_SUCCESS_GRACE_MS = 10_000L
 private const val DIAGNOSTICS_QUEUE_DELAY_MS = 10_000L
+private const val GATE_REPORT_NAME = "gate-report.json"
 
-internal fun registerSmokeTasks(project: Project, cases: List<SmokeCase>) {
+internal fun registerSmokeTasks(project: Project, cases: List<SmokeCase>, defaultGate: SmokeGate) {
     project.tasks.register("runCompatibilitySmoke", MagicUtilsSmokeTask::class.java) { task ->
         task.group = "verification"
-        task.description = "Launch each smoke case's server, run diagnostics, and gate on the verdict."
+        task.description = "Launch each smoke case's server, run diagnostics, and gate per sub-range " +
+            "(-Psmoke_gate=strict|partial|approval)."
         task.cases.set(cases)
+        task.defaultGate.set(defaultGate)
         task.notCompatibleWithConfigurationCache("Spawns server processes and reads their console I/O.")
     }
     project.tasks.register("listSmokeMatrix") { task ->
@@ -54,6 +59,9 @@ abstract class MagicUtilsSmokeTask : DefaultTask() {
     @get:Internal
     abstract val cases: ListProperty<SmokeCase>
 
+    @get:Internal
+    abstract val defaultGate: org.gradle.api.provider.Property<SmokeGate>
+
     @TaskAction
     fun run() {
         val all = cases.get()
@@ -70,16 +78,65 @@ abstract class MagicUtilsSmokeTask : DefaultTask() {
 
         val logDir = project.layout.buildDirectory.dir("smoke-logs").get().asFile
         logDir.mkdirs()
-        val failures = mutableListOf<String>()
+
+        val caseFailure = linkedMapOf<String, String>()
         for (case in selected) {
             logger.lifecycle("==> ${case.id}: ${case.gradleCommand}")
             runCatching { runCase(case, logDir) }
-                .onFailure { failures += "${case.id}: ${it.message}" }
+                .onFailure { caseFailure[case.id] = it.message ?: "failed" }
         }
-        if (failures.isNotEmpty()) {
-            throw GradleException("Smoke failed:\n" + failures.joinToString("\n"))
+
+        val gateOverride = project.findProperty("smoke_gate") as? String
+        val gate = if (gateOverride.isNullOrBlank()) defaultGate.get() else SmokeGate.from(gateOverride)
+        val entryIds = selected.map(SmokeCase::entryId).distinct()
+        val failedEntries = entryIds.filter { entry ->
+            selected.any { it.entryId == entry && it.id in caseFailure }
         }
-        logger.lifecycle("Smoke passed: ${selected.size} case(s).")
+        writeGateReport(logDir, entryIds, failedEntries, caseFailure)
+
+        val passedEntries = entryIds - failedEntries.toSet()
+        if (failedEntries.isEmpty()) {
+            logger.lifecycle("Smoke passed: ${entryIds.size} sub-range(s), ${selected.size} case(s).")
+            return
+        }
+
+        val detail = failedEntries.joinToString("\n") { entry ->
+            val reasons = selected.filter { it.entryId == entry && it.id in caseFailure }
+                .joinToString("; ") { "${it.minecraftVersion}: ${caseFailure[it.id]}" }
+            "  $entry ($reasons)"
+        }
+        when (gate) {
+            SmokeGate.STRICT -> throw GradleException(
+                "Smoke gate=strict: ${failedEntries.size} sub-range(s) failed, nothing publishes:\n$detail"
+            )
+            SmokeGate.PARTIAL -> logger.warn(
+                "Smoke gate=partial: publishing ${passedEntries.size} passed sub-range(s); " +
+                    "skipping ${failedEntries.size} failed:\n$detail"
+            )
+            SmokeGate.APPROVAL -> throw GradleException(
+                "Smoke gate=approval: ${passedEntries.size} passed, ${failedEntries.size} need sign-off " +
+                    "(see ${logDir.resolve(GATE_REPORT_NAME)}):\n$detail"
+            )
+        }
+    }
+
+    private fun writeGateReport(
+        logDir: File,
+        entryIds: List<String>,
+        failedEntries: List<String>,
+        caseFailure: Map<String, String>,
+    ) {
+        val passed = entryIds - failedEntries.toSet()
+        val json = buildString {
+            append("""{"passedEntries":""")
+            append(passed.joinToString(prefix = "[", postfix = "]") { "\"$it\"" })
+            append(""","failedEntries":""")
+            append(failedEntries.joinToString(prefix = "[", postfix = "]") { "\"$it\"" })
+            append(""","failedCases":""")
+            append(caseFailure.keys.joinToString(prefix = "[", postfix = "]") { "\"$it\"" })
+            append("}")
+        }
+        logDir.resolve(GATE_REPORT_NAME).writeText(json)
     }
 
     private fun runCase(case: SmokeCase, logDir: File) {

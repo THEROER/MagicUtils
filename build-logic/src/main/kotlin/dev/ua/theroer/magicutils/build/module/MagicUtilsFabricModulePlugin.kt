@@ -1,9 +1,13 @@
+package dev.ua.theroer.magicutils.build.module
+
+import dev.ua.theroer.magicutils.build.support.*
+import dev.ua.theroer.magicutils.build.target.*
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
-import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 
 class MagicUtilsFabricModulePlugin : Plugin<Project> {
@@ -13,13 +17,12 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.target")
 
         val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        // 26.x ships a deobfuscated jar: use the new no-remap Loom plugin id,
-        // drop mappings, and let `jar` be the artifact (no remapJar). Older,
-        // obfuscated targets keep the classic remapping `fabric-loom` path.
-        val isDeobfuscated = target.minecraft.get().substringBefore('.').toInt() >= 26
+        // Obfuscation boundary, Loom flavour and classifier come from the shared
+        // target conventions (MagicUtilsTargetConventions) — see there.
+        val isDeobfuscated = target.isDeobfuscated
 
         project.pluginManager.apply("magicutils.java-library")
-        project.pluginManager.apply(if (isDeobfuscated) "net.fabricmc.fabric-loom" else "fabric-loom")
+        project.pluginManager.apply(target.loomPluginId)
         project.pluginManager.apply("magicutils.common")
         project.pluginManager.apply("magicutils.shadow")
 
@@ -30,35 +33,37 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
         shadowRuntimeClasspath.isCanBeConsumed = false
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
         val moduleName = project.magicUtilsModuleName()
 
-        // On deobfuscated (26.x) targets the new Loom plugin does not remap, so
-        // there is no remapJar task and no mappings — `jar` is the artifact and
-        // dependencies use plain (implementation/compileOnly) configurations.
-        val classifier = "mc${magicutilsTarget.minecraft.get().substringBeforeLast('.')}"
-        val compileOnlyConfig = if (isDeobfuscated) "compileOnly" else "modCompileOnly"
-        // Name of the task producing the primary (published, JiJ) artifact.
-        val mainJarTaskName = if (isDeobfuscated) "jar" else "remapJar"
+        // Config selection / primary-jar task from shared conventions.
+        val compileOnlyConfig = magicutilsTarget.compileOnlyConfiguration
+        val mainJarTaskName = magicutilsTarget.mainJarTaskName
 
         with(project) {
-            project.dependencies.add("minecraft", "com.mojang:minecraft:${magicutilsTarget.minecraft.get()}")
-            if (!isDeobfuscated) {
-                project.dependencies.add("mappings", loom.officialMojangMappings())
-            }
+            // Minecraft + Mojang mappings (obfuscated only); modules take the
+            // loader compile-only.
+            applyMinecraftAndMappings(project, magicutilsTarget)
             project.dependencies.add(compileOnlyConfig, "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}")
             project.dependencies.add(compileOnlyConfig, "eu.pb4:placeholder-api:${magicutilsTarget.pb4_placeholder_api.get()}")
             project.dependencies.add(compileOnlyConfig, "io.github.miniplaceholders:miniplaceholders-api:${magicutilsTarget.miniplaceholders_api.get()}")
 
+            // The published jar carries no classifier (branch is in the version).
             if (isDeobfuscated) {
+                // No remap: `jar` is the shipped artifact.
                 tasks.named("jar", Jar::class.java).configure { jarTask ->
                     jarTask.archiveBaseName.set(moduleName)
-                    jarTask.archiveClassifier.set(classifier)
+                    jarTask.archiveClassifier.set("")
                 }
             } else {
+                // Loom: `remapJar` is shipped (classifier-less); the unmapped `jar`
+                // keeps a `dev` classifier so the two never collide on disk.
+                tasks.named("jar", Jar::class.java).configure { jarTask ->
+                    jarTask.archiveBaseName.set(moduleName)
+                    jarTask.archiveClassifier.set("dev")
+                }
                 tasks.named("remapJar", RemapJarTask::class.java).configure { remapJarTask ->
                     remapJarTask.archiveBaseName.set(moduleName)
-                    remapJarTask.archiveClassifier.set(classifier)
+                    remapJarTask.archiveClassifier.set("")
                     remapJarTask.dependsOn(tasks.named("jar", Jar::class.java))
                 }
             }

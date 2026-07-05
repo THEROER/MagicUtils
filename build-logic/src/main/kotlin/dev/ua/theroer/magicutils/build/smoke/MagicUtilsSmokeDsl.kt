@@ -1,3 +1,5 @@
+package dev.ua.theroer.magicutils.build.smoke
+
 import org.gradle.api.Action
 
 /**
@@ -9,8 +11,9 @@ import org.gradle.api.Action
  *                 runTask = ":bukkit-bundle:runServer --args='nogui'"
  *                 successPattern = "Done ("
  *                 entry("paper-121x") {
- *                     versions = listOf("1.21-1.21.11")
- *                     smokeValues = listOf("1.21", "1.21.11")
+ *                     versions = listOf("1.21-1.21.11")  // advertised on release
+ *                     smokeValues = listOf("1.21", "1.21.11")  // gated on these
+ *                     target = "mc12110"                 // built as this jar
  *                 }
  *             }
  *         }
@@ -18,6 +21,9 @@ import org.gradle.api.Action
  */
 open class MagicUtilsSmokeDsl {
     private val platforms = linkedMapOf<String, MagicUtilsSmokePlatformBuilder>()
+
+    /** Default gate for failed sub-ranges; overridable with -Psmoke_gate=... . */
+    var gate: SmokeGate = SmokeGate.STRICT
 
     fun platform(name: String, action: Action<MagicUtilsSmokePlatformBuilder>) {
         val builder = platforms.getOrPut(name) { MagicUtilsSmokePlatformBuilder(name) }
@@ -58,8 +64,15 @@ open class MagicUtilsSmokePlatformBuilder(private val name: String) {
 }
 
 open class MagicUtilsSmokeEntryBuilder(private val id: String) {
+    /** Full Minecraft range this build covers — advertised on the release. */
     var versions: List<String> = emptyList()
+    /** Representative versions actually launched to gate the range. */
     var smokeValues: List<String> = emptyList()
+    /** Build variant (its jar) the whole range ships as; null = matrix default. */
+    var target: String? = null
+    /** Platform's primary sub-range (update-service default); at most one per platform. */
+    var primary: Boolean = false
+    /** Extra -P flags for rare cases; `target` above is the idiomatic way to pick one. */
     var gradleProperties: Map<String, String> = emptyMap()
     var smokeGradleProperties: Map<String, Map<String, String>> = emptyMap()
     var successPattern: String? = null
@@ -68,6 +81,8 @@ open class MagicUtilsSmokeEntryBuilder(private val id: String) {
         id = id,
         versions = versions,
         smokeValues = smokeValues,
+        target = target,
+        primary = primary,
         gradleProperties = gradleProperties,
         smokeGradleProperties = smokeGradleProperties,
         successPattern = successPattern,

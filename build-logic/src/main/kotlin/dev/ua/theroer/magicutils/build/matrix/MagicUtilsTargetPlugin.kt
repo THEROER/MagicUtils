@@ -1,20 +1,10 @@
+package dev.ua.theroer.magicutils.build.matrix
+
+import dev.ua.theroer.magicutils.build.target.*
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.provider.Property
 import java.io.File
-
-abstract class MagicUtilsTargetExtension {
-    abstract val name: Property<String>
-    abstract val minecraft: Property<String>
-    abstract val java: Property<Int>
-    abstract val yarn: Property<String>
-    abstract val loader: Property<String>
-    abstract val fabric_api: Property<String>
-    abstract val paper: Property<String>
-    abstract val miniplaceholders_api: Property<String>
-    abstract val pb4_placeholder_api: Property<String>
-    abstract val neoforge: Property<String>
-}
 
 class MagicUtilsTargetPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -23,6 +13,7 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
 
             val resolvedContext = gradle.extensions.extraProperties.properties["magicutilsMatrixResolved"]
                 as? MagicUtilsMatrixResolvedContext
+            val defaultTarget = resolvedContext?.definition?.defaultTarget ?: "mc12110"
             val targetSpec = if (resolvedContext != null) {
                 resolvedContext.target
             } else {
@@ -34,13 +25,15 @@ class MagicUtilsTargetPlugin : Plugin<Project> {
                 }
                 resolveMagicUtilsTargetSpec(
                     targetsFile = File(rootDir, "gradle/targets.properties"),
-                    defaultTarget = "mc12110",
+                    defaultTarget = defaultTarget,
                     explicitTarget = explicitTarget,
                 )
             }
 
             extension.name.set(targetSpec.name)
+            extension.defaultTarget.set(targetSpec.name == defaultTarget)
             extension.minecraft.set(targetSpec.minecraft)
+            extension.libraryMinecraft.set(targetSpec.libraryMinecraft)
             extension.java.set(targetSpec.java)
             extension.yarn.set(targetSpec.yarn)
             extension.loader.set(targetSpec.loader)
