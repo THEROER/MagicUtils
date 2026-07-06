@@ -48,7 +48,7 @@ platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitCo
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitConsoleAudience.java:176:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitConsoleAudience.java:177:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitConsoleAudience.java:178:.getMethod(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitMagicUtilsConsumerRegistry.java:127:.getMethod(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitMagicUtilsConsumerRegistry.java:138:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitPlaceholderRegistrar.java:66:Class.forName(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitPlaceholderRegistrar.java:71:Class.forName(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:181:Class.forName(
