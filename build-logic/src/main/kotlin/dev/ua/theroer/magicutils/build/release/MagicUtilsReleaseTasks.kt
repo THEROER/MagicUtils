@@ -35,8 +35,11 @@ private const val RELEASE_GROUP = "release"
 
 internal fun registerReleaseTasks(project: Project, publishingSpec: MagicUtilsPublishingSpec) {
     val gradlePropertiesFile = project.rootProject.file("gradle.properties")
+    // Read the raw -Pversion from the start parameter, not project.version: the
+    // target plugin overwrites project.version with the +<minecraft> suffix
+    // (e.g. 1.23.0+1.21.10), which is not a plain semver a release can validate.
     val versionProvider = project.provider {
-        (project.findProperty("version") as? String)
+        project.gradle.startParameter.projectProperties["version"]
             ?: throw org.gradle.api.GradleException("Pass the release version via -Pversion=X.Y.Z.")
     }
 
