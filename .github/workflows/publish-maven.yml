@@ -39,7 +39,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'gradle'
       - uses: gradle/actions/setup-gradle@v3
       - id: matrix
         run: |
@@ -72,7 +71,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'gradle'
       - uses: gradle/actions/setup-gradle@v3
       - name: Publish ${{ matrix.unit.target }}
         run: |
@@ -99,7 +97,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'gradle'
       - uses: gradle/actions/setup-gradle@v3
       - name: Publish build-logic plugins
         run: |

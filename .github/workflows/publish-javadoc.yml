@@ -34,7 +34,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'gradle'
       - uses: gradle/actions/setup-gradle@v3
 
       - name: Generate aggregated Javadoc zip
