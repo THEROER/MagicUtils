@@ -1,0 +1,67 @@
+name: publish-javadoc
+
+on:
+  # Dispatched by release.yml after the tag is created (alongside publish-maven),
+  # and runnable manually. Generates the aggregated, themed Javadoc for the
+  # common modules and uploads it to the self-hosted Reposilite as a single zip
+  # at a stable, version-independent path. The docs site (MagicUtilsWebsite)
+  # downloads that zip during its Docker build and serves it under /javadoc.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version being published (informational)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-javadoc
+  cancel-in-progress: true
+
+jobs:
+  publish-javadoc:
+    runs-on: ubuntu-latest
+    env:
+      PUBLISH_USER: ${{ secrets.MAVEN_PUBLISH_USER }}
+      PUBLISH_TOKEN: ${{ secrets.MAVEN_PUBLISH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate aggregated Javadoc zip
+        run: |
+          chmod +x ./gradlew
+          ./gradlew aggregatedJavadocZip
+
+      - name: Resolve upload URL
+        id: coords
+        run: |
+          REPO_URL=$(grep -E '^repo\.url=' gradle/publishing.properties | head -n1 | cut -d= -f2- | tr -d '[:space:]')
+          # Stable path: the docs build always fetches the latest published tree.
+          # A versioned copy is kept too, for reference/rollback.
+          echo "latest_url=${REPO_URL}/dev/ua/theroer/magicutils-javadoc/latest/magicutils-javadoc.zip" >> "$GITHUB_OUTPUT"
+          VERSION="${{ inputs.version }}"
+          if [ -n "$VERSION" ]; then
+            echo "version_url=${REPO_URL}/dev/ua/theroer/magicutils-javadoc/${VERSION}/magicutils-javadoc.zip" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload to Reposilite
+        run: |
+          ZIP=build/docs/magicutils-javadoc.zip
+          test -f "$ZIP" || { echo "Javadoc zip not found at $ZIP"; exit 1; }
+          echo "Uploading to ${{ steps.coords.outputs.latest_url }}"
+          curl --fail-with-body -sS -u "$PUBLISH_USER:$PUBLISH_TOKEN" \
+            -T "$ZIP" "${{ steps.coords.outputs.latest_url }}"
+          if [ -n "${{ steps.coords.outputs.version_url }}" ]; then
+            echo "Uploading versioned copy to ${{ steps.coords.outputs.version_url }}"
+            curl --fail-with-body -sS -u "$PUBLISH_USER:$PUBLISH_TOKEN" \
+              -T "$ZIP" "${{ steps.coords.outputs.version_url }}"
+          fi

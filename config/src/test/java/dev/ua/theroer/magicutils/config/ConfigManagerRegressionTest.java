@@ -4,6 +4,9 @@ import dev.ua.theroer.magicutils.config.annotations.ConfigFile;
 import dev.ua.theroer.magicutils.config.annotations.ConfigReloadable;
 import dev.ua.theroer.magicutils.config.annotations.ConfigSection;
 import dev.ua.theroer.magicutils.config.annotations.ConfigValue;
+import dev.ua.theroer.magicutils.config.annotations.MaxValue;
+import dev.ua.theroer.magicutils.config.annotations.MinValue;
+import dev.ua.theroer.magicutils.config.annotations.SaveTo;
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.ListenerSubscription;
 import dev.ua.theroer.magicutils.platform.Platform;
@@ -219,6 +222,51 @@ class ConfigManagerRegressionTest {
         }
     }
 
+    @Test
+    void clampsMinMaxOnPlainConfigValueFields() throws IOException {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager manager = new ConfigManager(platform);
+        try {
+            BoundedConfig config = manager.register(BoundedConfig.class);
+
+            Files.writeString(tempDir.resolve("bounded.json"),
+                    "{\n  \"volume\" : 250,\n  \"depth\" : -5\n}\n");
+
+            manager.reload(config);
+
+            assertEquals(100, config.volume);
+            assertEquals(0, config.depth);
+        } finally {
+            manager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void writesAndReadsSaveToSideFile() throws IOException {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager manager = new ConfigManager(platform);
+        try {
+            SaveToConfig config = manager.register(SaveToConfig.class);
+
+            String main = Files.readString(tempDir.resolve("saveto-main.json"));
+            assertTrue(main.contains("\"inline\""), main);
+            assertFalse(main.contains("\"secret\""), main);
+
+            Path sideFile = tempDir.resolve("secrets.json");
+            assertTrue(Files.exists(sideFile), "side file should be created");
+            assertTrue(Files.readString(sideFile).contains("\"secret\""));
+
+            Files.writeString(sideFile, "{\n  \"secret\" : \"from-side-file\"\n}\n");
+            manager.reload(config);
+
+            assertEquals("from-side-file", config.secret);
+        } finally {
+            manager.shutdown();
+            platform.shutdown();
+        }
+    }
+
     private static class BaseConfig {
         @ConfigValue("base")
         String base = "base-default";
@@ -272,6 +320,27 @@ class ConfigManagerRegressionTest {
     static final class RetryListConfig {
         @ConfigValue("items")
         List<String> items = new ArrayList<>(List.of("default"));
+    }
+
+    @ConfigFile("bounded.json")
+    static final class BoundedConfig {
+        @ConfigValue("volume")
+        @MaxValue(100)
+        int volume = 50;
+
+        @ConfigValue("depth")
+        @MinValue(0)
+        int depth = 10;
+    }
+
+    @ConfigFile("saveto-main.json")
+    static final class SaveToConfig {
+        @ConfigValue("inline")
+        String inline = "in-main";
+
+        @ConfigValue("secret")
+        @SaveTo("secrets.json")
+        String secret = "secret-default";
     }
 
     private static final class FailOnceMap<K, V> extends LinkedHashMap<K, V> {

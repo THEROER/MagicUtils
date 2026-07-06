@@ -291,13 +291,10 @@ public final class BukkitBootstrap {
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
-            Runnable refreshConsumerRegistration =
-                    () -> BukkitMagicUtilsConsumerRegistry.register(plugin, runtime, prepared.commandRegistry());
-            runtime.onStateChanged(refreshConsumerRegistration);
-            if (prepared.commandRegistry() != null) {
-                prepared.commandRegistry().onCommandsChanged(refreshConsumerRegistration);
-            }
-            refreshConsumerRegistration.run();
+            // The registry keeps a live payload supplier, so a single registration
+            // suffices — the bundle re-reads the runtime whenever /magicutils mods
+            // runs, no need to re-push on every state/command change.
+            BukkitMagicUtilsConsumerRegistry.register(plugin, runtime, prepared.commandRegistry());
             runtime.onClose("magicutils.consumerRegistry", () -> BukkitMagicUtilsConsumerRegistry.unregister(plugin));
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(plugin.getName()));

@@ -2,6 +2,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+import dev.ua.theroer.magicutils.build.smoke.*
+
 class MagicUtilsSmokeModelTest {
 
     @Test
@@ -48,7 +50,7 @@ class MagicUtilsSmokeModelTest {
                 ),
             ),
         )
-        val cases = spec.toSmokeCases()
+        val cases = spec.toSmokeCases(defaultTarget = "mc12110")
         assertEquals(2, cases.size)
         val first = cases.first { it.minecraftVersion == "1.21" }
         val last = cases.first { it.minecraftVersion == "1.21.11" }
@@ -72,6 +74,6 @@ class MagicUtilsSmokeModelTest {
                 SmokeMatrixEntry(id = "nf", versions = listOf("1.21"), successPattern = "Done ("),
             ),
         )
-        assertEquals("Done (", spec.toSmokeCases().single().successPattern)
+        assertEquals("Done (", spec.toSmokeCases(defaultTarget = "mc12110").single().successPattern)
     }
 }

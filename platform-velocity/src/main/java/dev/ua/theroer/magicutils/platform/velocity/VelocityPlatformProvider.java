@@ -156,6 +156,22 @@ public final class VelocityPlatformProvider implements Platform, ShutdownHookReg
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Audience playerByName(String name) {
+        if (proxy == null || name == null || name.isEmpty()) {
+            return null;
+        }
+        return proxy.getPlayer(name).map(this::wrap).orElse(null);
+    }
+
+    @Override
+    public Audience playerById(UUID id) {
+        if (proxy == null || id == null) {
+            return null;
+        }
+        return proxy.getPlayer(id).map(this::wrap).orElse(null);
+    }
+
     /**
      * {@inheritDoc}
      */

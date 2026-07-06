@@ -8,12 +8,21 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
+import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.fabric.FabricPlatformProvider;
+import dev.ua.theroer.magicutils.platform.fabric.MagicUtilsFabricConsumerRegistry;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.metadata.ModMetadata;
+import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
@@ -340,8 +349,54 @@ public final class FabricBootstrap {
                 });
             }
 
+            // Register this mod in the shared-runtime consumer registry so the
+            // standalone bundle command can list it (/magicutils mods|mod <id>),
+            // mirroring the Bukkit bundle's plugins/plugin sub-commands.
+            registerSharedRuntimeConsumer(runtime, prepared.commandRegistry());
+            runtime.onClose("magicutils.consumerRegistry",
+                    () -> MagicUtilsFabricConsumerRegistry.unregister(modName));
+
             return new RuntimeResult(runtime, prepared.platform(), prepared.configManager(), prepared.logger(),
                     prepared.languageManager(), prepared.commandRegistry());
+        }
+
+        private void registerSharedRuntimeConsumer(MagicRuntime runtime, @Nullable CommandRegistry commandRegistry) {
+            boolean commandsEnabled = commandRegistry != null;
+            String prefix = commandsEnabled
+                    ? (permissionPrefix != null ? permissionPrefix : modName)
+                    : null;
+
+            Optional<ModMetadata> metadata = FabricLoader.getInstance()
+                    .getModContainer(modName)
+                    .map(container -> container.getMetadata());
+            String version = metadata.map(m -> m.getVersion().getFriendlyString()).orElse("unknown");
+            String name = metadata.map(ModMetadata::getName).filter(s -> !s.isBlank()).orElse(modName);
+            String description = metadata.map(ModMetadata::getDescription).filter(s -> !s.isBlank()).orElse(null);
+            List<String> authors = new ArrayList<>();
+            metadata.ifPresent(m -> {
+                for (Person person : m.getAuthors()) {
+                    authors.add(person.getName());
+                }
+            });
+
+            // Static metadata is captured once; the dynamic state (command and
+            // component counts, diagnostics, closed) is read live from the
+            // runtime whenever /magicutils mods rebuilds a snapshot. This avoids
+            // freezing counts at buildRuntime() time, before the consumer has
+            // registered its commands (Fabric wires those on server start).
+            var meta = new MagicUtilsConsumerRegistry.StaticMeta(
+                    name, version,
+                    // Fabric mods have no single "main class"; use the mod id.
+                    modName, description, null, List.copyOf(authors),
+                    MagicUtilsConsumerPayloads.platformTypeLabel(runtime),
+                    commandsEnabled, prefix, Instant.now());
+            var view = MagicUtilsConsumerViews.liveView(
+                    runtime,
+                    () -> commandsEnabled && commandRegistry.commandManager() != null
+                            ? commandRegistry.commandManager().getAll().size()
+                            : 0,
+                    () -> runtime.findComponent(DiagnosticsService.class).isPresent());
+            MagicUtilsFabricConsumerRegistry.register(meta, view);
         }
 
         private Prepared prepare() {

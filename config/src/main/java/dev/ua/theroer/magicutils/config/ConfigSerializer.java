@@ -423,7 +423,7 @@ public class ConfigSerializer {
      * @param value  the value to validate
      * @return the clamped value, or the original if no clamping is needed
      */
-    private static Object validateNumericBounds(PlatformLogger logger, Field field, Object value) {
+    static Object validateNumericBounds(PlatformLogger logger, Field field, Object value) {
         if (value == null) {
             return null;
         }

@@ -12,6 +12,7 @@ import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.UUID;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -49,6 +50,16 @@ public final class FoliaPlatformProvider implements Platform, ShutdownHookRegist
     @Override
     public Collection<Audience> onlinePlayers() {
         return delegate.onlinePlayers();
+    }
+
+    @Override
+    public Audience playerByName(String name) {
+        return delegate.playerByName(name);
+    }
+
+    @Override
+    public Audience playerById(UUID id) {
+        return delegate.playerById(id);
     }
 
     @Override

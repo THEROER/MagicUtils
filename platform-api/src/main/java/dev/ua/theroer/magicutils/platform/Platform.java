@@ -2,6 +2,9 @@ package dev.ua.theroer.magicutils.platform;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.UUID;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Abstraction over runtime platform (Bukkit, Fabric, NeoForge, etc.).
@@ -34,6 +37,48 @@ public interface Platform {
      * @return online audiences collection (may be empty)
      */
     Collection<Audience> onlinePlayers();
+
+    /**
+     * Finds an online player audience by exact, case-insensitive name.
+     *
+     * <p>The default implementation scans {@link #onlinePlayers()}; platforms
+     * with a direct registry lookup may override for efficiency.</p>
+     *
+     * @param name player name (case-insensitive)
+     * @return the matching audience, or {@code null} if no such player is online
+     */
+    default @Nullable Audience playerByName(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        for (Audience audience : onlinePlayers()) {
+            if (audience != null && name.equalsIgnoreCase(audience.name())) {
+                return audience;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds an online player audience by UUID.
+     *
+     * <p>The default implementation scans {@link #onlinePlayers()}; platforms
+     * with a direct registry lookup may override for efficiency.</p>
+     *
+     * @param id player UUID
+     * @return the matching audience, or {@code null} if no such player is online
+     */
+    default @Nullable Audience playerById(UUID id) {
+        if (id == null) {
+            return null;
+        }
+        for (Audience audience : onlinePlayers()) {
+            if (audience != null && id.equals(audience.id())) {
+                return audience;
+            }
+        }
+        return null;
+    }
 
     /**
      * Executes a task on the main thread.

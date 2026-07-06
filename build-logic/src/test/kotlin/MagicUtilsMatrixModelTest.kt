@@ -6,6 +6,9 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
 
+import dev.ua.theroer.magicutils.build.matrix.*
+import dev.ua.theroer.magicutils.build.target.loadAllTargetNames
+
 class MagicUtilsMatrixModelTest {
 
     private fun writeTargets(dir: Path): File {

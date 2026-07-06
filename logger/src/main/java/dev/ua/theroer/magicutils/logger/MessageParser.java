@@ -37,4 +37,22 @@ public final class MessageParser {
         }
         return comp;
     }
+
+    /**
+     * Escapes a value for use inside a MiniMessage tag attribute (e.g. the target
+     * of {@code <click:run_command:"...">} or {@code <hover:show_text:"...">}), so
+     * quotes and tag brackets in the value don't break the surrounding tag.
+     *
+     * @param value raw attribute value (null yields empty string)
+     * @return escaped value safe to embed in a quoted MiniMessage attribute
+     */
+    public static String escapeAttribute(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("<", "\\<")
+                .replace(">", "\\>");
+    }
 }
