@@ -101,3 +101,14 @@ jobs:
           gh workflow run publish-maven.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" \
             -f version="$VERSION"
           echo "Dispatched publish-maven.yml for $TAG"
+      - name: Dispatch Javadoc publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.resolve.outputs.version }}"
+          TAG="${{ needs.resolve.outputs.tag }}"
+          # Aggregated, themed Javadoc for the common modules is generated and
+          # uploaded to Reposilite; the docs site pulls it in at Docker build time.
+          gh workflow run publish-javadoc.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" \
+            -f version="$VERSION"
+          echo "Dispatched publish-javadoc.yml for $TAG"

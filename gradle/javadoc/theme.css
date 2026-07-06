@@ -1,0 +1,175 @@
+/*
+ * MagicUtils Javadoc theme.
+ *
+ * Standalone brand skin for the aggregated Javadoc, mirroring the palette of the
+ * MagicUtils docs site (magicutils.theroer.dev). Javadoc cannot import the
+ * @leavepulse/ui kit, so the token values below are copied from the kit's
+ * tokens.css and must be kept in sync with it if the brand palette changes.
+ *
+ * Dark-first (the docs default), with a light prefers-color-scheme fallback
+ * derived from the same brand colour.
+ */
+
+:root {
+  /* mirrors @leavepulse/ui tokens.css (dark) */
+  --mu-surface: #080b0d;
+  --mu-surface-raised: #12171d;
+  --mu-surface-soft: #172027;
+  --mu-ink: #eef5f1;
+  --mu-muted: #9aa8a2;
+  --mu-muted-strong: #c7d2cc;
+  --mu-brand: #00bcff;
+  --mu-brand-hover: #19c6ff;
+  --mu-line: rgba(255, 255, 255, 0.1);
+  --mu-line-strong: rgba(255, 255, 255, 0.18);
+
+  --mu-font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mu-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --mu-surface: #f6f8f7;
+    --mu-surface-raised: #ffffff;
+    --mu-surface-soft: #eef2f0;
+    --mu-ink: #10201a;
+    --mu-muted: #55635d;
+    --mu-muted-strong: #33413b;
+    --mu-brand: #0091c8;
+    --mu-brand-hover: #00a5e0;
+    --mu-line: rgba(0, 0, 0, 0.1);
+    --mu-line-strong: rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* ── base ──────────────────────────────────────── */
+body {
+  background: var(--mu-surface);
+  color: var(--mu-ink);
+  font-family: var(--mu-font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+a, a:link, a:visited {
+  color: var(--mu-brand);
+  text-decoration: none;
+}
+a:hover, a:focus {
+  color: var(--mu-brand-hover);
+  text-decoration: underline;
+}
+
+pre, code, tt, .code {
+  font-family: var(--mu-font-mono);
+}
+
+/* ── MagicUtils site header banner ─────────────── */
+.mu-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--mu-surface-raised);
+  border-bottom: 1px solid var(--mu-line-strong);
+  font-family: var(--mu-font-sans);
+}
+.mu-topbar a.mu-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 680;
+  color: var(--mu-ink);
+  letter-spacing: -0.01em;
+}
+.mu-topbar a.mu-brand:hover {
+  text-decoration: none;
+  color: var(--mu-brand);
+}
+.mu-topbar .mu-spacer { flex: 1; }
+.mu-topbar a.mu-back {
+  color: var(--mu-muted-strong);
+  font-size: 0.9rem;
+}
+.mu-topbar a.mu-back:hover { color: var(--mu-brand); }
+.mu-topbar .mu-tag {
+  font-family: var(--mu-font-mono);
+  font-size: 0.78rem;
+  color: var(--mu-muted);
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--mu-line);
+  border-radius: 6px;
+}
+
+/* ── standard Javadoc chrome ───────────────────── */
+.top-nav, .bottom-nav, .sub-nav {
+  background: var(--mu-surface-raised);
+  border-color: var(--mu-line);
+}
+.top-nav a, .bottom-nav a, .sub-nav a { color: var(--mu-muted-strong); }
+.nav-bar-cell1-rev, .skip-nav {
+  background: var(--mu-brand-soft, rgba(0, 188, 255, 0.16));
+  color: var(--mu-brand);
+}
+.title, h1, h2, h3, h4 {
+  color: var(--mu-ink);
+  font-family: var(--mu-font-sans);
+  letter-spacing: -0.01em;
+}
+.header .title { color: var(--mu-ink); }
+
+/* content panels */
+.summary section, .details section,
+.class-description, .block, .contentContainer {
+  color: var(--mu-ink);
+}
+
+/* tables */
+.summary-table, .memberSummary, table.striped {
+  border-color: var(--mu-line);
+}
+.summary-table .table-header, .table-tab, caption {
+  background: var(--mu-surface-soft);
+  color: var(--mu-ink);
+}
+.summary-table .col-first, .summary-table .col-second,
+.summary-table .col-last, .summary-table .col-summary-item-name {
+  border-color: var(--mu-line);
+}
+.summary-table .even-row-color { background: var(--mu-surface); }
+.summary-table .odd-row-color { background: var(--mu-surface-raised); }
+
+/* code / signatures */
+pre, .source, .member-signature, code, tt {
+  background: var(--mu-surface-soft);
+  color: var(--mu-ink);
+  border-radius: 6px;
+}
+.member-signature {
+  border: 1px solid var(--mu-line);
+  padding: 0.5rem 0.7rem;
+}
+
+/* inline code inside prose should not get a heavy box */
+p code, li code, td code, .block code {
+  background: color-mix(in srgb, var(--mu-surface-soft) 70%, transparent);
+  padding: 0.05rem 0.3rem;
+}
+
+/* deprecation / notes */
+.deprecation-block, .notes {
+  border-color: var(--mu-line-strong);
+  background: var(--mu-surface-soft);
+}
+
+/* search box */
+.search-input, input.ui-autocomplete-input {
+  background: var(--mu-surface);
+  color: var(--mu-ink);
+  border: 1px solid var(--mu-line-strong);
+  border-radius: 6px;
+}
