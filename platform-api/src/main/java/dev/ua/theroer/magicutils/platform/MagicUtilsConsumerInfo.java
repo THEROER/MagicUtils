@@ -77,12 +77,54 @@ public record MagicUtilsConsumerInfo(
         fields.put("platform", platformType);
         fields.put("commands", commandsEnabled ? rootCommandCount + " roots" : "off");
         fields.put("diagnostics", diagnosticsEnabled ? "on" : "off");
-        fields.put("components", typedComponentCount + "/" + namedComponentCount);
+        fields.put("components", typedComponentCount + "t/" + namedComponentCount + "n");
         List<String> parts = new ArrayList<>();
         for (Map.Entry<String, String> entry : fields.entrySet()) {
             parts.add(entry.getKey() + "=" + entry.getValue());
         }
         return String.join(", ", parts);
+    }
+
+    /**
+     * Builds a point-in-time snapshot from static metadata plus a live {@code
+     * view}. The static fields never change after registration; the dynamic
+     * fields (command/component counts, diagnostics, closed) are read from the
+     * view at call time, so each snapshot reflects the consumer's current state.
+     * A {@code null} view yields a consumer with zeroed dynamic fields.
+     */
+    public static MagicUtilsConsumerInfo fromStatic(
+            String pluginName,
+            String version,
+            String mainClass,
+            @Nullable String description,
+            @Nullable String website,
+            List<String> authors,
+            String platformType,
+            boolean commandsEnabled,
+            @Nullable String permissionPrefix,
+            Instant connectedAt,
+            @Nullable MagicUtilsConsumerRuntimeView view
+    ) {
+        List<String> namedNames = view != null ? new ArrayList<>(view.namedComponentNames()) : new ArrayList<>();
+        namedNames.sort(String.CASE_INSENSITIVE_ORDER);
+        return new MagicUtilsConsumerInfo(
+                pluginName,
+                version,
+                mainClass,
+                description,
+                website,
+                List.copyOf(authors),
+                platformType,
+                commandsEnabled,
+                permissionPrefix,
+                commandsEnabled && view != null ? view.rootCommandCount() : 0,
+                view != null && view.diagnosticsEnabled(),
+                view != null && view.closed(),
+                view != null ? view.typedComponentCount() : 0,
+                view != null ? view.namedComponentCount() : 0,
+                List.copyOf(namedNames),
+                connectedAt
+        );
     }
 
     /**

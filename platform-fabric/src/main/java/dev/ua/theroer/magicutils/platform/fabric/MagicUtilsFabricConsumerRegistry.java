@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.platform.fabric;
 
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerInfo;
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
+import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRuntimeView;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,6 +19,11 @@ public final class MagicUtilsFabricConsumerRegistry {
     /** @see MagicUtilsConsumerRegistry#register(MagicUtilsConsumerInfo) */
     public static void register(MagicUtilsConsumerInfo info) {
         MagicUtilsConsumerRegistry.register(info);
+    }
+
+    /** @see MagicUtilsConsumerRegistry#register(MagicUtilsConsumerRegistry.StaticMeta, MagicUtilsConsumerRuntimeView) */
+    public static void register(MagicUtilsConsumerRegistry.StaticMeta meta, MagicUtilsConsumerRuntimeView view) {
+        MagicUtilsConsumerRegistry.register(meta, view);
     }
 
     /** @see MagicUtilsConsumerRegistry#unregister(String) */

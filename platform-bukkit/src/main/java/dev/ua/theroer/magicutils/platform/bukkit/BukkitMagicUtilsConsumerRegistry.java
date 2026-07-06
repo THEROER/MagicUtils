@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +31,14 @@ public final class BukkitMagicUtilsConsumerRegistry {
     }
 
     /**
-     * Registers or refreshes a plugin using the shared MagicUtils runtime.
+     * Registers a plugin using the shared MagicUtils runtime. Instead of pushing
+     * a frozen payload, this hands the bundle plugin a {@link Supplier} that
+     * rebuilds the payload from the live {@code runtime}/{@code commandRegistry}
+     * on demand. The bundle calls it when {@code /magicutils mods} runs, so the
+     * command/component counts always reflect the consumer's current state rather
+     * than whatever was true the instant it registered (before commands were even
+     * wired up). Because the supplier and the bundle share only JDK types, it
+     * crosses the separate-classloader reflective bridge cleanly.
      *
      * @param plugin plugin instance
      * @param runtime runtime container
@@ -55,13 +63,16 @@ public final class BukkitMagicUtilsConsumerRegistry {
             return;
         }
 
+        Instant connectedAt = Instant.now();
+        Supplier<Map<String, Object>> payloadSupplier =
+                () -> snapshotPayload(plugin, runtime, commandRegistry, connectedAt);
         try {
             invokeBundleMethod(
                     bundlePlugin,
                     REGISTER_METHOD,
-                    new Class<?>[]{JavaPlugin.class, Map.class},
+                    new Class<?>[]{JavaPlugin.class, Supplier.class},
                     plugin,
-                    snapshotPayload(plugin, runtime, commandRegistry, Instant.now())
+                    payloadSupplier
             );
         } catch (ReflectiveOperationException exception) {
             plugin.getLogger().warning("Failed to register shared MagicUtils consumer: " + exception.getMessage());
