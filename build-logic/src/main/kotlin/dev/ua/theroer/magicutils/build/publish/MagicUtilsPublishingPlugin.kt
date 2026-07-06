@@ -19,13 +19,23 @@ class MagicUtilsPublishingPlugin : Plugin<Project> {
 
         // Production publishing skips the fat build (it exists for local dev only);
         // hide the shadow variant from the component so `:all` is not published.
-        // Runs after the shadow plugin has added shadowRuntimeElements to the
-        // component (withVariantsFromConfiguration must follow addVariants...).
+        //
+        // withVariantsFromConfiguration throws "Variant for configuration
+        // 'shadowRuntimeElements' does not exist in component 'java'" unless the
+        // shadow plugin has already added that variant to the component. It does so
+        // from its own afterEvaluate hook, whose ordering vs. this one is not
+        // guaranteed — and CI's injected plugins (Develocity via setup-gradle)
+        // reorder it so ours runs first, which failed every publish. Modules
+        // without real shading (e.g. :processor) never register the variant at all,
+        // so there is simply nothing to skip. Guard the call: only skip when the
+        // variant is actually present on the component.
         if (project.hasProperty("skip_shadow_publish")) {
-            project.afterEvaluate {
-                (project.components.findByName("java") as? AdhocComponentWithVariants)?.let { java ->
-                    project.configurations.findByName("shadowRuntimeElements")?.let { shadow ->
-                        java.withVariantsFromConfiguration(shadow) { it.skip() }
+            project.plugins.withId("com.gradleup.shadow") {
+                project.afterEvaluate {
+                    (project.components.findByName("java") as? AdhocComponentWithVariants)?.let { java ->
+                        project.configurations.findByName("shadowRuntimeElements")?.let { shadow ->
+                            runCatching { java.withVariantsFromConfiguration(shadow) { it.skip() } }
+                        }
                     }
                 }
             }
@@ -39,17 +49,7 @@ class MagicUtilsPublishingPlugin : Plugin<Project> {
                 // one module, variants by classifier, mirroring the Fabric bundle's
                 // `dev`. No separate `-all` artifactId.
                 //
-                // Bind the component in afterEvaluate: the shadow plugin registers
-                // its shadowRuntimeElements variant on the component from its own
-                // afterEvaluate hook. Reading the component at apply time (or having
-                // publish compute componentArtifacts before that hook runs, as CI's
-                // injected plugins reorder it to) throws "Variant for configuration
-                // 'shadowRuntimeElements' does not exist in component 'java'".
-                // afterEvaluate runs after shadow's registration, so the component
-                // is complete.
-                project.afterEvaluate {
-                    publication.from(project.components.getByName("java"))
-                }
+                publication.from(project.components.getByName("java"))
             }
         }
 
