@@ -40,7 +40,9 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 project(":platform-api"),
                 project(":commands-brigadier"),
                 project(":core"),
-                project(":diagnostics")
+                project(":diagnostics"),
+                // Jackson (its only external dep) is already bundled via config-yaml/toml.
+                project(":http-client")
             )
 
             val bundleModProjects = listOf(
