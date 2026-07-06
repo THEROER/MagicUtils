@@ -38,7 +38,18 @@ class MagicUtilsPublishingPlugin : Plugin<Project> {
                 // unless skipped above, the shadow jar under the `all` classifier —
                 // one module, variants by classifier, mirroring the Fabric bundle's
                 // `dev`. No separate `-all` artifactId.
-                publication.from(project.components.getByName("java"))
+                //
+                // Bind the component in afterEvaluate: the shadow plugin registers
+                // its shadowRuntimeElements variant on the component from its own
+                // afterEvaluate hook. Reading the component at apply time (or having
+                // publish compute componentArtifacts before that hook runs, as CI's
+                // injected plugins reorder it to) throws "Variant for configuration
+                // 'shadowRuntimeElements' does not exist in component 'java'".
+                // afterEvaluate runs after shadow's registration, so the component
+                // is complete.
+                project.afterEvaluate {
+                    publication.from(project.components.getByName("java"))
+                }
             }
         }
 
