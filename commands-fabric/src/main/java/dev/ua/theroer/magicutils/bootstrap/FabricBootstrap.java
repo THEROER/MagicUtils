@@ -8,7 +8,7 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
-import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerInfo;
+import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.fabric.FabricPlatformProvider;
 import dev.ua.theroer.magicutils.platform.fabric.MagicUtilsFabricConsumerRegistry;
@@ -362,13 +362,9 @@ public final class FabricBootstrap {
 
         private void registerSharedRuntimeConsumer(MagicRuntime runtime, @Nullable CommandRegistry commandRegistry) {
             boolean commandsEnabled = commandRegistry != null;
-            int rootCommandCount = commandsEnabled && commandRegistry.commandManager() != null
-                    ? commandRegistry.commandManager().getAll().size()
-                    : 0;
             String prefix = commandsEnabled
                     ? (permissionPrefix != null ? permissionPrefix : modName)
                     : null;
-            boolean diagnosticsEnabled = runtime.findComponent(DiagnosticsService.class).isPresent();
 
             Optional<ModMetadata> metadata = FabricLoader.getInstance()
                     .getModContainer(modName)
@@ -383,13 +379,24 @@ public final class FabricBootstrap {
                 }
             });
 
-            var payload = MagicUtilsConsumerPayloads.runtimePayload(
-                    runtime, name, version,
+            // Static metadata is captured once; the dynamic state (command and
+            // component counts, diagnostics, closed) is read live from the
+            // runtime whenever /magicutils mods rebuilds a snapshot. This avoids
+            // freezing counts at buildRuntime() time, before the consumer has
+            // registered its commands (Fabric wires those on server start).
+            var meta = new MagicUtilsConsumerRegistry.StaticMeta(
+                    name, version,
                     // Fabric mods have no single "main class"; use the mod id.
-                    modName, description, null, authors,
-                    commandsEnabled, prefix, rootCommandCount, diagnosticsEnabled, Instant.now());
-            MagicUtilsFabricConsumerRegistry.register(
-                    MagicUtilsConsumerInfo.fromPayload(payload, name, version, modName, description, null, authors));
+                    modName, description, null, List.copyOf(authors),
+                    MagicUtilsConsumerPayloads.platformTypeLabel(runtime),
+                    commandsEnabled, prefix, Instant.now());
+            var view = MagicUtilsConsumerViews.liveView(
+                    runtime,
+                    () -> commandsEnabled && commandRegistry.commandManager() != null
+                            ? commandRegistry.commandManager().getAll().size()
+                            : 0,
+                    () -> runtime.findComponent(DiagnosticsService.class).isPresent());
+            MagicUtilsFabricConsumerRegistry.register(meta, view);
         }
 
         private Prepared prepare() {

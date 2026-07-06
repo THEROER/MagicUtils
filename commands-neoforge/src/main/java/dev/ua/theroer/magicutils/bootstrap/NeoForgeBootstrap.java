@@ -8,7 +8,6 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
-import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerInfo;
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.neoforge.NeoForgePlatformProvider;
@@ -23,7 +22,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -363,13 +361,9 @@ public final class NeoForgeBootstrap {
 
         private void registerSharedRuntimeConsumer(MagicRuntime runtime, @Nullable CommandRegistry commandRegistry) {
             boolean commandsEnabled = commandRegistry != null;
-            int rootCommandCount = commandsEnabled && commandRegistry.commandManager() != null
-                    ? commandRegistry.commandManager().getAll().size()
-                    : 0;
             String prefix = commandsEnabled
                     ? (permissionPrefix != null ? permissionPrefix : modName)
                     : null;
-            boolean diagnosticsEnabled = runtime.findComponent(DiagnosticsService.class).isPresent();
 
             // Look up the mod's metadata by its id. `modName` is the logical/display
             // name ("MagicUtils"); NeoForge keys containers by lowercase mod id
@@ -403,13 +397,23 @@ public final class NeoForgeBootstrap {
             }
             List<String> authors = new ArrayList<>();
 
-            Map<String, Object> payload = MagicUtilsConsumerPayloads.runtimePayload(
-                    runtime, name, version,
+            // Static metadata is captured once; the dynamic state (command and
+            // component counts, diagnostics, closed) is read live from the runtime
+            // whenever /magicutils mods rebuilds a snapshot, rather than frozen at
+            // buildRuntime() time before commands/components are wired up.
+            var meta = new MagicUtilsConsumerRegistry.StaticMeta(
+                    name, version,
                     // NeoForge mods have no single "main class"; use the mod id.
-                    modName, description, null, authors,
-                    commandsEnabled, prefix, rootCommandCount, diagnosticsEnabled, Instant.now());
-            MagicUtilsConsumerRegistry.register(
-                    MagicUtilsConsumerInfo.fromPayload(payload, name, version, modName, description, null, authors));
+                    modName, description, null, List.copyOf(authors),
+                    MagicUtilsConsumerPayloads.platformTypeLabel(runtime),
+                    commandsEnabled, prefix, Instant.now());
+            var view = MagicUtilsConsumerViews.liveView(
+                    runtime,
+                    () -> commandsEnabled && commandRegistry.commandManager() != null
+                            ? commandRegistry.commandManager().getAll().size()
+                            : 0,
+                    () -> runtime.findComponent(DiagnosticsService.class).isPresent());
+            MagicUtilsConsumerRegistry.register(meta, view);
         }
 
         private Prepared prepare() {
