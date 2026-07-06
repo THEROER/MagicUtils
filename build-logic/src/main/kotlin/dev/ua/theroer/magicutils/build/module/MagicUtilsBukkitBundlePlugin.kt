@@ -69,7 +69,7 @@ class MagicUtilsBukkitBundlePlugin : Plugin<Project> {
             tasks.named("processResources", ProcessResources::class.java).configure { resources ->
                 resources.inputs.property("version", version)
                 resources.inputs.property("apiVersion", apiVersion)
-                resources.filesMatching("plugin.yml") { details ->
+                resources.filesMatching(listOf("plugin.yml", "paper-plugin.yml")) { details ->
                     details.expand(
                         mapOf(
                             "version" to version,

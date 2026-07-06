@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +24,20 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
     private MagicRuntime runtime;
-    private final Map<String, MagicUtilsConsumerInfo> sharedRuntimeConsumers = new ConcurrentHashMap<>();
+
+    /**
+     * A registered consumer: the plugin plus a supplier that rebuilds its
+     * registry payload from the live runtime on demand. Kept instead of a frozen
+     * {@link MagicUtilsConsumerInfo} so {@code /magicutils mods} reads the
+     * consumer's current command/component state at query time.
+     */
+    private record ConsumerRegistration(JavaPlugin plugin, Supplier<Map<String, Object>> payloadSupplier) {
+        MagicUtilsConsumerInfo toInfo() {
+            return BukkitMagicUtilsConsumerRegistry.consumerInfo(plugin, payloadSupplier.get());
+        }
+    }
+
+    private final Map<String, ConsumerRegistration> sharedRuntimeConsumers = new ConcurrentHashMap<>();
 
     /**
      * Creates a new instance of the MagicUtils bundle plugin.
@@ -71,12 +85,11 @@ public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
         }
     }
 
-    public void registerSharedRuntimeConsumer(JavaPlugin plugin, Map<String, Object> payload) {
-        if (plugin == null || plugin == this || payload == null) {
+    public void registerSharedRuntimeConsumer(JavaPlugin plugin, Supplier<Map<String, Object>> payloadSupplier) {
+        if (plugin == null || plugin == this || payloadSupplier == null) {
             return;
         }
-        MagicUtilsConsumerInfo consumerInfo = BukkitMagicUtilsConsumerRegistry.consumerInfo(plugin, payload);
-        sharedRuntimeConsumers.put(normalizeKey(consumerInfo.pluginName()), consumerInfo);
+        sharedRuntimeConsumers.put(normalizeKey(plugin.getName()), new ConsumerRegistration(plugin, payloadSupplier));
     }
 
     public void unregisterSharedRuntimeConsumer(JavaPlugin plugin) {
@@ -87,7 +100,10 @@ public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
     }
 
     public List<MagicUtilsConsumerInfo> snapshotSharedRuntimeConsumers() {
-        List<MagicUtilsConsumerInfo> consumers = new ArrayList<>(sharedRuntimeConsumers.values());
+        List<MagicUtilsConsumerInfo> consumers = new ArrayList<>(sharedRuntimeConsumers.size());
+        for (ConsumerRegistration registration : sharedRuntimeConsumers.values()) {
+            consumers.add(registration.toInfo());
+        }
         consumers.sort(Comparator.comparing(MagicUtilsConsumerInfo::pluginName, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(consumers);
     }
@@ -109,7 +125,8 @@ public final class MagicUtilsBukkitBundlePlugin extends JavaPlugin {
         if (pluginName == null || pluginName.isBlank()) {
             return null;
         }
-        return sharedRuntimeConsumers.get(normalizeKey(pluginName));
+        ConsumerRegistration registration = sharedRuntimeConsumers.get(normalizeKey(pluginName));
+        return registration != null ? registration.toInfo() : null;
     }
 
     private static String normalizeKey(String pluginName) {

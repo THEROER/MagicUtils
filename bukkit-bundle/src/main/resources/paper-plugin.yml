@@ -1,0 +1,8 @@
+name: MagicUtils
+main: dev.ua.theroer.magicutils.bukkit.MagicUtilsBukkitBundlePlugin
+version: ${version}
+api-version: "${apiVersion}"
+author: THEROER
+description: Shared MagicUtils runtime for Bukkit/Paper.
+website: https://magicutils.theroer.dev/
+folia-supported: true
