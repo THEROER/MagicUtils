@@ -39,6 +39,13 @@ public final class BukkitMagicUtilsConsumerRegistry {
     public static void register(JavaPlugin plugin, MagicRuntime runtime, @Nullable CommandRegistry commandRegistry) {
         Objects.requireNonNull(plugin, "plugin");
         Objects.requireNonNull(runtime, "runtime");
+
+        // Record this MagicUtils copy in the JVM-global host registry and warn if
+        // the server ends up running more than one. Done for every host (standalone
+        // and shaded) before the short-circuits below, since a shaded consumer with
+        // no standalone bundle returns early yet must still be counted.
+        MagicUtilsDuplicationDetector.record(plugin);
+
         if (isBundlePlugin(plugin)) {
             return;
         }
