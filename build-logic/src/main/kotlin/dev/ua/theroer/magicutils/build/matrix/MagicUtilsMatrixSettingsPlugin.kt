@@ -56,6 +56,15 @@ open class MagicUtilsMatrixSettingsExtension {
 
     internal fun toModrinthSpec(): ModrinthReleaseSpec? = modrinthDsl.toSpec()
 
+    private val allTargetsDsl = MagicUtilsAllTargetsDsl()
+
+    /** Shapes the `buildAllTargets` fan-out (targets subset, scenario, task type). */
+    fun allTargets(action: org.gradle.api.Action<MagicUtilsAllTargetsDsl>) {
+        action.execute(allTargetsDsl)
+    }
+
+    internal fun toAllTargetsSpec(): MagicUtilsAllTargetsSpec = allTargetsDsl.toSpec()
+
     fun commonProject(path: String) {
         commonProjectPaths += normalizeProjectPath(path)
     }
@@ -376,6 +385,7 @@ class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
             settings.gradle.extensions.extraProperties.set("magicutilsSmokeSpecs", extension.toSmokeSpecs())
             settings.gradle.extensions.extraProperties.set("magicutilsSmokeGate", extension.smokeGate())
             settings.gradle.extensions.extraProperties.set("magicutilsModrinthSpec", extension.toModrinthSpec())
+            settings.gradle.extensions.extraProperties.set("magicutilsAllTargetsSpec", extension.toAllTargetsSpec())
 
             resolvedContext.includedProjects.forEach { projectPath ->
                 settings.include(projectPath.removePrefix(":"))

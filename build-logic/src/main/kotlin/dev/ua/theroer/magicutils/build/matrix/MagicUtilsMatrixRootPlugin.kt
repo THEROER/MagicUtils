@@ -39,6 +39,10 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         registerMatrixJsonTasks(project, resolvedContext)
         registerScenarioAggregateTasks(project, resolvedContext)
         registerSelectedScenarioTasks(project, resolvedContext)
+
+        val allTargetsSpec = project.gradle.extensions.extraProperties.properties["magicutilsAllTargetsSpec"]
+            as? MagicUtilsAllTargetsSpec ?: MagicUtilsAllTargetsSpec(emptyList(), null, MagicUtilsAllTargetsTaskType.BUILD)
+        registerAllTargetsTask(project, resolvedContext, allTargetsSpec)
         registerAggregatedJavadocTask(project, resolvedContext)
         registerDevServerAggregateTasks(project)
         registerPublishCategoryTasks(project)
@@ -211,6 +215,113 @@ private fun registerListBuildMatrixTask(
                 val descriptionSuffix = scenario.description.takeIf(String::isNotBlank)?.let { " - $it" } ?: ""
                 println("    ${scenario.name}: ${scenario.platforms.joinToString(", ")}$descriptionSuffix")
             }
+        }
+    }
+}
+
+/**
+ * `buildAllTargets`: the "build everything, for every advertised version" fan-out.
+ *
+ * A single Gradle build graph is pinned to one Minecraft target (resolved in
+ * `settings.gradle`), so covering every target is inherently N separate Gradle
+ * invocations. This registers one [org.gradle.api.tasks.Exec] per target — each
+ * shells out to the project's own `gradlew` wrapper with `-Ptarget=mcXXXX` — and
+ * an aggregate `buildAllTargets` that depends on them all. The default
+ * `./gradlew build` is left untouched (single default target); this is the opt-in
+ * "all versions" task.
+ *
+ * A nested `GradleBuild` task can't be used here: Gradle forbids a nested build
+ * over a root that itself `includeBuild`s another project (build-logic), which is
+ * exactly this layout. Shelling out to `gradlew` is also what CI does per target,
+ * so the two paths stay behaviourally identical.
+ *
+ * Shaped by `magicMatrix { allTargets { ... } }` (targets subset, scenario, task
+ * type) and overridable per-invocation with:
+ *   -PallTargets.targets=mc12110,mc262   (comma list; overrides the DSL subset)
+ *   -PallTargets.scenario=fabric         (overrides the DSL/default scenario)
+ *   -PallTargets.taskType=publishToMavenLocal
+ */
+private fun registerAllTargetsTask(
+    project: Project,
+    resolvedContext: MagicUtilsMatrixResolvedContext,
+    spec: MagicUtilsAllTargetsSpec,
+) {
+    val definition = resolvedContext.definition
+    val targetsFile = project.rootProject.file(definition.targetsFile)
+
+    fun stringProperty(name: String): String? =
+        (project.findProperty(name) as? String)?.trim()?.takeIf { it.isNotEmpty() }
+
+    // CLI overrides win over the DSL config, so a consumer can retarget a one-off
+    // run without editing settings.gradle.
+    val overrideTargets = stringProperty("allTargets.targets")
+        ?.split(',')
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        ?.map(::normalizeTargetName)
+        ?: emptyList()
+    val effectiveSpec = spec.copy(
+        targets = overrideTargets.ifEmpty { spec.targets },
+        scenario = stringProperty("allTargets.scenario")?.lowercase() ?: spec.scenario,
+        taskType = stringProperty("allTargets.taskType")
+            ?.let(MagicUtilsAllTargetsTaskType::fromToken)
+            ?: spec.taskType,
+    )
+
+    val resolvedTargets = runCatching { effectiveSpec.resolveTargets(targetsFile) }.getOrElse { error ->
+        // Defer the failure to task execution so plain configuration (IDE sync,
+        // `tasks`) never breaks just because a subset typo exists in the DSL.
+        project.tasks.register("buildAllTargets") { task ->
+            task.group = "matrix"
+            task.description = "Build every declared target (misconfigured — see error on run)."
+            task.doFirst { throw GradleException(error.message ?: "Invalid allTargets configuration.") }
+        }
+        return
+    }
+
+    val rootDir = project.rootProject.projectDir
+    val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
+    val wrapper = if (isWindows) "gradlew.bat" else "./gradlew"
+    // Child builds run against a dedicated Gradle user home so their daemon
+    // registry, caches and lock files never collide with the parent build that
+    // spawned them (the parent is still holding the root project's locks while
+    // this task executes). Without this the child intermittently fails its cold
+    // compile racing the parent for the same daemon/locks.
+    val childGradleHome = project.layout.buildDirectory.dir("all-targets-gradle-home").get().asFile
+
+    val perTargetTasks = resolvedTargets.map { targetName ->
+        project.tasks.register(
+            "buildTarget${targetName.replaceFirstChar(Char::titlecase)}",
+            org.gradle.api.tasks.Exec::class.java,
+        ) { task ->
+            task.group = "matrix"
+            task.description = "Run '${effectiveSpec.taskType.gradleTask}' for target $targetName."
+            task.workingDir = rootDir
+            // Each target is a fresh Gradle invocation; -Ptarget pins its whole
+            // include graph in settings.gradle. Scenario limits which platforms
+            // that run builds (defaults to the matrix default scenario when null).
+            val args = mutableListOf(
+                wrapper,
+                effectiveSpec.taskType.gradleTask,
+                "-Ptarget=$targetName",
+                "--gradle-user-home=${childGradleHome.absolutePath}",
+            )
+            effectiveSpec.scenario?.let { args += "-Pscenario=$it" }
+            task.commandLine(args)
+        }
+    }
+
+    project.tasks.register("buildAllTargets") { task ->
+        task.group = "matrix"
+        task.description = "Run '${effectiveSpec.taskType.gradleTask}' for every declared target " +
+            "(${resolvedTargets.joinToString(", ")})."
+        task.dependsOn(perTargetTasks)
+        task.doLast {
+            println(
+                "buildAllTargets: '${effectiveSpec.taskType.gradleTask}' completed for " +
+                    "${resolvedTargets.size} targets (${resolvedTargets.joinToString(", ")})" +
+                    (effectiveSpec.scenario?.let { ", scenario=$it" } ?: "")
+            )
         }
     }
 }
