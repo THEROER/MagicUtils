@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -133,6 +134,26 @@ public final class FabricPlatformProvider implements Platform, ConfigNamespacePr
         return server.getPlayerList().getPlayers().stream()
                 .map(this::wrap)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Audience playerByName(String name) {
+        MinecraftServer server = server();
+        if (server == null || name == null || name.isEmpty()) {
+            return null;
+        }
+        ServerPlayer player = server.getPlayerList().getPlayerByName(name);
+        return player != null ? wrap(player) : null;
+    }
+
+    @Override
+    public Audience playerById(UUID id) {
+        MinecraftServer server = server();
+        if (server == null || id == null) {
+            return null;
+        }
+        ServerPlayer player = server.getPlayerList().getPlayer(id);
+        return player != null ? wrap(player) : null;
     }
 
     @Override

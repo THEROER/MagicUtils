@@ -11,13 +11,13 @@ commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:1
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:30:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:41:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/TypeParserRegistry.java:322:.getMethod(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2812:Class.forName(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2850:Class.forName(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2868:Class.forName(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2878:.getMethod(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2889:.getMethod(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2901:Class.forName(
-config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2903:.getMethod(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2882:Class.forName(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2920:Class.forName(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2938:Class.forName(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2948:.getMethod(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2959:.getMethod(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2971:Class.forName(
+config/src/main/java/dev/ua/theroer/magicutils/config/ConfigManager.java:2973:.getMethod(
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:109:Class.forName(
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:182:.getMethod(
 core/src/main/java/dev/ua/theroer/magicutils/reflect/ReflectiveAccess.java:277:.getField(
@@ -48,7 +48,7 @@ platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitCo
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitConsoleAudience.java:176:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitConsoleAudience.java:177:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitConsoleAudience.java:178:.getMethod(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitMagicUtilsConsumerRegistry.java:153:.getMethod(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitMagicUtilsConsumerRegistry.java:127:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitPlaceholderRegistrar.java:66:Class.forName(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitPlaceholderRegistrar.java:71:Class.forName(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:181:Class.forName(
@@ -56,7 +56,5 @@ platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitTh
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:198:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:210:Class.forName(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:211:.getMethod(
-platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgeComponentSerializer.java:78:Class.forName(
-platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgeComponentSerializer.java:87:.getMethod(
 platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:450:.getMethod(
 platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:463:.getMethod(

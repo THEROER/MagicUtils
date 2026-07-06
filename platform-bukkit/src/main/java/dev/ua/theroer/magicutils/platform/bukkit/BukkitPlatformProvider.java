@@ -36,6 +36,7 @@ import org.bukkit.scheduler.BukkitScheduler;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -98,6 +99,24 @@ public class BukkitPlatformProvider implements Platform, ShutdownHookRegistrar {
         return Bukkit.getOnlinePlayers().stream()
                 .map(this::wrap)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Audience playerByName(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        Player player = Bukkit.getPlayerExact(name);
+        return player != null ? wrap(player) : null;
+    }
+
+    @Override
+    public Audience playerById(UUID id) {
+        if (id == null) {
+            return null;
+        }
+        Player player = Bukkit.getPlayer(id);
+        return player != null ? wrap(player) : null;
     }
 
     @Override

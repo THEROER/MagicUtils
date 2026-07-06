@@ -439,6 +439,7 @@ public class ConfigManager {
 
         writeDefaults(instance, document, instance.getClass(), "");
         document.save(configFile);
+        flushExternalFields(instance, instance.getClass(), "");
         logger.info("Created default config: " + configFile.getName());
     }
 
@@ -450,6 +451,10 @@ public class ConfigManager {
                 continue;
 
             String path = getFieldPath(field, prefix);
+
+            if (field.getAnnotation(SaveTo.class) != null) {
+                continue;
+            }
 
             ConfigSection section = field.getAnnotation(ConfigSection.class);
             if (section != null) {
@@ -520,7 +525,14 @@ public class ConfigManager {
 
             ConfigValue configValue = field.getAnnotation(ConfigValue.class);
             if (configValue != null) {
-                loadFieldValue(instance, field, document, path);
+                SaveTo saveTo = field.getAnnotation(SaveTo.class);
+                ConfigDocument source = document;
+                if (saveTo != null) {
+                    File file = new ConfigMetadata(saveTo.value(), true, null, platform.configDir())
+                            .resolveFile(platform.configDir());
+                    source = ConfigDocument.load(file);
+                }
+                loadFieldValue(instance, field, source, path);
             }
         }
     }
@@ -675,6 +687,9 @@ public class ConfigManager {
                 value = getPrimitiveDefault(field.getType());
             }
         }
+
+        // Clamp @MinValue/@MaxValue on plain fields too (no-op without bounds).
+        value = ConfigSerializer.validateNumericBounds(logger, field, value);
 
         try {
             field.set(instance, cloneIfNeeded(value));
@@ -1437,8 +1452,7 @@ public class ConfigManager {
             value = cloneIfNeeded(value);
             field.set(instance, value);
 
-            SaveTo saveTo = field.getAnnotation(SaveTo.class);
-            if (saveTo != null) {
+            if (field.getAnnotation(SaveTo.class) != null) {
                 continue;
             }
 
@@ -1465,6 +1479,61 @@ public class ConfigManager {
         File file = metadata.resolveFile(platform.configDir());
         ensureParentDirectory(file);
         document.save(file);
+        flushExternalFields(instance, instance.getClass(), "");
+    }
+
+    /**
+     * Writes every {@link SaveTo} field to its own file. Fields sharing a
+     * {@code @SaveTo} path go into one document, keyed by the field's config path.
+     */
+    private void flushExternalFields(Object instance, Class<?> clazz, String prefix) throws Exception {
+        Map<String, ConfigDocument> externalDocs = new LinkedHashMap<>();
+        collectExternalFields(instance, clazz, prefix, externalDocs);
+        for (Map.Entry<String, ConfigDocument> entry : externalDocs.entrySet()) {
+            File file = new ConfigMetadata(entry.getKey(), true, null, platform.configDir())
+                    .resolveFile(platform.configDir());
+            ensureParentDirectory(file);
+            entry.getValue().save(file);
+        }
+    }
+
+    private void collectExternalFields(Object instance, Class<?> clazz, String prefix,
+                                       Map<String, ConfigDocument> externalDocs) throws Exception {
+        for (Field field : getConfigFields(clazz)) {
+            field.setAccessible(true);
+
+            if (!isConfigField(field))
+                continue;
+
+            String path = getFieldPath(field, prefix);
+
+            SaveTo saveTo = field.getAnnotation(SaveTo.class);
+            if (saveTo != null) {
+                Object value = field.get(instance);
+                if (value == null) {
+                    value = getDefaultValue(field);
+                }
+                if (value == null && field.getType().isPrimitive()) {
+                    value = getPrimitiveDefault(field.getType());
+                }
+                if (value == null) {
+                    continue;
+                }
+                ConfigDocument document =
+                        externalDocs.computeIfAbsent(saveTo.value(), k -> ConfigDocument.empty());
+                document.set(path, prepareForConfig(value, field),
+                        commentLines(field.getAnnotation(Comment.class)));
+                continue;
+            }
+
+            ConfigSection section = field.getAnnotation(ConfigSection.class);
+            if (section != null) {
+                Object sectionInstance = field.get(instance);
+                if (sectionInstance != null) {
+                    collectExternalFields(sectionInstance, field.getType(), "", externalDocs);
+                }
+            }
+        }
     }
 
     /**
@@ -1741,6 +1810,7 @@ public class ConfigManager {
 
                 ensureParentDirectory(entry.file);
                 document.save(entry.file);
+                flushExternalFields(entry.instance, entry.instance.getClass(), "");
                 entry.refreshLastModified();
             } catch (Exception e) {
             logger.error("Failed to save config " + entry.key.configClass.getName() + " (" + entry.metadata.getFilePath()

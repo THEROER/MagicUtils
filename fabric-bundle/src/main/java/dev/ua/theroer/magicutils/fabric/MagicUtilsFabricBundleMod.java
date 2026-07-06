@@ -6,7 +6,9 @@ import dev.ua.theroer.magicutils.bootstrap.MagicRuntime;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsCommandSupport;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
+import dev.ua.theroer.magicutils.diagnostics.MagicUtilsBundleCommand;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.platform.fabric.MagicUtilsFabricConsumerRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -32,11 +34,16 @@ public final class MagicUtilsFabricBundleMod implements ModInitializer {
     @Override
     public void onInitialize() {
         FabricBootstrap.RuntimeResult bootstrap = FabricBootstrap.forMod(MOD_NAME, serverRef::get)
-                .initLanguage(false)
+                .initLanguage(true)
+                // Load the bundled MagicUtils translations into this mod's own
+                // language scope and register that scope, so the bundle command's
+                // `@magicutils.*` descriptions (e.g. help) resolve instead of
+                // showing the raw key. The global Messages manager is left alone
+                // (setMessagesManager stays off) so consumer mods keep theirs.
+                .registerMessages(true)
+                .addMagicUtilsMessages(true)
                 .bindLoggerLanguage(false)
                 .setMessagesManager(false)
-                .registerMessages(false)
-                .addMagicUtilsMessages(false)
                 .enableCommands()
                 .enableDiagnostics()
                 .permissionPrefix("magicutils")
@@ -68,10 +75,13 @@ public final class MagicUtilsFabricBundleMod implements ModInitializer {
             // are enabled, before the callback ever runs.
             DiagnosticsCommandSupport.registerTypeParsers(commandRegistry.commandManager());
             CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                    commandRegistry.registerAllCommands(dispatcher, new MagicUtilsFabricBundleCommand(
+                    commandRegistry.registerAllCommands(dispatcher, new MagicUtilsBundleCommand(
                             loggerCore,
                             bundleVersion,
-                            this::diagnosticsService)));
+                            MagicUtilsFabricConsumerRegistry::snapshot,
+                            MagicUtilsFabricConsumerRegistry::find,
+                            this::diagnosticsService,
+                            commandRegistry::commandManager)));
         }
 
         LOG.info("MagicUtils Fabric bundle loaded.");

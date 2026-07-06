@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "magicutils-fabric-bundle",
   "version": "${version}",
-  "name": "MagicUtils Fabric Bundle",
+  "name": "MagicUtils",
   "description": "Bundled MagicUtils modules for Fabric (jar-in-jar).",
   "authors": [
     "THEROER"

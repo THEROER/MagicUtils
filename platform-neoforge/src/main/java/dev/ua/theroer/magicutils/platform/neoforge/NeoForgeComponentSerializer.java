@@ -1,11 +1,11 @@
 package dev.ua.theroer.magicutils.platform.neoforge;
 
 import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-
-import java.lang.reflect.Method;
+import net.minecraft.network.chat.ComponentSerialization;
 
 /**
  * Utility for converting Adventure components to NeoForge chat components.
@@ -13,10 +13,6 @@ import java.lang.reflect.Method;
 public final class NeoForgeComponentSerializer {
     private static final GsonComponentSerializer GSON = GsonComponentSerializer.gson();
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
-
-    private static volatile boolean serializerChecked;
-    private static volatile Method fromJsonElement;
-    private static volatile Method fromJsonString;
 
     private NeoForgeComponentSerializer() {
     }
@@ -46,49 +42,17 @@ public final class NeoForgeComponentSerializer {
         return net.minecraft.network.chat.Component.literal(plain);
     }
 
+    /**
+     * Decodes an Adventure-produced JSON tree into a native component via the
+     * vanilla {@link ComponentSerialization#CODEC}. Since MC 1.20.5 the old
+     * reflective {@code Component$Serializer.fromJson(...)} no longer exists —
+     * decoding goes through the component codec, so colours/formatting/hover
+     * events survive instead of being flattened to plain text.
+     */
     private static net.minecraft.network.chat.Component decode(JsonElement tree) {
-        ensureSerializer();
-        if (fromJsonElement != null) {
-            try {
-                Object res = fromJsonElement.invoke(null, tree);
-                if (res instanceof net.minecraft.network.chat.Component) {
-                    return (net.minecraft.network.chat.Component) res;
-                }
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
-            }
-        }
-        if (fromJsonString != null) {
-            try {
-                Object res = fromJsonString.invoke(null, tree.toString());
-                if (res instanceof net.minecraft.network.chat.Component) {
-                    return (net.minecraft.network.chat.Component) res;
-                }
-            } catch (ReflectiveOperationException | RuntimeException ignored) {
-            }
-        }
-        return null;
-    }
-
-    private static void ensureSerializer() {
-        if (serializerChecked) {
-            return;
-        }
-        serializerChecked = true;
-        try {
-            Class<?> serializerClass = Class.forName("net.minecraft.network.chat.Component$Serializer");
-            fromJsonElement = findMethod(serializerClass, JsonElement.class);
-            fromJsonString = findMethod(serializerClass, String.class);
-        } catch (ClassNotFoundException ignored) {
-        }
-    }
-
-    private static Method findMethod(Class<?> serializerClass, Class<?> argType) {
-        try {
-            Method method = serializerClass.getMethod("fromJson", argType);
-            method.setAccessible(true);
-            return method;
-        } catch (ReflectiveOperationException ignored) {
-            return null;
-        }
+        return ComponentSerialization.CODEC
+                .parse(JsonOps.INSTANCE, tree)
+                .result()
+                .orElse(null);
     }
 }
