@@ -123,6 +123,9 @@ venv/
 
 # Maven (if used alongside Gradle)
 target/
+# but not the build-logic source package that happens to be named target/
+!build-logic/src/main/kotlin/dev/ua/theroer/magicutils/build/target/
+!build-logic/src/main/kotlin/dev/ua/theroer/magicutils/build/target/**
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
