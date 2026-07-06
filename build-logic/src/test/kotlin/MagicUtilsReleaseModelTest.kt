@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
+import dev.ua.theroer.magicutils.build.release.*
+import dev.ua.theroer.magicutils.build.publish.*
+
 class MagicUtilsReleaseModelTest {
 
     @Test
