@@ -164,9 +164,10 @@ public final class MagicUtilsBundleCommand extends MagicCommand {
             return List.copyOf(lines);
         }
         for (MagicUtilsConsumerInfo info : consumers) {
-            lines.add("<dark_gray>-</dark_gray> <white>" + escape(info.pluginName()) + "</white> <gray>v"
+            String body = "<dark_gray>-</dark_gray> <white>" + escape(info.pluginName()) + "</white> <gray>v"
                     + escape(info.version()) + "</gray> <dark_gray>(" + escape(info.capabilitiesSummary())
-                    + ")</dark_gray>");
+                    + ")</dark_gray>";
+            lines.add(clickableMod(info.pluginName(), body));
         }
         return List.copyOf(lines);
     }
@@ -250,5 +251,15 @@ public final class MagicUtilsBundleCommand extends MagicCommand {
         return value.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;");
+    }
+
+    /** Wraps a list line so clicking it runs {@code /magicutils mod <name>}. */
+    private String clickableMod(String modName, String body) {
+        String command = "/magicutils mod " + modName;
+        return "<click:run_command:\"" + MessageParser.escapeAttribute(command) + "\">"
+                + "<hover:show_text:\"<gray>Click for details of <white>" + MessageParser.escapeAttribute(modName)
+                + "</white></gray>\">"
+                + body
+                + "</hover></click>";
     }
 }

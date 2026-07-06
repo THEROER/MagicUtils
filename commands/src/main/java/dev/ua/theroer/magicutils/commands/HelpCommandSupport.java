@@ -821,8 +821,8 @@ public final class HelpCommandSupport {
     }
 
     private static String clickable(String text, String hover, String command, HelpStyle style) {
-        String hoverText = escapeMiniAttribute(hover);
-        String clickCommand = escapeMiniAttribute(command);
+        String hoverText = MessageParser.escapeAttribute(hover);
+        String clickCommand = MessageParser.escapeAttribute(command);
         return "<click:run_command:\"" + clickCommand + "\">"
                 + "<hover:show_text:\"" + hoverText + "\">"
                 + color(style.textTag(), text)
@@ -1349,16 +1349,6 @@ public final class HelpCommandSupport {
             return "";
         }
         String escaped = text.replace("\\", "\\\\");
-        escaped = escaped.replace("<", "\\<").replace(">", "\\>");
-        return escaped;
-    }
-
-    private static String escapeMiniAttribute(String text) {
-        if (text == null || text.isEmpty()) {
-            return "";
-        }
-        String escaped = text.replace("\\", "\\\\");
-        escaped = escaped.replace("\"", "\\\"");
         escaped = escaped.replace("<", "\\<").replace(">", "\\>");
         return escaped;
     }
