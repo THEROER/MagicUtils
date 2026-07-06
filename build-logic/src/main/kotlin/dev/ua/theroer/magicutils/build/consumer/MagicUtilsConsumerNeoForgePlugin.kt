@@ -61,10 +61,12 @@ class MagicUtilsConsumerNeoForgePlugin : Plugin<Project> {
         // its own mod — mixins/entrypoint/metadata intact — so the consumer never
         // spells out the coordinate or the JiJ wiring. The bundle jar is
         // classifier-less (the branch is in the +<minecraft> version). Opt out
-        // with `magicutils_embed=false` / `magicutilsConsumer { embedMagicUtils =
-        // false }` when the consumer bundles MagicUtils some other way (e.g.
-        // shaded via its own embeddedRuntime), as verified-plugin does.
-        if (consumer.embedMagicUtils.get()) {
+        // with `magicutils_embed=false` / `magicutilsConsumer { embedMode =
+        // EmbedMode.EXTERNAL }` when the consumer bundles MagicUtils some other way
+        // (e.g. shaded via its own embeddedRuntime), as verified-plugin does.
+        // AUTO → JAR_IN_JAR on NeoForge; SHADED is rejected here (fail-fast).
+        val embed = resolveEmbedMode(consumer.embedMode.get(), ConsumerLoader.NEOFORGE)
+        if (embed == EmbedMode.JAR_IN_JAR) {
             val bundleCoordinate = project.provider {
                 val version = target.publishedVersion(consumer.magicutilsVersion.get())
                 project.dependencies.create("dev.ua.theroer:magicutils-neoforge-bundle:$version")

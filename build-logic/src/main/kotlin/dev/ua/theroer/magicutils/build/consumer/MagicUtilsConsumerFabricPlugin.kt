@@ -70,7 +70,10 @@ class MagicUtilsConsumerFabricPlugin : Plugin<Project> {
         val fatDep = if (target.isDeobfuscated) shippedDep else "$module:dev"
 
         project.dependencies.add(compileOnly, fatDep)
-        if (consumer.embedMagicUtils.get()) {
+        // AUTO → JAR_IN_JAR on Fabric; SHADED is rejected here (fail-fast). Only
+        // JAR_IN_JAR actually JiJ's the bundle; EXTERNAL leaves it to the runtime.
+        val embed = resolveEmbedMode(consumer.embedMode.get(), ConsumerLoader.FABRIC)
+        if (embed == EmbedMode.JAR_IN_JAR) {
             project.dependencies.add("include", shippedDep)
         }
         // Dev runtime needs the fat jar on the classpath (JiJ is not exploded by

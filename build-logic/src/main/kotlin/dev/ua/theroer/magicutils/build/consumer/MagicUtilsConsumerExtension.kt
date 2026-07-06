@@ -9,6 +9,69 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 
 /**
+ * How a downstream consumer ships MagicUtils. The set of *techniques* is the
+ * same vocabulary on every loader, but not every technique is valid on every
+ * loader (there is no jar-in-jar on Bukkit, and shading the mod bundle breaks
+ * Fabric/NeoForge). [AUTO] picks the native technique for the loader; a
+ * consumer only names an explicit mode to deviate. See
+ * [MagicUtilsConsumerExtension.embedMode] and [resolveEmbedMode].
+ */
+enum class EmbedMode {
+    /**
+     * Use the loader's native embedding: [JAR_IN_JAR] on Fabric/NeoForge,
+     * [SHADED] on Bukkit. The default, so most consumers never set this.
+     */
+    AUTO,
+
+    /**
+     * Ship MagicUtils as a nested mod/artifact inside the consumer jar — Loom
+     * `include` on Fabric, ModDevGradle `jarJar` on NeoForge. Invalid on Bukkit
+     * (no jar-in-jar there).
+     */
+    JAR_IN_JAR,
+
+    /**
+     * Relocate the MagicUtils classes into the consumer's fat jar (shadow).
+     * Valid on Bukkit. Not yet supported on Fabric/NeoForge, where the bundle
+     * carries mixins/entrypoint metadata that shading into the consumer mod
+     * would break.
+     */
+    SHADED,
+
+    /**
+     * Do not package MagicUtils; it is provided beside the consumer at runtime
+     * (a separately installed server plugin / nested mod). Valid on every loader.
+     */
+    EXTERNAL,
+}
+
+/** The loader a consumer plugin targets, for [resolveEmbedMode] validation. */
+internal enum class ConsumerLoader(val label: String, val native: EmbedMode, val allowed: Set<EmbedMode>) {
+    FABRIC("Fabric", EmbedMode.JAR_IN_JAR, setOf(EmbedMode.JAR_IN_JAR, EmbedMode.EXTERNAL)),
+    NEOFORGE("NeoForge", EmbedMode.JAR_IN_JAR, setOf(EmbedMode.JAR_IN_JAR, EmbedMode.EXTERNAL)),
+    BUKKIT("Bukkit", EmbedMode.SHADED, setOf(EmbedMode.SHADED, EmbedMode.EXTERNAL)),
+}
+
+/**
+ * Resolves the consumer's requested [EmbedMode] to a concrete technique for the
+ * given [loader]: [EmbedMode.AUTO] becomes the loader's native mode, and an
+ * explicit mode is validated against what the loader supports. An unsupported
+ * combination (e.g. [EmbedMode.JAR_IN_JAR] on Bukkit) fails the build with a
+ * message that names the alternatives, rather than silently doing something else.
+ */
+internal fun resolveEmbedMode(requested: EmbedMode, loader: ConsumerLoader): EmbedMode {
+    val resolved = if (requested == EmbedMode.AUTO) loader.native else requested
+    if (resolved !in loader.allowed) {
+        val alternatives = loader.allowed.joinToString(" or ") { it.name }
+        throw org.gradle.api.GradleException(
+            "MagicUtils embedMode ${requested.name} is not supported on ${loader.label}. " +
+                "Use $alternatives (or AUTO for the ${loader.label} default, ${loader.native.name})."
+        )
+    }
+    return resolved
+}
+
+/**
  * Consumer-facing configuration for the `magicutils.consumer-*` plugins.
  *
  * A downstream plugin/mod only needs to state which MagicUtils library version
@@ -23,13 +86,20 @@ abstract class MagicUtilsConsumerExtension {
     abstract val magicutilsVersion: Property<String>
 
     /**
-     * Whether to jar-in-jar the MagicUtils bundle into the consumer mod as a
-     * nested mod — Loom `include` of magicutils-fabric-bundle on Fabric, or
-     * ModDevGradle `jarJar` of magicutils-neoforge-bundle on NeoForge. Ignored by
-     * the bukkit/proxy plugins (no jar-in-jar there). Default true; set false when
-     * the consumer bundles MagicUtils another way (e.g. shaded into a fat jar).
+     * How the consumer ships MagicUtils. See [EmbedMode] for the techniques and
+     * [resolveEmbedMode] for which are valid on each loader.
+     *
+     * Defaults to [EmbedMode.AUTO], which each consumer plugin resolves to its
+     * loader's native technique ([EmbedMode.JAR_IN_JAR] on Fabric/NeoForge,
+     * [EmbedMode.SHADED] on Bukkit), so most consumers never set this. Name an
+     * explicit mode only to deviate — e.g. [EmbedMode.EXTERNAL] when several
+     * MagicUtils consumers share one server and MagicUtils is installed
+     * standalone. An explicit mode a loader does not support fails the build.
+     *
+     * The `-Pmagicutils_embed` gradle property is a one-flag CLI override: `true`
+     * ⇒ [EmbedMode.AUTO], `false` ⇒ [EmbedMode.EXTERNAL].
      */
-    abstract val embedMagicUtils: Property<Boolean>
+    abstract val embedMode: Property<EmbedMode>
 
     /**
      * MagicUtils modules to add on the `api` configuration (e.g.
@@ -243,8 +313,12 @@ internal fun Project.magicUtilsConsumerExtension(): MagicUtilsConsumerExtension 
     ext.magicutilsVersion.convention(
         providers.gradleProperty("magicutils_version").orElse(project.version.toString()),
     )
-    ext.embedMagicUtils.convention(
-        providers.gradleProperty("magicutils_embed").map { it.toBoolean() }.orElse(true),
+    // -Pmagicutils_embed=false selects EXTERNAL (true selects AUTO, i.e. the
+    // loader's native embedding); with no property the default is AUTO.
+    ext.embedMode.convention(
+        providers.gradleProperty("magicutils_embed")
+            .map { if (it.toBoolean()) EmbedMode.AUTO else EmbedMode.EXTERNAL }
+            .orElse(EmbedMode.AUTO),
     )
     return ext
 }
