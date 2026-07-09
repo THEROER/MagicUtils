@@ -62,7 +62,8 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
 
         val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
             as? ModrinthReleaseSpec
-        registerModrinthTasks(project, modrinthSpec)
+        val targetsFile = project.rootProject.file(resolvedContext.definition.targetsFile)
+        registerModrinthTasks(project, modrinthSpec, smokeSpecs, resolvedContext.definition.defaultTarget, targetsFile)
     }
 }
 

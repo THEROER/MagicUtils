@@ -1,4 +1,8 @@
 import dev.ua.theroer.magicutils.build.target.*
+import dev.ua.theroer.magicutils.build.support.magicUtilsPrepareServerRunDir
+import dev.ua.theroer.magicutils.build.support.magicUtilsRunJavaVersion
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
 
 plugins {
     id("magicutils.fabric-bundle")
@@ -52,45 +56,80 @@ dependencies {
     compileOnly(project(":diagnostics"))     // DiagnosticsCommandSupport, DiagnosticsService
 }
 
-// `runServer` (the compatibility smoke) runs the mod from the dev source set,
-// where the MagicUtils modules are only `compileOnly` — so they are absent at
-// dev runtime (NoClassDefFoundError: FabricBootstrap). Rather than re-deriving
-// the bundle's per-module variant wiring here, run the actual published bundle
-// jar as a local dev mod: it already jar-in-jars every MagicUtils module, so the
-// dev server loads exactly what ships. This is dev-only and never published, so
-// the bundle/pom stays untouched. On deobfuscated targets (26.x) the no-remap
-// Loom plugin has no `modLocalRuntime` — use plain `localRuntime`; obfuscated
-// targets keep the remapping `modLocalRuntime`.
-// Attach the built bundle jar as a dev mod for runServer only. It must NOT be a
-// plain `files(<jar provider>)` dependency: Loom eagerly resolves the mod
-// configuration and sha256s the not-yet-built jar during configuration, which
-// fails every project-wide configuration (release, preflight) with "Failed to
-// compute checksum". Only add it when this project's runServer is the build's
-// start task, and gate on the property so normal builds/releases stay clean.
-val bundleJarProvider = if (isDeobfuscated) {
-    tasks.named<AbstractArchiveTask>("shadowJar").flatMap { it.archiveFile }   // 26.x: no remap
-} else {
-    tasks.named<AbstractArchiveTask>("remapJar").flatMap { it.archiveFile }    // <26: remapped jar
-}
-val devRuntimeConfig = if (isDeobfuscated) "localRuntime" else "modLocalRuntime"
+// `runServer` (the compatibility smoke) runs the mod from THIS project's dev
+// source set: the @Mod entrypoint + fabric.mod.json live here, so Loom loads the
+// bundle mod from the compiled dev classes and resolves its declared depends
+// (fabricloader + fabric-api, both on the mod-aware `modImplementation` above)
+// as part of the same dev run. The MagicUtils runtime modules are `compileOnly`
+// here (they ship jar-in-jar in the published bundle), so they are absent at dev
+// runtime and the entrypoint would hit NoClassDefFoundError: FabricBootstrap.
+//
+// Put those modules on the run classpath — but by *kind*, so Loom's mod
+// resolution stays correct (an earlier attempt to feed a whole fat `:dev` jar on
+// `runtimeOnly` made Loom force-load that jar as the *only* root mod, dropping
+// fabric-api/loader from the run — HARD_DEP_NO_CANDIDATE):
+//  - Fabric-remapped modules (platform-fabric, commands/logger/placeholders-
+//    fabric) carry intermediary refs, so they go on `modLocalRuntime`, which
+//    Loom remaps into the named dev namespace.
+//  - Platform-neutral modules (core, commands, logger, diagnostics, …) are plain
+//    named jars — `runtimeOnly` is enough, no remap needed.
+// This mirrors how the bundle plugin itself splits remapped vs plain modules.
+//
+// CRITICAL: these are added ONLY when runServer/runClient is the invoked task.
+// The `modLocalRuntime` entries make Loom eagerly read each project jar's
+// metadata during configuration; if added unconditionally that breaks EVERY
+// build/publish/config on a target whose fabric jars aren't built yet
+// ("Failed to read metadata ... NoSuchFileException"). The gate keeps normal
+// builds/releases clean — the same guard the original wiring used.
+val fabricRemappedRuntime = listOf(
+    ":platform-fabric",
+    ":commands-fabric",
+    ":logger-fabric",
+    ":placeholders-fabric",
+)
+val plainRuntime = listOf(
+    ":platform-api",
+    ":core",
+    ":commands",
+    ":commands-brigadier",
+    ":logger",
+    ":placeholders",
+    ":diagnostics",
+    ":http-client",
+    ":config",
+    ":config-yaml",
+    ":config-toml",
+    ":lang",
+)
 val wantsRun = gradle.startParameter.taskNames.any { it.endsWith("runServer") || it.endsWith("runClient") }
 if (wantsRun) {
+    val devModRuntimeConfig = if (isDeobfuscated) "localRuntime" else "modLocalRuntime"
     dependencies {
-        add(devRuntimeConfig, files(bundleJarProvider))
+        fabricRemappedRuntime.forEach { add(devModRuntimeConfig, project(it)) }
+        plainRuntime.forEach { runtimeOnly(project(it)) }
     }
 }
 
 // `./gradlew :fabric-bundle:runServer` — Loom downloads and starts a Fabric
-// server with the built bundle as a dev mod (the compatibility smoke launches
-// this). Depend on the bundle jar so it's built first, and auto-accept the
-// Minecraft EULA in the run dir so the unattended smoke server boots
-// (dev/test only). Loom's default run dir is `run/`.
-tasks.named("runServer") {
-    dependsOn(bundleJarProvider)
+// server with this bundle (from the dev source set) as the mod (the compatibility
+// smoke launches this). Auto-accept the Minecraft EULA so the unattended smoke
+// boots, and bind a free port (or -PrunServerPort=N) so it never collides with a
+// real server on 25565. Loom's default run dir is `run/`.
+//
+// Pin the server JDK to Mojang's requirement for the target's Minecraft (1.20.x
+// needs Java 17, not the build JVM): Loom otherwise launches the run on the
+// build JDK (25 here) and the 1.20.x server aborts (exit 1) — the same class of
+// failure the bukkit runner hit. Loom's runServer is a JavaExec, so javaLauncher
+// applies directly.
+val fabricRunJavaVersion = magicUtilsRunJavaVersion(magicutilsTarget.minecraft.get())
+val fabricServerLauncher = extensions.getByType(JavaToolchainService::class.java).launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(fabricRunJavaVersion))
+}
+tasks.named<JavaExec>("runServer") {
+    javaLauncher.set(fabricServerLauncher)
     val runDir = layout.projectDirectory.dir("run")
     doFirst {
-        val dir = runDir.asFile
-        dir.mkdirs()
-        dir.resolve("eula.txt").writeText("eula=true\n")
+        val port = magicUtilsPrepareServerRunDir(runDir.asFile)
+        logger.lifecycle("fabric-bundle runServer: Minecraft ${magicutilsTarget.minecraft.get()} (Java $fabricRunJavaVersion) on port $port")
     }
 }

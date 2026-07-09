@@ -29,6 +29,17 @@ private val FAILURE_PATTERNS = listOf(
     "NoSuchMethodError",
 )
 
+/**
+ * Lines that match a [FAILURE_PATTERNS] entry but are known-harmless — platform
+ * noise unrelated to the mod under test, so they must not fail the smoke. The
+ * NeoForge "Version Check" thread NPEs (ModList.get() is null) during the dev
+ * server's shutdown/update-check; it is a NeoForge dev-env quirk, not a MagicUtils
+ * failure, and the mod has already loaded and registered its command by then.
+ */
+private val IGNORED_FAILURE_SUBSTRINGS = listOf(
+    "NeoForge Version Check",
+)
+
 private val DIAGNOSTICS_EXPORT_PATTERN = Regex("""Saved diagnostics report to\s+(.+)""")
 private const val POST_SUCCESS_GRACE_MS = 10_000L
 private const val DIAGNOSTICS_QUEUE_DELAY_MS = 10_000L
@@ -189,8 +200,10 @@ abstract class MagicUtilsSmokeTask : DefaultTask() {
                 val line = reader.readLine() ?: break
                 captured.append(line).append('\n')
 
-                FAILURE_PATTERNS.firstOrNull { line.contains(it) }?.let {
-                    throw GradleException("failure pattern '$it' in output; see $logFile")
+                if (IGNORED_FAILURE_SUBSTRINGS.none { line.contains(it) }) {
+                    FAILURE_PATTERNS.firstOrNull { line.contains(it) }?.let {
+                        throw GradleException("failure pattern '$it' in output; see $logFile")
+                    }
                 }
                 if (successAt == null && line.contains(case.successPattern)) {
                     successAt = System.currentTimeMillis()

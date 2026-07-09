@@ -49,7 +49,11 @@ enum class EmbedMode {
 internal enum class ConsumerLoader(val label: String, val native: EmbedMode, val allowed: Set<EmbedMode>) {
     FABRIC("Fabric", EmbedMode.JAR_IN_JAR, setOf(EmbedMode.JAR_IN_JAR, EmbedMode.EXTERNAL)),
     NEOFORGE("NeoForge", EmbedMode.JAR_IN_JAR, setOf(EmbedMode.JAR_IN_JAR, EmbedMode.EXTERNAL)),
+    // Velocity is a plain JVM plugin like Bukkit (flat proxy classpath, no
+    // jar-in-jar), so it shades by default and can also run EXTERNAL beside the
+    // standalone velocity-bundle.
     BUKKIT("Bukkit", EmbedMode.SHADED, setOf(EmbedMode.SHADED, EmbedMode.EXTERNAL)),
+    VELOCITY("Velocity", EmbedMode.SHADED, setOf(EmbedMode.SHADED, EmbedMode.EXTERNAL)),
 }
 
 /**

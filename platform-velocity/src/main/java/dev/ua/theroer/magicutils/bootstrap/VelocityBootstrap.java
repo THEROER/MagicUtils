@@ -1,6 +1,9 @@
 package dev.ua.theroer.magicutils.bootstrap;
 
+import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.ProxyServer;
+import dev.ua.theroer.magicutils.bootstrap.MagicUtilsConsumerPayloads;
+import dev.ua.theroer.magicutils.bootstrap.MagicUtilsConsumerViews;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
 import dev.ua.theroer.magicutils.config.ConfigManager;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
@@ -9,12 +12,18 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
+import dev.ua.theroer.magicutils.platform.velocity.VelocityMagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.velocity.VelocityPlatformProvider;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
@@ -346,8 +355,64 @@ public final class VelocityBootstrap {
                 });
             }
 
+            // Register this plugin in the shared-runtime consumer registry so the
+            // standalone velocity-bundle command can list it
+            // (/magicutils mods|mod <id>), mirroring the Bukkit/Fabric bundles. The
+            // registry filters out the bundle itself by name ("MagicUtils"), so the
+            // velocity-bundle registering through this same path is a no-op there.
+            registerSharedRuntimeConsumer(runtime, prepared.commandRegistry());
+            runtime.onClose("magicutils.consumerRegistry",
+                    () -> VelocityMagicUtilsConsumerRegistry.unregister(pluginName));
+
             return new RuntimeResult(runtime, prepared.platform(), prepared.configManager(), prepared.logger(),
                     prepared.languageManager(), prepared.commandRegistry());
+        }
+
+        private void registerSharedRuntimeConsumer(MagicRuntime runtime, @Nullable CommandRegistry commandRegistry) {
+            boolean commandsEnabled = commandRegistry != null;
+            String prefix = commandsEnabled
+                    ? (permissionPrefix != null ? permissionPrefix : pluginName)
+                    : null;
+
+            Optional<PluginDescription> description = proxy.getPluginManager()
+                    .fromInstance(plugin)
+                    .map(container -> container.getDescription());
+            String version = description
+                    .flatMap(PluginDescription::getVersion)
+                    .orElse("unknown");
+            String name = description
+                    .flatMap(PluginDescription::getName)
+                    .filter(s -> !s.isBlank())
+                    .orElse(pluginName);
+            String website = description
+                    .flatMap(PluginDescription::getUrl)
+                    .filter(s -> !s.isBlank())
+                    .orElse(null);
+            String descriptionText = description
+                    .flatMap(PluginDescription::getDescription)
+                    .filter(s -> !s.isBlank())
+                    .orElse(null);
+            String mainClass = description
+                    .map(PluginDescription::getId)
+                    .orElse(pluginName);
+            List<String> authors = new ArrayList<>(
+                    description.map(PluginDescription::getAuthors).orElse(List.of()));
+
+            // Static metadata is captured once; the dynamic state (command and
+            // component counts, diagnostics, closed) is read live from the runtime
+            // whenever /magicutils mods rebuilds a snapshot, so counts are never
+            // frozen at buildRuntime() time before the consumer wires everything.
+            var meta = new MagicUtilsConsumerRegistry.StaticMeta(
+                    name, version, mainClass, descriptionText, website, List.copyOf(authors),
+                    MagicUtilsConsumerPayloads.platformTypeLabel(runtime),
+                    commandsEnabled, prefix, Instant.now());
+            var view = MagicUtilsConsumerViews.liveView(
+                    runtime,
+                    () -> commandsEnabled && commandRegistry.commandManager() != null
+                            ? commandRegistry.commandManager().getAll().size()
+                            : 0,
+                    () -> runtime.findComponent(DiagnosticsService.class).isPresent());
+            VelocityMagicUtilsConsumerRegistry.register(meta, view);
         }
 
         private Prepared prepare() {

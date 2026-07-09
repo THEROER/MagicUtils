@@ -1,0 +1,5 @@
+name: MagicUtils
+main: dev.ua.theroer.magicutils.bungee.MagicUtilsBungeeBundlePlugin
+version: ${version}
+author: theroer
+description: Shared MagicUtils runtime for BungeeCord/Waterfall proxies

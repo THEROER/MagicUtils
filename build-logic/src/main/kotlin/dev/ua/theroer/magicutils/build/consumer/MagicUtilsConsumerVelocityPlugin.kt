@@ -17,7 +17,17 @@ import org.gradle.kotlin.dsl.*
  * gradle property (default [DEFAULT_VELOCITY_API]). The plugin applies
  * `java-library` + shadow, pins the Java toolchain to the active target, adds the
  * Velocity API (compileOnly + annotationProcessor), wires the consumer's
- * MagicUtils modules, and — on `devServer {}` opt-in — the `runVelocity` runner.
+ * MagicUtils modules per [EmbedMode] (like the Bukkit consumer, since Velocity is
+ * a plain JVM plugin on a flat proxy classpath), and — on `devServer {}` opt-in —
+ * the `runVelocity` runner.
+ *
+ * [EmbedMode] mapping (Velocity has no jar-in-jar, so JAR_IN_JAR is rejected):
+ *   SHADED   → `api`/`implementation`, so shadow relocates the modules into the
+ *             fat jar (a self-contained plugin). Velocity default (AUTO ⇒ SHADED).
+ *   EXTERNAL → `compileOnly`, and `dev/ua/theroer/magicutils` is stripped from
+ *             the shadow jar, so the built jar is thin and expects the standalone
+ *             `velocity-bundle` plugin installed beside it on the proxy. Use this
+ *             when several MagicUtils consumers share one proxy.
  */
 class MagicUtilsConsumerVelocityPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -44,7 +54,45 @@ class MagicUtilsConsumerVelocityPlugin : Plugin<Project> {
         project.dependencies.add("annotationProcessor", "com.velocitypowered:velocity-api:$velocityApiVersion")
 
         project.exposeMagicUtilsTargetFacts(target)
-        project.addConsumerMagicUtilsModules(target, "api", "implementation")
+
+        // MagicUtils modules the consumer declared, wired per embedMode. Velocity
+        // has no jar-in-jar, so this maps onto the dependency configuration + the
+        // shadow jar exactly like the Bukkit consumer. Resolved at afterEvaluate
+        // because the consumer sets embedMode in its DSL block, which runs after
+        // this plugin applies; Velocity has no Loom early-observe of
+        // configurations, so a late `add` is safe (unlike the Fabric consumer).
+        project.afterEvaluate {
+            val embed = resolveEmbedMode(consumer.embedMode.get(), ConsumerLoader.VELOCITY)
+            val shaded = embed == EmbedMode.SHADED
+            val apiConfig = if (shaded) "api" else "compileOnly"
+            val implConfig = if (shaded) "implementation" else "compileOnly"
+            val base = consumer.magicutilsVersion.get()
+            consumer.apiModules.get().forEach { module ->
+                project.dependencies.add(apiConfig, magicUtilsModuleCoordinate(module, base, target))
+            }
+            consumer.implementationModules.get().forEach { module ->
+                project.dependencies.add(implConfig, magicUtilsModuleCoordinate(module, base, target))
+            }
+
+            // EXTERNAL: strip MagicUtils and its bundled libraries from the shadow
+            // jar, so this jar carries none of them and the standalone
+            // velocity-bundle provides the single copy at runtime. They reach the
+            // fat jar transitively via the common module (whose MagicUtils deps are
+            // `api`), so moving this module's deps to compileOnly alone does not
+            // remove them; the shadow exclude does. jackson is the config modules'
+            // only external dependency and the bundle owns its own copy — shipping
+            // a second here clashes under the proxy classloader, so exclude it too.
+            if (!shaded) {
+                project.tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class.java)
+                    .configure { shadow ->
+                        // The `**/` prefix also catches multi-release copies under
+                        // META-INF/versions/<n>/, which a root-anchored pattern
+                        // would leave behind.
+                        shadow.exclude("**/dev/ua/theroer/magicutils/**")
+                        shadow.exclude("**/com/fasterxml/jackson/**")
+                    }
+            }
+        }
 
         project.afterEvaluate {
             val spec = consumer.devServerSpec.orNull ?: return@afterEvaluate

@@ -31,6 +31,9 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
 
         with(project) {
 
+            // (fabric.mod.json's `@MC_JAVA@` token is substituted centrally in the
+            // shared java-library plugin, which this bundle applies.)
+
             val bundleShadowConfig = configurations.create("bundleShadow")
             bundleShadowConfig.isCanBeConsumed = false
             bundleShadowConfig.isCanBeResolved = true
