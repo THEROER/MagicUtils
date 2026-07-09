@@ -177,6 +177,36 @@ public abstract class MagicCommand {
     }
 
     /**
+     * Adds another command's sub-commands directly into this command tree, at the
+     * same level — <em>without</em> nesting them under the source command's name the
+     * way {@link #mount(MagicCommand)} does.
+     *
+     * <p>Where {@code mount(cmd)} produces {@code /root <cmd-name> <sub>}, this
+     * produces {@code /root <sub>}. Use it to let a plugin contribute top-level
+     * sub-commands to a shared root command it does not own: define them as
+     * {@code @SubCommand} methods on a carrier class, then flat-mount that carrier
+     * into a copy of the root and re-register. The source command's own direct
+     * {@code execute} (its bare-name action) is intentionally not carried over —
+     * only its sub-commands are.
+     *
+     * @param command the command whose sub-commands to graft in at this level
+     * @return this command
+     */
+    public MagicCommand mountSubCommands(MagicCommand command) {
+        ensureMutable();
+        if (command == null) {
+            return this;
+        }
+        if (command == this) {
+            throw new IllegalArgumentException("Cannot mount a command into itself");
+        }
+        for (MountedSubCommand mounted : resolveMountedSubCommands(command)) {
+            addSubCommand(mounted.spec(), mounted.replaceExisting());
+        }
+        return this;
+    }
+
+    /**
      * Add a dynamic subcommand (builder API).
      *
      * @param subCommand subcommand spec
@@ -347,6 +377,52 @@ public abstract class MagicCommand {
 
     DynamicExecute getDynamicExecute() {
         return dynamicExecute;
+    }
+
+    /**
+     * Creates an unfrozen duplicate of this command's declarative state so it can be
+     * modified and re-registered after the original was frozen by registration.
+     *
+     * <p>Registration {@link #freeze() freezes} a command, after which {@link #mount}
+     * and the other mutators throw. This is the supported way to add sub-commands to
+     * an already-registered command tree: copy it, mount into the copy, and register
+     * the copy under the same name (registration replaces the previous owner by name).
+     * Because a copy preserves the {@link #mount mounted} sub-commands of the source,
+     * multiple contributors can each copy-mount-register in turn and their additions
+     * accumulate.
+     *
+     * <p>The copy is a {@link DynamicCommand} carrying the source's effective
+     * {@link #resolveInfo() info}, name/alias overrides, dynamic sub-commands (which
+     * is where {@link #mount} records mounted trees) and dynamic execute. Sub-commands
+     * declared as {@code @SubCommand} <em>methods</em> on a concrete subclass are part
+     * of that subclass, not of this declarative state; a subclass that carries such
+     * methods and needs them preserved across a copy should override this method to
+     * return an instance of its own type. Commands built from a spec/builder or
+     * assembled purely by {@link #mount} — such as an aggregate root command — copy
+     * losslessly with the default implementation.
+     *
+     * @return an unfrozen copy that can be mutated and re-registered
+     */
+    public MagicCommand copy() {
+        CommandInfo info = resolveInfo();
+        if (info == null) {
+            throw new IllegalStateException("Cannot copy a command with no resolvable CommandInfo");
+        }
+        DynamicCommand copy = new DynamicCommand(
+                CommandSpec.builder(info.name())
+                        .aliases(info.aliases())
+                        .description(info.description())
+                        .build());
+        copy.withInfo(info);
+        DynamicExecute execute = this.dynamicExecute;
+        if (execute != null) {
+            copy.setExecute(execute.executor(), execute.arguments(), execute.threading(),
+                    execute.replaceExisting());
+        }
+        for (DynamicSubCommand sub : this.dynamicSubCommands) {
+            copy.addSubCommand(sub.spec(), sub.replaceExisting());
+        }
+        return copy;
     }
 
     void freeze() {
