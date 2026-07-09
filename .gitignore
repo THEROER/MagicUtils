@@ -45,6 +45,8 @@ out/
 .factorypath
 .project
 .settings
+# Generated run configs (e.g. neoforge moddev writes neoforge-bundle/.eclipse/)
+.eclipse/
 .springBeans
 .sts4-cache
 bin/
@@ -92,6 +94,9 @@ Thumbs.db
 # Bukkit/Spigot
 plugins/
 run/
+# bukkit-bundle uses per-version run dirs (run-<mcVersion>, run-folia-<mcVersion>)
+# from `runServer`/`runFolia`; `run/` alone doesn't catch the versioned suffix.
+run-*/
 server.jar
 server.properties
 bukkit.yml
