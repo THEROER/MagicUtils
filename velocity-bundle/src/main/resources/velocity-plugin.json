@@ -1,0 +1,9 @@
+{
+  "id": "magicutils",
+  "name": "MagicUtils",
+  "version": "${version}",
+  "description": "Shared MagicUtils runtime for Velocity proxies",
+  "authors": ["theroer"],
+  "dependencies": [],
+  "main": "dev.ua.theroer.magicutils.velocity.MagicUtilsVelocityBundlePlugin"
+}

@@ -40,6 +40,9 @@ class MagicUtilsFabricModulePlugin : Plugin<Project> {
         val mainJarTaskName = magicutilsTarget.mainJarTaskName
 
         with(project) {
+            // (fabric.mod.json's `@MC_JAVA@` token is substituted centrally in the
+            // shared java-library plugin, which this module applies.)
+
             // Minecraft + Mojang mappings (obfuscated only); modules take the
             // loader compile-only.
             applyMinecraftAndMappings(project, magicutilsTarget)

@@ -149,6 +149,14 @@ gradlePlugin {
             id = "magicutils.bukkit-bundle"
             implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsBukkitBundlePlugin"
         }
+        register("magicutilsVelocityBundle") {
+            id = "magicutils.velocity-bundle"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsVelocityBundlePlugin"
+        }
+        register("magicutilsBungeeBundle") {
+            id = "magicutils.bungee-bundle"
+            implementationClass = "dev.ua.theroer.magicutils.build.module.MagicUtilsBungeeBundlePlugin"
+        }
         // Consumer-facing plugins for downstream plugins/mods (not MagicUtils'
         // own library modules): hide Loom/obf/classifier/toolchain selection.
         register("magicutilsConsumerCommon") {

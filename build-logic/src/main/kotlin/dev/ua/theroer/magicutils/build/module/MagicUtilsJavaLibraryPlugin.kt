@@ -47,6 +47,22 @@ class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
             javaCompileTask.options.compilerArgs.addAll(listOf("-Xlint:all,-processing", "-parameters"))
         }
 
+        // Every module that ships a fabric.mod.json declares `"java": "@MC_JAVA@"`
+        // as a plain token, not a `${...}` (Loom expands `${version}` and fails on
+        // an unknown `${}` key). Replace it with the target's Java version so a
+        // module built for a 1.20.1 (Java 17) branch does not falsely require Java
+        // 21 and get rejected by the loader. Done here (the shared java-library
+        // plugin every module applies) so common modules — commands, logger,
+        // config, lang, placeholders — get it too, not just the fabric ones. The
+        // filter runs before Loom's `${version}` expansion, leaving it untouched.
+        val mcJava = magicutilsTarget.java.get().toString()
+        project.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources::class.java).configureEach { task ->
+            task.inputs.property("mcJava", mcJava)
+            task.filesMatching("fabric.mod.json") {
+                it.filter { line -> line.replace("@MC_JAVA@", ">=$mcJava") }
+            }
+        }
+
         // Bytecode is compiled with `options.release = target.java`, but Gradle
         // derives the published `org.gradle.jvm.version` metadata attribute from
         // the *toolchain* (MAGICUTILS_BUILD_JDK = 25), not from `release`. That
