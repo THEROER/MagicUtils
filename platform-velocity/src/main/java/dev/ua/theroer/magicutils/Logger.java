@@ -18,13 +18,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Velocity logger adapter backed by {@link LoggerCore}.
+ * Velocity logger: the single output surface for a plugin.
  *
- * <p>Gives Velocity the same typed logger facade as Bukkit/Fabric/NeoForge:
- * generated {@code info/warn/error/success/debug/trace} methods, player-typed
- * overloads keyed on {@link Player}, prefixed sub-loggers, and a fluent
- * {@link LogBuilder}. Console routing reuses the platform's structured console
- * audience.
+ * <p>Despite the name, this is not only for console logs. The same level methods
+ * send to the console (a log line) and to players (a chat message), so one call
+ * site covers both. Text is authored once with MiniMessage or legacy {@code &}
+ * codes and rendered correctly on every platform.
+ *
+ * <p><b>Everyday use</b> is the short level methods; reach for the fluent
+ * {@link #log()} builder only when you need several recipients, tag resolvers,
+ * or a per-message prefix override:
+ *
+ * <pre>{@code
+ * // Console log line:
+ * logger.info("<green>Ready</green>, <yellow>%d</yellow> loaded", count);
+ *
+ * // Message a player (same levels, different target):
+ * logger.info(player, "<green>Connected");
+ *
+ * // Composite case -> builder:
+ * logger.warn().to(player).toConsole().send("<red>Backend down");
+ * }</pre>
+ *
+ * <p>Backed by {@link LoggerCore}; obtain a prefixed sub-logger with
+ * {@link #create(String)}. Console routing reuses the platform's structured
+ * console audience.
+ *
+ * @see LoggerAdapter
  */
 @LogMethods(staticMethods = false, audienceType = "com.velocitypowered.api.proxy.Player")
 public final class Logger extends LoggerMethods implements LoggerAdapter<Player, PrefixedLogger> {

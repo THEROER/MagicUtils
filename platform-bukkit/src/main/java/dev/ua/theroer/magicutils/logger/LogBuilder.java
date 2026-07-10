@@ -14,20 +14,37 @@ import java.util.Collection;
  * return {@code LogBuilder} thanks to its self type; this class only adds the
  * Bukkit-typed recipient overloads.
  */
-@SuppressWarnings("doclint:missing")
 public class LogBuilder extends LogBuilderCore<LogBuilder> {
     private final Logger logger;
 
+    /**
+     * Creates a log builder for the given level.
+     *
+     * @param logger parent logger
+     * @param level log level
+     */
     public LogBuilder(Logger logger, LogLevel level) {
         super(logger.getCore(), level);
         this.logger = logger;
     }
 
+    /**
+     * Sets a player as the direct audience.
+     *
+     * @param player target player
+     * @return this builder
+     */
     public LogBuilder to(Player player) {
         super.to(logger.wrapAudience(player));
         return this;
     }
 
+    /**
+     * Adds several players as recipients.
+     *
+     * @param players target players
+     * @return this builder
+     */
     public LogBuilder to(Player... players) {
         if (players != null) {
             for (Player player : players) {
@@ -39,6 +56,12 @@ public class LogBuilder extends LogBuilderCore<LogBuilder> {
         return this;
     }
 
+    /**
+     * Adds a collection of players as recipients.
+     *
+     * @param players target players
+     * @return this builder
+     */
     public LogBuilder to(Collection<? extends Player> players) {
         if (players != null) {
             for (Player player : players) {
@@ -50,16 +73,34 @@ public class LogBuilder extends LogBuilderCore<LogBuilder> {
         return this;
     }
 
+    /**
+     * Adds a command sender (player or console) as a recipient.
+     *
+     * @param sender command sender
+     * @return this builder
+     */
     public LogBuilder to(CommandSender sender) {
         super.recipient(logger.wrapAudience(sender));
         return this;
     }
 
+    /**
+     * Adds a command sender as a recipient.
+     *
+     * @param sender command sender
+     * @return this builder
+     */
     public LogBuilder recipient(CommandSender sender) {
         super.recipient(logger.wrapAudience(sender));
         return this;
     }
 
+    /**
+     * Adds a collection of command senders as recipients.
+     *
+     * @param senders command senders
+     * @return this builder
+     */
     public LogBuilder toSenders(Collection<? extends CommandSender> senders) {
         if (senders != null) {
             for (CommandSender sender : senders) {
