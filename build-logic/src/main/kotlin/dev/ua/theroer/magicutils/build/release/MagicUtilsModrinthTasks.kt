@@ -1,5 +1,6 @@
 package dev.ua.theroer.magicutils.build.release
 
+import dev.ua.theroer.magicutils.build.support.findMagicUtilsModrinthToken
 import dev.ua.theroer.magicutils.build.smoke.SmokePlatformSpec
 import dev.ua.theroer.magicutils.build.smoke.expandVersionsFull
 import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
@@ -23,7 +24,8 @@ import java.time.Duration
  * Kotlin replacement for the reusable part of verified-plugin's
  * `publish_to_modrinth.sh`: uploads one Modrinth version per declared artifact
  * (idempotent — skips a version_number that already exists). The token comes
- * from the MODRINTH_TOKEN environment variable.
+ * from the `modrinth_token` Gradle property or the MODRINTH_TOKEN env var, the
+ * same property-or-env resolution as the Maven publish secrets.
  */
 // v3 for native per-version `environment`; body shape is otherwise the same as v2.
 private const val MODRINTH_API = "https://api.modrinth.com/v3"
@@ -37,7 +39,7 @@ internal fun registerModrinthTasks(
 ) {
     project.tasks.register("publishToModrinth", ModrinthPublishTask::class.java) { task ->
         task.group = "publishing"
-        task.description = "Upload artifacts to Modrinth (-Pversion=X.Y.Z; MODRINTH_TOKEN env). " +
+        task.description = "Upload artifacts to Modrinth (-Pversion=X.Y.Z; modrinth_token property or MODRINTH_TOKEN env). " +
             "Artifacts come from the smoke matrix unless the modrinth {} block lists them."
         // When the modrinth {} block declares no artifacts, synthesise them from
         // the smoke matrix — the single source of truth (same rows printReleaseMatrix
@@ -60,6 +62,9 @@ internal fun registerModrinthTasks(
                 ?: throw GradleException("Pass the release version via -Pversion=X.Y.Z.")
         })
         task.rootDir.set(project.rootDir.absolutePath)
+        // Resolved in the configuration phase (property-or-env), so the token
+        // source is uniform with the Maven secrets. Optional: a dry run needs none.
+        task.token.set(project.provider { project.findMagicUtilsModrinthToken() })
         task.notCompatibleWithConfigurationCache("Performs network uploads.")
     }
 }
@@ -151,6 +156,11 @@ abstract class ModrinthPublishTask : DefaultTask() {
     @get:Input abstract val baseVersion: Property<String>
     @get:Input abstract val rootDir: Property<String>
 
+    // @Internal, not @Input: a secret must never enter the up-to-date hash or the
+    // build cache. Optional so a dry run (which returns before needing it) works
+    // without a token configured.
+    @get:Internal abstract val token: Property<String>
+
     @TaskAction
     fun run() {
         val spec = releaseSpec.orNull
@@ -181,8 +191,8 @@ abstract class ModrinthPublishTask : DefaultTask() {
             return
         }
 
-        val token = System.getenv("MODRINTH_TOKEN")?.takeIf { it.isNotBlank() }
-            ?: throw GradleException("MODRINTH_TOKEN environment variable is not set.")
+        val token = token.orNull?.takeIf { it.isNotBlank() }
+            ?: throw GradleException("Modrinth token is not set (modrinth_token property or MODRINTH_TOKEN env).")
 
         val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()
         val existing = fetchExistingVersions(client, token, spec.projectId)

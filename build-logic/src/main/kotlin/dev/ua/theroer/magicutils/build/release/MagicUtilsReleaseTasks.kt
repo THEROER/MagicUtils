@@ -1,12 +1,14 @@
 package dev.ua.theroer.magicutils.build.release
 
 import dev.ua.theroer.magicutils.build.publish.*
+import dev.ua.theroer.magicutils.build.support.findMagicUtilsModrinthToken
 import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
@@ -100,6 +102,7 @@ internal fun registerReleaseTasks(
             publishingSpec.smokeArtifactUrl(javaSuffixedCoordinate(base, defaultTargetJava))
         })
         task.modrinthProjectId.set(project.provider { modrinthProjectId })
+        task.modrinthToken.set(project.provider { project.findMagicUtilsModrinthToken() })
         task.reportOnly.set(project.provider { project.hasProperty("report") })
         task.notCompatibleWithConfigurationCache("Queries git and the network.")
     }
@@ -296,6 +299,9 @@ abstract class VerifyReleaseConsistencyTask @Inject constructor(
     @get:Input abstract val gradlePropertiesText: Property<String>
     @get:Input abstract val mavenPomUrl: Property<String>
     @get:[Input Optional] abstract val modrinthProjectId: Property<String>
+    // @Internal: a secret must not enter the up-to-date hash. Optional: a public
+    // project's version list needs no token.
+    @get:Internal abstract val modrinthToken: Property<String>
     @get:Input abstract val reportOnly: Property<Boolean>
 
     @TaskAction
@@ -310,7 +316,7 @@ abstract class VerifyReleaseConsistencyTask @Inject constructor(
 
         val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()
         val mavenPublished = headOk(client, mavenPomUrl.get())
-        val modrinthPublished = modrinthVersionPresent(client, modrinthProjectId.orNull, requested.toString())
+        val modrinthPublished = modrinthVersionPresent(client, modrinthProjectId.orNull, modrinthToken.orNull, requested.toString())
 
         val report = evaluateReleaseConsistency(
             version = requested,
@@ -360,12 +366,12 @@ abstract class VerifyReleaseConsistencyTask @Inject constructor(
      * A public project's version list needs no token; MODRINTH_TOKEN is sent when
      * present so private/draft projects also resolve.
      */
-    private fun modrinthVersionPresent(client: HttpClient, projectId: String?, versionNumber: String): Boolean? {
+    private fun modrinthVersionPresent(client: HttpClient, projectId: String?, token: String?, versionNumber: String): Boolean? {
         if (projectId.isNullOrBlank()) return null
         val builder = HttpRequest.newBuilder(
             URI.create("https://api.modrinth.com/v3/project/$projectId/version?include_changelog=false")
         ).timeout(Duration.ofSeconds(20)).GET()
-        System.getenv("MODRINTH_TOKEN")?.takeIf { it.isNotBlank() }?.let { builder.header("Authorization", it) }
+        token?.takeIf { it.isNotBlank() }?.let { builder.header("Authorization", it) }
         return runCatching {
             val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() !in 200..299) return null

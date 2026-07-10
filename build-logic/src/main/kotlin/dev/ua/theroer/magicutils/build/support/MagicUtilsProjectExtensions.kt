@@ -59,6 +59,15 @@ internal fun Project.findMagicUtilsPublishSecret(propertyName: String, envName: 
         ?: System.getenv(envName)?.trim()?.takeIf(String::isNotEmpty)
 
 /**
+ * The Modrinth API token: the `modrinth_token` Gradle property or the
+ * `MODRINTH_TOKEN` env var. Same property-or-env resolution as the Maven
+ * publish secrets, so a consumer configures every secret one way (e.g. all in
+ * ~/.gradle/gradle.properties). Null when neither is set.
+ */
+internal fun Project.findMagicUtilsModrinthToken(): String? =
+    findMagicUtilsPublishSecret("modrinth_token", "MODRINTH_TOKEN")
+
+/**
  * Drops the `<dependencies>` node from the generated POM. Bundle publications
  * ship a fat/jar-in-jar artifact whose dependencies are already inside the jar,
  * so advertising them as Maven deps would make consumers double-resolve them.
