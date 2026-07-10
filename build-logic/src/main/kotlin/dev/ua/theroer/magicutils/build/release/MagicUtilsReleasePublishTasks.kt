@@ -260,10 +260,16 @@ abstract class UploadJavadocTask : DefaultTask() {
                 .PUT(HttpRequest.BodyPublishers.ofFile(zip.toPath()))
             authHeader?.let { builder.header("Authorization", it) }
             val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
-            if (response.statusCode() !in 200..299) {
-                throw GradleException("Javadoc upload to $url failed (HTTP ${response.statusCode()}): ${response.body()}")
+            when {
+                response.statusCode() in 200..299 -> logger.lifecycle("Uploaded ${zip.name} -> $url")
+                // The immutable releases repo rejects overwriting an existing path
+                // with 409. The stable `latest` path already holds a prior release's
+                // zip, and a re-run re-uploads the versioned path; neither is fatal —
+                // the docs site keeps serving what is there. Warn and carry on so a
+                // resumed release does not fail on javadoc that is effectively done.
+                response.statusCode() == 409 -> logger.warn("Javadoc path already published (HTTP 409, skipping overwrite): $url")
+                else -> throw GradleException("Javadoc upload to $url failed (HTTP ${response.statusCode()}): ${response.body()}")
             }
-            logger.lifecycle("Uploaded ${zip.name} -> $url")
         }
     }
 }
