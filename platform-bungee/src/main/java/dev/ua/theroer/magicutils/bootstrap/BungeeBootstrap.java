@@ -30,12 +30,32 @@ public final class BungeeBootstrap {
     }
 
     /**
-     * Creates a bootstrap builder for a Bungee plugin.
+     * Creates a bootstrap builder for a Bungee plugin, resolving the plugin
+     * name from the plugin description.
+     *
+     * <p>This is the recommended entry point. The plugin name is taken from
+     * {@code plugin.getDescription().getName()}; the data directory is the
+     * plugin's data folder.
+     *
+     * @param plugin Bungee plugin instance
+     * @return bootstrap builder
+     */
+    public static Builder forPlugin(Plugin plugin) {
+        Objects.requireNonNull(plugin, "plugin");
+        String pluginName = plugin.getDescription() != null ? plugin.getDescription().getName() : null;
+        return new Builder(plugin, pluginName);
+    }
+
+    /**
+     * Creates a bootstrap builder for a Bungee plugin with an explicit name.
      *
      * @param plugin Bungee plugin instance
      * @param pluginName logical plugin name for logger/messages
      * @return bootstrap builder
+     * @deprecated prefer {@link #forPlugin(Plugin)}, which derives the name from
+     *     the plugin description
      */
+    @Deprecated
     public static Builder forPlugin(Plugin plugin, String pluginName) {
         return new Builder(plugin, pluginName);
     }

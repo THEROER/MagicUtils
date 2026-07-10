@@ -39,14 +39,48 @@ public final class VelocityBootstrap {
     }
 
     /**
-     * Creates a bootstrap builder for a Velocity plugin.
+     * Creates a bootstrap builder for a Velocity plugin, resolving the plugin
+     * name and data directory from the plugin's {@code @Plugin} metadata.
+     *
+     * <p>This is the recommended entry point. The plugin name is taken from the
+     * registered {@link PluginDescription} (name, falling back to id); the data
+     * directory defaults to {@code plugins/<pluginId>}. Use
+     * {@link Builder#dataDirectory(Path)} to override, for example when the
+     * plugin injects a {@code @DataDirectory Path}.
+     *
+     * @param proxy Velocity proxy server
+     * @param plugin plugin instance used for event registration and metadata
+     * @return bootstrap builder
+     */
+    public static Builder forPlugin(ProxyServer proxy, Object plugin) {
+        Objects.requireNonNull(proxy, "proxy");
+        Objects.requireNonNull(plugin, "plugin");
+        Optional<PluginDescription> description = proxy.getPluginManager()
+                .fromInstance(plugin)
+                .map(container -> container.getDescription());
+        String id = description.map(PluginDescription::getId).filter(s -> !s.isBlank()).orElse("magicutils");
+        String name = description
+                .flatMap(PluginDescription::getName)
+                .filter(s -> !s.isBlank())
+                .orElse(id);
+        Path dataDirectory = Path.of("plugins", id);
+        return new Builder(proxy, plugin, name, dataDirectory);
+    }
+
+    /**
+     * Creates a bootstrap builder for a Velocity plugin with an explicit name
+     * and data directory.
      *
      * @param proxy Velocity proxy server
      * @param plugin plugin instance used for event registration
      * @param pluginName logical plugin name for logger/messages
      * @param dataDirectory plugin data directory
      * @return bootstrap builder
+     * @deprecated prefer {@link #forPlugin(ProxyServer, Object)}, which derives
+     *     the name and data directory from the plugin metadata; override the
+     *     data directory with {@link Builder#dataDirectory(Path)} when needed
      */
+    @Deprecated
     public static Builder forPlugin(ProxyServer proxy, Object plugin, String pluginName, Path dataDirectory) {
         return new Builder(proxy, plugin, pluginName, dataDirectory);
     }
