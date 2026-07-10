@@ -291,37 +291,28 @@ private fun registerAllTargetsTask(
         return
     }
 
-    val rootDir = project.rootProject.projectDir
-    val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
-    val wrapper = if (isWindows) "gradlew.bat" else "./gradlew"
-    // Child builds run against a dedicated Gradle user home so their daemon
-    // registry, caches and lock files never collide with the parent build that
-    // spawned them (the parent is still holding the root project's locks while
-    // this task executes). Without this the child intermittently fails its cold
-    // compile racing the parent for the same daemon/locks.
-    val childGradleHome = project.layout.buildDirectory.dir("all-targets-gradle-home").get().asFile
-
-    val perTargetTasks = resolvedTargets.map { targetName ->
-        project.tasks.register(
-            "buildTarget${targetName.replaceFirstChar(Char::titlecase)}",
-            org.gradle.api.tasks.Exec::class.java,
-        ) { task ->
-            task.group = "matrix"
-            task.description = "Run '${effectiveSpec.taskType.gradleTask}' for target $targetName."
-            task.workingDir = rootDir
-            // Each target is a fresh Gradle invocation; -Ptarget pins its whole
-            // include graph in settings.gradle. Scenario limits which platforms
-            // that run builds (defaults to the matrix default scenario when null).
-            val args = mutableListOf(
-                wrapper,
-                effectiveSpec.taskType.gradleTask,
-                "-Ptarget=$targetName",
-                "--gradle-user-home=${childGradleHome.absolutePath}",
+    // Each target is a fresh Gradle invocation; -Ptarget pins its whole include
+    // graph in settings.gradle. Scenario limits which platforms that run builds
+    // (defaults to the matrix default scenario when null). The per-target Exec
+    // mechanism itself lives in registerMagicUtilsFanout so it is shared with the
+    // release publish/modrinth fan-outs.
+    val perTargetTasks = registerMagicUtilsFanout(
+        project = project,
+        taskPrefix = "buildTarget",
+        taskGroup = "matrix",
+        invocations = resolvedTargets.map { targetName ->
+            MagicUtilsFanoutInvocation(
+                target = targetName,
+                args = buildList {
+                    add(effectiveSpec.taskType.gradleTask)
+                    effectiveSpec.scenario?.let { add("-Pscenario=$it") }
+                },
             )
-            effectiveSpec.scenario?.let { args += "-Pscenario=$it" }
-            task.commandLine(args)
-        }
-    }
+        },
+        childHomeSubdir = "all-targets-gradle-home",
+        dryRun = false,
+        describe = { "Run '${effectiveSpec.taskType.gradleTask}' for target ${it.target}." },
+    )
 
     project.tasks.register("buildAllTargets") { task ->
         task.group = "matrix"
