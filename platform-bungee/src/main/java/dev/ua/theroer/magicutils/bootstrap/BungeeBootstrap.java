@@ -6,8 +6,10 @@ import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
-import dev.ua.theroer.magicutils.lang.Messages;
-import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.Logger;
+import dev.ua.theroer.magicutils.messaging.MessagingService;
+import dev.ua.theroer.magicutils.messaging.bungee.BungeeMessagingSupport;
+import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.bungee.BungeePlatformProvider;
 import net.md_5.bungee.api.ProxyServer;
@@ -17,7 +19,6 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -28,12 +29,32 @@ public final class BungeeBootstrap {
     }
 
     /**
-     * Creates a bootstrap builder for a Bungee plugin.
+     * Creates a bootstrap builder for a Bungee plugin, resolving the plugin
+     * name from the plugin description.
+     *
+     * <p>This is the recommended entry point. The plugin name is taken from
+     * {@code plugin.getDescription().getName()}; the data directory is the
+     * plugin's data folder.
+     *
+     * @param plugin Bungee plugin instance
+     * @return bootstrap builder
+     */
+    public static Builder forPlugin(Plugin plugin) {
+        Objects.requireNonNull(plugin, "plugin");
+        String pluginName = plugin.getDescription() != null ? plugin.getDescription().getName() : null;
+        return new Builder(plugin, pluginName);
+    }
+
+    /**
+     * Creates a bootstrap builder for a Bungee plugin with an explicit name.
      *
      * @param plugin Bungee plugin instance
      * @param pluginName logical plugin name for logger/messages
      * @return bootstrap builder
+     * @deprecated prefer {@link #forPlugin(Plugin)}, which derives the name from
+     *     the plugin description
      */
+    @Deprecated
     public static Builder forPlugin(Plugin plugin, String pluginName) {
         return new Builder(plugin, pluginName);
     }
@@ -45,26 +66,22 @@ public final class BungeeBootstrap {
         private final Plugin plugin;
         private final ProxyServer proxy;
         private final String pluginName;
+        private final LanguageBootstrap lang = new LanguageBootstrap();
         private Path dataDirectory;
-        private Logger jul;
+        private java.util.logging.Logger jul;
         private Platform platform;
         private ConfigManager configManager;
-        private LoggerCore logger;
+        private Logger logger;
         private LanguageManager languageManager;
-        private String language = "en";
-        private boolean initLanguage = true;
-        private boolean bindLoggerLanguage = true;
-        private boolean setMessagesManager = true;
-        private boolean registerMessages = true;
-        private boolean addMagicUtilsMessages = true;
-        private boolean bindClientLocaleSync = true;
-        private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private Executor asyncExecutor;
         private Consumer<CommandRegistry> commandConfigurer;
         private boolean enableDiagnostics;
         private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
+        private boolean enableMessaging;
+        private RedisConfig.Redis messagingRedis;
+        private Consumer<MessagingService.Builder> messagingConfigurer;
 
         private Builder(Plugin plugin, String pluginName) {
             this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -101,7 +118,7 @@ public final class BungeeBootstrap {
          * @param jul logger instance
          * @return this builder
          */
-        public Builder logger(Logger jul) {
+        public Builder logger(java.util.logging.Logger jul) {
             this.jul = jul;
             return this;
         }
@@ -118,12 +135,12 @@ public final class BungeeBootstrap {
         }
 
         /**
-         * Sets the custom logger core.
+         * Sets the custom logger.
          *
-         * @param logger logger core
+         * @param logger logger to use
          * @return this builder
          */
-        public Builder loggerCore(LoggerCore logger) {
+        public Builder loggerCore(Logger logger) {
             this.logger = logger;
             return this;
         }
@@ -140,15 +157,35 @@ public final class BungeeBootstrap {
         }
 
         /**
+         * Applies the recommended language defaults (every flag enabled). This
+         * is already the initial state; call it to make intent explicit.
+         *
+         * @return this builder
+         */
+        public Builder withRecommendedDefaults() {
+            lang.withRecommendedDefaults();
+            return this;
+        }
+
+        /**
+         * Disables all automatic language/messages wiring for callers that
+         * manage localization themselves.
+         *
+         * @return this builder
+         */
+        public Builder minimal() {
+            lang.minimal();
+            return this;
+        }
+
+        /**
          * Sets the default language.
          *
          * @param language language code (e.g., "en")
          * @return this builder
          */
         public Builder language(String language) {
-            if (language != null && !language.isBlank()) {
-                this.language = language;
-            }
+            lang.language(language);
             return this;
         }
 
@@ -159,7 +196,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder initLanguage(boolean initLanguage) {
-            this.initLanguage = initLanguage;
+            lang.initLanguage(initLanguage);
             return this;
         }
 
@@ -170,7 +207,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
-            this.bindLoggerLanguage = bindLoggerLanguage;
+            lang.bindLoggerLanguage(bindLoggerLanguage);
             return this;
         }
 
@@ -181,7 +218,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
-            this.setMessagesManager = setMessagesManager;
+            lang.setMessagesManager(setMessagesManager);
             return this;
         }
 
@@ -192,7 +229,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder registerMessages(boolean registerMessages) {
-            this.registerMessages = registerMessages;
+            lang.registerMessages(registerMessages);
             return this;
         }
 
@@ -203,7 +240,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
-            this.addMagicUtilsMessages = addMagicUtilsMessages;
+            lang.addMagicUtilsMessages(addMagicUtilsMessages);
             return this;
         }
 
@@ -214,7 +251,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
-            this.bindClientLocaleSync = bindClientLocaleSync;
+            lang.bindClientLocaleSync(bindClientLocaleSync);
             return this;
         }
 
@@ -225,7 +262,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder translations(Consumer<LanguageManager> translations) {
-            this.translations = translations;
+            lang.translations(translations);
             return this;
         }
 
@@ -294,6 +331,40 @@ public final class BungeeBootstrap {
         }
 
         /**
+         * Enables cross-server messaging using the default plugin-messaging transport.
+         *
+         * @return this builder
+         */
+        public Builder enableMessaging() {
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Supplies Redis settings for messaging; when enabled, Redis is used.
+         *
+         * @param redis redis settings
+         * @return this builder
+         */
+        public Builder messagingRedis(RedisConfig.Redis redis) {
+            this.messagingRedis = redis;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring the messaging service builder before it is built.
+         *
+         * @param messagingConfigurer messaging builder callback
+         * @return this builder
+         */
+        public Builder configureMessaging(Consumer<MessagingService.Builder> messagingConfigurer) {
+            this.messagingConfigurer = messagingConfigurer;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result.
          *
          * @return bootstrap result
@@ -313,18 +384,16 @@ public final class BungeeBootstrap {
             MagicRuntime runtime = MagicRuntime.builder(
                             prepared.platform(),
                             prepared.configManager(),
-                            prepared.logger()
+                            prepared.logger().getCore()
                     )
                     .languageManager(prepared.languageManager())
                     .manageConfigManager(configManager == null)
                     .component(Plugin.class, plugin)
                     .component(ProxyServer.class, proxy)
+                    .component(Logger.class, prepared.logger())
                     .build();
 
-            if (bindClientLocaleSync) {
-                runtime.manage("language.clientLocaleSync",
-                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
-            }
+            lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
@@ -335,16 +404,11 @@ public final class BungeeBootstrap {
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
-            if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));
+            if (enableMessaging) {
+                BungeeMessagingSupport.install(
+                        runtime, proxy, plugin, pluginName, messagingRedis, messagingConfigurer);
             }
-            if (setMessagesManager) {
-                runtime.onClose("messages.default", () -> {
-                    if (Messages.getLanguageManager() == prepared.languageManager()) {
-                        Messages.setLanguageManager(null);
-                    }
-                });
-            }
+            lang.installMessagesCloseHooks(runtime, pluginName, prepared.languageManager());
 
             return new RuntimeResult(runtime, prepared.platform(), prepared.configManager(), prepared.logger(),
                     prepared.languageManager(), prepared.commandRegistry());
@@ -357,36 +421,19 @@ public final class BungeeBootstrap {
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);
-            LoggerCore resolvedLogger = logger != null
+            Logger resolvedLogger = logger != null
                     ? logger
-                    : new LoggerCore(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
+                    : new Logger(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
             LanguageManager resolvedLanguageManager = languageManager != null
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            if (initLanguage) {
-                resolvedLanguageManager.init(language);
-            }
-            if (translations != null) {
-                translations.accept(resolvedLanguageManager);
-            }
-            if (addMagicUtilsMessages) {
-                resolvedLanguageManager.addMagicUtilsMessages();
-            }
-            if (registerMessages) {
-                Messages.register(pluginName, resolvedLanguageManager);
-            }
-            if (setMessagesManager) {
-                Messages.setLanguageManager(resolvedLanguageManager);
-            }
-            if (bindLoggerLanguage) {
-                resolvedLogger.setLanguageManager(resolvedLanguageManager);
-            }
+            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {
                 String prefix = permissionPrefix != null ? permissionPrefix : pluginName;
-                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger, asyncExecutor);
+                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger.getCore(), asyncExecutor);
                 if (commandConfigurer != null) {
                     commandConfigurer.accept(registry);
                 }
@@ -405,7 +452,7 @@ public final class BungeeBootstrap {
         private record Prepared(
                 Platform platform,
                 ConfigManager configManager,
-                LoggerCore logger,
+                Logger logger,
                 LanguageManager languageManager,
                 CommandRegistry commandRegistry
         ) {
@@ -424,7 +471,7 @@ public final class BungeeBootstrap {
     public record Result(
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
@@ -444,7 +491,7 @@ public final class BungeeBootstrap {
             MagicRuntime runtime,
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {

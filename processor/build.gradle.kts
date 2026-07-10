@@ -8,7 +8,11 @@ plugins {
 }
 
 magicutilsPublish {
-    category = MagicUtilsPublishCategory.COMMON_MATRIX
+    // Build-only: applied as an annotationProcessor to the library modules (see
+    // MagicUtilsAnnotationProcessingPlugin), its generated code is baked into
+    // those jars and it never appears as a runtime dependency in any published
+    // POM. Downstreams don't need it, so it is not published.
+    category = MagicUtilsPublishCategory.NONE
 }
 
 java {

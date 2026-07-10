@@ -91,8 +91,10 @@ public final class LogMessageFormatter {
         // Build console text: message only (no prefixes — logger name carries that info)
         String consoleText = processed;
 
-        boolean chatNeedsMini = prefixRender.useGradient() || hasMiniMessageTags(chatText)
-                || hasExternalResolver(externalResolver);
+        // Chat always goes through MiniMessage: attachPrefix injects the level
+        // colour (single colour or gradient) into every chat message, so the
+        // success/warn/error signal is present even when gradients are disabled.
+        boolean chatNeedsMini = true;
         boolean consoleNeedsMini = hasMiniMessageTags(consoleText) || hasExternalResolver(externalResolver);
 
         Component chatComponent = deserializeComponent(logger, engine, targetAudience,
@@ -245,7 +247,7 @@ public final class LogMessageFormatter {
                 : (target == LogTarget.CONSOLE || target == LogTarget.BOTH)
                         ? logger.getConsolePrefixMode()
                         : logger.getChatPrefixMode();
-        String prefix = buildPrefix(logger, level, mode);
+        String prefix = buildPrefix(logger, mode);
         boolean useGradient = !prefix.isEmpty() && shouldUseGradient(logger, target);
         return new PrefixRender(prefix, useGradient);
     }
@@ -255,12 +257,19 @@ public final class LogMessageFormatter {
                                        LoggerCore logger,
                                        LogLevel level,
                                        LogTarget target) {
-        if (prefixRender.useGradient()) {
-            String[] colors = logger.resolveColorsForLevel(level, target == LogTarget.CONSOLE);
+        // The level colour is the message's signal of success/warn/error, so it
+        // is applied whether or not gradients are enabled. useGradient() only
+        // decides between a two-stop gradient and a single solid colour.
+        String[] colors = logger.resolveColorsForLevel(level, target == LogTarget.CONSOLE);
+        if (colors == null || colors.length == 0) {
+            return "<reset>" + combined;
+        }
+        if (prefixRender.useGradient() && colors.length >= 2) {
             String gradientTag = ColorUtils.createGradientTag(colors);
             return "<reset>" + gradientTag + combined + "</gradient>";
         }
-        return "<reset>" + combined;
+        String color = colors[0];
+        return "<reset><" + color + ">" + combined + "</" + color + ">";
     }
 
     private static String combinePrefix(String prefix, String message) {
@@ -291,7 +300,7 @@ public final class LogMessageFormatter {
     static record FormattedMessage(Component chatComponent, Component consoleComponent, String prefixText) {
     }
 
-    private static String buildPrefix(LoggerCore logger, LogLevel level, PrefixMode mode) {
+    private static String buildPrefix(LoggerCore logger, PrefixMode mode) {
         if (mode == PrefixMode.NONE) {
             return "";
         }
@@ -304,9 +313,11 @@ public final class LogMessageFormatter {
             default -> "";
         };
 
-        if (level != LogLevel.INFO) {
-            prefixText = prefixText + " " + level.name();
-        }
+        // The prefix is rendered into the chat message only (the console line
+        // carries the level via the platform logger already). Players do not
+        // need the log level spelled out as "[Plugin SUCCESS]" — the level is
+        // conveyed by the message colour instead, so keep the chat prefix to the
+        // plugin brand only.
 
         return "[" + prefixText + "]";
     }

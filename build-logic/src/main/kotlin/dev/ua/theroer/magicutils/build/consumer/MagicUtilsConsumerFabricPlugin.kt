@@ -64,7 +64,7 @@ class MagicUtilsConsumerFabricPlugin : Plugin<Project> {
         // for compile/dev-runtime; on deobfuscated 26.x there is no remap, so the
         // classifier-less jar is itself the fat, self-contained artifact used for
         // both publish and dev runtime.
-        val version = target.publishedVersion(consumer.magicutilsVersion.get())
+        val version = target.publishedVersion("magicutils-fabric-bundle", consumer.magicutilsVersion.get())
         val module = "dev.ua.theroer:magicutils-fabric-bundle:$version"
         val shippedDep = module
         val fatDep = if (target.isDeobfuscated) shippedDep else "$module:dev"

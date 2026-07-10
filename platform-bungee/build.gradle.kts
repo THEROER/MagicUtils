@@ -13,6 +13,7 @@ magicutilsPublish {
 dependencies {
     api(project(":core"))
     api(project(":diagnostics"))
+    api(project(":messaging"))
     compileOnly(libs.bungeecord.api)
     api(libs.kyori.adventure.text.serializer.legacy)
     implementation(libs.kyori.adventure.text.serializer.plain)

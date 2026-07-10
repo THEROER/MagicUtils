@@ -58,16 +58,66 @@ internal fun bumpGradleVersion(gradlePropertiesText: String, version: SemanticVe
     return regex.replaceFirst(gradlePropertiesText, "version=$version")
 }
 
-/** URL of the POM smoke-tested after a publish, per [MagicUtilsPublishingSpec]. */
-internal fun MagicUtilsPublishingSpec.smokeArtifactUrl(version: SemanticVersion): String {
+/**
+ * URL of the POM smoke-tested after a publish, per [MagicUtilsPublishingSpec].
+ *
+ * [versionCoordinate] is the smoke artifact's ACTUAL published coordinate:
+ * `X.Y.Z` for a plain library module (which now ships bare) or `X.Y.Z+java<N>`
+ * for a bundle. The caller applies the module-vs-bundle rule
+ * (magicUtilsPublishedModuleVersion) before calling, so this points at a POM that
+ * is really published and the smoke poll does not 404 forever. The `+` (if any)
+ * is percent-encoded for the HTTP request.
+ */
+internal fun MagicUtilsPublishingSpec.smokeArtifactUrl(versionCoordinate: String): String {
     val groupPath = group.replace('.', '/')
-    return "$repoUrl/$groupPath/$smokeArtifact/$version/$smokeArtifact-$version.pom"
+    val encoded = versionCoordinate.replace("+", "%2B")
+    return "$repoUrl/$groupPath/$smokeArtifact/$encoded/$smokeArtifact-$encoded.pom"
 }
+
+/**
+ * Parse a Modrinth `GET /project/{id}/version` response body into a map of
+ * `version_number` -> version `id`. A regex can't pair id<->version_number
+ * because nested file/dependency objects also carry `"id"`, so this does a
+ * proper JSON parse. Later duplicates overwrite, so the map holds the newest id
+ * per version_number. Kept here (pure) so both the Modrinth publish task and the
+ * release-consistency check parse the response the same way.
+ */
+internal fun parseModrinthVersionIds(responseBody: String): Map<String, String> {
+    @Suppress("UNCHECKED_CAST")
+    val versions = groovy.json.JsonSlurper().parseText(responseBody) as? List<Map<String, Any?>>
+        ?: return emptyMap()
+    return versions.mapNotNull { v ->
+        val id = v["id"] as? String
+        val num = v["version_number"] as? String
+        if (id != null && num != null) num to id else null
+    }.toMap()
+}
+
+/** Maven artifactId the aggregated Javadoc zip is uploaded under. */
+private const val JAVADOC_ARTIFACT = "magicutils-javadoc"
+
+/**
+ * Upload URL for the stable "latest" Javadoc zip on the publish repo. The docs
+ * site always fetches this path, so every release overwrites it. [group] is the
+ * publishing group (e.g. `dev.ua.theroer`), [repoUrl] the repo base.
+ */
+internal fun javadocLatestUrl(repoUrl: String, group: String): String =
+    "${repoUrl.trimEnd('/')}/${group.replace('.', '/')}/$JAVADOC_ARTIFACT/latest/$JAVADOC_ARTIFACT.zip"
+
+/** Upload URL for the versioned Javadoc zip copy, kept for reference/rollback. */
+internal fun javadocVersionUrl(repoUrl: String, group: String, version: String): String =
+    "${repoUrl.trimEnd('/')}/${group.replace('.', '/')}/$JAVADOC_ARTIFACT/$version/$JAVADOC_ARTIFACT.zip"
 
 /**
  * Validate a requested release version against the current gradle.properties
  * version and the latest already-released version. Returns nothing; throws
  * [GradleException] with an actionable message on any violation.
+ *
+ * Idempotent by design: a release can fail partway (e.g. Maven publish dies on
+ * one target) and be re-run. On a re-run the bump already happened
+ * (`requested == current`) and the tag already exists, which is NOT an error —
+ * it is exactly a resume. Only a fresh release (a version not yet bumped to)
+ * must be strictly greater than everything and untagged.
  */
 internal fun validateReleaseVersion(
     requested: SemanticVersion,
@@ -75,6 +125,13 @@ internal fun validateReleaseVersion(
     latestReleased: SemanticVersion?,
     existingTags: Set<String>,
 ) {
+    // Resume: gradle.properties is already at the requested version. A prior run
+    // bumped it, so the tag/monotonicity checks below (which assume a not-yet-cut
+    // release) must not fire — otherwise a re-run after a mid-release failure is
+    // impossible.
+    if (requested == current) {
+        return
+    }
     if (requested < current) {
         throw GradleException("Version $requested must not be lower than gradle.properties $current.")
     }
@@ -84,4 +141,79 @@ internal fun validateReleaseVersion(
     if (latestReleased != null && requested <= latestReleased) {
         throw GradleException("Version $requested must be greater than latest release $latestReleased.")
     }
+}
+
+/** Presence of a release version across the sources verifyReleaseConsistency checks. */
+enum class SourceState { PRESENT, ABSENT, SKIPPED }
+
+/** One line of the consistency report: a source name, its state, and detail. */
+data class ReleaseSourceStatus(val source: String, val state: SourceState, val detail: String)
+
+/**
+ * Result of comparing a release version across gradle.properties, the git tag,
+ * Reposilite Maven, and Modrinth. [consistent] is the strict verdict: all
+ * required sources (everything except Modrinth, which publishes manually and may
+ * legitimately lag) must agree, or [verifyReleaseConsistency]'s task fails.
+ */
+data class ReleaseConsistencyReport(
+    val version: SemanticVersion,
+    val statuses: List<ReleaseSourceStatus>,
+    val consistent: Boolean,
+    val problems: List<String>,
+)
+
+/**
+ * Compare a release [version] across its four publishing surfaces. Each input is
+ * the already-gathered fact for that source (I/O stays in the Gradle task; this
+ * is the pure, testable comparison):
+ *
+ * - [gradlePropertiesVersion]: the version in gradle.properties.
+ * - [tagExists]: whether a `vX.Y.Z` git tag exists.
+ * - [mavenPublished]: whether the java-suffixed POM is reachable on Reposilite.
+ * - [modrinthPublished]: whether Modrinth has the version; null = check skipped
+ *   (no token / offline), which is a warning, never a strict failure.
+ *
+ * Modrinth is advisory because it is published by a separate manual command; the
+ * other three must agree for the release to be considered consistent.
+ */
+fun evaluateReleaseConsistency(
+    version: SemanticVersion,
+    gradlePropertiesVersion: SemanticVersion,
+    tagExists: Boolean,
+    mavenPublished: Boolean,
+    modrinthPublished: Boolean?,
+): ReleaseConsistencyReport {
+    val statuses = mutableListOf<ReleaseSourceStatus>()
+    val problems = mutableListOf<String>()
+
+    val gradleMatches = gradlePropertiesVersion == version
+    statuses += ReleaseSourceStatus(
+        "gradle.properties",
+        if (gradleMatches) SourceState.PRESENT else SourceState.ABSENT,
+        if (gradleMatches) "version=$version" else "version=$gradlePropertiesVersion (expected $version)",
+    )
+    if (!gradleMatches) problems += "gradle.properties is at $gradlePropertiesVersion, not $version."
+
+    statuses += ReleaseSourceStatus(
+        "git tag",
+        if (tagExists) SourceState.PRESENT else SourceState.ABSENT,
+        if (tagExists) "v$version present" else "v$version missing",
+    )
+    if (!tagExists) problems += "Git tag v$version does not exist."
+
+    statuses += ReleaseSourceStatus(
+        "Maven (Reposilite)",
+        if (mavenPublished) SourceState.PRESENT else SourceState.ABSENT,
+        if (mavenPublished) "POM published" else "POM not found",
+    )
+    if (!mavenPublished) problems += "Maven POM for $version is not published on Reposilite."
+
+    statuses += when (modrinthPublished) {
+        true -> ReleaseSourceStatus("Modrinth", SourceState.PRESENT, "version $version published")
+        false -> ReleaseSourceStatus("Modrinth", SourceState.ABSENT, "version $version not published (publish manually with publishToModrinth)")
+        null -> ReleaseSourceStatus("Modrinth", SourceState.SKIPPED, "not checked (no MODRINTH_TOKEN or unreachable)")
+    }
+
+    // Strict verdict excludes Modrinth: it lags legitimately until the manual publish.
+    return ReleaseConsistencyReport(version, statuses, problems.isEmpty(), problems)
 }

@@ -44,6 +44,15 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 project(":commands-brigadier"),
                 project(":core"),
                 project(":diagnostics"),
+                // Platform-neutral messaging runtime (MessageBus + plugin-messaging
+                // transport). Must be listed explicitly: on <26 it used to arrive
+                // only transitively via commands-fabric's `api(":messaging")` through
+                // Loom's namedElements fat jar, but the 26.x bundle is built from
+                // `bundleShadow` alone (the jiJRemap path drops transitive api project
+                // deps), so the messaging package silently vanished from the 26.x
+                // (java25) bundle. Adding it here inlines it on every branch, the same
+                // way the neoforge/jvm bundles list `:messaging` explicitly.
+                project(":messaging"),
                 // Jackson (its only external dep) is already bundled via config-yaml/toml.
                 project(":http-client")
             )
@@ -206,11 +215,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                         artifact.classifier = "dev"
                     }
                 }
-                publication.pom.withXml { xml ->
-                    xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
-                        node.parentNode.removeChild(node)
-                    }
-                }
+                publication.stripPomDependencies()
             }
 
             project.magicUtilsPublishRepository(publishing)

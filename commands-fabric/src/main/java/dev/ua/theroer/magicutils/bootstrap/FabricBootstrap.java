@@ -8,6 +8,9 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
+import dev.ua.theroer.magicutils.messaging.MessagingService;
+import dev.ua.theroer.magicutils.messaging.fabric.FabricMessagingSupport;
+import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.fabric.FabricPlatformProvider;
@@ -51,26 +54,22 @@ public final class FabricBootstrap {
     public static final class Builder {
         private final String modName;
         private final Supplier<MinecraftServer> serverSupplier;
+        private final LanguageBootstrap lang = new LanguageBootstrap();
         private org.slf4j.Logger slf4j;
         private Path configDir;
         private Platform platform;
         private ConfigManager configManager;
         private Logger logger;
         private LanguageManager languageManager;
-        private String language = "en";
-        private boolean initLanguage = true;
-        private boolean bindLoggerLanguage = true;
-        private boolean setMessagesManager = true;
-        private boolean registerMessages = true;
-        private boolean addMagicUtilsMessages = true;
-        private boolean bindClientLocaleSync = true;
-        private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private int opLevel = 2;
         private Consumer<CommandRegistry> commandConfigurer;
         private boolean enableDiagnostics;
         private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
+        private boolean enableMessaging;
+        private RedisConfig.Redis messagingRedis;
+        private Consumer<MessagingService.Builder> messagingConfigurer;
 
         private Builder(String modName, Supplier<MinecraftServer> serverSupplier) {
             this.modName = normalizeModName(modName);
@@ -144,15 +143,35 @@ public final class FabricBootstrap {
         }
 
         /**
+         * Applies the recommended language defaults (every flag enabled). This
+         * is already the initial state; call it to make intent explicit.
+         *
+         * @return builder
+         */
+        public Builder withRecommendedDefaults() {
+            lang.withRecommendedDefaults();
+            return this;
+        }
+
+        /**
+         * Disables all automatic language/messages wiring for callers that
+         * manage localization themselves.
+         *
+         * @return builder
+         */
+        public Builder minimal() {
+            lang.minimal();
+            return this;
+        }
+
+        /**
          * Sets the default language code to initialize.
          *
          * @param language language code
          * @return builder
          */
         public Builder language(String language) {
-            if (language != null && !language.isBlank()) {
-                this.language = language;
-            }
+            lang.language(language);
             return this;
         }
 
@@ -163,7 +182,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder initLanguage(boolean initLanguage) {
-            this.initLanguage = initLanguage;
+            lang.initLanguage(initLanguage);
             return this;
         }
 
@@ -174,7 +193,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
-            this.bindLoggerLanguage = bindLoggerLanguage;
+            lang.bindLoggerLanguage(bindLoggerLanguage);
             return this;
         }
 
@@ -185,7 +204,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
-            this.setMessagesManager = setMessagesManager;
+            lang.setMessagesManager(setMessagesManager);
             return this;
         }
 
@@ -196,7 +215,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder registerMessages(boolean registerMessages) {
-            this.registerMessages = registerMessages;
+            lang.registerMessages(registerMessages);
             return this;
         }
 
@@ -207,7 +226,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
-            this.addMagicUtilsMessages = addMagicUtilsMessages;
+            lang.addMagicUtilsMessages(addMagicUtilsMessages);
             return this;
         }
 
@@ -218,7 +237,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
-            this.bindClientLocaleSync = bindClientLocaleSync;
+            lang.bindClientLocaleSync(bindClientLocaleSync);
             return this;
         }
 
@@ -229,7 +248,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder translations(Consumer<LanguageManager> translations) {
-            this.translations = translations;
+            lang.translations(translations);
             return this;
         }
 
@@ -298,6 +317,45 @@ public final class FabricBootstrap {
         }
 
         /**
+         * Enables cross-server messaging. On Fabric only the Redis transport
+         * reaches other servers; supply Redis settings via
+         * {@link #messagingRedis(RedisConfig.Redis)}. Without Redis the bus falls
+         * back to an in-process loopback transport.
+         *
+         * @return builder
+         */
+        public Builder enableMessaging() {
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Supplies Redis settings for messaging and enables messaging. When
+         * {@code enabled}, the Redis transport is used for cross-server delivery.
+         *
+         * @param redis redis settings
+         * @return builder
+         */
+        public Builder messagingRedis(RedisConfig.Redis redis) {
+            this.messagingRedis = redis;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring the messaging service builder before it is built,
+         * and enables messaging.
+         *
+         * @param messagingConfigurer messaging builder callback
+         * @return builder
+         */
+        public Builder configureMessaging(Consumer<MessagingService.Builder> messagingConfigurer) {
+            this.messagingConfigurer = messagingConfigurer;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
@@ -324,10 +382,7 @@ public final class FabricBootstrap {
                     .component(Logger.class, prepared.logger())
                     .build();
 
-            if (bindClientLocaleSync) {
-                runtime.manage("language.clientLocaleSync",
-                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
-            }
+            lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
@@ -338,16 +393,10 @@ public final class FabricBootstrap {
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
-            if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(modName));
+            if (enableMessaging) {
+                FabricMessagingSupport.install(runtime, modName, messagingRedis, messagingConfigurer);
             }
-            if (setMessagesManager) {
-                runtime.onClose("messages.default", () -> {
-                    if (Messages.getLanguageManager() == prepared.languageManager()) {
-                        Messages.setLanguageManager(null);
-                    }
-                });
-            }
+            lang.installMessagesCloseHooks(runtime, modName, prepared.languageManager());
 
             // Register this mod in the shared-runtime consumer registry so the
             // standalone bundle command can list it (/magicutils mods|mod <id>),
@@ -415,24 +464,7 @@ public final class FabricBootstrap {
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            if (initLanguage) {
-                resolvedLanguageManager.init(language);
-            }
-            if (translations != null) {
-                translations.accept(resolvedLanguageManager);
-            }
-            if (addMagicUtilsMessages) {
-                resolvedLanguageManager.addMagicUtilsMessages();
-            }
-            if (registerMessages) {
-                Messages.register(modName, resolvedLanguageManager);
-            }
-            if (setMessagesManager) {
-                Messages.setLanguageManager(resolvedLanguageManager);
-            }
-            if (bindLoggerLanguage) {
-                resolvedLogger.setLanguageManager(resolvedLanguageManager);
-            }
+            lang.apply(modName, resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {

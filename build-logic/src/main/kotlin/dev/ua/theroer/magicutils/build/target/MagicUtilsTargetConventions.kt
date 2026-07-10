@@ -32,18 +32,53 @@ val MagicUtilsTargetExtension.mcClassifier: String
     get() = "mc${libraryMinecraft.get().substringBeforeLast('.')}"
 
 /**
- * Published MagicUtils version for [baseVersion] on this target, Fabric-style:
- * `<base>+<library-minecraft>` (e.g. `1.22.0+26.2`). Every target carries the
- * suffix so each Minecraft version is its own Maven version — its own module
- * metadata, Java level and transitive deps — instead of one version whose
- * metadata the targets overwrite. Consumers pass the bare base version
- * (`magicutils_version=1.22.0`); the consumer plugins add the suffix from the
- * resolved target's *library* Minecraft, so no build script writes it by hand.
- * The library Minecraft equals the runtime one unless the target overrides
- * `library_minecraft` (see [MagicUtilsTargetSpec]).
+ * Bundle artifact ids end in `-bundle` (`magicutils-fabric-bundle`,
+ * `magicutils-bukkit-bundle`, ...). Only the five bundle plugins produce them,
+ * so this suffix is the reliable discriminator — on both the publish side (the
+ * project's artifact id) and the consumer side (the requested module name) —
+ * between a bundle and a plain library module, without either side importing the
+ * publish-category extension.
  */
-fun MagicUtilsTargetExtension.publishedVersion(baseVersion: String): String =
-    "$baseVersion+${libraryMinecraft.get()}"
+fun magicUtilsModuleIsBundle(moduleName: String): Boolean = moduleName.endsWith("-bundle")
+
+/**
+ * Published MagicUtils coordinate version for [moduleName] built at [javaLevel].
+ *
+ * Two kinds of module, two coordinate shapes:
+ *  - **Bundles** (`*-bundle`) are fat jars whose shaded dependency set genuinely
+ *    differs per Java level / Minecraft branch (the 1.20.x, 1.21.x and 26.x
+ *    bundles are not byte-identical), so they keep the `<base>+java<N>` coordinate
+ *    — one real variant per Java level.
+ *  - **Plain library modules** (core/config/commands/lang, the platform and
+ *    fabric modules) are byte-identical across Java levels once the class-file
+ *    version word is normalized: the per-level diffs are pure javac codegen
+ *    artifacts, not behaviour. Publishing three near-duplicate `+java17/21/25`
+ *    copies was redundant, so they now publish once under the **bare** base
+ *    version. A `+java17`-compiled class loads fine on any JRE >= 17, so a
+ *    consumer on Java 21/25 resolving the bare coordinate runs it unchanged.
+ *
+ * Consumers pass the bare base version (`magicutils_version=1.27.1`); this is the
+ * single place that decides whether the resolved coordinate carries `+java<N>`,
+ * so the publish side and every consumer plugin agree by construction.
+ */
+fun magicUtilsPublishedModuleVersion(moduleName: String, baseVersion: String, javaLevel: Int): String =
+    if (magicUtilsModuleIsBundle(moduleName)) javaSuffixedCoordinate(baseVersion, javaLevel) else baseVersion
+
+/**
+ * Published MagicUtils version for a [moduleName] on this target. Thin wrapper
+ * over [magicUtilsPublishedModuleVersion] that supplies the target's Java level;
+ * consumer plugins call this so the module-vs-bundle rule lives in one place.
+ */
+fun MagicUtilsTargetExtension.publishedVersion(moduleName: String, baseVersion: String): String =
+    magicUtilsPublishedModuleVersion(moduleName, baseVersion, java.get())
+
+/**
+ * Pure formatter for the `<base>+java<N>` published coordinate. The `+java<N>`
+ * suffix format lives here as one function so no caller (the module-version rule,
+ * the Modrinth bundle file name, the release smoke URL) re-spells it by hand.
+ */
+fun javaSuffixedCoordinate(baseVersion: String, javaLevel: Int): String =
+    "$baseVersion+java$javaLevel"
 
 /** Loom plugin id for the target: no-remap on deobfuscated, remapping otherwise. */
 val MagicUtilsTargetExtension.loomPluginId: String

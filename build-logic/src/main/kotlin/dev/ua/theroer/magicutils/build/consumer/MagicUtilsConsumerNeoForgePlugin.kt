@@ -68,7 +68,7 @@ class MagicUtilsConsumerNeoForgePlugin : Plugin<Project> {
         val embed = resolveEmbedMode(consumer.embedMode.get(), ConsumerLoader.NEOFORGE)
         if (embed == EmbedMode.JAR_IN_JAR) {
             val bundleCoordinate = project.provider {
-                val version = target.publishedVersion(consumer.magicutilsVersion.get())
+                val version = target.publishedVersion("magicutils-neoforge-bundle", consumer.magicutilsVersion.get())
                 project.dependencies.create("dev.ua.theroer:magicutils-neoforge-bundle:$version")
             }
             // moddev registers `jarJar` at apply time, but hook it via

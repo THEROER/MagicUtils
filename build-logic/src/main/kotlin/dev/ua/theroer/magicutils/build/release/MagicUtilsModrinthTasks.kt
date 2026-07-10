@@ -1,7 +1,9 @@
 package dev.ua.theroer.magicutils.build.release
 
+import dev.ua.theroer.magicutils.build.support.findMagicUtilsModrinthToken
 import dev.ua.theroer.magicutils.build.smoke.SmokePlatformSpec
 import dev.ua.theroer.magicutils.build.smoke.expandVersionsFull
+import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
 import dev.ua.theroer.magicutils.build.target.resolveMagicUtilsTargetSpec
 
 import org.gradle.api.DefaultTask
@@ -22,7 +24,8 @@ import java.time.Duration
  * Kotlin replacement for the reusable part of verified-plugin's
  * `publish_to_modrinth.sh`: uploads one Modrinth version per declared artifact
  * (idempotent — skips a version_number that already exists). The token comes
- * from the MODRINTH_TOKEN environment variable.
+ * from the `modrinth_token` Gradle property or the MODRINTH_TOKEN env var, the
+ * same property-or-env resolution as the Maven publish secrets.
  */
 // v3 for native per-version `environment`; body shape is otherwise the same as v2.
 private const val MODRINTH_API = "https://api.modrinth.com/v3"
@@ -36,7 +39,7 @@ internal fun registerModrinthTasks(
 ) {
     project.tasks.register("publishToModrinth", ModrinthPublishTask::class.java) { task ->
         task.group = "publishing"
-        task.description = "Upload artifacts to Modrinth (-Pversion=X.Y.Z; MODRINTH_TOKEN env). " +
+        task.description = "Upload artifacts to Modrinth (-Pversion=X.Y.Z; modrinth_token property or MODRINTH_TOKEN env). " +
             "Artifacts come from the smoke matrix unless the modrinth {} block lists them."
         // When the modrinth {} block declares no artifacts, synthesise them from
         // the smoke matrix — the single source of truth (same rows printReleaseMatrix
@@ -59,6 +62,9 @@ internal fun registerModrinthTasks(
                 ?: throw GradleException("Pass the release version via -Pversion=X.Y.Z.")
         })
         task.rootDir.set(project.rootDir.absolutePath)
+        // Resolved in the configuration phase (property-or-env), so the token
+        // source is uniform with the Maven secrets. Optional: a dry run needs none.
+        task.token.set(project.provider { project.findMagicUtilsModrinthToken() })
         task.notCompatibleWithConfigurationCache("Performs network uploads.")
     }
 }
@@ -109,12 +115,10 @@ private fun modrinthArtifactsFromMatrix(
 ): List<ModrinthArtifact> = smokeSpecs
     .filter { it.name !in MODRINTH_NON_PUBLISHED_PLATFORMS }
     .flatMap { platform ->
-    // The bundle jar is named by the *library* Minecraft, not the runtime one:
-    // mc1201 and mc1205 both publish `+1.20.1` (one 1.20.x library coordinate,
-    // two Java runtimes for the smoke). So two smoke entries can map to a single
-    // jar. Group entries by their library-Minecraft coordinate and merge their
-    // advertised game versions into ONE Modrinth version — otherwise we'd upload
-    // the same file twice and split its supported versions across duplicates.
+    // Group smoke entries by Java level: every Minecraft version sharing a Java
+    // level ships the same bundle jar (the coordinate is `+java<N>`), so they
+    // fold into one Modrinth version whose game_versions is their union —
+    // otherwise we'd upload the same file once per Minecraft version.
     val ver = version ?: "{version}"
     platform.versionMatrix
         .groupBy { entry ->
@@ -122,16 +126,17 @@ private fun modrinthArtifactsFromMatrix(
                 targetsFile = targetsFile,
                 defaultTarget = defaultTarget,
                 explicitTarget = entry.target ?: defaultTarget,
-            ).libraryMinecraft
+            ).java
         }
-        .map { (libraryMc, entries) ->
-            val fileName = "magicutils-${platform.name}-bundle-$ver+$libraryMc.jar"
-            // Merge + de-dup game versions across the entries sharing this jar,
-            // in matrix order (the versions the release advertises for this file).
+        .map { (java, entries) ->
+            // The bundle jar is named by the Java level (the published coordinate
+            // is `<base>+java<N>`), so all Minecraft versions sharing a Java level
+            // map to one jar. Merge their advertised game versions into ONE
+            // Modrinth version instead of re-uploading the same file per MC.
+            val fileName = "magicutils-${platform.name}-bundle-${javaSuffixedCoordinate(ver, java)}.jar"
             val gameVersions = entries.flatMap { it.versions.expandVersionsFull() }.distinct()
-            // Stable key from the library coordinate (dots dropped) so it is a
-            // valid Modrinth file part and unique per jar.
-            val key = "${platform.name}-mc${libraryMc.replace(".", "")}"
+            // Stable, valid Modrinth file part, unique per jar.
+            val key = "${platform.name}-java$java"
             ModrinthArtifact(
                 key = key,
                 file = "${platform.name}-bundle/build/libs/$fileName",
@@ -150,6 +155,11 @@ abstract class ModrinthPublishTask : DefaultTask() {
     @get:Internal abstract val releaseSpec: Property<ModrinthReleaseSpec>
     @get:Input abstract val baseVersion: Property<String>
     @get:Input abstract val rootDir: Property<String>
+
+    // @Internal, not @Input: a secret must never enter the up-to-date hash or the
+    // build cache. Optional so a dry run (which returns before needing it) works
+    // without a token configured.
+    @get:Internal abstract val token: Property<String>
 
     @TaskAction
     fun run() {
@@ -181,8 +191,8 @@ abstract class ModrinthPublishTask : DefaultTask() {
             return
         }
 
-        val token = System.getenv("MODRINTH_TOKEN")?.takeIf { it.isNotBlank() }
-            ?: throw GradleException("MODRINTH_TOKEN environment variable is not set.")
+        val token = token.orNull?.takeIf { it.isNotBlank() }
+            ?: throw GradleException("Modrinth token is not set (modrinth_token property or MODRINTH_TOKEN env).")
 
         val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()
         val existing = fetchExistingVersions(client, token, spec.projectId)
@@ -234,17 +244,7 @@ abstract class ModrinthPublishTask : DefaultTask() {
         if (response.statusCode() !in 200..299) {
             throw GradleException("Failed to list Modrinth versions (HTTP ${response.statusCode()}): ${response.body()}")
         }
-        // Proper JSON parse: a regex can't pair id↔version_number because nested
-        // file/dependency objects also carry "id". Later duplicates overwrite so
-        // the map holds the newest id per version_number.
-        @Suppress("UNCHECKED_CAST")
-        val versions = groovy.json.JsonSlurper().parseText(response.body()) as? List<Map<String, Any?>>
-            ?: return emptyMap()
-        return versions.mapNotNull { v ->
-            val id = v["id"] as? String
-            val num = v["version_number"] as? String
-            if (id != null && num != null) num to id else null
-        }.toMap()
+        return parseModrinthVersionIds(response.body())
     }
 
     private fun uploadVersion(

@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 /**
  * Fabric-specific external placeholder engine adapter.
  */
-@SuppressWarnings("doclint:missing")
 public final class FabricExternalPlaceholderEngine implements ExternalPlaceholderEngine {
     private static final Pattern PB4_PERCENT_PATTERN = Pattern
             .compile("(?<!((?<!(\\\\))\\\\))[%](?<id>[^%]+)[%]");

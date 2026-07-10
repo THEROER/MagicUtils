@@ -40,6 +40,7 @@ magicMatrix {
         "commands-brigadier",
         "placeholders",
         "http-client",
+        "messaging",
         "config-yaml",
         "config-toml",
         "diagnostics",

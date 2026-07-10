@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.bootstrap;
 
 import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.ProxyServer;
+import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.bootstrap.MagicUtilsConsumerPayloads;
 import dev.ua.theroer.magicutils.bootstrap.MagicUtilsConsumerViews;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
@@ -11,12 +12,13 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
-import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.messaging.MessagingService;
+import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
+import dev.ua.theroer.magicutils.messaging.velocity.VelocityMessagingSupport;
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.velocity.VelocityMagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.velocity.VelocityPlatformProvider;
-import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -36,14 +38,48 @@ public final class VelocityBootstrap {
     }
 
     /**
-     * Creates a bootstrap builder for a Velocity plugin.
+     * Creates a bootstrap builder for a Velocity plugin, resolving the plugin
+     * name and data directory from the plugin's {@code @Plugin} metadata.
+     *
+     * <p>This is the recommended entry point. The plugin name is taken from the
+     * registered {@link PluginDescription} (name, falling back to id); the data
+     * directory defaults to {@code plugins/<pluginId>}. Use
+     * {@link Builder#dataDirectory(Path)} to override, for example when the
+     * plugin injects a {@code @DataDirectory Path}.
+     *
+     * @param proxy Velocity proxy server
+     * @param plugin plugin instance used for event registration and metadata
+     * @return bootstrap builder
+     */
+    public static Builder forPlugin(ProxyServer proxy, Object plugin) {
+        Objects.requireNonNull(proxy, "proxy");
+        Objects.requireNonNull(plugin, "plugin");
+        Optional<PluginDescription> description = proxy.getPluginManager()
+                .fromInstance(plugin)
+                .map(container -> container.getDescription());
+        String id = description.map(PluginDescription::getId).filter(s -> !s.isBlank()).orElse("magicutils");
+        String name = description
+                .flatMap(PluginDescription::getName)
+                .filter(s -> !s.isBlank())
+                .orElse(id);
+        Path dataDirectory = Path.of("plugins", id);
+        return new Builder(proxy, plugin, name, dataDirectory);
+    }
+
+    /**
+     * Creates a bootstrap builder for a Velocity plugin with an explicit name
+     * and data directory.
      *
      * @param proxy Velocity proxy server
      * @param plugin plugin instance used for event registration
      * @param pluginName logical plugin name for logger/messages
      * @param dataDirectory plugin data directory
      * @return bootstrap builder
+     * @deprecated prefer {@link #forPlugin(ProxyServer, Object)}, which derives
+     *     the name and data directory from the plugin metadata; override the
+     *     data directory with {@link Builder#dataDirectory(Path)} when needed
      */
+    @Deprecated
     public static Builder forPlugin(ProxyServer proxy, Object plugin, String pluginName, Path dataDirectory) {
         return new Builder(proxy, plugin, pluginName, dataDirectory);
     }
@@ -55,26 +91,22 @@ public final class VelocityBootstrap {
         private final ProxyServer proxy;
         private final Object plugin;
         private final String pluginName;
+        private final LanguageBootstrap lang = new LanguageBootstrap();
         private Path dataDirectory;
-        private Logger slf4j;
+        private org.slf4j.Logger slf4j;
         private Platform platform;
         private ConfigManager configManager;
-        private LoggerCore logger;
+        private Logger logger;
         private LanguageManager languageManager;
-        private String language = "en";
-        private boolean initLanguage = true;
-        private boolean bindLoggerLanguage = true;
-        private boolean setMessagesManager = true;
-        private boolean registerMessages = true;
-        private boolean addMagicUtilsMessages = true;
-        private boolean bindClientLocaleSync = true;
-        private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private Executor asyncExecutor;
         private Consumer<CommandRegistry> commandConfigurer;
         private boolean enableDiagnostics;
         private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
+        private boolean enableMessaging;
+        private RedisConfig.Redis messagingRedis;
+        private Consumer<MessagingService.Builder> messagingConfigurer;
 
         private Builder(ProxyServer proxy, Object plugin, String pluginName, Path dataDirectory) {
             this.proxy = Objects.requireNonNull(proxy, "proxy");
@@ -111,7 +143,7 @@ public final class VelocityBootstrap {
          * @param slf4j logger to use
          * @return builder
          */
-        public Builder slf4j(Logger slf4j) {
+        public Builder slf4j(org.slf4j.Logger slf4j) {
             this.slf4j = slf4j;
             return this;
         }
@@ -128,12 +160,12 @@ public final class VelocityBootstrap {
         }
 
         /**
-         * Overrides the logger core instance.
+         * Overrides the logger instance.
          *
-         * @param logger logger core to use
+         * @param logger logger to use
          * @return builder
          */
-        public Builder logger(LoggerCore logger) {
+        public Builder logger(Logger logger) {
             this.logger = logger;
             return this;
         }
@@ -150,15 +182,35 @@ public final class VelocityBootstrap {
         }
 
         /**
+         * Applies the recommended language defaults (every flag enabled). This
+         * is already the initial state; call it to make intent explicit.
+         *
+         * @return builder
+         */
+        public Builder withRecommendedDefaults() {
+            lang.withRecommendedDefaults();
+            return this;
+        }
+
+        /**
+         * Disables all automatic language/messages wiring for callers that
+         * manage localization themselves.
+         *
+         * @return builder
+         */
+        public Builder minimal() {
+            lang.minimal();
+            return this;
+        }
+
+        /**
          * Sets the default language code to initialize.
          *
          * @param language language code
          * @return builder
          */
         public Builder language(String language) {
-            if (language != null && !language.isBlank()) {
-                this.language = language;
-            }
+            lang.language(language);
             return this;
         }
 
@@ -169,7 +221,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder initLanguage(boolean initLanguage) {
-            this.initLanguage = initLanguage;
+            lang.initLanguage(initLanguage);
             return this;
         }
 
@@ -180,7 +232,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
-            this.bindLoggerLanguage = bindLoggerLanguage;
+            lang.bindLoggerLanguage(bindLoggerLanguage);
             return this;
         }
 
@@ -191,7 +243,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
-            this.setMessagesManager = setMessagesManager;
+            lang.setMessagesManager(setMessagesManager);
             return this;
         }
 
@@ -202,7 +254,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder registerMessages(boolean registerMessages) {
-            this.registerMessages = registerMessages;
+            lang.registerMessages(registerMessages);
             return this;
         }
 
@@ -213,7 +265,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
-            this.addMagicUtilsMessages = addMagicUtilsMessages;
+            lang.addMagicUtilsMessages(addMagicUtilsMessages);
             return this;
         }
 
@@ -224,7 +276,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
-            this.bindClientLocaleSync = bindClientLocaleSync;
+            lang.bindClientLocaleSync(bindClientLocaleSync);
             return this;
         }
 
@@ -235,7 +287,7 @@ public final class VelocityBootstrap {
          * @return builder
          */
         public Builder translations(Consumer<LanguageManager> translations) {
-            this.translations = translations;
+            lang.translations(translations);
             return this;
         }
 
@@ -304,6 +356,40 @@ public final class VelocityBootstrap {
         }
 
         /**
+         * Enables cross-server messaging using the default plugin-messaging transport.
+         *
+         * @return builder
+         */
+        public Builder enableMessaging() {
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Supplies Redis settings for messaging; when enabled, Redis is used.
+         *
+         * @param redis redis settings
+         * @return builder
+         */
+        public Builder messagingRedis(RedisConfig.Redis redis) {
+            this.messagingRedis = redis;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring the messaging service builder before it is built.
+         *
+         * @param messagingConfigurer messaging builder callback
+         * @return builder
+         */
+        public Builder configureMessaging(Consumer<MessagingService.Builder> messagingConfigurer) {
+            this.messagingConfigurer = messagingConfigurer;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
@@ -323,17 +409,15 @@ public final class VelocityBootstrap {
             MagicRuntime runtime = MagicRuntime.builder(
                             prepared.platform(),
                             prepared.configManager(),
-                            prepared.logger()
+                            prepared.logger().getCore()
                     )
                     .languageManager(prepared.languageManager())
                     .manageConfigManager(configManager == null)
                     .component(ProxyServer.class, proxy)
+                    .component(Logger.class, prepared.logger())
                     .build();
 
-            if (bindClientLocaleSync) {
-                runtime.manage("language.clientLocaleSync",
-                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
-            }
+            lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
@@ -344,16 +428,11 @@ public final class VelocityBootstrap {
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
-            if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));
+            if (enableMessaging) {
+                VelocityMessagingSupport.install(
+                        runtime, proxy, plugin, pluginName, messagingRedis, messagingConfigurer);
             }
-            if (setMessagesManager) {
-                runtime.onClose("messages.default", () -> {
-                    if (Messages.getLanguageManager() == prepared.languageManager()) {
-                        Messages.setLanguageManager(null);
-                    }
-                });
-            }
+            lang.installMessagesCloseHooks(runtime, pluginName, prepared.languageManager());
 
             // Register this plugin in the shared-runtime consumer registry so the
             // standalone velocity-bundle command can list it
@@ -422,36 +501,19 @@ public final class VelocityBootstrap {
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);
-            LoggerCore resolvedLogger = logger != null
+            Logger resolvedLogger = logger != null
                     ? logger
-                    : new LoggerCore(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
+                    : new Logger(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
             LanguageManager resolvedLanguageManager = languageManager != null
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            if (initLanguage) {
-                resolvedLanguageManager.init(language);
-            }
-            if (translations != null) {
-                translations.accept(resolvedLanguageManager);
-            }
-            if (addMagicUtilsMessages) {
-                resolvedLanguageManager.addMagicUtilsMessages();
-            }
-            if (registerMessages) {
-                Messages.register(pluginName, resolvedLanguageManager);
-            }
-            if (setMessagesManager) {
-                Messages.setLanguageManager(resolvedLanguageManager);
-            }
-            if (bindLoggerLanguage) {
-                resolvedLogger.setLanguageManager(resolvedLanguageManager);
-            }
+            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {
                 String prefix = permissionPrefix != null ? permissionPrefix : pluginName;
-                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger, asyncExecutor);
+                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger.getCore(), asyncExecutor);
                 if (commandConfigurer != null) {
                     commandConfigurer.accept(registry);
                 }
@@ -470,7 +532,7 @@ public final class VelocityBootstrap {
         private record Prepared(
                 Platform platform,
                 ConfigManager configManager,
-                LoggerCore logger,
+                Logger logger,
                 LanguageManager languageManager,
                 CommandRegistry commandRegistry
         ) {
@@ -489,7 +551,7 @@ public final class VelocityBootstrap {
     public record Result(
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
@@ -509,7 +571,7 @@ public final class VelocityBootstrap {
             MagicRuntime runtime,
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {

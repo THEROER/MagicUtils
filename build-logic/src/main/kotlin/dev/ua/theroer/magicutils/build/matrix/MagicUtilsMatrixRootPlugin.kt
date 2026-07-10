@@ -46,7 +46,22 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         registerAggregatedJavadocTask(project, resolvedContext)
         registerDevServerAggregateTasks(project)
         registerPublishCategoryTasks(project)
-        registerReleaseTasks(project, publishingSpec)
+        val defaultTargetJava = resolveMagicUtilsTargetSpec(
+            targetsFile = project.rootProject.file(resolvedContext.definition.targetsFile),
+            defaultTarget = resolvedContext.definition.defaultTarget,
+            explicitTarget = resolvedContext.definition.defaultTarget,
+        ).java
+        val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
+            as? ModrinthReleaseSpec
+        val releaseSpec = project.gradle.extensions.extraProperties.properties["magicutilsReleaseSpec"]
+            as? MagicUtilsReleaseSpec ?: MagicUtilsReleaseSpec()
+        registerReleaseMavenTasks(
+            project,
+            publishingSpec,
+            resolvedContext.definition,
+            project.rootProject.file(resolvedContext.definition.targetsFile),
+        )
+        registerReleaseJavadocTask(project, publishingSpec)
 
         @Suppress("UNCHECKED_CAST")
         val smokeSpecs = project.gradle.extensions.extraProperties.properties["magicutilsSmokeSpecs"]
@@ -60,10 +75,16 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         )
         registerReleaseMatrixTask(project, resolvedContext, smokeSpecs)
 
-        val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
-            as? ModrinthReleaseSpec
         val targetsFile = project.rootProject.file(resolvedContext.definition.targetsFile)
         registerModrinthTasks(project, modrinthSpec, smokeSpecs, resolvedContext.definition.defaultTarget, targetsFile)
+        // After publishToModrinth exists: the local release wraps it with a
+        // per-Java-level bundle build fan-out.
+        registerReleaseModrinthTask(project, resolvedContext.definition, targetsFile)
+
+        // The orchestrator last: every step task it chains (releaseMavenAll,
+        // releaseModrinth, releaseJavadoc, ...) is registered by now, so the
+        // release aggregate can wire its mustRunAfter chain directly.
+        registerReleaseTasks(project, publishingSpec, defaultTargetJava, modrinthSpec?.projectId, releaseSpec)
     }
 }
 
@@ -91,7 +112,13 @@ private fun registerMatrixJsonTasks(
         task.group = "help"
         task.description = "Print the publish matrix (target + publish tasks) as JSON for CI."
         task.doLast {
-            val units = definition.publishUnits(loadAllTargetNames(targetsFile))
+            val units = definition.publishUnits(loadAllTargetNames(targetsFile)) { target ->
+                resolveMagicUtilsTargetSpec(
+                    targetsFile = targetsFile,
+                    defaultTarget = definition.defaultTarget,
+                    explicitTarget = target,
+                ).java
+            }
             println(units.toMatrixJson())
         }
     }
@@ -280,37 +307,28 @@ private fun registerAllTargetsTask(
         return
     }
 
-    val rootDir = project.rootProject.projectDir
-    val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
-    val wrapper = if (isWindows) "gradlew.bat" else "./gradlew"
-    // Child builds run against a dedicated Gradle user home so their daemon
-    // registry, caches and lock files never collide with the parent build that
-    // spawned them (the parent is still holding the root project's locks while
-    // this task executes). Without this the child intermittently fails its cold
-    // compile racing the parent for the same daemon/locks.
-    val childGradleHome = project.layout.buildDirectory.dir("all-targets-gradle-home").get().asFile
-
-    val perTargetTasks = resolvedTargets.map { targetName ->
-        project.tasks.register(
-            "buildTarget${targetName.replaceFirstChar(Char::titlecase)}",
-            org.gradle.api.tasks.Exec::class.java,
-        ) { task ->
-            task.group = "matrix"
-            task.description = "Run '${effectiveSpec.taskType.gradleTask}' for target $targetName."
-            task.workingDir = rootDir
-            // Each target is a fresh Gradle invocation; -Ptarget pins its whole
-            // include graph in settings.gradle. Scenario limits which platforms
-            // that run builds (defaults to the matrix default scenario when null).
-            val args = mutableListOf(
-                wrapper,
-                effectiveSpec.taskType.gradleTask,
-                "-Ptarget=$targetName",
-                "--gradle-user-home=${childGradleHome.absolutePath}",
+    // Each target is a fresh Gradle invocation; -Ptarget pins its whole include
+    // graph in settings.gradle. Scenario limits which platforms that run builds
+    // (defaults to the matrix default scenario when null). The per-target Exec
+    // mechanism itself lives in registerMagicUtilsFanout so it is shared with the
+    // release publish/modrinth fan-outs.
+    val perTargetTasks = registerMagicUtilsFanout(
+        project = project,
+        taskPrefix = "buildTarget",
+        taskGroup = "matrix",
+        invocations = resolvedTargets.map { targetName ->
+            MagicUtilsFanoutInvocation(
+                target = targetName,
+                args = buildList {
+                    add(effectiveSpec.taskType.gradleTask)
+                    effectiveSpec.scenario?.let { add("-Pscenario=$it") }
+                },
             )
-            effectiveSpec.scenario?.let { args += "-Pscenario=$it" }
-            task.commandLine(args)
-        }
-    }
+        },
+        childHomeSubdir = "all-targets-gradle-home",
+        dryRun = false,
+        describe = { "Run '${effectiveSpec.taskType.gradleTask}' for target ${it.target}." },
+    )
 
     project.tasks.register("buildAllTargets") { task ->
         task.group = "matrix"

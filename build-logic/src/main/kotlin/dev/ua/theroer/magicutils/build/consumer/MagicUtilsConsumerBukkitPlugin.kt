@@ -26,7 +26,6 @@ class MagicUtilsConsumerBukkitPlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.target")
 
         val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-        val consumer = project.magicUtilsConsumerExtension()
 
         project.extensions.configure(JavaPluginExtension::class.java) { java ->
             java.toolchain.languageVersion.set(JavaLanguageVersion.of(target.java.get()))
@@ -43,53 +42,11 @@ class MagicUtilsConsumerBukkitPlugin : Plugin<Project> {
 
         project.exposeMagicUtilsTargetFacts(target)
 
-        // MagicUtils modules the consumer declared. Bukkit has no jar-in-jar, so
-        // embedMode maps onto the dependency configuration + the shadow jar:
-        //   SHADED   → api/implementation, so shadow relocates the modules into the
-        //             fat jar (a self-contained plugin). This is the Bukkit default
-        //             (AUTO resolves here), but see the SHADED note in EmbedMode:
-        //             two shaded consumers on one server load two isolated copies —
-        //             use EXTERNAL there.
-        //   EXTERNAL → compileOnly, and dev/ua/theroer/magicutils is stripped from
-        //             the shadow jar, so the built jar is thin and expects
-        //             MagicUtils installed as a separate server plugin.
-        //   JAR_IN_JAR → rejected by resolveEmbedMode (fail-fast; no JiJ on Bukkit).
-        // Resolved at afterEvaluate: the consumer sets embedMode in its DSL block,
-        // which runs after this plugin applies. Bukkit has no Loom early-observe of
-        // configurations, so a late `add` is safe (unlike the Fabric consumer).
-        project.afterEvaluate {
-            val embed = resolveEmbedMode(consumer.embedMode.get(), ConsumerLoader.BUKKIT)
-            val shaded = embed == EmbedMode.SHADED
-            val apiConfig = if (shaded) "api" else "compileOnly"
-            val implConfig = if (shaded) "implementation" else "compileOnly"
-            val base = consumer.magicutilsVersion.get()
-            consumer.apiModules.get().forEach { module ->
-                project.dependencies.add(apiConfig, magicUtilsModuleCoordinate(module, base, target))
-            }
-            consumer.implementationModules.get().forEach { module ->
-                project.dependencies.add(implConfig, magicUtilsModuleCoordinate(module, base, target))
-            }
-
-            // EXTERNAL: strip MagicUtils and its bundled libraries from the shadow
-            // jar, so this jar carries none of them and the standalone MagicUtils
-            // plugin provides the single copy at runtime. These reach the fat jar
-            // transitively via the common module (whose MagicUtils deps are `api`),
-            // so moving this module's deps to compileOnly alone does not remove
-            // them; the shadow exclude does. jackson is the config modules' only
-            // external dependency and the bundle plugin owns its own relocated
-            // copy — shipping a second here produced a ClassCastException under
-            // Paper's isolated classloaders, so it is excluded too.
-            if (!shaded) {
-                project.tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class.java)
-                    .configure { shadow ->
-                        // The `**/` prefix also catches multi-release copies under
-                        // META-INF/versions/<n>/, which a root-anchored pattern
-                        // (e.g. `com/fasterxml/...`) would leave behind.
-                        shadow.exclude("**/dev/ua/theroer/magicutils/**")
-                        shadow.exclude("**/com/fasterxml/jackson/**")
-                    }
-            }
-        }
+        // MagicUtils modules per embedMode + the EXTERNAL shadow-strip. Bukkit and
+        // Velocity share this exactly (flat-classpath JVM plugins, no jar-in-jar),
+        // so it lives in one helper. SHADED is the Bukkit default (AUTO); EXTERNAL
+        // makes a thin jar that expects the standalone MagicUtils bundle beside it.
+        project.configureJvmConsumerEmbed(target, ConsumerLoader.BUKKIT)
 
         // Local dev server (runPaper/runFolia), only when the consumer opted in
         // with `magicutilsConsumer { devServer { ... } }`. The Folia runner is

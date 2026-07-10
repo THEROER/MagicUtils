@@ -394,7 +394,7 @@ internal fun magicUtilsModuleCoordinate(
     module: String,
     version: String,
     target: MagicUtilsTargetExtension,
-): String = "dev.ua.theroer:$module:${target.publishedVersion(version)}"
+): String = "dev.ua.theroer:$module:${target.publishedVersion(module, version)}"
 
 /**
  * Exposes the resolved target's facts as extra properties so consumer build
@@ -408,8 +408,9 @@ internal fun magicUtilsModuleCoordinate(
  * - `magicutilsIsDeobfuscated`   — Boolean
  * - `magicutilsClassifier`       — e.g. `mc26`
  * - `magicutilsPublishedVersion` — the base `magicutils_version` with the
- *   target's `+<minecraft>` suffix (e.g. `1.22.0+26.2`), for the rare coordinate
- *   a script must build by hand (a classifier-less bundle jar).
+ *   bundle's `+java<N>` suffix (e.g. `1.27.1+java25`), for the rare coordinate a
+ *   script must build by hand (a classifier-less bundle jar). Bundles keep the
+ *   suffix; plain modules are published bare, so this fact is bundle-shaped.
  */
 internal fun Project.exposeMagicUtilsTargetFacts(target: MagicUtilsTargetExtension) {
     val base = magicUtilsConsumerExtension().magicutilsVersion.get()
@@ -418,7 +419,9 @@ internal fun Project.exposeMagicUtilsTargetFacts(target: MagicUtilsTargetExtensi
     extensions.extraProperties.set("magicutilsJavaVersion", target.java.get())
     extensions.extraProperties.set("magicutilsIsDeobfuscated", target.isDeobfuscated)
     extensions.extraProperties.set("magicutilsClassifier", target.mcClassifier)
-    extensions.extraProperties.set("magicutilsPublishedVersion", target.publishedVersion(base))
+    // This fact is consumed only for bundle jars, which retain the +java<N>
+    // coordinate; pass a bundle-shaped name so the discriminator keeps the suffix.
+    extensions.extraProperties.set("magicutilsPublishedVersion", target.publishedVersion("magicutils-bundle", base))
     // Optional per-platform facts (not every targets.properties defines them).
     target.neoforge.orNull?.let { extensions.extraProperties.set("magicutilsNeoforgeVersion", it) }
 }
@@ -451,4 +454,52 @@ internal fun Project.addConsumerMagicUtilsModules(
 
     register(apiConfiguration, consumer.apiModules)
     register(implementationConfiguration, consumer.implementationModules)
+}
+
+/**
+ * Wires the consumer's MagicUtils modules onto a plain-JVM loader (Bukkit,
+ * Velocity) honouring [EmbedMode], and — for EXTERNAL — strips MagicUtils and its
+ * bundled jackson from the shadow jar so the standalone bundle owns the single
+ * runtime copy. Bukkit and Velocity are identical here (both are flat-classpath
+ * JVM plugins with no jar-in-jar), so this is the one place that logic lives;
+ * each consumer plugin just passes its [ConsumerLoader]. BungeeCord is always
+ * shaded (no EXTERNAL split) and uses [addConsumerMagicUtilsModules] instead.
+ *
+ * Runs in `afterEvaluate` because the consumer sets `embedMode` in its DSL block,
+ * which executes after the plugin applies; a plain JVM loader has no Loom
+ * early-observe of configurations, so a late `add` is safe.
+ */
+internal fun Project.configureJvmConsumerEmbed(
+    target: MagicUtilsTargetExtension,
+    loader: ConsumerLoader,
+) {
+    val consumer = magicUtilsConsumerExtension()
+    afterEvaluate {
+        val shaded = resolveEmbedMode(consumer.embedMode.get(), loader) == EmbedMode.SHADED
+        val apiConfig = if (shaded) "api" else "compileOnly"
+        val implConfig = if (shaded) "implementation" else "compileOnly"
+        val base = consumer.magicutilsVersion.get()
+        consumer.apiModules.get().forEach { module ->
+            dependencies.add(apiConfig, magicUtilsModuleCoordinate(module, base, target))
+        }
+        consumer.implementationModules.get().forEach { module ->
+            dependencies.add(implConfig, magicUtilsModuleCoordinate(module, base, target))
+        }
+
+        // EXTERNAL: the modules reach the fat jar transitively via the common
+        // module (whose MagicUtils deps are `api`), so moving this module's own
+        // deps to compileOnly doesn't remove them — the shadow exclude does. The
+        // `**/` prefix also catches multi-release copies under
+        // META-INF/versions/<n>/. jackson is the config modules' only external
+        // dependency and the bundle ships its own relocated copy; a second one
+        // here clashes under the isolated plugin/proxy classloaders, so it goes
+        // too.
+        if (!shaded) {
+            tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class.java)
+                .configure { shadow ->
+                    shadow.exclude("**/dev/ua/theroer/magicutils/**")
+                    shadow.exclude("**/com/fasterxml/jackson/**")
+                }
+        }
+    }
 }

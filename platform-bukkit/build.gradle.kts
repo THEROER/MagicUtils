@@ -16,6 +16,7 @@ val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
 dependencies {
     api(project(":core"))
     api(project(":diagnostics"))
+    api(project(":messaging"))
     compileOnly("io.papermc.paper:paper-api:${target.paper.get()}")
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.projectlombok.lombok)

@@ -1,11 +1,17 @@
 import org.gradle.api.GradleException
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 import dev.ua.theroer.magicutils.build.release.*
 import dev.ua.theroer.magicutils.build.publish.*
+import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
+import dev.ua.theroer.magicutils.build.target.magicUtilsModuleIsBundle
+import dev.ua.theroer.magicutils.build.target.magicUtilsPublishedModuleVersion
 
 class MagicUtilsReleaseModelTest {
 
@@ -46,16 +52,67 @@ class MagicUtilsReleaseModelTest {
     }
 
     @Test
-    fun `smokeArtifactUrl builds POM url`() {
+    fun `smokeArtifactUrl percent-encodes the java-suffixed coordinate`() {
         val spec = MagicUtilsPublishingSpec(
             group = "dev.ua.theroer",
             repoUrl = "https://maven.theroer.dev/releases",
             smokeArtifact = "magicutils-core",
         )
+        // A bundle coordinate carries `+java<N>`; the smoke URL percent-encodes the
+        // `+` for the HTTP request.
         assertEquals(
-            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-core/1.21.5/magicutils-core-1.21.5.pom",
-            spec.smokeArtifactUrl(SemanticVersion(1, 21, 5)),
+            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-core/" +
+                "1.26.0%2Bjava21/magicutils-core-1.26.0%2Bjava21.pom",
+            spec.smokeArtifactUrl(javaSuffixedCoordinate("1.26.0", 21)),
         )
+    }
+
+    @Test
+    fun `only -bundle modules are treated as bundles`() {
+        assertTrue(magicUtilsModuleIsBundle("magicutils-fabric-bundle"))
+        assertTrue(magicUtilsModuleIsBundle("magicutils-bukkit-bundle"))
+        assertTrue(magicUtilsModuleIsBundle("magicutils-neoforge-bundle"))
+        assertFalse(magicUtilsModuleIsBundle("magicutils-core"))
+        assertFalse(magicUtilsModuleIsBundle("magicutils-commands"))
+        // A bundle-like substring that is not the suffix must not match.
+        assertFalse(magicUtilsModuleIsBundle("magicutils-bundle-utils"))
+    }
+
+    @Test
+    fun `published module version bare for libraries, java-suffixed for bundles`() {
+        // Plain library modules ship one bare coordinate across all Java levels.
+        assertEquals("1.27.1", magicUtilsPublishedModuleVersion("magicutils-core", "1.27.1", 17))
+        assertEquals("1.27.1", magicUtilsPublishedModuleVersion("magicutils-core", "1.27.1", 21))
+        assertEquals("1.27.1", magicUtilsPublishedModuleVersion("magicutils-core", "1.27.1", 25))
+        // Bundles keep the +java<N> coordinate, one real variant per Java level.
+        assertEquals("1.27.1+java17", magicUtilsPublishedModuleVersion("magicutils-fabric-bundle", "1.27.1", 17))
+        assertEquals("1.27.1+java25", magicUtilsPublishedModuleVersion("magicutils-fabric-bundle", "1.27.1", 25))
+    }
+
+    @Test
+    fun `release branch gate blocks off-branch and allows main`() {
+        // On the required branch: allowed.
+        assertNull(releaseBranchViolation("main", "main", allowAnyBranch = false))
+        // Off branch: blocked with a reason.
+        assertNotNull(releaseBranchViolation("main", "feature/x", allowAnyBranch = false))
+        // Explicit bypass: allowed even off-branch.
+        assertNull(releaseBranchViolation("main", "feature/x", allowAnyBranch = true))
+        // Gate disabled (null required branch): allowed anywhere.
+        assertNull(releaseBranchViolation(null, "feature/x", allowAnyBranch = false))
+        // Unknown branch (detached HEAD / no git): not blocked (caller warns).
+        assertNull(releaseBranchViolation("main", null, allowAnyBranch = false))
+    }
+
+    @Test
+    fun `release branch override - absent keeps default, empty disables, value replaces`() {
+        val spec = MagicUtilsReleaseSpec()
+        assertEquals("main", spec.releaseBranch)
+        // Absent property -> keeps DSL default.
+        assertEquals("main", applyReleaseOverrides(spec, emptyMap()).releaseBranch)
+        // Present-but-empty -> disables the gate.
+        assertNull(applyReleaseOverrides(spec, mapOf("release.branch" to "")).releaseBranch)
+        // Named value -> replaces.
+        assertEquals("release/2.x", applyReleaseOverrides(spec, mapOf("release.branch" to "release/2.x")).releaseBranch)
     }
 
     @Test
@@ -75,5 +132,112 @@ class MagicUtilsReleaseModelTest {
         assertThrows(GradleException::class.java) {
             validateReleaseVersion(SemanticVersion(1, 21, 6), current, SemanticVersion(1, 21, 6), emptySet())
         }
+    }
+
+    @Test
+    fun `validateReleaseVersion allows a resume when gradle_properties is already at the version`() {
+        // A prior release run bumped to 1.21.6 and tagged v1.21.6, then failed
+        // during publish. Re-running must NOT reject the existing tag / version —
+        // requested == current signals a resume, not a fresh release.
+        val current = SemanticVersion(1, 21, 6)
+        validateReleaseVersion(
+            requested = SemanticVersion(1, 21, 6),
+            current = current,
+            latestReleased = SemanticVersion(1, 21, 6),
+            existingTags = setOf("v1.21.6"),
+        ) // does not throw
+    }
+
+    @Test
+    fun `parseModrinthVersionIds pairs version_number to id and ignores nested ids`() {
+        val json = """
+            [
+              {"id":"aaa111","version_number":"1.26.0","files":[{"id":"nested-file-id"}]},
+              {"id":"bbb222","version_number":"1.25.0"}
+            ]
+        """.trimIndent()
+        val map = parseModrinthVersionIds(json)
+        assertEquals(mapOf("1.26.0" to "aaa111", "1.25.0" to "bbb222"), map)
+    }
+
+    @Test
+    fun `evaluateReleaseConsistency passes when required sources agree and Modrinth may lag`() {
+        val v = SemanticVersion(1, 26, 0)
+        // Maven + tag + gradle.properties agree; Modrinth not yet published (manual) — still consistent.
+        val report = evaluateReleaseConsistency(
+            version = v,
+            gradlePropertiesVersion = v,
+            tagExists = true,
+            mavenPublished = true,
+            modrinthPublished = false,
+        )
+        assertTrue(report.consistent)
+        assertTrue(report.problems.isEmpty())
+        // Modrinth-absent still surfaces as an ABSENT status line for visibility.
+        assertEquals(SourceState.ABSENT, report.statuses.single { it.source == "Modrinth" }.state)
+    }
+
+    @Test
+    fun `evaluateReleaseConsistency fails when a required source disagrees`() {
+        val v = SemanticVersion(1, 26, 0)
+        val report = evaluateReleaseConsistency(
+            version = v,
+            gradlePropertiesVersion = SemanticVersion(1, 25, 0),
+            tagExists = false,
+            mavenPublished = false,
+            modrinthPublished = null,
+        )
+        assertFalse(report.consistent)
+        // gradle.properties, tag, Maven each contribute a problem; Modrinth (null) does not.
+        assertEquals(3, report.problems.size)
+        assertEquals(SourceState.SKIPPED, report.statuses.single { it.source == "Modrinth" }.state)
+    }
+
+    @Test
+    fun `releasePlan lists steps in fixed order with enabled flags from the spec`() {
+        val spec = MagicUtilsReleaseSpec(publishModrinth = false, push = true)
+        val plan = releasePlan(spec)
+        assertEquals(
+            listOf(
+                "releasePreflight", "releaseValidateBuild", "bumpVersion", "releaseTag",
+                "releaseMavenAll", "releaseModrinth", "releaseJavadoc", "verifyReleaseConsistency",
+            ),
+            plan.map { it.name },
+        )
+        assertFalse(plan.single { it.name == "releaseModrinth" }.enabled)
+        assertTrue(plan.single { it.name == "releaseMavenAll" }.enabled)
+    }
+
+    @Test
+    fun `applyReleaseOverrides merges -Prelease flags over the DSL spec`() {
+        val spec = MagicUtilsReleaseSpec() // all defaults (modrinth on, push off)
+        val merged = applyReleaseOverrides(
+            spec,
+            mapOf("release.modrinth" to "false", "release.push" to "true", "release.maven" to "FALSE"),
+        )
+        assertFalse(merged.publishModrinth)
+        assertTrue(merged.push)
+        assertFalse(merged.publishMaven) // case-insensitive
+        assertTrue(merged.publishJavadoc) // untouched default
+    }
+
+    @Test
+    fun `javadoc urls build the latest and versioned coordinate`() {
+        val repo = "https://maven.theroer.dev/releases"
+        assertEquals(
+            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-javadoc/latest/magicutils-javadoc.zip",
+            javadocLatestUrl(repo, "dev.ua.theroer"),
+        )
+        assertEquals(
+            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-javadoc/1.27.0/magicutils-javadoc.zip",
+            javadocVersionUrl(repo, "dev.ua.theroer", "1.27.0"),
+        )
+    }
+
+    @Test
+    fun `applyReleaseOverrides ignores non-boolean values and keeps the DSL default`() {
+        val spec = MagicUtilsReleaseSpec(publishModrinth = true)
+        val merged = applyReleaseOverrides(spec, mapOf("release.modrinth" to "maybe"))
+        assertTrue(merged.publishModrinth) // garbage ignored, default stands
     }
 }

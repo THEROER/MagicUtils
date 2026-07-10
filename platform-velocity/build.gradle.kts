@@ -13,6 +13,7 @@ magicutilsPublish {
 dependencies {
     api(project(":core"))
     api(project(":diagnostics"))
+    api(project(":messaging"))
     compileOnly(libs.velocity.api)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jetbrains.annotations)

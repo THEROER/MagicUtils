@@ -65,6 +65,16 @@ open class MagicUtilsMatrixSettingsExtension {
 
     internal fun toAllTargetsSpec(): MagicUtilsAllTargetsSpec = allTargetsDsl.toSpec()
 
+    private val releaseDsl = MagicUtilsReleaseDsl()
+
+    /** Shapes the `release` orchestrator (which steps run: maven/modrinth/tag/javadoc/...). */
+    fun release(action: org.gradle.api.Action<MagicUtilsReleaseDsl>) {
+        action.execute(releaseDsl)
+    }
+
+    internal fun toReleaseSpec(): dev.ua.theroer.magicutils.build.release.MagicUtilsReleaseSpec =
+        releaseDsl.toSpec()
+
     fun commonProject(path: String) {
         commonProjectPaths += normalizeProjectPath(path)
     }
@@ -386,6 +396,7 @@ class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
             settings.gradle.extensions.extraProperties.set("magicutilsSmokeGate", extension.smokeGate())
             settings.gradle.extensions.extraProperties.set("magicutilsModrinthSpec", extension.toModrinthSpec())
             settings.gradle.extensions.extraProperties.set("magicutilsAllTargetsSpec", extension.toAllTargetsSpec())
+            settings.gradle.extensions.extraProperties.set("magicutilsReleaseSpec", extension.toReleaseSpec())
 
             resolvedContext.includedProjects.forEach { projectPath ->
                 settings.include(projectPath.removePrefix(":"))

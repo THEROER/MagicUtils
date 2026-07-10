@@ -67,30 +67,51 @@ class MagicUtilsMatrixModelTest {
         assertEquals(setOf("bukkit", "fabric", "neoforge"), def.availablePlatformsFor("mc12110"))
     }
 
+    // Java level per test target, mirroring writeTargets: one target per level,
+    // so each is its own level's representative.
+    private val javaLevels = mapOf("mc1201" to 17, "mc12110" to 21, "mc262" to 25)
+    private val javaLevelOf: (String) -> Int = { javaLevels.getValue(it) }
+
     @Test
-    fun `publishUnits marks default target without suffix and all-categories`() {
-        val units = definition().publishUnits(listOf("mc1201", "mc12110", "mc262"))
-        val default = units.single { it.target == "mc12110" }
-        assertEquals(listOf("publishDefaultMatrix"), default.publishTasks)
-        assertFalse(default.suffix)
+    fun `publishUnits publishes one representative per Java level, no suffix`() {
+        val units = definition().publishUnits(listOf("mc1201", "mc12110", "mc262"), javaLevelOf)
+        // Three distinct Java levels (17/21/25) -> three representatives.
+        assertEquals(listOf("mc1201", "mc12110", "mc262"), units.map { it.target })
+        units.forEach { unit ->
+            assertTrue("publishDefaultMatrix" in unit.publishTasks)
+            assertFalse(unit.suffix) // +java<N> is intrinsic to the coordinate now
+        }
+    }
+
+    @Test
+    fun `publishUnits collapses targets sharing a Java level to one representative`() {
+        // mc12110 and a hypothetical mc12111 both Java 21 -> one unit; the default
+        // target wins as the representative for its level.
+        val levels = mapOf("mc1201" to 17, "mc12110" to 21, "mc12111" to 21, "mc262" to 25)
+        val units = definition().publishUnits(
+            listOf("mc1201", "mc12111", "mc12110", "mc262"),
+        ) { levels.getValue(it) }
+        assertEquals(listOf(17, 21, 25).size, units.size)
+        // The Java-21 representative is the default target (mc12110), not mc12111.
+        assertTrue(units.any { it.target == "mc12110" })
+        assertFalse(units.any { it.target == "mc12111" })
     }
 
     @Test
     fun `publishUnits adds fabric only when platform enabled`() {
-        val units = definition().publishUnits(listOf("mc1201", "mc262"))
+        val units = definition().publishUnits(listOf("mc1201", "mc262"), javaLevelOf)
         val mc1201 = units.single { it.target == "mc1201" }
         val mc262 = units.single { it.target == "mc262" }
         assertTrue("publishFabricMatrix" in mc1201.publishTasks)
         assertFalse("publishFabricMatrix" in mc262.publishTasks) // fabric disabled on mc26
-        assertTrue(mc1201.suffix)
-        assertTrue(mc262.suffix)
     }
 
     @Test
     fun `toMatrixJson emits valid boolean suffix and joined tasks`() {
-        val json = definition().publishUnits(listOf("mc12110", "mc1201")).toMatrixJson()
+        val json = definition().publishUnits(listOf("mc12110", "mc1201"), javaLevelOf).toMatrixJson()
         assertTrue(json.startsWith("[") && json.endsWith("]"))
-        assertTrue(json.contains(""""target":"mc12110","tasks":"publishDefaultMatrix","suffix":false"""))
-        assertTrue(json.contains(""""tasks":"publishCommonMatrix publishFabricMatrix","suffix":true"""))
+        // Both representatives enable fabric here (fabric is only disabled on mc26).
+        assertTrue(json.contains(""""target":"mc12110","tasks":"publishDefaultMatrix publishFabricMatrix","suffix":false"""))
+        assertTrue(json.contains(""""target":"mc1201","tasks":"publishDefaultMatrix publishFabricMatrix","suffix":false"""))
     }
 }

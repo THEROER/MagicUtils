@@ -17,7 +17,8 @@ import org.gradle.api.Action
  *         }
  *     }
  *
- * The token is read from the MODRINTH_TOKEN env var at publish time, never here.
+ * The token is read from the `modrinth_token` property or MODRINTH_TOKEN env at
+ * publish time, never here.
  */
 open class MagicUtilsModrinthDsl {
     var projectId: String = ""

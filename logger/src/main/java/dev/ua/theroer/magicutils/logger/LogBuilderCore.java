@@ -12,8 +12,16 @@ import java.util.Map;
 
 /**
  * Fluent API builder for logging messages with advanced options.
+ *
+ * <p>Uses a self-referential type parameter so the shared fluent methods return
+ * the concrete platform builder type. Platform subclasses declare
+ * {@code class LogBuilder extends LogBuilderCore<LogBuilder>} and only add their
+ * player/command-source overloads; they no longer need to re-declare covariant
+ * overrides of the shared methods just to keep the chain typed.
+ *
+ * @param <SELF> concrete builder type returned by the fluent methods
  */
-public class LogBuilderCore {
+public class LogBuilderCore<SELF extends LogBuilderCore<SELF>> {
     /** Logger core used to dispatch messages. */
     protected final LoggerCore logger;
     /** Log level associated with this builder. */
@@ -44,6 +52,11 @@ public class LogBuilderCore {
         this.level = level;
         this.recipients = new ArrayList<>();
         this.tagResolvers = new ArrayList<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private SELF self() {
+        return (SELF) this;
     }
 
     /**
@@ -88,9 +101,9 @@ public class LogBuilderCore {
      * @param target log target
      * @return this builder
      */
-    public LogBuilderCore target(LogTarget target) {
+    public SELF target(LogTarget target) {
         this.target = target;
-        return this;
+        return self();
     }
 
     /**
@@ -99,9 +112,9 @@ public class LogBuilderCore {
      * @param audience target audience
      * @return this builder
      */
-    public LogBuilderCore to(Audience audience) {
+    public SELF to(Audience audience) {
         this.audience = audience;
-        return this;
+        return self();
     }
 
     /**
@@ -110,11 +123,11 @@ public class LogBuilderCore {
      * @param audiences recipient collection
      * @return this builder
      */
-    public LogBuilderCore toAudiences(Collection<? extends Audience> audiences) {
+    public SELF toAudiences(Collection<? extends Audience> audiences) {
         if (audiences != null) {
             this.recipients.addAll(audiences);
         }
-        return this;
+        return self();
     }
 
     /**
@@ -123,11 +136,11 @@ public class LogBuilderCore {
      * @param audience recipient
      * @return this builder
      */
-    public LogBuilderCore recipient(Audience audience) {
+    public SELF recipient(Audience audience) {
         if (audience != null) {
             this.recipients.add(audience);
         }
-        return this;
+        return self();
     }
 
     /**
@@ -135,9 +148,9 @@ public class LogBuilderCore {
      *
      * @return this builder
      */
-    public LogBuilderCore toAll() {
+    public SELF toAll() {
         this.broadcast = true;
-        return this;
+        return self();
     }
 
     /**
@@ -145,9 +158,9 @@ public class LogBuilderCore {
      *
      * @return this builder
      */
-    public LogBuilderCore toConsole() {
+    public SELF toConsole() {
         this.target = LogTarget.CONSOLE;
-        return this;
+        return self();
     }
 
     /**
@@ -155,10 +168,10 @@ public class LogBuilderCore {
      *
      * @return this builder
      */
-    public LogBuilderCore noPrefix() {
+    public SELF noPrefix() {
         this.noPrefix = true;
         this.prefixOverride = PrefixMode.NONE;
-        return this;
+        return self();
     }
 
     /**
@@ -167,9 +180,9 @@ public class LogBuilderCore {
      * @param mode prefix mode override
      * @return this builder
      */
-    public LogBuilderCore prefixMode(PrefixMode mode) {
+    public SELF prefixMode(PrefixMode mode) {
         this.prefixOverride = mode;
-        return this;
+        return self();
     }
 
     /**
@@ -178,9 +191,9 @@ public class LogBuilderCore {
      * @param args placeholder arguments
      * @return this builder
      */
-    public LogBuilderCore args(Object... args) {
+    public SELF args(Object... args) {
         this.args = args != null ? args.clone() : null;
-        return this;
+        return self();
     }
 
     /**
@@ -189,9 +202,9 @@ public class LogBuilderCore {
      * @param placeholders placeholder map
      * @return this builder
      */
-    public LogBuilderCore placeholders(Map<String, Object> placeholders) {
+    public SELF placeholders(Map<String, Object> placeholders) {
         this.placeholders = placeholders != null ? new HashMap<>(placeholders) : null;
-        return this;
+        return self();
     }
 
     /**
@@ -200,7 +213,7 @@ public class LogBuilderCore {
      * @param resolvers tag resolvers
      * @return this builder
      */
-    public LogBuilderCore withResolvers(TagResolver... resolvers) {
+    public SELF withResolvers(TagResolver... resolvers) {
         if (resolvers != null) {
             for (TagResolver resolver : resolvers) {
                 if (resolver != null) {
@@ -208,7 +221,7 @@ public class LogBuilderCore {
                 }
             }
         }
-        return this;
+        return self();
     }
 
     /**

@@ -10,11 +10,16 @@ import java.util.UUID;
 /**
  * Wraps a Velocity command source as a MagicUtils audience.
  */
-final class VelocityAudience implements Audience {
+public final class VelocityAudience implements Audience {
     private final CommandSource source;
     private final UUID id;
 
-    VelocityAudience(CommandSource source) {
+    /**
+     * Wraps a Velocity command source (player or console) as an audience.
+     *
+     * @param source command source to wrap
+     */
+    public VelocityAudience(CommandSource source) {
         this.source = source;
         this.id = source instanceof Player player ? player.getUniqueId() : null;
     }

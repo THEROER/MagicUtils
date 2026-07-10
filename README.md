@@ -103,24 +103,32 @@ dependencies {
 
 ## Quickstart
 
-Bootstrap helpers are the recommended platform entry points:
+Bootstrap helpers are the recommended platform entry points. The name and data
+directory are derived from the plugin/mod metadata, so the entry points are
+consistent across platforms:
 
 - Bukkit/Paper: `BukkitBootstrap.forPlugin(this)`
-- BungeeCord: `BungeeBootstrap.forPlugin(this, "MyPlugin")`
+- BungeeCord: `BungeeBootstrap.forPlugin(this)`
+- Velocity: `VelocityBootstrap.forPlugin(proxy, this)`
 - Fabric: `FabricBootstrap.forMod("mymod", () -> server)`
-- Velocity: `VelocityBootstrap.forPlugin(proxy, this, "MyPlugin", dataDir)`
-- NeoForge: manual wiring with `NeoForgePlatformProvider` +
-  `CommandRegistry.create(...)`
+- NeoForge: `NeoForgeBootstrap.forMod("mymod", () -> server)`
+
+Every builder exposes `.withRecommendedDefaults()` (the default, every language
+and messages feature on) and `.minimal()` (opt out of the automatic language and
+messages wiring when you manage localization yourself), so you configure intent
+with one call instead of a wall of boolean toggles.
 
 If your project has a shared `common` module, let the platform layer create the
 runtime and pass `MagicRuntime` into the shared services instead of calling the
 bootstrap helpers from common code.
 
 `buildRuntime()` returns a managed `MagicRuntime` container with the platform,
-config manager, logger, language manager, and optional command registry.
-Enable diagnostics with `.enableDiagnostics()` and fetch the service from
-`runtime.requireComponent(DiagnosticsService.class)` or the bootstrap runtime
-result accessor.
+config manager, logger, language manager, and optional command registry. On
+every platform, `bootstrap.logger()` returns a typed `Logger` facade with
+`info/warn/error/...` methods, player-typed overloads, and a fluent
+`Logger#log()` builder. Enable diagnostics with `.enableDiagnostics()` and fetch
+the service from `runtime.requireComponent(DiagnosticsService.class)` or the
+bootstrap runtime result accessor.
 
 See the full setup guide in the docs:
 https://magicutils.theroer.dev/getting-started/quickstart/
