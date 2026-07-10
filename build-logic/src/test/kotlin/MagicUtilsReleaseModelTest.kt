@@ -1,7 +1,9 @@
 import org.gradle.api.GradleException
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 import dev.ua.theroer.magicutils.build.release.*
@@ -80,5 +82,50 @@ class MagicUtilsReleaseModelTest {
         assertThrows(GradleException::class.java) {
             validateReleaseVersion(SemanticVersion(1, 21, 6), current, SemanticVersion(1, 21, 6), emptySet())
         }
+    }
+
+    @Test
+    fun `parseModrinthVersionIds pairs version_number to id and ignores nested ids`() {
+        val json = """
+            [
+              {"id":"aaa111","version_number":"1.26.0","files":[{"id":"nested-file-id"}]},
+              {"id":"bbb222","version_number":"1.25.0"}
+            ]
+        """.trimIndent()
+        val map = parseModrinthVersionIds(json)
+        assertEquals(mapOf("1.26.0" to "aaa111", "1.25.0" to "bbb222"), map)
+    }
+
+    @Test
+    fun `evaluateReleaseConsistency passes when required sources agree and Modrinth may lag`() {
+        val v = SemanticVersion(1, 26, 0)
+        // Maven + tag + gradle.properties agree; Modrinth not yet published (manual) — still consistent.
+        val report = evaluateReleaseConsistency(
+            version = v,
+            gradlePropertiesVersion = v,
+            tagExists = true,
+            mavenPublished = true,
+            modrinthPublished = false,
+        )
+        assertTrue(report.consistent)
+        assertTrue(report.problems.isEmpty())
+        // Modrinth-absent still surfaces as an ABSENT status line for visibility.
+        assertEquals(SourceState.ABSENT, report.statuses.single { it.source == "Modrinth" }.state)
+    }
+
+    @Test
+    fun `evaluateReleaseConsistency fails when a required source disagrees`() {
+        val v = SemanticVersion(1, 26, 0)
+        val report = evaluateReleaseConsistency(
+            version = v,
+            gradlePropertiesVersion = SemanticVersion(1, 25, 0),
+            tagExists = false,
+            mavenPublished = false,
+            modrinthPublished = null,
+        )
+        assertFalse(report.consistent)
+        // gradle.properties, tag, Maven each contribute a problem; Modrinth (null) does not.
+        assertEquals(3, report.problems.size)
+        assertEquals(SourceState.SKIPPED, report.statuses.single { it.source == "Modrinth" }.state)
     }
 }

@@ -234,17 +234,7 @@ abstract class ModrinthPublishTask : DefaultTask() {
         if (response.statusCode() !in 200..299) {
             throw GradleException("Failed to list Modrinth versions (HTTP ${response.statusCode()}): ${response.body()}")
         }
-        // Proper JSON parse: a regex can't pair id↔version_number because nested
-        // file/dependency objects also carry "id". Later duplicates overwrite so
-        // the map holds the newest id per version_number.
-        @Suppress("UNCHECKED_CAST")
-        val versions = groovy.json.JsonSlurper().parseText(response.body()) as? List<Map<String, Any?>>
-            ?: return emptyMap()
-        return versions.mapNotNull { v ->
-            val id = v["id"] as? String
-            val num = v["version_number"] as? String
-            if (id != null && num != null) num to id else null
-        }.toMap()
+        return parseModrinthVersionIds(response.body())
     }
 
     private fun uploadVersion(

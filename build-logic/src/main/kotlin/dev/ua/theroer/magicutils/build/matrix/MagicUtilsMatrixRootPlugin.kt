@@ -51,7 +51,9 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
             defaultTarget = resolvedContext.definition.defaultTarget,
             explicitTarget = resolvedContext.definition.defaultTarget,
         ).java
-        registerReleaseTasks(project, publishingSpec, defaultTargetJava)
+        val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
+            as? ModrinthReleaseSpec
+        registerReleaseTasks(project, publishingSpec, defaultTargetJava, modrinthSpec?.projectId)
 
         @Suppress("UNCHECKED_CAST")
         val smokeSpecs = project.gradle.extensions.extraProperties.properties["magicutilsSmokeSpecs"]
@@ -65,8 +67,6 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         )
         registerReleaseMatrixTask(project, resolvedContext, smokeSpecs)
 
-        val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
-            as? ModrinthReleaseSpec
         val targetsFile = project.rootProject.file(resolvedContext.definition.targetsFile)
         registerModrinthTasks(project, modrinthSpec, smokeSpecs, resolvedContext.definition.defaultTarget, targetsFile)
     }
