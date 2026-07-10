@@ -58,7 +58,7 @@ public final class MagicUtilsBungeeBundlePlugin extends Plugin {
                 .buildRuntime();
         runtime = bootstrap.runtime();
 
-        LoggerCore loggerCore = bootstrap.logger();
+        LoggerCore loggerCore = bootstrap.logger().getCore();
         CommandRegistry commandRegistry = bootstrap.commandRegistry();
         if (commandRegistry != null) {
             // Register the diagnostics suite-name parser so
