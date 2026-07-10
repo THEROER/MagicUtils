@@ -111,6 +111,12 @@ internal fun javadocVersionUrl(repoUrl: String, group: String, version: String):
  * Validate a requested release version against the current gradle.properties
  * version and the latest already-released version. Returns nothing; throws
  * [GradleException] with an actionable message on any violation.
+ *
+ * Idempotent by design: a release can fail partway (e.g. Maven publish dies on
+ * one target) and be re-run. On a re-run the bump already happened
+ * (`requested == current`) and the tag already exists, which is NOT an error —
+ * it is exactly a resume. Only a fresh release (a version not yet bumped to)
+ * must be strictly greater than everything and untagged.
  */
 internal fun validateReleaseVersion(
     requested: SemanticVersion,
@@ -118,6 +124,13 @@ internal fun validateReleaseVersion(
     latestReleased: SemanticVersion?,
     existingTags: Set<String>,
 ) {
+    // Resume: gradle.properties is already at the requested version. A prior run
+    // bumped it, so the tag/monotonicity checks below (which assume a not-yet-cut
+    // release) must not fire — otherwise a re-run after a mid-release failure is
+    // impossible.
+    if (requested == current) {
+        return
+    }
     if (requested < current) {
         throw GradleException("Version $requested must not be lower than gradle.properties $current.")
     }

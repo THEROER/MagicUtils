@@ -85,6 +85,20 @@ class MagicUtilsReleaseModelTest {
     }
 
     @Test
+    fun `validateReleaseVersion allows a resume when gradle_properties is already at the version`() {
+        // A prior release run bumped to 1.21.6 and tagged v1.21.6, then failed
+        // during publish. Re-running must NOT reject the existing tag / version —
+        // requested == current signals a resume, not a fresh release.
+        val current = SemanticVersion(1, 21, 6)
+        validateReleaseVersion(
+            requested = SemanticVersion(1, 21, 6),
+            current = current,
+            latestReleased = SemanticVersion(1, 21, 6),
+            existingTags = setOf("v1.21.6"),
+        ) // does not throw
+    }
+
+    @Test
     fun `parseModrinthVersionIds pairs version_number to id and ignores nested ids`() {
         val json = """
             [
