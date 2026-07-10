@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.bootstrap;
 
 import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.proxy.ProxyServer;
+import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.bootstrap.MagicUtilsConsumerPayloads;
 import dev.ua.theroer.magicutils.bootstrap.MagicUtilsConsumerViews;
 import dev.ua.theroer.magicutils.commands.CommandRegistry;
@@ -11,7 +12,6 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
-import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.messaging.MessagingService;
 import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
 import dev.ua.theroer.magicutils.messaging.velocity.VelocityMessagingSupport;
@@ -19,7 +19,6 @@ import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.velocity.VelocityMagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.velocity.VelocityPlatformProvider;
-import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -94,10 +93,10 @@ public final class VelocityBootstrap {
         private final String pluginName;
         private final LanguageBootstrap lang = new LanguageBootstrap();
         private Path dataDirectory;
-        private Logger slf4j;
+        private org.slf4j.Logger slf4j;
         private Platform platform;
         private ConfigManager configManager;
-        private LoggerCore logger;
+        private Logger logger;
         private LanguageManager languageManager;
         private boolean enableCommands;
         private String permissionPrefix;
@@ -144,7 +143,7 @@ public final class VelocityBootstrap {
          * @param slf4j logger to use
          * @return builder
          */
-        public Builder slf4j(Logger slf4j) {
+        public Builder slf4j(org.slf4j.Logger slf4j) {
             this.slf4j = slf4j;
             return this;
         }
@@ -161,12 +160,12 @@ public final class VelocityBootstrap {
         }
 
         /**
-         * Overrides the logger core instance.
+         * Overrides the logger instance.
          *
-         * @param logger logger core to use
+         * @param logger logger to use
          * @return builder
          */
-        public Builder logger(LoggerCore logger) {
+        public Builder logger(Logger logger) {
             this.logger = logger;
             return this;
         }
@@ -410,11 +409,12 @@ public final class VelocityBootstrap {
             MagicRuntime runtime = MagicRuntime.builder(
                             prepared.platform(),
                             prepared.configManager(),
-                            prepared.logger()
+                            prepared.logger().getCore()
                     )
                     .languageManager(prepared.languageManager())
                     .manageConfigManager(configManager == null)
                     .component(ProxyServer.class, proxy)
+                    .component(Logger.class, prepared.logger())
                     .build();
 
             lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
@@ -501,19 +501,19 @@ public final class VelocityBootstrap {
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);
-            LoggerCore resolvedLogger = logger != null
+            Logger resolvedLogger = logger != null
                     ? logger
-                    : new LoggerCore(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
+                    : new Logger(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
             LanguageManager resolvedLanguageManager = languageManager != null
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger);
+            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {
                 String prefix = permissionPrefix != null ? permissionPrefix : pluginName;
-                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger, asyncExecutor);
+                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger.getCore(), asyncExecutor);
                 if (commandConfigurer != null) {
                     commandConfigurer.accept(registry);
                 }
@@ -532,7 +532,7 @@ public final class VelocityBootstrap {
         private record Prepared(
                 Platform platform,
                 ConfigManager configManager,
-                LoggerCore logger,
+                Logger logger,
                 LanguageManager languageManager,
                 CommandRegistry commandRegistry
         ) {
@@ -551,7 +551,7 @@ public final class VelocityBootstrap {
     public record Result(
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
@@ -571,7 +571,7 @@ public final class VelocityBootstrap {
             MagicRuntime runtime,
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
