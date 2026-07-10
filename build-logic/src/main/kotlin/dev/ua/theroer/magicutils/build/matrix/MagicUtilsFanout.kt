@@ -22,6 +22,10 @@ import org.gradle.api.tasks.TaskProvider
  * so the two paths stay behaviourally identical.
  */
 
+/** The project's Gradle wrapper script name for the current OS. */
+internal fun magicUtilsGradleWrapperName(): String =
+    if (System.getProperty("os.name").orEmpty().lowercase().contains("win")) "gradlew.bat" else "./gradlew"
+
 /** One per-target invocation: the extra `gradlew` args to run for [target]. */
 data class MagicUtilsFanoutInvocation(
     val target: String,
@@ -53,8 +57,7 @@ internal fun registerMagicUtilsFanout(
     describe: (MagicUtilsFanoutInvocation) -> String,
 ): List<TaskProvider<out Task>> {
     val rootDir = project.rootProject.projectDir
-    val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
-    val wrapper = if (isWindows) "gradlew.bat" else "./gradlew"
+    val wrapper = magicUtilsGradleWrapperName()
     val childGradleHome = project.layout.buildDirectory.dir(childHomeSubdir).get().asFile
 
     fun commandLine(invocation: MagicUtilsFanoutInvocation): List<String> = buildList {
