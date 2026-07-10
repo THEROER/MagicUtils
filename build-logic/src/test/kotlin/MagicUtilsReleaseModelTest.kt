@@ -128,4 +128,39 @@ class MagicUtilsReleaseModelTest {
         assertEquals(3, report.problems.size)
         assertEquals(SourceState.SKIPPED, report.statuses.single { it.source == "Modrinth" }.state)
     }
+
+    @Test
+    fun `releasePlan lists steps in fixed order with enabled flags from the spec`() {
+        val spec = MagicUtilsReleaseSpec(publishModrinth = false, push = true)
+        val plan = releasePlan(spec)
+        assertEquals(
+            listOf(
+                "releasePreflight", "releaseValidateBuild", "bumpVersion", "releaseTag",
+                "releaseMavenAll", "releaseModrinth", "releaseJavadoc", "verifyReleaseConsistency",
+            ),
+            plan.map { it.name },
+        )
+        assertFalse(plan.single { it.name == "releaseModrinth" }.enabled)
+        assertTrue(plan.single { it.name == "releaseMavenAll" }.enabled)
+    }
+
+    @Test
+    fun `applyReleaseOverrides merges -Prelease flags over the DSL spec`() {
+        val spec = MagicUtilsReleaseSpec() // all defaults (modrinth on, push off)
+        val merged = applyReleaseOverrides(
+            spec,
+            mapOf("release.modrinth" to "false", "release.push" to "true", "release.maven" to "FALSE"),
+        )
+        assertFalse(merged.publishModrinth)
+        assertTrue(merged.push)
+        assertFalse(merged.publishMaven) // case-insensitive
+        assertTrue(merged.publishJavadoc) // untouched default
+    }
+
+    @Test
+    fun `applyReleaseOverrides ignores non-boolean values and keeps the DSL default`() {
+        val spec = MagicUtilsReleaseSpec(publishModrinth = true)
+        val merged = applyReleaseOverrides(spec, mapOf("release.modrinth" to "maybe"))
+        assertTrue(merged.publishModrinth) // garbage ignored, default stands
+    }
 }
