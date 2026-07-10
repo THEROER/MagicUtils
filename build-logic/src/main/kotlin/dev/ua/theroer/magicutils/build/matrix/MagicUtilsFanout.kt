@@ -58,7 +58,11 @@ internal fun registerMagicUtilsFanout(
 ): List<TaskProvider<out Task>> {
     val rootDir = project.rootProject.projectDir
     val wrapper = magicUtilsGradleWrapperName()
-    val childGradleHome = project.layout.buildDirectory.dir(childHomeSubdir).get().asFile
+    // Under .gradle/, NOT build/: a child invocation may run `clean` (the Maven
+    // release does, to republish from scratch), which would delete build/ — and
+    // with it the child's own Gradle home if it lived there, killing the daemon
+    // mid-run ("could not setcwd"). .gradle/ survives clean.
+    val childGradleHome = rootDir.resolve(".gradle").resolve(childHomeSubdir)
 
     fun commandLine(invocation: MagicUtilsFanoutInvocation): List<String> = buildList {
         add(wrapper)
