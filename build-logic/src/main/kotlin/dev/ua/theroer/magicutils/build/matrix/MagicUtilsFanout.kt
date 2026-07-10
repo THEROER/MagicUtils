@@ -31,6 +31,14 @@ data class MagicUtilsFanoutInvocation(
     val target: String,
     /** Gradle arguments after the wrapper (tasks + `-P` flags), excluding `-Ptarget`. */
     val args: List<String>,
+    /**
+     * Extra environment for the child process. The child runs with an isolated
+     * `--gradle-user-home`, so it does NOT read the caller's
+     * ~/.gradle/gradle.properties. Secrets the caller resolved (publish creds,
+     * Modrinth token) must be passed here as env so the child's publish can
+     * authenticate. Passed as env, not `-P` args, so they never appear in `ps`.
+     */
+    val env: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -87,6 +95,9 @@ internal fun registerMagicUtilsFanout(
                 task.description = describe(invocation)
                 task.workingDir = rootDir
                 task.commandLine(commandLine(invocation))
+                // The child has an isolated Gradle home; pass resolved secrets as
+                // env so its publish can authenticate (it can't read ~/.gradle).
+                invocation.env.forEach { (key, value) -> task.environment(key, value) }
             }
         }
     }

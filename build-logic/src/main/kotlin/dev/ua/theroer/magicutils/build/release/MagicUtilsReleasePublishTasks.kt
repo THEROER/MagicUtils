@@ -50,6 +50,10 @@ internal fun registerReleaseMavenTasks(
     val dryRun = project.hasProperty("release.dryRun")
     val repoUrl = publishingSpec.repoUrl
     val units = resolvePublishUnits(definition, targetsFile)
+    // Each child runs with an isolated Gradle home and cannot read the caller's
+    // ~/.gradle/gradle.properties, so the publish creds the parent resolved are
+    // forwarded as env (the child's publish helper reads PUBLISH_USER/PUBLISH_TOKEN).
+    val publishEnv = magicUtilsPublishEnv(project)
 
     val perUnitTasks = registerMagicUtilsFanout(
         project = project,
@@ -70,6 +74,7 @@ internal fun registerReleaseMavenTasks(
                     add("-Pskip_shadow_publish=true")
                     add("-Pskip_existing")
                 },
+                env = publishEnv,
             )
         },
         childHomeSubdir = "release-maven-gradle-home",
@@ -93,6 +98,7 @@ internal fun registerReleaseMavenTasks(
             task.description = "Publish the build-logic plugins to $repoUrl."
             task.workingDir = project.rootProject.projectDir
             task.commandLine(magicUtilsGradleWrapperName(), "-p", "build-logic", "publish", "-Ppublish_repo=$repoUrl", "-Pskip_existing")
+            publishEnv.forEach { (key, value) -> task.environment(key, value) }
         }
     }
 
@@ -103,6 +109,18 @@ internal fun registerReleaseMavenTasks(
         task.dependsOn(perUnitTasks)
         task.dependsOn(buildLogicTask)
     }
+}
+
+/**
+ * Publish secrets the parent resolved (property-or-env), as an env map to forward
+ * to child fan-out invocations. The children run with an isolated
+ * `--gradle-user-home` and cannot read ~/.gradle/gradle.properties, so without
+ * this their publish would 401. Empty entries are omitted so we never set a blank
+ * env var. Passed as env (not `-P`) so secrets never appear in `ps`.
+ */
+private fun magicUtilsPublishEnv(project: Project): Map<String, String> = buildMap {
+    project.findMagicUtilsPublishSecret("publish_user", "PUBLISH_USER")?.let { put("PUBLISH_USER", it) }
+    project.findMagicUtilsPublishSecret("publish_password", "PUBLISH_TOKEN")?.let { put("PUBLISH_TOKEN", it) }
 }
 
 /**
