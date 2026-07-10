@@ -10,11 +10,16 @@ import java.util.UUID;
 /**
  * Wraps a Bungee command sender as a MagicUtils audience.
  */
-final class BungeeAudience implements Audience {
+public final class BungeeAudience implements Audience {
     private final CommandSender source;
     private final UUID id;
 
-    BungeeAudience(CommandSender source) {
+    /**
+     * Wraps a Bungee command sender (player or console) as an audience.
+     *
+     * @param source command sender to wrap
+     */
+    public BungeeAudience(CommandSender source) {
         this.source = source;
         this.id = source instanceof ProxiedPlayer player ? player.getUniqueId() : null;
     }

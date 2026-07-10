@@ -6,7 +6,7 @@ import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
-import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.Logger;
 import dev.ua.theroer.magicutils.messaging.MessagingService;
 import dev.ua.theroer.magicutils.messaging.bungee.BungeeMessagingSupport;
 import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -69,10 +68,10 @@ public final class BungeeBootstrap {
         private final String pluginName;
         private final LanguageBootstrap lang = new LanguageBootstrap();
         private Path dataDirectory;
-        private Logger jul;
+        private java.util.logging.Logger jul;
         private Platform platform;
         private ConfigManager configManager;
-        private LoggerCore logger;
+        private Logger logger;
         private LanguageManager languageManager;
         private boolean enableCommands;
         private String permissionPrefix;
@@ -119,7 +118,7 @@ public final class BungeeBootstrap {
          * @param jul logger instance
          * @return this builder
          */
-        public Builder logger(Logger jul) {
+        public Builder logger(java.util.logging.Logger jul) {
             this.jul = jul;
             return this;
         }
@@ -136,12 +135,12 @@ public final class BungeeBootstrap {
         }
 
         /**
-         * Sets the custom logger core.
+         * Sets the custom logger.
          *
-         * @param logger logger core
+         * @param logger logger to use
          * @return this builder
          */
-        public Builder loggerCore(LoggerCore logger) {
+        public Builder loggerCore(Logger logger) {
             this.logger = logger;
             return this;
         }
@@ -385,12 +384,13 @@ public final class BungeeBootstrap {
             MagicRuntime runtime = MagicRuntime.builder(
                             prepared.platform(),
                             prepared.configManager(),
-                            prepared.logger()
+                            prepared.logger().getCore()
                     )
                     .languageManager(prepared.languageManager())
                     .manageConfigManager(configManager == null)
                     .component(Plugin.class, plugin)
                     .component(ProxyServer.class, proxy)
+                    .component(Logger.class, prepared.logger())
                     .build();
 
             lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
@@ -421,19 +421,19 @@ public final class BungeeBootstrap {
             ConfigManager resolvedConfigManager = configManager != null
                     ? configManager
                     : new ConfigManager(resolvedPlatform);
-            LoggerCore resolvedLogger = logger != null
+            Logger resolvedLogger = logger != null
                     ? logger
-                    : new LoggerCore(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
+                    : new Logger(resolvedPlatform, resolvedConfigManager, plugin, pluginName);
             LanguageManager resolvedLanguageManager = languageManager != null
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger);
+            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {
                 String prefix = permissionPrefix != null ? permissionPrefix : pluginName;
-                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger, asyncExecutor);
+                registry = CommandRegistry.create(proxy, plugin, prefix, resolvedLogger.getCore(), asyncExecutor);
                 if (commandConfigurer != null) {
                     commandConfigurer.accept(registry);
                 }
@@ -452,7 +452,7 @@ public final class BungeeBootstrap {
         private record Prepared(
                 Platform platform,
                 ConfigManager configManager,
-                LoggerCore logger,
+                Logger logger,
                 LanguageManager languageManager,
                 CommandRegistry commandRegistry
         ) {
@@ -471,7 +471,7 @@ public final class BungeeBootstrap {
     public record Result(
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
@@ -491,7 +491,7 @@ public final class BungeeBootstrap {
             MagicRuntime runtime,
             Platform platform,
             ConfigManager configManager,
-            LoggerCore logger,
+            Logger logger,
             LanguageManager languageManager,
             CommandRegistry commandRegistry
     ) {
