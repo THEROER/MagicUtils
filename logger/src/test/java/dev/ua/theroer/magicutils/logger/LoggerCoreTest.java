@@ -111,6 +111,84 @@ class LoggerCoreTest {
         }
     }
 
+    @Test
+    void chatPrefixCarriesBrandButNotTheLogLevel() throws Exception {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LoggerCore core = new LoggerCore(platform, configManager, new Object(), "TestPlugin");
+            configManager.shutdown();
+
+            // Chat defaults to FULL, so the brand appears; the level must not.
+            for (LogLevel level : new LogLevel[] {LogLevel.SUCCESS, LogLevel.WARN, LogLevel.ERROR, LogLevel.INFO}) {
+                LogMessageFormatter.FormattedMessage formatted = LogMessageFormatter.formatDetailed(
+                        core, "hello", level, LogTarget.CHAT, null, null, null);
+                String chat = PlainTextComponentSerializer.plainText().serialize(formatted.chatComponent());
+
+                assertTrue(chat.contains("[TestPlugin]"),
+                        "Chat prefix should keep the plugin brand for " + level + ", was: " + chat);
+                assertTrue(!chat.contains(level.name()),
+                        "Chat prefix should not spell out the log level " + level + ", was: " + chat);
+                assertTrue(chat.contains("hello"), "Chat message content should be present for " + level);
+            }
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void chatCarriesLevelColourEvenWithGradientsDisabled() throws Exception {
+        TestPlatform platform = new TestPlatform(tempDir);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LoggerCore core = new LoggerCore(platform, configManager, new Object(), "TestPlugin");
+            configManager.shutdown();
+            setChatGradient(core, false);
+
+            String success = chatDownsampledColour(core, LogLevel.SUCCESS);
+            String error = chatDownsampledColour(core, LogLevel.ERROR);
+
+            // With gradients off, a single solid level colour must still be applied,
+            // and SUCCESS must not read as ERROR.
+            assertNotNull(success, "SUCCESS chat message should carry a colour");
+            assertNotNull(error, "ERROR chat message should carry a colour");
+            assertTrue(!success.equals(error),
+                    "SUCCESS and ERROR chat messages should not share the same colour");
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    private static String chatDownsampledColour(LoggerCore core, LogLevel level) {
+        LogMessageFormatter.FormattedMessage formatted = LogMessageFormatter.formatDetailed(
+                core, "hello", level, LogTarget.CHAT, null, null, null);
+        return findFirstColour(formatted.chatComponent());
+    }
+
+    private static String findFirstColour(Component component) {
+        if (component.color() != null) {
+            return component.color().asHexString();
+        }
+        for (Component child : component.children()) {
+            String childColour = findFirstColour(child);
+            if (childColour != null) {
+                return childColour;
+            }
+        }
+        return null;
+    }
+
+    private static void setChatGradient(LoggerCore core, boolean enabled) throws Exception {
+        Field prefixField = core.getConfig().getClass().getDeclaredField("prefix");
+        prefixField.setAccessible(true);
+        Object prefixSettings = prefixField.get(core.getConfig());
+        Field gradientField = prefixSettings.getClass().getDeclaredField("useGradientChat");
+        gradientField.setAccessible(true);
+        gradientField.setBoolean(prefixSettings, enabled);
+    }
+
     private static void setDebugPlaceholders(LoggerCore core, boolean enabled) throws Exception {
         Field field = core.getConfig().getClass().getDeclaredField("debugPlaceholders");
         field.setAccessible(true);
