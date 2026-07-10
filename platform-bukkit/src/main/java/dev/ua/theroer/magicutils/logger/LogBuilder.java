@@ -1,36 +1,26 @@
 package dev.ua.theroer.magicutils.logger;
 
 import dev.ua.theroer.magicutils.Logger;
-import dev.ua.theroer.magicutils.platform.Audience;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Bukkit-specific log builder with Player/CommandSender helpers.
+ *
+ * <p>The shared fluent methods ({@code to(Audience)}, {@code target},
+ * {@code noPrefix}, ...) are inherited from {@link LogBuilderCore} and already
+ * return {@code LogBuilder} thanks to its self type; this class only adds the
+ * Bukkit-typed recipient overloads.
  */
 @SuppressWarnings("doclint:missing")
-public class LogBuilder extends LogBuilderCore {
+public class LogBuilder extends LogBuilderCore<LogBuilder> {
     private final Logger logger;
 
     public LogBuilder(Logger logger, LogLevel level) {
         super(logger.getCore(), level);
         this.logger = logger;
-    }
-
-    @Override
-    public LogBuilder to(Audience audience) {
-        super.to(audience);
-        return this;
-    }
-
-    @Override
-    public LogBuilder target(LogTarget target) {
-        super.target(target);
-        return this;
     }
 
     public LogBuilder to(Player player) {
@@ -78,54 +68,6 @@ public class LogBuilder extends LogBuilderCore {
                 }
             }
         }
-        return this;
-    }
-
-    @Override
-    public LogBuilder toAudiences(Collection<? extends Audience> audiences) {
-        super.toAudiences(audiences);
-        return this;
-    }
-
-    @Override
-    public LogBuilder toAll() {
-        super.toAll();
-        return this;
-    }
-
-    @Override
-    public LogBuilder toConsole() {
-        super.toConsole();
-        return this;
-    }
-
-    @Override
-    public LogBuilder noPrefix() {
-        super.noPrefix();
-        return this;
-    }
-
-    @Override
-    public LogBuilder prefixMode(PrefixMode mode) {
-        super.prefixMode(mode);
-        return this;
-    }
-
-    @Override
-    public LogBuilder args(Object... args) {
-        super.args(args);
-        return this;
-    }
-
-    @Override
-    public LogBuilder placeholders(Map<String, Object> placeholders) {
-        super.placeholders(placeholders);
-        return this;
-    }
-
-    @Override
-    public LogBuilder withResolvers(TagResolver... resolvers) {
-        super.withResolvers(resolvers);
         return this;
     }
 }
