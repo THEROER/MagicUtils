@@ -46,7 +46,12 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         registerAggregatedJavadocTask(project, resolvedContext)
         registerDevServerAggregateTasks(project)
         registerPublishCategoryTasks(project)
-        registerReleaseTasks(project, publishingSpec)
+        val defaultTargetJava = resolveMagicUtilsTargetSpec(
+            targetsFile = project.rootProject.file(resolvedContext.definition.targetsFile),
+            defaultTarget = resolvedContext.definition.defaultTarget,
+            explicitTarget = resolvedContext.definition.defaultTarget,
+        ).java
+        registerReleaseTasks(project, publishingSpec, defaultTargetJava)
 
         @Suppress("UNCHECKED_CAST")
         val smokeSpecs = project.gradle.extensions.extraProperties.properties["magicutilsSmokeSpecs"]

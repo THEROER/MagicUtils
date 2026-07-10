@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 
 import dev.ua.theroer.magicutils.build.release.*
 import dev.ua.theroer.magicutils.build.publish.*
+import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
 
 class MagicUtilsReleaseModelTest {
 
@@ -46,15 +47,19 @@ class MagicUtilsReleaseModelTest {
     }
 
     @Test
-    fun `smokeArtifactUrl builds POM url`() {
+    fun `smokeArtifactUrl percent-encodes the java-suffixed coordinate`() {
         val spec = MagicUtilsPublishingSpec(
             group = "dev.ua.theroer",
             repoUrl = "https://maven.theroer.dev/releases",
             smokeArtifact = "magicutils-core",
         )
+        // The library ships only per-Java coordinates; the smoke URL must target
+        // one of them (`+` percent-encoded), not a bare X.Y.Z POM that is never
+        // published (which would 404 forever).
         assertEquals(
-            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-core/1.21.5/magicutils-core-1.21.5.pom",
-            spec.smokeArtifactUrl(SemanticVersion(1, 21, 5)),
+            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-core/" +
+                "1.26.0%2Bjava21/magicutils-core-1.26.0%2Bjava21.pom",
+            spec.smokeArtifactUrl(javaSuffixedCoordinate("1.26.0", 21)),
         )
     }
 

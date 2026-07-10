@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.build.release
 
 import dev.ua.theroer.magicutils.build.publish.*
+import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -33,7 +34,11 @@ import javax.inject.Inject
 
 private const val RELEASE_GROUP = "release"
 
-internal fun registerReleaseTasks(project: Project, publishingSpec: MagicUtilsPublishingSpec) {
+internal fun registerReleaseTasks(
+    project: Project,
+    publishingSpec: MagicUtilsPublishingSpec,
+    defaultTargetJava: Int,
+) {
     val gradlePropertiesFile = project.rootProject.file("gradle.properties")
     // Read the raw -Pversion from the start parameter, not project.version: the
     // target plugin overwrites project.version with the +<minecraft> suffix
@@ -70,7 +75,13 @@ internal fun registerReleaseTasks(project: Project, publishingSpec: MagicUtilsPu
     project.tasks.register("smokeTest", SmokeTestTask::class.java) { task ->
         task.group = RELEASE_GROUP
         task.description = "Poll the published POM for -Pversion until it appears (or times out)."
-        task.artifactUrl.set(project.provider { publishingSpec.smokeArtifactUrl(SemanticVersion.parse(versionProvider.get())) })
+        // The library ships only per-Java coordinates (`X.Y.Z+java<N>`); a bare
+        // X.Y.Z POM is never published. Poll the default target's Java level as
+        // the canonical "Maven is up" signal.
+        task.artifactUrl.set(project.provider {
+            val base = SemanticVersion.parse(versionProvider.get()).toString()
+            publishingSpec.smokeArtifactUrl(javaSuffixedCoordinate(base, defaultTargetJava))
+        })
         task.notCompatibleWithConfigurationCache("Performs network polling.")
     }
 

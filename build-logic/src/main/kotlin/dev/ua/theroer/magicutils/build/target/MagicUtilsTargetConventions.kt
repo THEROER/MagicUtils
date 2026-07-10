@@ -51,7 +51,15 @@ val MagicUtilsTargetExtension.mcClassifier: String
  * not through the Maven coordinate.
  */
 fun MagicUtilsTargetExtension.publishedVersion(baseVersion: String): String =
-    "$baseVersion+java${java.get()}"
+    javaSuffixedCoordinate(baseVersion, java.get())
+
+/**
+ * Pure formatter for the `<base>+java<N>` published coordinate. The `+java<N>`
+ * suffix format lives here as one function so no caller (publishedVersion, the
+ * Modrinth bundle file name, the release smoke URL) re-spells it by hand.
+ */
+fun javaSuffixedCoordinate(baseVersion: String, javaLevel: Int): String =
+    "$baseVersion+java$javaLevel"
 
 /** Loom plugin id for the target: no-remap on deobfuscated, remapping otherwise. */
 val MagicUtilsTargetExtension.loomPluginId: String

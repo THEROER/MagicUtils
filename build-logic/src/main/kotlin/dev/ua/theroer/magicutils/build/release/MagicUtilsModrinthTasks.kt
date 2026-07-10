@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.build.release
 
 import dev.ua.theroer.magicutils.build.smoke.SmokePlatformSpec
 import dev.ua.theroer.magicutils.build.smoke.expandVersionsFull
+import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
 import dev.ua.theroer.magicutils.build.target.resolveMagicUtilsTargetSpec
 
 import org.gradle.api.DefaultTask
@@ -127,7 +128,7 @@ private fun modrinthArtifactsFromMatrix(
             // is `<base>+java<N>`), so all Minecraft versions sharing a Java level
             // map to one jar. Merge their advertised game versions into ONE
             // Modrinth version instead of re-uploading the same file per MC.
-            val fileName = "magicutils-${platform.name}-bundle-$ver+java$java.jar"
+            val fileName = "magicutils-${platform.name}-bundle-${javaSuffixedCoordinate(ver, java)}.jar"
             val gameVersions = entries.flatMap { it.versions.expandVersionsFull() }.distinct()
             // Stable, valid Modrinth file part, unique per jar.
             val key = "${platform.name}-java$java"
