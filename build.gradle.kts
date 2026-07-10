@@ -7,18 +7,15 @@ plugins {
 }
 
 val baseVersion = (project.properties["version"] as String?) ?: "0.0.0"
-// Fabric-style version per target: <base>+<minecraft> (e.g. 1.22.0+26.2). Every
-// target is its own Maven version, so its module metadata (Java level,
-// transitive deps) never collides with another target's. The consumer plugins
-// mirror this suffix from their resolved target, so downstream builds keep
-// declaring the bare base version.
+// Version per Java level: <base>+java<N> (e.g. 1.25.0+java21). MagicUtils'
+// compiled bytecode depends only on the Java level, not the Minecraft version,
+// so several Minecraft targets share one coordinate (mc1205/mc12110/mc12111 are
+// all +java21). The consumer plugins mirror this exact suffix from their
+// resolved target's Java level (see publishedVersion), so downstream builds keep
+// declaring the bare base version and always resolve a coordinate that exists.
 val resolvedContext = gradle.extensions.extraProperties.get("magicutilsMatrixResolved")
     as dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixResolvedContext
-// Use the library Minecraft (the published coordinate's branch), not the runtime
-// one — they differ when a target overrides library_minecraft, and consumers
-// resolve against the library branch (publishedVersion mirrors this).
-val targetMinecraft = resolvedContext.target.libraryMinecraft
-val targetVersion = "$baseVersion+$targetMinecraft"
+val targetVersion = "$baseVersion+java${resolvedContext.target.java}"
 
 val publishingSpec = gradle.extensions.extraProperties.get("magicutilsPublishingSpec")
     as MagicUtilsPublishingSpec

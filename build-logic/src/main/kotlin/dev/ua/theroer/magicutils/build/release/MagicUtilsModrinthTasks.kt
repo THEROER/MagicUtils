@@ -109,12 +109,10 @@ private fun modrinthArtifactsFromMatrix(
 ): List<ModrinthArtifact> = smokeSpecs
     .filter { it.name !in MODRINTH_NON_PUBLISHED_PLATFORMS }
     .flatMap { platform ->
-    // The bundle jar is named by the *library* Minecraft, not the runtime one:
-    // mc1201 and mc1205 both publish `+1.20.1` (one 1.20.x library coordinate,
-    // two Java runtimes for the smoke). So two smoke entries can map to a single
-    // jar. Group entries by their library-Minecraft coordinate and merge their
-    // advertised game versions into ONE Modrinth version — otherwise we'd upload
-    // the same file twice and split its supported versions across duplicates.
+    // Group smoke entries by Java level: every Minecraft version sharing a Java
+    // level ships the same bundle jar (the coordinate is `+java<N>`), so they
+    // fold into one Modrinth version whose game_versions is their union —
+    // otherwise we'd upload the same file once per Minecraft version.
     val ver = version ?: "{version}"
     platform.versionMatrix
         .groupBy { entry ->
@@ -122,16 +120,17 @@ private fun modrinthArtifactsFromMatrix(
                 targetsFile = targetsFile,
                 defaultTarget = defaultTarget,
                 explicitTarget = entry.target ?: defaultTarget,
-            ).libraryMinecraft
+            ).java
         }
-        .map { (libraryMc, entries) ->
-            val fileName = "magicutils-${platform.name}-bundle-$ver+$libraryMc.jar"
-            // Merge + de-dup game versions across the entries sharing this jar,
-            // in matrix order (the versions the release advertises for this file).
+        .map { (java, entries) ->
+            // The bundle jar is named by the Java level (the published coordinate
+            // is `<base>+java<N>`), so all Minecraft versions sharing a Java level
+            // map to one jar. Merge their advertised game versions into ONE
+            // Modrinth version instead of re-uploading the same file per MC.
+            val fileName = "magicutils-${platform.name}-bundle-$ver+java$java.jar"
             val gameVersions = entries.flatMap { it.versions.expandVersionsFull() }.distinct()
-            // Stable key from the library coordinate (dots dropped) so it is a
-            // valid Modrinth file part and unique per jar.
-            val key = "${platform.name}-mc${libraryMc.replace(".", "")}"
+            // Stable, valid Modrinth file part, unique per jar.
+            val key = "${platform.name}-java$java"
             ModrinthArtifact(
                 key = key,
                 file = "${platform.name}-bundle/build/libs/$fileName",

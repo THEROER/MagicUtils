@@ -32,18 +32,26 @@ val MagicUtilsTargetExtension.mcClassifier: String
     get() = "mc${libraryMinecraft.get().substringBeforeLast('.')}"
 
 /**
- * Published MagicUtils version for [baseVersion] on this target, Fabric-style:
- * `<base>+<library-minecraft>` (e.g. `1.22.0+26.2`). Every target carries the
- * suffix so each Minecraft version is its own Maven version — its own module
- * metadata, Java level and transitive deps — instead of one version whose
- * metadata the targets overwrite. Consumers pass the bare base version
- * (`magicutils_version=1.22.0`); the consumer plugins add the suffix from the
- * resolved target's *library* Minecraft, so no build script writes it by hand.
- * The library Minecraft equals the runtime one unless the target overrides
- * `library_minecraft` (see [MagicUtilsTargetSpec]).
+ * Published MagicUtils version for [baseVersion] on this target:
+ * `<base>+java<N>` (e.g. `1.25.0+java21`).
+ *
+ * Empirically MagicUtils' compiled bytecode depends only on the Java level, not
+ * on the Minecraft version: the whole library (core/config/commands/lang, the
+ * platform modules, even the Fabric mod's classes) is byte-identical between two
+ * targets that share a Java level (e.g. +1.21.10 vs +1.21.11 differed in 0
+ * classes) and differs wholesale only across Java levels (major 65 vs 69). So a
+ * per-Minecraft coordinate published five near-duplicate copies where three real
+ * variants exist — one per Java level (17 / 21 / 25). obf/deobf is not a second
+ * axis: it is a function of the Java level (26.x is Java 25 + deobfuscated).
+ *
+ * Consumers pass the bare base version (`magicutils_version=1.25.0`); the
+ * consumer plugins add `+java<N>` from the resolved target's Java level, so the
+ * coordinate a consumer resolves always matches one that was published. Fabric
+ * mods pin their runtime Minecraft through `fabric.mod.json` (a version range),
+ * not through the Maven coordinate.
  */
 fun MagicUtilsTargetExtension.publishedVersion(baseVersion: String): String =
-    "$baseVersion+${libraryMinecraft.get()}"
+    "$baseVersion+java${java.get()}"
 
 /** Loom plugin id for the target: no-remap on deobfuscated, remapping otherwise. */
 val MagicUtilsTargetExtension.loomPluginId: String

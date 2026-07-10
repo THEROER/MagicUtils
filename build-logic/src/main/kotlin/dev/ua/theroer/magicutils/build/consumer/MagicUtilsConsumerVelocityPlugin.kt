@@ -55,44 +55,11 @@ class MagicUtilsConsumerVelocityPlugin : Plugin<Project> {
 
         project.exposeMagicUtilsTargetFacts(target)
 
-        // MagicUtils modules the consumer declared, wired per embedMode. Velocity
-        // has no jar-in-jar, so this maps onto the dependency configuration + the
-        // shadow jar exactly like the Bukkit consumer. Resolved at afterEvaluate
-        // because the consumer sets embedMode in its DSL block, which runs after
-        // this plugin applies; Velocity has no Loom early-observe of
-        // configurations, so a late `add` is safe (unlike the Fabric consumer).
-        project.afterEvaluate {
-            val embed = resolveEmbedMode(consumer.embedMode.get(), ConsumerLoader.VELOCITY)
-            val shaded = embed == EmbedMode.SHADED
-            val apiConfig = if (shaded) "api" else "compileOnly"
-            val implConfig = if (shaded) "implementation" else "compileOnly"
-            val base = consumer.magicutilsVersion.get()
-            consumer.apiModules.get().forEach { module ->
-                project.dependencies.add(apiConfig, magicUtilsModuleCoordinate(module, base, target))
-            }
-            consumer.implementationModules.get().forEach { module ->
-                project.dependencies.add(implConfig, magicUtilsModuleCoordinate(module, base, target))
-            }
-
-            // EXTERNAL: strip MagicUtils and its bundled libraries from the shadow
-            // jar, so this jar carries none of them and the standalone
-            // velocity-bundle provides the single copy at runtime. They reach the
-            // fat jar transitively via the common module (whose MagicUtils deps are
-            // `api`), so moving this module's deps to compileOnly alone does not
-            // remove them; the shadow exclude does. jackson is the config modules'
-            // only external dependency and the bundle owns its own copy — shipping
-            // a second here clashes under the proxy classloader, so exclude it too.
-            if (!shaded) {
-                project.tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class.java)
-                    .configure { shadow ->
-                        // The `**/` prefix also catches multi-release copies under
-                        // META-INF/versions/<n>/, which a root-anchored pattern
-                        // would leave behind.
-                        shadow.exclude("**/dev/ua/theroer/magicutils/**")
-                        shadow.exclude("**/com/fasterxml/jackson/**")
-                    }
-            }
-        }
+        // MagicUtils modules per embedMode + the EXTERNAL shadow-strip — shared
+        // with the Bukkit consumer (see configureJvmConsumerEmbed). Velocity's
+        // default is SHADED (self-contained proxy plugin); EXTERNAL yields a thin
+        // jar that expects the standalone velocity-bundle beside it on the proxy.
+        project.configureJvmConsumerEmbed(target, ConsumerLoader.VELOCITY)
 
         project.afterEvaluate {
             val spec = consumer.devServerSpec.orNull ?: return@afterEvaluate

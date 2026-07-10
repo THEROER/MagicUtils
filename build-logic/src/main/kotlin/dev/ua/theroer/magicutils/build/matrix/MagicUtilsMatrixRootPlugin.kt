@@ -91,7 +91,13 @@ private fun registerMatrixJsonTasks(
         task.group = "help"
         task.description = "Print the publish matrix (target + publish tasks) as JSON for CI."
         task.doLast {
-            val units = definition.publishUnits(loadAllTargetNames(targetsFile))
+            val units = definition.publishUnits(loadAllTargetNames(targetsFile)) { target ->
+                resolveMagicUtilsTargetSpec(
+                    targetsFile = targetsFile,
+                    defaultTarget = definition.defaultTarget,
+                    explicitTarget = target,
+                ).java
+            }
             println(units.toMatrixJson())
         }
     }

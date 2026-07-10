@@ -206,11 +206,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                         artifact.classifier = "dev"
                     }
                 }
-                publication.pom.withXml { xml ->
-                    xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
-                        node.parentNode.removeChild(node)
-                    }
-                }
+                publication.stripPomDependencies()
             }
 
             project.magicUtilsPublishRepository(publishing)

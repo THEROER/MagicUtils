@@ -148,11 +148,7 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
             publishing.publications.create("mavenJava", MavenPublication::class.java) { publication ->
                 publication.artifactId = moduleName
                 publication.from(project.components.getByName("java"))
-                publication.pom.withXml { xml ->
-                    xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
-                        node.parentNode.removeChild(node)
-                    }
-                }
+                publication.stripPomDependencies()
             }
 
             project.magicUtilsPublishRepository(publishing)

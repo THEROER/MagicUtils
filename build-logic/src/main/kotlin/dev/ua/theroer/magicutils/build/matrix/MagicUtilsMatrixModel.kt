@@ -61,24 +61,44 @@ internal fun MagicUtilsMatrixDefinition.availablePlatformsFor(target: String): S
     platforms.values.filter { it.isEnabledFor(target) }.map { it.name }.toSet()
 
 /**
- * Publish units for every target. The default target publishes all
- * categories (DEFAULT_ONLY runs exactly once, here). Non-default targets
- * publish COMMON_MATRIX, plus FABRIC_MATRIX when the fabric platform is
- * enabled for that target. Non-default targets carry the `mcXXXX`
- * classifier suffix.
+ * Publish units, one per distinct Java level rather than per Minecraft target.
+ *
+ * The published coordinate is `<base>+java<N>` (see [publishedVersion]) because
+ * MagicUtils' compiled bytecode depends only on the Java level, not the
+ * Minecraft version. Several targets can share a Java level (e.g. mc1205 /
+ * mc12110 / mc12111 are all Java 21); publishing each would re-upload a
+ * byte-identical jar to the same coordinate and 409 in the immutable releases
+ * repo. So we pick one representative target per Java level — the default target
+ * for its own level, otherwise the first target in file order — and publish the
+ * full module set there (`publishDefaultMatrix` covers every category, plus the
+ * Fabric matrix when that representative enables the fabric platform).
+ *
+ * The remaining targets still exist for the build/smoke matrix (each Minecraft
+ * version boots a real server); they just don't publish.
  */
-internal fun MagicUtilsMatrixDefinition.publishUnits(allTargets: List<String>): List<MagicUtilsPublishUnit> =
-    allTargets.map { target ->
-        if (target == defaultTarget) {
-            MagicUtilsPublishUnit(target, listOf("publishDefaultMatrix"), suffix = false)
-        } else {
-            val tasks = mutableListOf("publishCommonMatrix")
-            if ("fabric" in availablePlatformsFor(target)) {
-                tasks += "publishFabricMatrix"
-            }
-            MagicUtilsPublishUnit(target, tasks, suffix = true)
+internal fun MagicUtilsMatrixDefinition.publishUnits(
+    allTargets: List<String>,
+    javaLevelOf: (String) -> Int,
+): List<MagicUtilsPublishUnit> {
+    val representatives = LinkedHashMap<Int, String>()
+    for (target in allTargets) {
+        val java = javaLevelOf(target)
+        // Prefer the default target as its level's representative; otherwise the
+        // first-seen target for that level wins (file order).
+        if (java !in representatives || target == defaultTarget) {
+            representatives[java] = target
         }
     }
+    return representatives.values.map { target ->
+        val tasks = mutableListOf("publishDefaultMatrix")
+        if ("fabric" in availablePlatformsFor(target)) {
+            tasks += "publishFabricMatrix"
+        }
+        // suffix is always false now: the +java<N> suffix is intrinsic to the
+        // coordinate (publishedVersion), not a per-target CI toggle.
+        MagicUtilsPublishUnit(target, tasks.distinct(), suffix = false)
+    }
+}
 
 /** Minimal JSON array serializer for the matrix outputs (no dependency needed). */
 internal fun List<MagicUtilsPublishUnit>.toMatrixJson(): String =

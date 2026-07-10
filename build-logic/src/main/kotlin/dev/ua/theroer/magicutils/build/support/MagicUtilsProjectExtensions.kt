@@ -4,6 +4,7 @@ import dev.ua.theroer.magicutils.build.module.*
 
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 
 internal fun Project.magicUtilsModuleName(projectName: String = name): String {
     val namingSpec = extensions.extraProperties
@@ -49,3 +50,17 @@ internal fun Project.magicUtilsPublishRepository(publishing: PublishingExtension
 private fun Project.findMagicUtilsPublishSecret(propertyName: String, envName: String): String? =
     (findProperty(propertyName) as? String)?.trim()?.takeIf(String::isNotEmpty)
         ?: System.getenv(envName)?.trim()?.takeIf(String::isNotEmpty)
+
+/**
+ * Drops the `<dependencies>` node from the generated POM. Bundle publications
+ * ship a fat/jar-in-jar artifact whose dependencies are already inside the jar,
+ * so advertising them as Maven deps would make consumers double-resolve them.
+ * Shared by every bundle plugin instead of copying the `pom.withXml` block.
+ */
+internal fun MavenPublication.stripPomDependencies() {
+    pom.withXml { xml ->
+        xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
+            node.parentNode.removeChild(node)
+        }
+    }
+}
