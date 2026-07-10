@@ -47,6 +47,7 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
                 ":core",
                 ":diagnostics",
                 ":http-client",
+                ":messaging",
                 ":platform-neoforge",
                 ":commands-neoforge",
             ).forEach(::addBundleProject)
@@ -86,6 +87,23 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
                 "net.kyori:option:1.1.0",
             ).forEach { coord ->
                 dependencies.add("bundleContents", coord)
+            }
+
+            // The messaging module's MessageCodec (and the config module) need
+            // Jackson at runtime. Project deps above are non-transitive, so add
+            // jackson-databind explicitly, mirroring the Adventure handling.
+            val jacksonVersion = project.extensions
+                .getByType(org.gradle.api.artifacts.VersionCatalogsExtension::class.java)
+                .named("libs")
+                .findVersion("jackson")
+                .get()
+                .requiredVersion
+            listOf(
+                "com.fasterxml.jackson.core:jackson-databind",
+                "com.fasterxml.jackson.core:jackson-core",
+                "com.fasterxml.jackson.core:jackson-annotations",
+            ).forEach { coord ->
+                dependencies.add("bundleContents", "$coord:$jacksonVersion")
             }
 
             tasks.named("jar", Jar::class.java).configure { jarTask ->
