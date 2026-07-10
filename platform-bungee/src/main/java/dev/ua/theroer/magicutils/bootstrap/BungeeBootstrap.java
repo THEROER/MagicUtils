@@ -6,7 +6,6 @@ import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
-import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.messaging.MessagingService;
 import dev.ua.theroer.magicutils.messaging.bungee.BungeeMessagingSupport;
@@ -48,20 +47,13 @@ public final class BungeeBootstrap {
         private final Plugin plugin;
         private final ProxyServer proxy;
         private final String pluginName;
+        private final LanguageBootstrap lang = new LanguageBootstrap();
         private Path dataDirectory;
         private Logger jul;
         private Platform platform;
         private ConfigManager configManager;
         private LoggerCore logger;
         private LanguageManager languageManager;
-        private String language = "en";
-        private boolean initLanguage = true;
-        private boolean bindLoggerLanguage = true;
-        private boolean setMessagesManager = true;
-        private boolean registerMessages = true;
-        private boolean addMagicUtilsMessages = true;
-        private boolean bindClientLocaleSync = true;
-        private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private Executor asyncExecutor;
@@ -146,15 +138,35 @@ public final class BungeeBootstrap {
         }
 
         /**
+         * Applies the recommended language defaults (every flag enabled). This
+         * is already the initial state; call it to make intent explicit.
+         *
+         * @return this builder
+         */
+        public Builder withRecommendedDefaults() {
+            lang.withRecommendedDefaults();
+            return this;
+        }
+
+        /**
+         * Disables all automatic language/messages wiring for callers that
+         * manage localization themselves.
+         *
+         * @return this builder
+         */
+        public Builder minimal() {
+            lang.minimal();
+            return this;
+        }
+
+        /**
          * Sets the default language.
          *
          * @param language language code (e.g., "en")
          * @return this builder
          */
         public Builder language(String language) {
-            if (language != null && !language.isBlank()) {
-                this.language = language;
-            }
+            lang.language(language);
             return this;
         }
 
@@ -165,7 +177,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder initLanguage(boolean initLanguage) {
-            this.initLanguage = initLanguage;
+            lang.initLanguage(initLanguage);
             return this;
         }
 
@@ -176,7 +188,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
-            this.bindLoggerLanguage = bindLoggerLanguage;
+            lang.bindLoggerLanguage(bindLoggerLanguage);
             return this;
         }
 
@@ -187,7 +199,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
-            this.setMessagesManager = setMessagesManager;
+            lang.setMessagesManager(setMessagesManager);
             return this;
         }
 
@@ -198,7 +210,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder registerMessages(boolean registerMessages) {
-            this.registerMessages = registerMessages;
+            lang.registerMessages(registerMessages);
             return this;
         }
 
@@ -209,7 +221,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
-            this.addMagicUtilsMessages = addMagicUtilsMessages;
+            lang.addMagicUtilsMessages(addMagicUtilsMessages);
             return this;
         }
 
@@ -220,7 +232,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
-            this.bindClientLocaleSync = bindClientLocaleSync;
+            lang.bindClientLocaleSync(bindClientLocaleSync);
             return this;
         }
 
@@ -231,7 +243,7 @@ public final class BungeeBootstrap {
          * @return this builder
          */
         public Builder translations(Consumer<LanguageManager> translations) {
-            this.translations = translations;
+            lang.translations(translations);
             return this;
         }
 
@@ -361,10 +373,7 @@ public final class BungeeBootstrap {
                     .component(ProxyServer.class, proxy)
                     .build();
 
-            if (bindClientLocaleSync) {
-                runtime.manage("language.clientLocaleSync",
-                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
-            }
+            lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
@@ -379,16 +388,7 @@ public final class BungeeBootstrap {
                 BungeeMessagingSupport.install(
                         runtime, proxy, plugin, pluginName, messagingRedis, messagingConfigurer);
             }
-            if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));
-            }
-            if (setMessagesManager) {
-                runtime.onClose("messages.default", () -> {
-                    if (Messages.getLanguageManager() == prepared.languageManager()) {
-                        Messages.setLanguageManager(null);
-                    }
-                });
-            }
+            lang.installMessagesCloseHooks(runtime, pluginName, prepared.languageManager());
 
             return new RuntimeResult(runtime, prepared.platform(), prepared.configManager(), prepared.logger(),
                     prepared.languageManager(), prepared.commandRegistry());
@@ -408,24 +408,7 @@ public final class BungeeBootstrap {
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            if (initLanguage) {
-                resolvedLanguageManager.init(language);
-            }
-            if (translations != null) {
-                translations.accept(resolvedLanguageManager);
-            }
-            if (addMagicUtilsMessages) {
-                resolvedLanguageManager.addMagicUtilsMessages();
-            }
-            if (registerMessages) {
-                Messages.register(pluginName, resolvedLanguageManager);
-            }
-            if (setMessagesManager) {
-                Messages.setLanguageManager(resolvedLanguageManager);
-            }
-            if (bindLoggerLanguage) {
-                resolvedLogger.setLanguageManager(resolvedLanguageManager);
-            }
+            lang.apply(pluginName, resolvedLanguageManager, resolvedLogger);
 
             CommandRegistry registry = null;
             if (enableCommands) {

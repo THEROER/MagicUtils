@@ -51,20 +51,13 @@ public final class FabricBootstrap {
     public static final class Builder {
         private final String modName;
         private final Supplier<MinecraftServer> serverSupplier;
+        private final LanguageBootstrap lang = new LanguageBootstrap();
         private org.slf4j.Logger slf4j;
         private Path configDir;
         private Platform platform;
         private ConfigManager configManager;
         private Logger logger;
         private LanguageManager languageManager;
-        private String language = "en";
-        private boolean initLanguage = true;
-        private boolean bindLoggerLanguage = true;
-        private boolean setMessagesManager = true;
-        private boolean registerMessages = true;
-        private boolean addMagicUtilsMessages = true;
-        private boolean bindClientLocaleSync = true;
-        private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private int opLevel = 2;
@@ -144,15 +137,35 @@ public final class FabricBootstrap {
         }
 
         /**
+         * Applies the recommended language defaults (every flag enabled). This
+         * is already the initial state; call it to make intent explicit.
+         *
+         * @return builder
+         */
+        public Builder withRecommendedDefaults() {
+            lang.withRecommendedDefaults();
+            return this;
+        }
+
+        /**
+         * Disables all automatic language/messages wiring for callers that
+         * manage localization themselves.
+         *
+         * @return builder
+         */
+        public Builder minimal() {
+            lang.minimal();
+            return this;
+        }
+
+        /**
          * Sets the default language code to initialize.
          *
          * @param language language code
          * @return builder
          */
         public Builder language(String language) {
-            if (language != null && !language.isBlank()) {
-                this.language = language;
-            }
+            lang.language(language);
             return this;
         }
 
@@ -163,7 +176,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder initLanguage(boolean initLanguage) {
-            this.initLanguage = initLanguage;
+            lang.initLanguage(initLanguage);
             return this;
         }
 
@@ -174,7 +187,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
-            this.bindLoggerLanguage = bindLoggerLanguage;
+            lang.bindLoggerLanguage(bindLoggerLanguage);
             return this;
         }
 
@@ -185,7 +198,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
-            this.setMessagesManager = setMessagesManager;
+            lang.setMessagesManager(setMessagesManager);
             return this;
         }
 
@@ -196,7 +209,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder registerMessages(boolean registerMessages) {
-            this.registerMessages = registerMessages;
+            lang.registerMessages(registerMessages);
             return this;
         }
 
@@ -207,7 +220,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
-            this.addMagicUtilsMessages = addMagicUtilsMessages;
+            lang.addMagicUtilsMessages(addMagicUtilsMessages);
             return this;
         }
 
@@ -218,7 +231,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
-            this.bindClientLocaleSync = bindClientLocaleSync;
+            lang.bindClientLocaleSync(bindClientLocaleSync);
             return this;
         }
 
@@ -229,7 +242,7 @@ public final class FabricBootstrap {
          * @return builder
          */
         public Builder translations(Consumer<LanguageManager> translations) {
-            this.translations = translations;
+            lang.translations(translations);
             return this;
         }
 
@@ -324,10 +337,7 @@ public final class FabricBootstrap {
                     .component(Logger.class, prepared.logger())
                     .build();
 
-            if (bindClientLocaleSync) {
-                runtime.manage("language.clientLocaleSync",
-                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
-            }
+            lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
@@ -338,16 +348,7 @@ public final class FabricBootstrap {
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
             }
-            if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(modName));
-            }
-            if (setMessagesManager) {
-                runtime.onClose("messages.default", () -> {
-                    if (Messages.getLanguageManager() == prepared.languageManager()) {
-                        Messages.setLanguageManager(null);
-                    }
-                });
-            }
+            lang.installMessagesCloseHooks(runtime, modName, prepared.languageManager());
 
             // Register this mod in the shared-runtime consumer registry so the
             // standalone bundle command can list it (/magicutils mods|mod <id>),
@@ -415,24 +416,7 @@ public final class FabricBootstrap {
                     ? languageManager
                     : new LanguageManager(resolvedPlatform, resolvedConfigManager);
 
-            if (initLanguage) {
-                resolvedLanguageManager.init(language);
-            }
-            if (translations != null) {
-                translations.accept(resolvedLanguageManager);
-            }
-            if (addMagicUtilsMessages) {
-                resolvedLanguageManager.addMagicUtilsMessages();
-            }
-            if (registerMessages) {
-                Messages.register(modName, resolvedLanguageManager);
-            }
-            if (setMessagesManager) {
-                Messages.setLanguageManager(resolvedLanguageManager);
-            }
-            if (bindLoggerLanguage) {
-                resolvedLogger.setLanguageManager(resolvedLanguageManager);
-            }
+            lang.apply(modName, resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {
