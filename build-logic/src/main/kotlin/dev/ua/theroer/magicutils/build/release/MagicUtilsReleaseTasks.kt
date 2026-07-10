@@ -39,6 +39,7 @@ internal fun registerReleaseTasks(
     publishingSpec: MagicUtilsPublishingSpec,
     defaultTargetJava: Int,
     modrinthProjectId: String?,
+    releaseSpec: MagicUtilsReleaseSpec,
 ) {
     val gradlePropertiesFile = project.rootProject.file("gradle.properties")
     // Read the raw -Pversion from the start parameter, not project.version: the
@@ -103,26 +104,57 @@ internal fun registerReleaseTasks(
         task.notCompatibleWithConfigurationCache("Queries git and the network.")
     }
 
+    // The effective spec: DSL defaults with -Prelease.<step>=... overrides applied.
+    val effectiveSpec = applyReleaseOverrides(releaseSpec, stringGradleProperties(project))
+
     project.tasks.register("releaseTag", ReleaseTagTask::class.java) { task ->
         task.group = RELEASE_GROUP
-        task.description = "Create the vX.Y.Z git tag locally; push to origin only with -Prelease.push=true."
+        task.description = "Create the vX.Y.Z git tag locally; push to origin only when push is enabled."
         task.requestedVersion.set(versionProvider)
-        // Default off: a local tag until you opt into publishing it, matching the
-        // release spec's push=false default. -Prelease.push=true (or release { push = true })
-        // turns the push on.
-        task.push.set(project.provider { project.findProperty("release.push")?.toString()?.toBoolean() ?: false })
+        // Push follows the resolved spec (DSL push, overridable with -Prelease.push).
+        task.push.set(effectiveSpec.push)
         task.notCompatibleWithConfigurationCache("Runs git tag/push.")
     }
 
+    // Build/tests gate before publishing: the non-Fabric scenario build (Fabric is
+    // covered by the matrix ci). Left as a real Exec so --dry-run skips it.
+    project.tasks.register("releaseValidateBuild", org.gradle.api.tasks.Exec::class.java) { task ->
+        task.group = RELEASE_GROUP
+        task.description = "Build the non-Fabric platforms as a pre-publish gate."
+        task.workingDir = project.rootProject.projectDir
+        task.commandLine(
+            dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapperName(),
+            "buildScenario", "-PincludePlatforms=bukkit,bungee,velocity,neoforge",
+        )
+    }
+
+    // Configurable orchestrator: only the steps the spec enables run, in the fixed
+    // plan order, each after the previous. dispatchRelease is intentionally NOT in
+    // the default release anymore (the release is now fully local); it stays as a
+    // standalone task for anyone who still wants to trigger the CI workflow.
+    val enabledSteps = releasePlan(effectiveSpec).filter { it.enabled }
     project.tasks.register("release") { task ->
         task.group = RELEASE_GROUP
-        task.description = "Full client release: preflight -> bump -> dispatch (-Pversion=X.Y.Z)."
-        task.dependsOn("releasePreflight", "bumpVersion", "dispatchRelease")
-        // Enforce ordering; Gradle runs dependencies in declared order when chained.
-        project.tasks.named("bumpVersion").configure { it.mustRunAfter("releasePreflight") }
-        project.tasks.named("dispatchRelease").configure { it.mustRunAfter("bumpVersion") }
+        task.description = "Local release: runs the steps enabled in release { } (-Pversion=X.Y.Z, -Prelease.<step>)."
+        enabledSteps.forEach { task.dependsOn(it.name) }
+        task.doFirst {
+            task.logger.lifecycle("Release plan (${enabledSteps.size} step(s)): ${enabledSteps.joinToString(" -> ") { it.name }}")
+        }
+    }
+    // Chain the enabled steps in plan order so publishing never races the tag/bump.
+    // registerReleaseTasks runs after every step task is registered, so named() here
+    // resolves. Configured outside the register block: Gradle forbids configuring
+    // another task from within a task-creation action.
+    enabledSteps.map { it.name }.zipWithNext().forEach { (before, after) ->
+        project.tasks.named(after).configure { it.mustRunAfter(before) }
     }
 }
+
+/** Gradle project properties as a plain String map (for applyReleaseOverrides). */
+private fun stringGradleProperties(project: Project): Map<String, String> =
+    project.properties.entries
+        .mapNotNull { (key, value) -> (value as? String)?.let { key to it } }
+        .toMap()
 
 /** Runs a command, returning trimmed stdout; throws on non-zero exit. */
 private fun ExecOperations.capture(vararg args: String): String {

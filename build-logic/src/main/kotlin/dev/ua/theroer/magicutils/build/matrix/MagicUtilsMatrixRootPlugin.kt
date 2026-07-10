@@ -53,7 +53,8 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         ).java
         val modrinthSpec = project.gradle.extensions.extraProperties.properties["magicutilsModrinthSpec"]
             as? ModrinthReleaseSpec
-        registerReleaseTasks(project, publishingSpec, defaultTargetJava, modrinthSpec?.projectId)
+        val releaseSpec = project.gradle.extensions.extraProperties.properties["magicutilsReleaseSpec"]
+            as? MagicUtilsReleaseSpec ?: MagicUtilsReleaseSpec()
         registerReleaseMavenTasks(
             project,
             publishingSpec,
@@ -79,6 +80,11 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
         // After publishToModrinth exists: the local release wraps it with a
         // per-Java-level bundle build fan-out.
         registerReleaseModrinthTask(project, resolvedContext.definition, targetsFile)
+
+        // The orchestrator last: every step task it chains (releaseMavenAll,
+        // releaseModrinth, releaseJavadoc, ...) is registered by now, so the
+        // release aggregate can wire its mustRunAfter chain directly.
+        registerReleaseTasks(project, publishingSpec, defaultTargetJava, modrinthSpec?.projectId, releaseSpec)
     }
 }
 
