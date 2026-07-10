@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.build.release
 
 import dev.ua.theroer.magicutils.build.matrix.MagicUtilsFanoutInvocation
 import dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixDefinition
+import dev.ua.theroer.magicutils.build.matrix.availablePlatformsFor
 import dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapperName
 import dev.ua.theroer.magicutils.build.matrix.publishUnits
 import dev.ua.theroer.magicutils.build.matrix.registerMagicUtilsFanout
@@ -161,9 +162,12 @@ internal fun registerReleaseModrinthTask(
         taskPrefix = "releaseModrinthBundles",
         taskGroup = RELEASE_GROUP,
         invocations = units.map { unit ->
-            // Build the full workspace scenario so every bundle platform available
-            // on this representative target produces its +java<N> jar.
-            MagicUtilsFanoutInvocation(unit.target, listOf("build", "-Pscenario=workspace"))
+            // Build only the platforms this representative target actually supports
+            // (e.g. mc1201/1.20.x has no neoforge) — a fixed workspace scenario would
+            // fail with "target does not support platforms: neoforge". Each produces
+            // its +java<N> bundle jar.
+            val platforms = definition.availablePlatformsFor(unit.target).sorted().joinToString(",")
+            MagicUtilsFanoutInvocation(unit.target, listOf("build", "-PincludePlatforms=$platforms"))
         },
         childHomeSubdir = "release-modrinth-gradle-home",
         dryRun = dryRun,
