@@ -1,6 +1,7 @@
 import org.gradle.api.GradleException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -86,6 +87,32 @@ class MagicUtilsReleaseModelTest {
         // Bundles keep the +java<N> coordinate, one real variant per Java level.
         assertEquals("1.27.1+java17", magicUtilsPublishedModuleVersion("magicutils-fabric-bundle", "1.27.1", 17))
         assertEquals("1.27.1+java25", magicUtilsPublishedModuleVersion("magicutils-fabric-bundle", "1.27.1", 25))
+    }
+
+    @Test
+    fun `release branch gate blocks off-branch and allows main`() {
+        // On the required branch: allowed.
+        assertNull(releaseBranchViolation("main", "main", allowAnyBranch = false))
+        // Off branch: blocked with a reason.
+        assertNotNull(releaseBranchViolation("main", "feature/x", allowAnyBranch = false))
+        // Explicit bypass: allowed even off-branch.
+        assertNull(releaseBranchViolation("main", "feature/x", allowAnyBranch = true))
+        // Gate disabled (null required branch): allowed anywhere.
+        assertNull(releaseBranchViolation(null, "feature/x", allowAnyBranch = false))
+        // Unknown branch (detached HEAD / no git): not blocked (caller warns).
+        assertNull(releaseBranchViolation("main", null, allowAnyBranch = false))
+    }
+
+    @Test
+    fun `release branch override - absent keeps default, empty disables, value replaces`() {
+        val spec = MagicUtilsReleaseSpec()
+        assertEquals("main", spec.releaseBranch)
+        // Absent property -> keeps DSL default.
+        assertEquals("main", applyReleaseOverrides(spec, emptyMap()).releaseBranch)
+        // Present-but-empty -> disables the gate.
+        assertNull(applyReleaseOverrides(spec, mapOf("release.branch" to "")).releaseBranch)
+        // Named value -> replaces.
+        assertEquals("release/2.x", applyReleaseOverrides(spec, mapOf("release.branch" to "release/2.x")).releaseBranch)
     }
 
     @Test

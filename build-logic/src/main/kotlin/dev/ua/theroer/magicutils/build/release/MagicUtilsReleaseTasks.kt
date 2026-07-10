@@ -52,11 +52,18 @@ internal fun registerReleaseTasks(
             ?: throw org.gradle.api.GradleException("Pass the release version via -Pversion=X.Y.Z.")
     }
 
+    // The effective spec: DSL defaults with -Prelease.<step>=... overrides applied.
+    // Computed up front so the preflight branch gate can read the release branch.
+    val effectiveSpec = applyReleaseOverrides(releaseSpec, stringGradleProperties(project))
+    val allowAnyBranch = project.hasProperty("release.allowAnyBranch")
+
     project.tasks.register("releasePreflight", ReleasePreflightTask::class.java) { task ->
         task.group = RELEASE_GROUP
         task.description = "Validate a release version against gradle.properties and existing tags (no changes)."
         task.requestedVersion.set(versionProvider)
         task.gradlePropertiesText.set(project.provider { gradlePropertiesFile.readText() })
+        effectiveSpec.releaseBranch?.let { task.releaseBranch.set(it) }
+        task.allowAnyBranch.set(allowAnyBranch)
         task.notCompatibleWithConfigurationCache("Queries git/gh for existing tags.")
     }
 
@@ -109,9 +116,6 @@ internal fun registerReleaseTasks(
         task.reportOnly.set(project.provider { project.hasProperty("report") })
         task.notCompatibleWithConfigurationCache("Queries git and the network.")
     }
-
-    // The effective spec: DSL defaults with -Prelease.<step>=... overrides applied.
-    val effectiveSpec = applyReleaseOverrides(releaseSpec, stringGradleProperties(project))
 
     project.tasks.register("releaseTag", ReleaseTagTask::class.java) { task ->
         task.group = RELEASE_GROUP
@@ -208,11 +212,28 @@ abstract class ReleasePreflightTask @Inject constructor(
 ) : DefaultTask() {
     @get:Input abstract val requestedVersion: Property<String>
     @get:Input abstract val gradlePropertiesText: Property<String>
+    /** Branch a release must run from; unset (Optional) disables the gate. */
+    @get:[Input Optional] abstract val releaseBranch: Property<String>
+    /** -Prelease.allowAnyBranch bypass. */
+    @get:Input abstract val allowAnyBranch: Property<Boolean>
 
     @TaskAction
     fun run() {
         val requested = SemanticVersion.parse(requestedVersion.get())
         val current = readGradleVersion(gradlePropertiesText.get())
+
+        // Branch gate: publishing off the wrong branch pins the tag and the
+        // immutable Maven coordinate to a commit that may never land on the
+        // release branch as written. Checked before the version gate so an
+        // off-branch attempt fails fast without touching tags.
+        val currentBranch = runCatching { execOps.capture("git", "rev-parse", "--abbrev-ref", "HEAD").trim() }
+            .getOrNull()
+            ?.takeIf { it.isNotEmpty() && it != "HEAD" }
+        releaseBranchViolation(releaseBranch.orNull, currentBranch, allowAnyBranch.get())
+            ?.let { throw org.gradle.api.GradleException(it) }
+        if (currentBranch == null && releaseBranch.orNull != null && !allowAnyBranch.get()) {
+            logger.warn("Release branch gate: could not determine current branch (detached HEAD?); skipping the check.")
+        }
 
         val localTags = runCatching { execOps.capture("git", "tag", "--list", "v*") }
             .getOrDefault("")
@@ -220,7 +241,8 @@ abstract class ReleasePreflightTask @Inject constructor(
         val released = localTags.mapNotNull(SemanticVersion::fromTag).maxOrNull()
 
         validateReleaseVersion(requested, current, released, localTags)
-        logger.lifecycle("Preflight OK: $requested (current $current, latest released ${released ?: "none"}).")
+        val branchNote = releaseBranch.orNull?.let { " on branch '$it'" } ?: ""
+        logger.lifecycle("Preflight OK: $requested$branchNote (current $current, latest released ${released ?: "none"}).")
     }
 }
 

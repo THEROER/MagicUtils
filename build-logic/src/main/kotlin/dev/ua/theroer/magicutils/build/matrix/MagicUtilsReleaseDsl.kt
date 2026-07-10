@@ -29,6 +29,13 @@ open class MagicUtilsReleaseDsl {
     var publishJavadoc: Boolean = true
     var verify: Boolean = true
 
+    /**
+     * Branch a release may run from (releasePreflight gate). Defaults to `main`;
+     * set to `null` to release from any branch. Override per invocation with
+     * `-Prelease.branch=<name>`, or bypass once with `-Prelease.allowAnyBranch=true`.
+     */
+    var releaseBranch: String? = "main"
+
     internal fun toSpec(): MagicUtilsReleaseSpec = MagicUtilsReleaseSpec(
         validateVersion = validateVersion,
         validateBuild = validateBuild,
@@ -39,5 +46,6 @@ open class MagicUtilsReleaseDsl {
         publishModrinth = publishModrinth,
         publishJavadoc = publishJavadoc,
         verify = verify,
+        releaseBranch = releaseBranch,
     )
 }

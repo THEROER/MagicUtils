@@ -30,7 +30,40 @@ data class MagicUtilsReleaseSpec(
     val publishJavadoc: Boolean = true,
     /** Verify version consistency across all sources after publishing. */
     val verify: Boolean = true,
+    /**
+     * Branch a release is allowed to run from (checked in releasePreflight).
+     * Publishing off a feature branch means the tag and the immutable Maven
+     * coordinate point at a commit that may never land on the release branch as
+     * written, so the release history diverges from it. Defaults to `main`; set
+     * to `null` to disable the gate (a fork with a different default branch, or
+     * one that intentionally releases from anywhere). Overridable per invocation
+     * with `-Prelease.branch=<name>`, and bypassable once with
+     * `-Prelease.allowAnyBranch=true` for a genuine off-branch hotfix.
+     */
+    val releaseBranch: String? = "main",
 )
+
+/**
+ * Validates that a release may run from [currentBranch].
+ *
+ * Returns null when allowed, or a human-readable reason when blocked. Pure so the
+ * gate is unit-testable without a git checkout. The gate is a no-op when
+ * [requiredBranch] is null (disabled), when [allowAnyBranch] is set (explicit
+ * bypass), or when the current branch cannot be determined (detached HEAD / no
+ * git) — in those two last cases the caller logs a warning rather than guessing.
+ */
+fun releaseBranchViolation(
+    requiredBranch: String?,
+    currentBranch: String?,
+    allowAnyBranch: Boolean,
+): String? {
+    if (requiredBranch == null || allowAnyBranch) return null
+    if (currentBranch.isNullOrBlank()) return null
+    if (currentBranch == requiredBranch) return null
+    return "Release must run from branch '$requiredBranch' but the current branch is " +
+        "'$currentBranch'. Merge to '$requiredBranch' first, or pass " +
+        "-Prelease.allowAnyBranch=true to override (e.g. an off-branch hotfix)."
+}
 
 /** A step of the release, in run order, with whether the spec enabled it. */
 data class MagicUtilsReleaseStep(val name: String, val enabled: Boolean)
@@ -72,6 +105,15 @@ fun applyReleaseOverrides(
             }
         } ?: current
 
+    // -Prelease.branch=<name> overrides the release branch; passing it empty
+    // (`-Prelease.branch=`) disables the gate (parity with a null DSL default).
+    // Absent property keeps the DSL value; present-but-empty means null.
+    val branch = if (properties.containsKey("release.branch")) {
+        properties["release.branch"]?.trim()?.ifEmpty { null }
+    } else {
+        spec.releaseBranch
+    }
+
     return spec.copy(
         validateVersion = override("validateVersion", spec.validateVersion),
         validateBuild = override("validate", spec.validateBuild),
@@ -82,5 +124,6 @@ fun applyReleaseOverrides(
         publishModrinth = override("modrinth", spec.publishModrinth),
         publishJavadoc = override("javadoc", spec.publishJavadoc),
         verify = override("verify", spec.verify),
+        releaseBranch = branch,
     )
 }
