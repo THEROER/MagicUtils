@@ -94,6 +94,17 @@ public interface LoggerAdapter<P, L> {
     }
 
     /**
+     * Controls whether external placeholders are escaped before MiniMessage
+     * parsing. Disabled by default; enable it when placeholder values may
+     * contain untrusted MiniMessage-like input.
+     *
+     * @param escapePlaceholders true to escape placeholder output
+     */
+    default void setEscapePlaceholders(boolean escapePlaceholders) {
+        getCore().setEscapePlaceholders(escapePlaceholders);
+    }
+
+    /**
      * Returns language manager used for localization.
      *
      * @return language manager
