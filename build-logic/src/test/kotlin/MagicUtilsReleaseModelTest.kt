@@ -158,6 +158,19 @@ class MagicUtilsReleaseModelTest {
     }
 
     @Test
+    fun `javadoc urls build the latest and versioned coordinate`() {
+        val repo = "https://maven.theroer.dev/releases"
+        assertEquals(
+            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-javadoc/latest/magicutils-javadoc.zip",
+            javadocLatestUrl(repo, "dev.ua.theroer"),
+        )
+        assertEquals(
+            "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-javadoc/1.27.0/magicutils-javadoc.zip",
+            javadocVersionUrl(repo, "dev.ua.theroer", "1.27.0"),
+        )
+    }
+
+    @Test
     fun `applyReleaseOverrides ignores non-boolean values and keeps the DSL default`() {
         val spec = MagicUtilsReleaseSpec(publishModrinth = true)
         val merged = applyReleaseOverrides(spec, mapOf("release.modrinth" to "maybe"))

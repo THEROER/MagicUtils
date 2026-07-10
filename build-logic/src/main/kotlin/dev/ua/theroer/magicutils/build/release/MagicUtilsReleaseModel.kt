@@ -92,6 +92,21 @@ internal fun parseModrinthVersionIds(responseBody: String): Map<String, String> 
     }.toMap()
 }
 
+/** Maven artifactId the aggregated Javadoc zip is uploaded under. */
+private const val JAVADOC_ARTIFACT = "magicutils-javadoc"
+
+/**
+ * Upload URL for the stable "latest" Javadoc zip on the publish repo. The docs
+ * site always fetches this path, so every release overwrites it. [group] is the
+ * publishing group (e.g. `dev.ua.theroer`), [repoUrl] the repo base.
+ */
+internal fun javadocLatestUrl(repoUrl: String, group: String): String =
+    "${repoUrl.trimEnd('/')}/${group.replace('.', '/')}/$JAVADOC_ARTIFACT/latest/$JAVADOC_ARTIFACT.zip"
+
+/** Upload URL for the versioned Javadoc zip copy, kept for reference/rollback. */
+internal fun javadocVersionUrl(repoUrl: String, group: String, version: String): String =
+    "${repoUrl.trimEnd('/')}/${group.replace('.', '/')}/$JAVADOC_ARTIFACT/$version/$JAVADOC_ARTIFACT.zip"
+
 /**
  * Validate a requested release version against the current gradle.properties
  * version and the latest already-released version. Returns nothing; throws

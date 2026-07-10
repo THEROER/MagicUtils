@@ -60,6 +60,7 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
             resolvedContext.definition,
             project.rootProject.file(resolvedContext.definition.targetsFile),
         )
+        registerReleaseJavadocTask(project, publishingSpec)
 
         @Suppress("UNCHECKED_CAST")
         val smokeSpecs = project.gradle.extensions.extraProperties.properties["magicutilsSmokeSpecs"]

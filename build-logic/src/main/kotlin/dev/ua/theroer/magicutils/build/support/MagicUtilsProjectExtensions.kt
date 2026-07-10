@@ -49,7 +49,12 @@ internal fun Project.magicUtilsPublishRepository(publishing: PublishingExtension
     }
 }
 
-private fun Project.findMagicUtilsPublishSecret(propertyName: String, envName: String): String? =
+/**
+ * A publish secret from a Gradle property or an environment variable, in that
+ * order. Shared by the module publish repo and the Javadoc upload task so the
+ * `publish_user`/`PUBLISH_USER` (and password/token) resolution lives once.
+ */
+internal fun Project.findMagicUtilsPublishSecret(propertyName: String, envName: String): String? =
     (findProperty(propertyName) as? String)?.trim()?.takeIf(String::isNotEmpty)
         ?: System.getenv(envName)?.trim()?.takeIf(String::isNotEmpty)
 

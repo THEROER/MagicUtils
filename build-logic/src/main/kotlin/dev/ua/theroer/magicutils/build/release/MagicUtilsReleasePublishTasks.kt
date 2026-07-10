@@ -6,12 +6,26 @@ import dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapperName
 import dev.ua.theroer.magicutils.build.matrix.publishUnits
 import dev.ua.theroer.magicutils.build.matrix.registerMagicUtilsFanout
 import dev.ua.theroer.magicutils.build.publish.MagicUtilsPublishingSpec
+import dev.ua.theroer.magicutils.build.support.findMagicUtilsPublishSecret
 import dev.ua.theroer.magicutils.build.target.loadAllTargetNames
 import dev.ua.theroer.magicutils.build.target.resolveMagicUtilsTargetSpec
 
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskAction
 import java.io.File
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.file.Path
+import java.time.Duration
+import java.util.Base64
 
 private const val RELEASE_GROUP = "release"
 
@@ -150,5 +164,81 @@ internal fun registerReleaseModrinthTask(
     // task-creation action.
     project.tasks.named("publishToModrinth").configure { publish ->
         bundleTasks.forEach { publish.mustRunAfter(it) }
+    }
+}
+
+/**
+ * Registers `releaseJavadoc`: generate the aggregated Javadoc zip (via the
+ * existing `aggregatedJavadocZip`) and upload it to the publish repo at the
+ * stable `latest` path plus a versioned copy. Actions-free equivalent of
+ * publish-javadoc.yml. `-Prelease.dryRun=true` prints the target URLs instead of
+ * uploading.
+ */
+internal fun registerReleaseJavadocTask(
+    project: Project,
+    publishingSpec: MagicUtilsPublishingSpec,
+) {
+    val dryRun = project.hasProperty("release.dryRun")
+    project.tasks.register("releaseJavadoc", UploadJavadocTask::class.java) { task ->
+        task.group = RELEASE_GROUP
+        task.description = "Generate and upload the aggregated Javadoc to ${publishingSpec.repoUrl} " +
+            "(-Prelease.dryRun to preview)."
+        task.dependsOn("aggregatedJavadocZip")
+        task.zipPath.set(project.layout.buildDirectory.file("docs/$JAVADOC_ZIP_NAME").map { it.asFile.toPath() })
+        task.latestUrl.set(javadocLatestUrl(publishingSpec.repoUrl, publishingSpec.group))
+        task.versionUrl.set(project.provider {
+            // The raw -Pversion, not project.version: the target plugin overwrites
+            // project.version with the +java<N> suffix, which is not a release version.
+            project.gradle.startParameter.projectProperties["version"]?.trim()?.takeIf { it.isNotEmpty() }
+                ?.let { javadocVersionUrl(publishingSpec.repoUrl, publishingSpec.group, it) }
+        })
+        task.username.set(project.provider { project.findMagicUtilsPublishSecret("publish_user", "PUBLISH_USER") })
+        task.password.set(project.provider { project.findMagicUtilsPublishSecret("publish_password", "PUBLISH_TOKEN") })
+        task.dryRun.set(dryRun)
+        task.notCompatibleWithConfigurationCache("Performs a network upload.")
+    }
+}
+
+/** The aggregated Javadoc zip file name produced by aggregatedJavadocZip. */
+private const val JAVADOC_ZIP_NAME = "magicutils-javadoc.zip"
+
+abstract class UploadJavadocTask : DefaultTask() {
+    @get:Input abstract val zipPath: Property<Path>
+    @get:Input abstract val latestUrl: Property<String>
+    @get:[Input Optional] abstract val versionUrl: Property<String>
+    @get:[Input Optional] abstract val username: Property<String>
+    @get:[Input Optional] abstract val password: Property<String>
+    @get:Input abstract val dryRun: Property<Boolean>
+
+    @TaskAction
+    fun run() {
+        val zip = zipPath.get().toFile()
+        val targets = listOfNotNull(latestUrl.get(), versionUrl.orNull)
+
+        if (dryRun.get()) {
+            logger.lifecycle("[dry-run] would upload ${zip.name} to:")
+            targets.forEach { logger.lifecycle("  $it") }
+            logger.lifecycle("  credentials: ${if (username.orNull != null && password.orNull != null) "present" else "absent"}")
+            return
+        }
+
+        if (!zip.isFile) throw GradleException("Javadoc zip not found at ${zip.absolutePath} (did aggregatedJavadocZip run?).")
+        val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()
+        val authHeader = username.orNull?.let { user ->
+            password.orNull?.let { pass ->
+                "Basic " + Base64.getEncoder().encodeToString("$user:$pass".toByteArray())
+            }
+        }
+        for (url in targets) {
+            val builder = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofMinutes(5))
+                .PUT(HttpRequest.BodyPublishers.ofFile(zip.toPath()))
+            authHeader?.let { builder.header("Authorization", it) }
+            val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() !in 200..299) {
+                throw GradleException("Javadoc upload to $url failed (HTTP ${response.statusCode()}): ${response.body()}")
+            }
+            logger.lifecycle("Uploaded ${zip.name} -> $url")
+        }
     }
 }
