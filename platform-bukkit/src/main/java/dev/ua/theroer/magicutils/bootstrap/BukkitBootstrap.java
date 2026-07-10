@@ -7,7 +7,6 @@ import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
-import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.messaging.MessagingService;
 import dev.ua.theroer.magicutils.messaging.bukkit.BukkitMessagingSupport;
 import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
@@ -43,18 +42,11 @@ public final class BukkitBootstrap {
      */
     public static final class Builder {
         private final JavaPlugin plugin;
+        private final LanguageBootstrap lang = new LanguageBootstrap();
         private Platform platform;
         private ConfigManager configManager;
         private Logger logger;
         private LanguageManager languageManager;
-        private String language = "en";
-        private boolean initLanguage = true;
-        private boolean bindLoggerLanguage = true;
-        private boolean setMessagesManager = true;
-        private boolean registerMessages = true;
-        private boolean addMagicUtilsMessages = true;
-        private boolean bindClientLocaleSync = true;
-        private Consumer<LanguageManager> translations;
         private boolean enableCommands;
         private String permissionPrefix;
         private Consumer<CommandRegistry> commandConfigurer;
@@ -113,15 +105,35 @@ public final class BukkitBootstrap {
         }
 
         /**
+         * Applies the recommended language defaults (every flag enabled). This
+         * is already the initial state; call it to make intent explicit.
+         *
+         * @return builder
+         */
+        public Builder withRecommendedDefaults() {
+            lang.withRecommendedDefaults();
+            return this;
+        }
+
+        /**
+         * Disables all automatic language/messages wiring for callers that
+         * manage localization themselves.
+         *
+         * @return builder
+         */
+        public Builder minimal() {
+            lang.minimal();
+            return this;
+        }
+
+        /**
          * Sets the default language code to initialize.
          *
          * @param language language code (for example, "en")
          * @return builder
          */
         public Builder language(String language) {
-            if (language != null && !language.isBlank()) {
-                this.language = language;
-            }
+            lang.language(language);
             return this;
         }
 
@@ -132,7 +144,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder initLanguage(boolean initLanguage) {
-            this.initLanguage = initLanguage;
+            lang.initLanguage(initLanguage);
             return this;
         }
 
@@ -143,7 +155,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder bindLoggerLanguage(boolean bindLoggerLanguage) {
-            this.bindLoggerLanguage = bindLoggerLanguage;
+            lang.bindLoggerLanguage(bindLoggerLanguage);
             return this;
         }
 
@@ -154,7 +166,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder setMessagesManager(boolean setMessagesManager) {
-            this.setMessagesManager = setMessagesManager;
+            lang.setMessagesManager(setMessagesManager);
             return this;
         }
 
@@ -165,7 +177,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder registerMessages(boolean registerMessages) {
-            this.registerMessages = registerMessages;
+            lang.registerMessages(registerMessages);
             return this;
         }
 
@@ -176,7 +188,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder addMagicUtilsMessages(boolean addMagicUtilsMessages) {
-            this.addMagicUtilsMessages = addMagicUtilsMessages;
+            lang.addMagicUtilsMessages(addMagicUtilsMessages);
             return this;
         }
 
@@ -187,7 +199,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder bindClientLocaleSync(boolean bindClientLocaleSync) {
-            this.bindClientLocaleSync = bindClientLocaleSync;
+            lang.bindClientLocaleSync(bindClientLocaleSync);
             return this;
         }
 
@@ -198,7 +210,7 @@ public final class BukkitBootstrap {
          * @return builder
          */
         public Builder translations(Consumer<LanguageManager> translations) {
-            this.translations = translations;
+            lang.translations(translations);
             return this;
         }
 
@@ -320,10 +332,7 @@ public final class BukkitBootstrap {
                     .component(Logger.class, prepared.logger())
                     .build();
 
-            if (bindClientLocaleSync) {
-                runtime.manage("language.clientLocaleSync",
-                        prepared.languageManager().bindClientLocaleSync(prepared.platform()));
-            }
+            lang.bindClientLocaleSync(runtime, prepared.platform(), prepared.languageManager());
 
             if (prepared.commandRegistry() != null) {
                 runtime.putComponent(CommandRegistry.class, prepared.commandRegistry());
@@ -342,16 +351,7 @@ public final class BukkitBootstrap {
             // runs, no need to re-push on every state/command change.
             BukkitMagicUtilsConsumerRegistry.register(plugin, runtime, prepared.commandRegistry());
             runtime.onClose("magicutils.consumerRegistry", () -> BukkitMagicUtilsConsumerRegistry.unregister(plugin));
-            if (registerMessages) {
-                runtime.onClose("messages.scope", () -> Messages.unregister(plugin.getName()));
-            }
-            if (setMessagesManager) {
-                runtime.onClose("messages.default", () -> {
-                    if (Messages.getLanguageManager() == prepared.languageManager()) {
-                        Messages.setLanguageManager(null);
-                    }
-                });
-            }
+            lang.installMessagesCloseHooks(runtime, plugin.getName(), prepared.languageManager());
 
             return new RuntimeResult(runtime, prepared.platform(), prepared.configManager(), prepared.logger(),
                     prepared.languageManager(), prepared.commandRegistry());
@@ -374,29 +374,7 @@ public final class BukkitBootstrap {
                     ? languageManager
                     : new LanguageManager(plugin, resolvedConfigManager);
 
-            if (initLanguage) {
-                resolvedLanguageManager.init(language);
-            }
-
-            if (translations != null) {
-                translations.accept(resolvedLanguageManager);
-            }
-
-            if (addMagicUtilsMessages) {
-                resolvedLanguageManager.addMagicUtilsMessages();
-            }
-
-            if (registerMessages) {
-                Messages.register(plugin.getName(), resolvedLanguageManager);
-            }
-
-            if (setMessagesManager) {
-                Messages.setLanguageManager(resolvedLanguageManager);
-            }
-
-            if (bindLoggerLanguage) {
-                resolvedLogger.setLanguageManager(resolvedLanguageManager);
-            }
+            lang.apply(plugin.getName(), resolvedLanguageManager, resolvedLogger.getCore());
 
             CommandRegistry registry = null;
             if (enableCommands) {
