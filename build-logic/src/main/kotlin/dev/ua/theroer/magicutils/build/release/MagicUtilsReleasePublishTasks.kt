@@ -35,17 +35,7 @@ internal fun registerReleaseMavenTasks(
 ) {
     val dryRun = project.hasProperty("release.dryRun")
     val repoUrl = publishingSpec.repoUrl
-
-    // Same per-unit resolution printPublishMatrix uses (one target per Java level,
-    // with its publishDefaultMatrix [+ publishFabricMatrix] tasks), so the local
-    // release and the CI matrix publish byte-identical coordinates.
-    val units = definition.publishUnits(loadAllTargetNames(targetsFile)) { target ->
-        resolveMagicUtilsTargetSpec(
-            targetsFile = targetsFile,
-            defaultTarget = definition.defaultTarget,
-            explicitTarget = target,
-        ).java
-    }
+    val units = resolvePublishUnits(definition, targetsFile)
 
     val perUnitTasks = registerMagicUtilsFanout(
         project = project,
@@ -95,5 +85,70 @@ internal fun registerReleaseMavenTasks(
             "(one invocation per Java level; -Prelease.dryRun to preview)."
         task.dependsOn(perUnitTasks)
         task.dependsOn(buildLogicTask)
+    }
+}
+
+/**
+ * The publish units (one representative target per Java level, with the publish
+ * tasks it runs). Shared by the Maven and Modrinth release fan-outs and matching
+ * printPublishMatrix, so all three agree on which targets represent which Java
+ * level. The `+java<N>` coordinate is byte-identical across targets of a level,
+ * so one representative per level is enough.
+ */
+internal fun resolvePublishUnits(definition: MagicUtilsMatrixDefinition, targetsFile: File) =
+    definition.publishUnits(loadAllTargetNames(targetsFile)) { target ->
+        resolveMagicUtilsTargetSpec(
+            targetsFile = targetsFile,
+            defaultTarget = definition.defaultTarget,
+            explicitTarget = target,
+        ).java
+    }
+
+/**
+ * Registers the local Modrinth release: `releaseModrinth` builds the platform
+ * bundle jars for every Java level (one representative target per level, fanned
+ * out) and then runs the existing `publishToModrinth` (matrix-driven, idempotent,
+ * `MODRINTH_TOKEN`). The per-level bundle jars carry the `+java<N>` suffix in
+ * their file names, so they accumulate side by side in each `<platform>-bundle/
+ * build/libs` and publishToModrinth finds all of them. Actions-free equivalent of
+ * a Modrinth publish job.
+ */
+internal fun registerReleaseModrinthTask(
+    project: Project,
+    definition: MagicUtilsMatrixDefinition,
+    targetsFile: File,
+) {
+    val dryRun = project.hasProperty("release.dryRun")
+    val units = resolvePublishUnits(definition, targetsFile)
+
+    val bundleTasks = registerMagicUtilsFanout(
+        project = project,
+        taskPrefix = "releaseModrinthBundles",
+        taskGroup = RELEASE_GROUP,
+        invocations = units.map { unit ->
+            // Build the full workspace scenario so every bundle platform available
+            // on this representative target produces its +java<N> jar.
+            MagicUtilsFanoutInvocation(unit.target, listOf("build", "-Pscenario=workspace"))
+        },
+        childHomeSubdir = "release-modrinth-gradle-home",
+        dryRun = dryRun,
+        describe = { "Build platform bundles for ${it.target} (Modrinth artifacts)." },
+    )
+
+    project.tasks.register("releaseModrinth") { task ->
+        task.group = RELEASE_GROUP
+        task.description = "Build the bundles for every Java level and publish them to Modrinth " +
+            "(-Prelease.dryRun / -PmodrinthDryRun to preview)."
+        task.dependsOn(bundleTasks)
+        // publishToModrinth is matrix-driven and idempotent; run it after the jars
+        // for all Java levels exist.
+        task.dependsOn("publishToModrinth")
+    }
+
+    // Order publishToModrinth after every bundle build. Configured outside the
+    // register block above: Gradle forbids configuring another task from within a
+    // task-creation action.
+    project.tasks.named("publishToModrinth").configure { publish ->
+        bundleTasks.forEach { publish.mustRunAfter(it) }
     }
 }

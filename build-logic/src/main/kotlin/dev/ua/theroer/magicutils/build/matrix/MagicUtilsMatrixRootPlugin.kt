@@ -75,6 +75,9 @@ class MagicUtilsMatrixRootPlugin : Plugin<Project> {
 
         val targetsFile = project.rootProject.file(resolvedContext.definition.targetsFile)
         registerModrinthTasks(project, modrinthSpec, smokeSpecs, resolvedContext.definition.defaultTarget, targetsFile)
+        // After publishToModrinth exists: the local release wraps it with a
+        // per-Java-level bundle build fan-out.
+        registerReleaseModrinthTask(project, resolvedContext.definition, targetsFile)
     }
 }
 
