@@ -80,6 +80,10 @@ abstract class MagicUtilsJvmBundlePlugin(private val platform: JvmBundlePlatform
                 dependencies.add("compileOnly", project(dep.path))
             }
 
+            // Ship the optional Redis transport (Jedis) so operators can enable it
+            // in messaging.yml; the default plugin-messaging transport needs it not.
+            magicUtilsBundleRedis("bundleShadow")
+
             // Server API on the compile classpath for the plugin entrypoint; the
             // server provides it at runtime, so it stays out of the bundle jar
             // (compileOnly, not bundleShadow). The plugin descriptor is the

@@ -8,6 +8,9 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.messaging.MessagingService;
+import dev.ua.theroer.magicutils.messaging.bungee.BungeeMessagingSupport;
+import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.bungee.BungeePlatformProvider;
 import net.md_5.bungee.api.ProxyServer;
@@ -65,6 +68,9 @@ public final class BungeeBootstrap {
         private Consumer<CommandRegistry> commandConfigurer;
         private boolean enableDiagnostics;
         private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
+        private boolean enableMessaging;
+        private RedisConfig.Redis messagingRedis;
+        private Consumer<MessagingService.Builder> messagingConfigurer;
 
         private Builder(Plugin plugin, String pluginName) {
             this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -294,6 +300,40 @@ public final class BungeeBootstrap {
         }
 
         /**
+         * Enables cross-server messaging using the default plugin-messaging transport.
+         *
+         * @return this builder
+         */
+        public Builder enableMessaging() {
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Supplies Redis settings for messaging; when enabled, Redis is used.
+         *
+         * @param redis redis settings
+         * @return this builder
+         */
+        public Builder messagingRedis(RedisConfig.Redis redis) {
+            this.messagingRedis = redis;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring the messaging service builder before it is built.
+         *
+         * @param messagingConfigurer messaging builder callback
+         * @return this builder
+         */
+        public Builder configureMessaging(Consumer<MessagingService.Builder> messagingConfigurer) {
+            this.messagingConfigurer = messagingConfigurer;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result.
          *
          * @return bootstrap result
@@ -334,6 +374,10 @@ public final class BungeeBootstrap {
             }
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
+            }
+            if (enableMessaging) {
+                BungeeMessagingSupport.install(
+                        runtime, proxy, plugin, pluginName, messagingRedis, messagingConfigurer);
             }
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));

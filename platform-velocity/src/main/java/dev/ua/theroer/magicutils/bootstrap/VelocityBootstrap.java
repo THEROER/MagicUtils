@@ -12,6 +12,9 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
+import dev.ua.theroer.magicutils.messaging.MessagingService;
+import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
+import dev.ua.theroer.magicutils.messaging.velocity.VelocityMessagingSupport;
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.velocity.VelocityMagicUtilsConsumerRegistry;
@@ -75,6 +78,9 @@ public final class VelocityBootstrap {
         private Consumer<CommandRegistry> commandConfigurer;
         private boolean enableDiagnostics;
         private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
+        private boolean enableMessaging;
+        private RedisConfig.Redis messagingRedis;
+        private Consumer<MessagingService.Builder> messagingConfigurer;
 
         private Builder(ProxyServer proxy, Object plugin, String pluginName, Path dataDirectory) {
             this.proxy = Objects.requireNonNull(proxy, "proxy");
@@ -304,6 +310,40 @@ public final class VelocityBootstrap {
         }
 
         /**
+         * Enables cross-server messaging using the default plugin-messaging transport.
+         *
+         * @return builder
+         */
+        public Builder enableMessaging() {
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Supplies Redis settings for messaging; when enabled, Redis is used.
+         *
+         * @param redis redis settings
+         * @return builder
+         */
+        public Builder messagingRedis(RedisConfig.Redis redis) {
+            this.messagingRedis = redis;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring the messaging service builder before it is built.
+         *
+         * @param messagingConfigurer messaging builder callback
+         * @return builder
+         */
+        public Builder configureMessaging(Consumer<MessagingService.Builder> messagingConfigurer) {
+            this.messagingConfigurer = messagingConfigurer;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
@@ -343,6 +383,10 @@ public final class VelocityBootstrap {
             }
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
+            }
+            if (enableMessaging) {
+                VelocityMessagingSupport.install(
+                        runtime, proxy, plugin, pluginName, messagingRedis, messagingConfigurer);
             }
             if (registerMessages) {
                 runtime.onClose("messages.scope", () -> Messages.unregister(pluginName));

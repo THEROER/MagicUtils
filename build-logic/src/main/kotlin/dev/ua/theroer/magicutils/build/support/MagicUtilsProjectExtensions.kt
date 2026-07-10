@@ -3,8 +3,10 @@ package dev.ua.theroer.magicutils.build.support
 import dev.ua.theroer.magicutils.build.module.*
 
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 internal fun Project.magicUtilsModuleName(projectName: String = name): String {
     val namingSpec = extensions.extraProperties
@@ -62,5 +64,35 @@ internal fun MavenPublication.stripPomDependencies() {
         xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
             node.parentNode.removeChild(node)
         }
+    }
+}
+
+/**
+ * Bundles the optional Redis messaging transport (Jedis) into a standalone
+ * bundle and relocates it under the MagicUtils `libs` namespace, the same way
+ * [MagicUtilsShadedModulePlugin] relocates Jackson.
+ *
+ * MagicUtils bundles are drop-in plugins that provide the messaging runtime for
+ * the whole network, so shipping Jedis makes the Redis transport work out of the
+ * box once an operator enables it in `messaging.yml`. The default
+ * plugin-messaging transport needs no extra dependency, so a network can still
+ * run without Redis. Called by every bundle plugin so the coordinate and
+ * relocation prefix live in one place.
+ *
+ * @param bundleShadowConfiguration name of the shade configuration the bundle jar draws from
+ */
+internal fun Project.magicUtilsBundleRedis(bundleShadowConfiguration: String) {
+    val jedis = extensions
+        .getByType(VersionCatalogsExtension::class.java)
+        .named("libs")
+        .findLibrary("jedis")
+        .get()
+        .get()
+    dependencies.add(bundleShadowConfiguration, jedis)
+
+    tasks.named("shadowJar", ShadowJar::class.java).configure { shadowJarTask ->
+        shadowJarTask.relocate("redis.clients.jedis", "dev.ua.theroer.magicutils.libs.jedis")
+        // Jedis pulls in Apache Commons Pool for its connection pool.
+        shadowJarTask.relocate("org.apache.commons.pool2", "dev.ua.theroer.magicutils.libs.commons.pool2")
     }
 }
