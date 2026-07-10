@@ -103,6 +103,17 @@ internal fun registerReleaseTasks(
         task.notCompatibleWithConfigurationCache("Queries git and the network.")
     }
 
+    project.tasks.register("releaseTag", ReleaseTagTask::class.java) { task ->
+        task.group = RELEASE_GROUP
+        task.description = "Create the vX.Y.Z git tag locally; push to origin only with -Prelease.push=true."
+        task.requestedVersion.set(versionProvider)
+        // Default off: a local tag until you opt into publishing it, matching the
+        // release spec's push=false default. -Prelease.push=true (or release { push = true })
+        // turns the push on.
+        task.push.set(project.provider { project.findProperty("release.push")?.toString()?.toBoolean() ?: false })
+        task.notCompatibleWithConfigurationCache("Runs git tag/push.")
+    }
+
     project.tasks.register("release") { task ->
         task.group = RELEASE_GROUP
         task.description = "Full client release: preflight -> bump -> dispatch (-Pversion=X.Y.Z)."
@@ -122,6 +133,36 @@ private fun ExecOperations.capture(vararg args: String): String {
         spec.isIgnoreExitValue = false
     }
     return out.toString().trim()
+}
+
+abstract class ReleaseTagTask @Inject constructor(
+    private val execOps: ExecOperations,
+) : DefaultTask() {
+    @get:Input abstract val requestedVersion: Property<String>
+    @get:Input abstract val push: Property<Boolean>
+
+    @TaskAction
+    fun run() {
+        val requested = SemanticVersion.parse(requestedVersion.get())
+        val tag = "v$requested"
+
+        val localTags = runCatching { execOps.capture("git", "tag", "--list", tag) }
+            .getOrDefault("")
+            .lineSequence().map(String::trim).filter(String::isNotEmpty).toSet()
+        if (tag in localTags) {
+            logger.lifecycle("Tag $tag already exists locally — not re-tagging.")
+        } else {
+            execOps.capture("git", "tag", tag)
+            logger.lifecycle("Created tag $tag.")
+        }
+
+        if (push.get()) {
+            execOps.capture("git", "push", "origin", tag)
+            logger.lifecycle("Pushed $tag to origin.")
+        } else {
+            logger.lifecycle("Not pushing $tag (pass -Prelease.push=true to push to origin).")
+        }
+    }
 }
 
 abstract class ReleasePreflightTask @Inject constructor(
