@@ -11,6 +11,7 @@ magicutilsPublish {
 dependencies {
     api(project(":commands-brigadier"))
     api(project(":diagnostics"))
+    api(project(":messaging"))
     api(project(":platform-fabric"))
     api(project(":logger-fabric"))
 

@@ -8,6 +8,9 @@ import dev.ua.theroer.magicutils.diagnostics.DiagnosticRegistry;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsService;
 import dev.ua.theroer.magicutils.diagnostics.DiagnosticsSupport;
 import dev.ua.theroer.magicutils.lang.Messages;
+import dev.ua.theroer.magicutils.messaging.MessagingService;
+import dev.ua.theroer.magicutils.messaging.fabric.FabricMessagingSupport;
+import dev.ua.theroer.magicutils.messaging.redis.RedisConfig;
 import dev.ua.theroer.magicutils.platform.MagicUtilsConsumerRegistry;
 import dev.ua.theroer.magicutils.platform.Platform;
 import dev.ua.theroer.magicutils.platform.fabric.FabricPlatformProvider;
@@ -64,6 +67,9 @@ public final class FabricBootstrap {
         private Consumer<CommandRegistry> commandConfigurer;
         private boolean enableDiagnostics;
         private Consumer<DiagnosticRegistry> diagnosticsConfigurer;
+        private boolean enableMessaging;
+        private RedisConfig.Redis messagingRedis;
+        private Consumer<MessagingService.Builder> messagingConfigurer;
 
         private Builder(String modName, Supplier<MinecraftServer> serverSupplier) {
             this.modName = normalizeModName(modName);
@@ -311,6 +317,45 @@ public final class FabricBootstrap {
         }
 
         /**
+         * Enables cross-server messaging. On Fabric only the Redis transport
+         * reaches other servers; supply Redis settings via
+         * {@link #messagingRedis(RedisConfig.Redis)}. Without Redis the bus falls
+         * back to an in-process loopback transport.
+         *
+         * @return builder
+         */
+        public Builder enableMessaging() {
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Supplies Redis settings for messaging and enables messaging. When
+         * {@code enabled}, the Redis transport is used for cross-server delivery.
+         *
+         * @param redis redis settings
+         * @return builder
+         */
+        public Builder messagingRedis(RedisConfig.Redis redis) {
+            this.messagingRedis = redis;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
+         * Allows configuring the messaging service builder before it is built,
+         * and enables messaging.
+         *
+         * @param messagingConfigurer messaging builder callback
+         * @return builder
+         */
+        public Builder configureMessaging(Consumer<MessagingService.Builder> messagingConfigurer) {
+            this.messagingConfigurer = messagingConfigurer;
+            this.enableMessaging = true;
+            return this;
+        }
+
+        /**
          * Builds the bootstrap result without exposing the runtime wrapper.
          *
          * @return bootstrap result
@@ -347,6 +392,9 @@ public final class FabricBootstrap {
             }
             if (enableDiagnostics) {
                 DiagnosticsSupport.install(runtime, diagnosticsConfigurer);
+            }
+            if (enableMessaging) {
+                FabricMessagingSupport.install(runtime, modName, messagingRedis, messagingConfigurer);
             }
             lang.installMessagesCloseHooks(runtime, modName, prepared.languageManager());
 
