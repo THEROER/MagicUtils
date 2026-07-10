@@ -32,6 +32,7 @@ tasks.named<ShadowJar>("shadowJar") {
 dependencies {
     api(project(":commands-brigadier"))
     api(project(":diagnostics"))
+    api(project(":messaging"))
     api(project(":platform-neoforge"))
     implementation(libs.kyori.adventure.text.serializer.plain)
     compileOnly(libs.brigadier)
