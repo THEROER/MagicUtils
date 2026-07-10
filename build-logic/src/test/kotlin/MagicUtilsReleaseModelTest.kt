@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test
 import dev.ua.theroer.magicutils.build.release.*
 import dev.ua.theroer.magicutils.build.publish.*
 import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
+import dev.ua.theroer.magicutils.build.target.magicUtilsModuleIsBundle
+import dev.ua.theroer.magicutils.build.target.magicUtilsPublishedModuleVersion
 
 class MagicUtilsReleaseModelTest {
 
@@ -55,14 +57,35 @@ class MagicUtilsReleaseModelTest {
             repoUrl = "https://maven.theroer.dev/releases",
             smokeArtifact = "magicutils-core",
         )
-        // The library ships only per-Java coordinates; the smoke URL must target
-        // one of them (`+` percent-encoded), not a bare X.Y.Z POM that is never
-        // published (which would 404 forever).
+        // A bundle coordinate carries `+java<N>`; the smoke URL percent-encodes the
+        // `+` for the HTTP request.
         assertEquals(
             "https://maven.theroer.dev/releases/dev/ua/theroer/magicutils-core/" +
                 "1.26.0%2Bjava21/magicutils-core-1.26.0%2Bjava21.pom",
             spec.smokeArtifactUrl(javaSuffixedCoordinate("1.26.0", 21)),
         )
+    }
+
+    @Test
+    fun `only -bundle modules are treated as bundles`() {
+        assertTrue(magicUtilsModuleIsBundle("magicutils-fabric-bundle"))
+        assertTrue(magicUtilsModuleIsBundle("magicutils-bukkit-bundle"))
+        assertTrue(magicUtilsModuleIsBundle("magicutils-neoforge-bundle"))
+        assertFalse(magicUtilsModuleIsBundle("magicutils-core"))
+        assertFalse(magicUtilsModuleIsBundle("magicutils-commands"))
+        // A bundle-like substring that is not the suffix must not match.
+        assertFalse(magicUtilsModuleIsBundle("magicutils-bundle-utils"))
+    }
+
+    @Test
+    fun `published module version bare for libraries, java-suffixed for bundles`() {
+        // Plain library modules ship one bare coordinate across all Java levels.
+        assertEquals("1.27.1", magicUtilsPublishedModuleVersion("magicutils-core", "1.27.1", 17))
+        assertEquals("1.27.1", magicUtilsPublishedModuleVersion("magicutils-core", "1.27.1", 21))
+        assertEquals("1.27.1", magicUtilsPublishedModuleVersion("magicutils-core", "1.27.1", 25))
+        // Bundles keep the +java<N> coordinate, one real variant per Java level.
+        assertEquals("1.27.1+java17", magicUtilsPublishedModuleVersion("magicutils-fabric-bundle", "1.27.1", 17))
+        assertEquals("1.27.1+java25", magicUtilsPublishedModuleVersion("magicutils-fabric-bundle", "1.27.1", 25))
     }
 
     @Test

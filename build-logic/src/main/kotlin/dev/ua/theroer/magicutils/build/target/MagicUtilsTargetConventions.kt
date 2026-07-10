@@ -32,31 +32,50 @@ val MagicUtilsTargetExtension.mcClassifier: String
     get() = "mc${libraryMinecraft.get().substringBeforeLast('.')}"
 
 /**
- * Published MagicUtils version for [baseVersion] on this target:
- * `<base>+java<N>` (e.g. `1.25.0+java21`).
- *
- * Empirically MagicUtils' compiled bytecode depends only on the Java level, not
- * on the Minecraft version: the whole library (core/config/commands/lang, the
- * platform modules, even the Fabric mod's classes) is byte-identical between two
- * targets that share a Java level (e.g. +1.21.10 vs +1.21.11 differed in 0
- * classes) and differs wholesale only across Java levels (major 65 vs 69). So a
- * per-Minecraft coordinate published five near-duplicate copies where three real
- * variants exist — one per Java level (17 / 21 / 25). obf/deobf is not a second
- * axis: it is a function of the Java level (26.x is Java 25 + deobfuscated).
- *
- * Consumers pass the bare base version (`magicutils_version=1.25.0`); the
- * consumer plugins add `+java<N>` from the resolved target's Java level, so the
- * coordinate a consumer resolves always matches one that was published. Fabric
- * mods pin their runtime Minecraft through `fabric.mod.json` (a version range),
- * not through the Maven coordinate.
+ * Bundle artifact ids end in `-bundle` (`magicutils-fabric-bundle`,
+ * `magicutils-bukkit-bundle`, ...). Only the five bundle plugins produce them,
+ * so this suffix is the reliable discriminator — on both the publish side (the
+ * project's artifact id) and the consumer side (the requested module name) —
+ * between a bundle and a plain library module, without either side importing the
+ * publish-category extension.
  */
-fun MagicUtilsTargetExtension.publishedVersion(baseVersion: String): String =
-    javaSuffixedCoordinate(baseVersion, java.get())
+fun magicUtilsModuleIsBundle(moduleName: String): Boolean = moduleName.endsWith("-bundle")
+
+/**
+ * Published MagicUtils coordinate version for [moduleName] built at [javaLevel].
+ *
+ * Two kinds of module, two coordinate shapes:
+ *  - **Bundles** (`*-bundle`) are fat jars whose shaded dependency set genuinely
+ *    differs per Java level / Minecraft branch (the 1.20.x, 1.21.x and 26.x
+ *    bundles are not byte-identical), so they keep the `<base>+java<N>` coordinate
+ *    — one real variant per Java level.
+ *  - **Plain library modules** (core/config/commands/lang, the platform and
+ *    fabric modules) are byte-identical across Java levels once the class-file
+ *    version word is normalized: the per-level diffs are pure javac codegen
+ *    artifacts, not behaviour. Publishing three near-duplicate `+java17/21/25`
+ *    copies was redundant, so they now publish once under the **bare** base
+ *    version. A `+java17`-compiled class loads fine on any JRE >= 17, so a
+ *    consumer on Java 21/25 resolving the bare coordinate runs it unchanged.
+ *
+ * Consumers pass the bare base version (`magicutils_version=1.27.1`); this is the
+ * single place that decides whether the resolved coordinate carries `+java<N>`,
+ * so the publish side and every consumer plugin agree by construction.
+ */
+fun magicUtilsPublishedModuleVersion(moduleName: String, baseVersion: String, javaLevel: Int): String =
+    if (magicUtilsModuleIsBundle(moduleName)) javaSuffixedCoordinate(baseVersion, javaLevel) else baseVersion
+
+/**
+ * Published MagicUtils version for a [moduleName] on this target. Thin wrapper
+ * over [magicUtilsPublishedModuleVersion] that supplies the target's Java level;
+ * consumer plugins call this so the module-vs-bundle rule lives in one place.
+ */
+fun MagicUtilsTargetExtension.publishedVersion(moduleName: String, baseVersion: String): String =
+    magicUtilsPublishedModuleVersion(moduleName, baseVersion, java.get())
 
 /**
  * Pure formatter for the `<base>+java<N>` published coordinate. The `+java<N>`
- * suffix format lives here as one function so no caller (publishedVersion, the
- * Modrinth bundle file name, the release smoke URL) re-spells it by hand.
+ * suffix format lives here as one function so no caller (the module-version rule,
+ * the Modrinth bundle file name, the release smoke URL) re-spells it by hand.
  */
 fun javaSuffixedCoordinate(baseVersion: String, javaLevel: Int): String =
     "$baseVersion+java$javaLevel"

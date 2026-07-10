@@ -7,22 +7,38 @@ plugins {
 }
 
 val baseVersion = (project.properties["version"] as String?) ?: "0.0.0"
-// Version per Java level: <base>+java<N> (e.g. 1.25.0+java21). MagicUtils'
-// compiled bytecode depends only on the Java level, not the Minecraft version,
-// so several Minecraft targets share one coordinate (mc1205/mc12110/mc12111 are
-// all +java21). The consumer plugins mirror this exact suffix from their
-// resolved target's Java level (see publishedVersion), so downstream builds keep
-// declaring the bare base version and always resolve a coordinate that exists.
+// Coordinate version is module-aware (see magicUtilsPublishedModuleVersion):
+//  - bundles (`*-bundle`) keep `<base>+java<N>` — their shaded dependency set
+//    genuinely differs per Java level / Minecraft branch;
+//  - plain library modules publish the BARE `<base>` — they are byte-identical
+//    across Java levels (the per-level diffs are javac codegen artifacts), so a
+//    single coordinate replaces the former three near-duplicate `+java17/21/25`
+//    copies. A resumed release with -Pskip_existing HEADs each POM, so the second
+//    and third Java-level representatives skip the already-uploaded bare module.
+// The consumer plugins mirror this exact rule from their resolved target's Java
+// level (see publishedVersion), so downstream builds keep declaring the bare base
+// version and always resolve a coordinate that exists.
 val resolvedContext = gradle.extensions.extraProperties.get("magicutilsMatrixResolved")
     as dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixResolvedContext
-val targetVersion = "$baseVersion+java${resolvedContext.target.java}"
+val javaLevel = resolvedContext.target.java
+
+val namingSpec = gradle.extensions.extraProperties
+    .let { if (it.has("magicutilsModuleNaming")) it.get("magicutilsModuleNaming") else null }
+        as? dev.ua.theroer.magicutils.build.module.MagicUtilsModuleNamingSpec
+    ?: dev.ua.theroer.magicutils.build.module.MagicUtilsModuleNamingSpec()
 
 val publishingSpec = gradle.extensions.extraProperties.get("magicutilsPublishingSpec")
     as MagicUtilsPublishingSpec
 
 allprojects {
     group = publishingSpec.group
-    version = targetVersion
+    // Keyed on the project's published artifact id so `-bundle` projects keep the
+    // Java suffix and library modules go bare. The root project has no artifact id
+    // of its own; its version is unused for publication but set for consistency.
+    val artifactId = namingSpec.moduleName(name)
+    version = dev.ua.theroer.magicutils.build.target.magicUtilsPublishedModuleVersion(
+        artifactId, baseVersion, javaLevel,
+    )
 }
 
 val reflectionPatterns = listOf(

@@ -61,11 +61,12 @@ internal fun bumpGradleVersion(gradlePropertiesText: String, version: SemanticVe
 /**
  * URL of the POM smoke-tested after a publish, per [MagicUtilsPublishingSpec].
  *
- * [versionCoordinate] is the FULL published coordinate, including the target
- * suffix the target plugin appends to `project.version` (e.g. `1.26.0+java21`).
- * Passing a bare `X.Y.Z` here would point at a POM that is never published — the
- * library only ships per-target coordinates — so the smoke poll would 404
- * forever. The `+` is percent-encoded for the HTTP request.
+ * [versionCoordinate] is the smoke artifact's ACTUAL published coordinate:
+ * `X.Y.Z` for a plain library module (which now ships bare) or `X.Y.Z+java<N>`
+ * for a bundle. The caller applies the module-vs-bundle rule
+ * (magicUtilsPublishedModuleVersion) before calling, so this points at a POM that
+ * is really published and the smoke poll does not 404 forever. The `+` (if any)
+ * is percent-encoded for the HTTP request.
  */
 internal fun MagicUtilsPublishingSpec.smokeArtifactUrl(versionCoordinate: String): String {
     val groupPath = group.replace('.', '/')

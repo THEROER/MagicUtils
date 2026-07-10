@@ -2,7 +2,7 @@ package dev.ua.theroer.magicutils.build.release
 
 import dev.ua.theroer.magicutils.build.publish.*
 import dev.ua.theroer.magicutils.build.support.findMagicUtilsModrinthToken
-import dev.ua.theroer.magicutils.build.target.javaSuffixedCoordinate
+import dev.ua.theroer.magicutils.build.target.magicUtilsPublishedModuleVersion
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -79,12 +79,14 @@ internal fun registerReleaseTasks(
     project.tasks.register("smokeTest", SmokeTestTask::class.java) { task ->
         task.group = RELEASE_GROUP
         task.description = "Poll the published POM for -Pversion until it appears (or times out)."
-        // The library ships only per-Java coordinates (`X.Y.Z+java<N>`); a bare
-        // X.Y.Z POM is never published. Poll the default target's Java level as
-        // the canonical "Maven is up" signal.
+        // Poll the smoke artifact's actual published coordinate. It is a plain
+        // library module (magicutils-core), which now ships bare (`X.Y.Z`); a
+        // bundle would instead carry `+java<N>`. magicUtilsPublishedModuleVersion
+        // applies that rule so the poll targets a POM that is really published.
         task.artifactUrl.set(project.provider {
             val base = SemanticVersion.parse(versionProvider.get()).toString()
-            publishingSpec.smokeArtifactUrl(javaSuffixedCoordinate(base, defaultTargetJava))
+            val coordinate = magicUtilsPublishedModuleVersion(publishingSpec.smokeArtifact, base, defaultTargetJava)
+            publishingSpec.smokeArtifactUrl(coordinate)
         })
         task.notCompatibleWithConfigurationCache("Performs network polling.")
     }
@@ -95,11 +97,12 @@ internal fun registerReleaseTasks(
             "(strict fail unless -Preport)."
         task.requestedVersion.set(versionProvider)
         task.gradlePropertiesText.set(project.provider { gradlePropertiesFile.readText() })
-        // Same java-suffixed coordinate the smoke poll uses (the only one that is
-        // actually published), so the two checks agree on what "Maven has it" means.
+        // Same coordinate the smoke poll uses (the one actually published for the
+        // smoke artifact), so the two checks agree on what "Maven has it" means.
         task.mavenPomUrl.set(project.provider {
             val base = SemanticVersion.parse(versionProvider.get()).toString()
-            publishingSpec.smokeArtifactUrl(javaSuffixedCoordinate(base, defaultTargetJava))
+            val coordinate = magicUtilsPublishedModuleVersion(publishingSpec.smokeArtifact, base, defaultTargetJava)
+            publishingSpec.smokeArtifactUrl(coordinate)
         })
         task.modrinthProjectId.set(project.provider { modrinthProjectId })
         task.modrinthToken.set(project.provider { project.findMagicUtilsModrinthToken() })
