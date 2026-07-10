@@ -59,13 +59,16 @@ internal fun registerReleaseMavenTasks(
             MagicUtilsFanoutInvocation(
                 target = unit.target,
                 // clean + --rerun-tasks so each fresh target invocation republishes
-                // from scratch (the immutable releases repo rejects stale reuploads).
+                // from scratch. skip_existing keeps it resumable: a coordinate a
+                // prior (failed) run already uploaded is skipped instead of 409ing
+                // against the immutable releases repo.
                 args = buildList {
                     add("clean")
                     unit.publishTasks.forEach { add(it) }
                     add("--rerun-tasks")
                     add("-Ppublish_repo=$repoUrl")
                     add("-Pskip_shadow_publish=true")
+                    add("-Pskip_existing")
                 },
             )
         },
@@ -89,7 +92,7 @@ internal fun registerReleaseMavenTasks(
             task.group = RELEASE_GROUP
             task.description = "Publish the build-logic plugins to $repoUrl."
             task.workingDir = project.rootProject.projectDir
-            task.commandLine(magicUtilsGradleWrapperName(), "-p", "build-logic", "publish", "-Ppublish_repo=$repoUrl")
+            task.commandLine(magicUtilsGradleWrapperName(), "-p", "build-logic", "publish", "-Ppublish_repo=$repoUrl", "-Pskip_existing")
         }
     }
 

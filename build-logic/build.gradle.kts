@@ -1,5 +1,7 @@
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
+import java.net.HttpURLConnection
+import java.net.URI
 
 plugins {
     kotlin("jvm") version "2.2.0"
@@ -40,6 +42,30 @@ publishing {
                     }
                 }
             }
+        }
+    }
+}
+
+// -Pskip_existing makes publishing idempotent: skip a PublishToMavenRepository
+// task whose POM is already in the (immutable) repo, so a resumed release does
+// not 409 on the plugins that a prior run already uploaded. HEAD is cheap and
+// runs at execution time (skip decided per task), not at configuration.
+if (project.hasProperty("skip_existing") && project.hasProperty("publish_repo")) {
+    val repoBase = (project.property("publish_repo") as String).trimEnd('/')
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        onlyIf {
+            val pub = publication as org.gradle.api.publish.maven.MavenPublication
+            val path = "${pub.groupId.replace('.', '/')}/${pub.artifactId}/${pub.version}/" +
+                "${pub.artifactId}-${pub.version}.pom"
+            val url = URI("$repoBase/$path").toURL()
+            val exists = runCatching {
+                (url.openConnection() as HttpURLConnection).run {
+                    requestMethod = "HEAD"; connectTimeout = 10000; readTimeout = 10000
+                    val code = responseCode; disconnect(); code == 200
+                }
+            }.getOrDefault(false)
+            if (exists) logger.lifecycle("skip_existing: ${pub.artifactId}:${pub.version} already published, skipping.")
+            !exists
         }
     }
 }

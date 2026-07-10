@@ -47,6 +47,37 @@ internal fun Project.magicUtilsPublishRepository(publishing: PublishingExtension
             }
         }
     }
+
+    // -Pskip_existing makes publishing idempotent so a resumed release does not
+    // 409 on modules a prior run already uploaded to the immutable repo. Each
+    // PublishToMavenRepository task HEADs its POM and skips if already present.
+    if (hasProperty("skip_existing")) {
+        val repoBase = repoUrl.trimEnd('/')
+        tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository::class.java).configureEach { task ->
+            val pub = task.publication as org.gradle.api.publish.maven.MavenPublication
+            task.onlyIf { !magicUtilsPomAlreadyPublished(repoBase, pub.groupId, pub.artifactId, pub.version, task.logger) }
+        }
+    }
+}
+
+/** HEAD the POM coordinate; true if the repo already has it (200). */
+internal fun magicUtilsPomAlreadyPublished(
+    repoBase: String,
+    groupId: String,
+    artifactId: String,
+    version: String,
+    logger: org.gradle.api.logging.Logger,
+): Boolean {
+    val path = "${groupId.replace('.', '/')}/$artifactId/$version/$artifactId-$version.pom"
+    val url = java.net.URI.create("$repoBase/$path").toURL()
+    val exists = runCatching {
+        (url.openConnection() as java.net.HttpURLConnection).run {
+            requestMethod = "HEAD"; connectTimeout = 10000; readTimeout = 10000
+            val code = responseCode; disconnect(); code == 200
+        }
+    }.getOrDefault(false)
+    if (exists) logger.lifecycle("skip_existing: $artifactId:$version already published, skipping.")
+    return exists
 }
 
 /**
