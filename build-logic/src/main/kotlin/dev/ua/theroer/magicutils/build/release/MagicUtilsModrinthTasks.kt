@@ -51,7 +51,10 @@ internal fun registerModrinthTasks(
         val resolvedSpec = spec?.let { base ->
             val withArtifacts = if (base.artifacts.isNotEmpty()) base
             else base.copy(
-                artifacts = modrinthArtifactsFromMatrix(smokeSpecs, defaultTarget, targetsFile, base.baseVersionOrNull(project)),
+                artifacts = modrinthArtifactsFromMatrix(
+                    smokeSpecs, defaultTarget, targetsFile, base.baseVersionOrNull(project),
+                    base.artifactPrefix, base.moduleSuffix,
+                ),
             )
             if (withArtifacts.changelog.isNotBlank()) withArtifacts
             else withArtifacts.copy(changelog = resolveChangelog(project, base.baseVersionOrNull(project) ?: "dev"))
@@ -112,6 +115,8 @@ private fun modrinthArtifactsFromMatrix(
     defaultTarget: String,
     targetsFile: File,
     version: String?,
+    artifactPrefix: String,
+    moduleSuffix: String,
 ): List<ModrinthArtifact> = smokeSpecs
     .filter { it.name !in MODRINTH_NON_PUBLISHED_PLATFORMS }
     .flatMap { platform ->
@@ -133,13 +138,14 @@ private fun modrinthArtifactsFromMatrix(
             // is `<base>+java<N>`), so all Minecraft versions sharing a Java level
             // map to one jar. Merge their advertised game versions into ONE
             // Modrinth version instead of re-uploading the same file per MC.
-            val fileName = "magicutils-${platform.name}-bundle-${javaSuffixedCoordinate(ver, java)}.jar"
+            val module = "${platform.name}$moduleSuffix"
+            val fileName = "$artifactPrefix$module-${javaSuffixedCoordinate(ver, java)}.jar"
             val gameVersions = entries.flatMap { it.versions.expandVersionsFull() }.distinct()
             // Stable, valid Modrinth file part, unique per jar.
             val key = "${platform.name}-java$java"
             ModrinthArtifact(
                 key = key,
-                file = "${platform.name}-bundle/build/libs/$fileName",
+                file = "$module/build/libs/$fileName",
                 loaders = emptyList(), // derived from platform
                 gameVersions = gameVersions,
                 platform = platform.name,

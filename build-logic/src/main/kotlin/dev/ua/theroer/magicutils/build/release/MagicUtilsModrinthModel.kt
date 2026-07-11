@@ -36,6 +36,10 @@ data class ModrinthReleaseSpec(
     val featured: Boolean = false,
     /** Markdown changelog uploaded with every version (empty = none). */
     val changelog: String = "",
+    /** Artifact-id prefix of synthesised bundle jars (e.g. `magicutils-`, `commandflow-`). */
+    val artifactPrefix: String = "magicutils-",
+    /** Bundle module-name suffix used to locate synthesised jars (e.g. `-bundle`, or empty). */
+    val moduleSuffix: String = "-bundle",
     val artifacts: List<ModrinthArtifact> = emptyList(),
 ) {
     /**
