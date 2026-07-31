@@ -671,8 +671,7 @@ public class CommandManager<S> {
                 return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
             }
 
-            CommandResult commandResult = result instanceof CommandResult ? (CommandResult) result
-                    : CommandResult.success();
+            CommandResult commandResult = MagicCommand.resolveResult(result);
             logger.debug(label + " executed successfully, result: " + commandResult.isSuccess());
 
             return commandResult;
@@ -1856,7 +1855,14 @@ public class CommandManager<S> {
 
         if (source.startsWith("{") && source.endsWith("}")) {
             String content = source.substring(1, source.length() - 1);
-            return Arrays.asList(content.split(",\\s*"));
+            List<String> values = new ArrayList<>();
+            for (String part : content.split(",")) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    values.add(trimmed);
+                }
+            }
+            return values;
         }
 
         List<Object> dynamicArgs = new ArrayList<>();
@@ -1867,15 +1873,40 @@ public class CommandManager<S> {
 
         boolean methodTakesPlayer = false;
 
-        try {
-            Method method = command.getClass().getMethod(source);
-            Object result = method.invoke(command);
-            if (result instanceof String[]) {
-                return Arrays.asList((String[]) result);
-            } else if (result instanceof List) {
-                return (List<String>) result;
+        // Provider methods resolve against the argument's suggestion host when set
+        // (the original carrier instance a flat-mounted/merged command came from),
+        // else the registered command itself. Without this, a source naming a
+        // carrier method is invisible after mount because the registered command is
+        // a wrapper that does not declare it — the method would then be misread as a
+        // literal below.
+        Object provider = currentArgument.getSuggestionHost() != null
+                ? currentArgument.getSuggestionHost()
+                : command;
+
+        // Whether a provider method with this name exists at all (any signature).
+        // If none does and no special form matched, the source is a static literal
+        // value (e.g. @Suggest({"void", "normal", "flat"}) — each array element is a
+        // ready-made completion, not a method name), so it is returned verbatim
+        // below. A real method-name typo therefore still yields nothing (the method
+        // is absent) — but so would an intended literal; we prefer the literal since
+        // an existing-method name always wins here.
+        boolean providerMethodExists = hasMethodNamed(provider.getClass(), source);
+
+        // A no-arg provider is the common case, but only when the declaration asks for
+        // nothing: with contextArgs the author wants those values, so a same-named
+        // no-arg overload must not shadow the context-aware one below (it would drop
+        // the context silently and suggest the wrong list).
+        if (currentArgument.getContextArgs().isEmpty()) {
+            try {
+                Method method = provider.getClass().getMethod(source);
+                Object result = method.invoke(provider);
+                if (result instanceof String[]) {
+                    return Arrays.asList((String[]) result);
+                } else if (result instanceof List) {
+                    return (List<String>) result;
+                }
+            } catch (Exception e) {
             }
-        } catch (Exception e) {
         }
 
         if (currentArgument.getContextArgs().isEmpty()) {
@@ -1904,15 +1935,34 @@ public class CommandManager<S> {
             }
         }
         
-        if (currentInput != null && !currentInput.isEmpty()) {
-            dynamicArgs.add(currentInput);
-            dynamicArgTypes.add(String.class);
-        }
+        // Sender and the partially-typed word are both conveniences a provider may or
+        // may not declare, so try the candidate signatures from richest to plainest
+        // and call the first one that exists. Notably currentInput is offered even
+        // when empty — tab on a bare argument is the common case, and a provider that
+        // declares it should not need a second overload just to serve it.
+        int senderArgs = dynamicArgs.size() - currentArgument.getContextArgs().size();
+        List<Object> withoutSender = dynamicArgs.subList(senderArgs, dynamicArgs.size());
+        List<Class<?>> withoutSenderTypes = dynamicArgTypes.subList(senderArgs, dynamicArgTypes.size());
+        String input = currentInput != null ? currentInput : "";
+
+        List<List<Object>> candidates = List.of(
+                append(dynamicArgs, input),      // (sender?, context..., currentInput)
+                dynamicArgs,                     // (sender?, context...)
+                append(withoutSender, input),    // (context..., currentInput)
+                withoutSender);                  // (context...)
+        List<List<Class<?>>> candidateTypes = List.of(
+                append(dynamicArgTypes, String.class),
+                dynamicArgTypes,
+                append(withoutSenderTypes, String.class),
+                withoutSenderTypes);
 
         try {
-            Method matchingMethod = findMatchingMethod(command.getClass(), source, dynamicArgTypes);
-            if (matchingMethod != null) {
-                Object result = matchingMethod.invoke(command, dynamicArgs.toArray());
+            for (int i = 0; i < candidates.size(); i++) {
+                Method matchingMethod = findMatchingMethod(provider.getClass(), source, candidateTypes.get(i));
+                if (matchingMethod == null) {
+                    continue;
+                }
+                Object result = matchingMethod.invoke(provider, candidates.get(i).toArray());
                 if (result instanceof String[]) {
                     return Arrays.asList((String[]) result);
                 } else if (result instanceof List) {
@@ -1927,7 +1977,32 @@ public class CommandManager<S> {
             return Collections.emptyList();
         }
 
+        // No special form and no provider method by this name: treat the source as a
+        // literal completion value. This makes the intuitive array form
+        // @Suggest({"a", "b", "c"}) work the same as @Suggest("{a, b, c}").
+        if (!providerMethodExists) {
+            String literal = source.trim();
+            return literal.isEmpty() ? Collections.emptyList() : List.of(literal);
+        }
+
         return Collections.emptyList();
+    }
+
+    /** @return {@code list} plus {@code extra}, as a new list. */
+    private static <T> List<T> append(List<T> list, T extra) {
+        List<T> out = new ArrayList<>(list);
+        out.add(extra);
+        return out;
+    }
+
+    /** @return true if {@code clazz} declares any accessible method named {@code name}. */
+    private static boolean hasMethodNamed(Class<?> clazz, String name) {
+        for (Method method : clazz.getMethods()) {
+            if (method.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Method findMatchingMethod(Class<?> clazz, String methodName, List<Class<?>> paramTypes) {

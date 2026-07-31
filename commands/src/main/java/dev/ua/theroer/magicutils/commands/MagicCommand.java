@@ -8,6 +8,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * Abstract base class for all custom commands.
@@ -207,6 +209,69 @@ public abstract class MagicCommand {
     }
 
     /**
+     * Merges {@code command}'s sub-commands into this one so several plugins can
+     * contribute to a shared tree (e.g. each adding under {@code /nox}) without
+     * clobbering each other. Unlike {@link #mountSubCommands}, which blindly appends,
+     * this deduplicates by (path + name): when a node already exists, ownership of
+     * its <em>execute</em> is decided by {@link MergePolicy} —
+     * {@link MergePolicy#CONTRIBUTE} keeps the existing handler (put-if-absent),
+     * {@link MergePolicy#OVERRIDE} replaces it (logging {@code warn} if the existing
+     * one was itself an explicit override), and {@link MergePolicy#EXTEND} never
+     * claims the node. Leaf nodes that don't collide are simply added.
+     *
+     * @param command the carrier whose sub-commands to merge in
+     * @param warn sink for a one-line conflict warning (may be {@code null})
+     * @return this command
+     */
+    public MagicCommand mergeSubCommands(MagicCommand command, java.util.function.Consumer<String> warn) {
+        ensureMutable();
+        if (command == null || command == this) {
+            return this;
+        }
+        for (MountedSubCommand incoming : resolveMountedSubCommands(command)) {
+            SubCommandSpec<Object> spec = incoming.spec();
+            int existingIndex = indexOfSubCommand(spec);
+            if (existingIndex < 0) {
+                this.dynamicSubCommands.add(new DynamicSubCommand(spec, incoming.replaceExisting()));
+                continue;
+            }
+            resolveNodeConflict(existingIndex, spec, warn);
+        }
+        return this;
+    }
+
+    /** @return index in dynamicSubCommands of a node with the same path+name, or -1 */
+    private int indexOfSubCommand(SubCommandSpec<?> spec) {
+        List<String> path = normalizePath(spec.path());
+        for (int i = 0; i < dynamicSubCommands.size(); i++) {
+            SubCommandSpec<?> existing = dynamicSubCommands.get(i).spec();
+            if (pathEquals(existing.path(), path)
+                    && existing.name().equalsIgnoreCase(spec.name())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** Resolves execute ownership when an incoming node collides with an existing one. */
+    private void resolveNodeConflict(int existingIndex, SubCommandSpec<Object> incoming,
+                                     java.util.function.Consumer<String> warn) {
+        MergePolicy policy = incoming.mergePolicy();
+        if (policy == MergePolicy.EXTEND || policy == MergePolicy.CONTRIBUTE) {
+            // Keep the existing owner's execute; the node is already present.
+            return;
+        }
+        // OVERRIDE: take the node. Warn if the existing owner also explicitly claimed it.
+        SubCommandSpec<?> existing = dynamicSubCommands.get(existingIndex).spec();
+        if (existing.mergePolicy() == MergePolicy.OVERRIDE && warn != null) {
+            String node = String.join(" ", normalizePath(incoming.path()));
+            warn.accept("Command node '" + (node.isEmpty() ? incoming.name() : node + " " + incoming.name())
+                    + "' execute is claimed by more than one plugin — using the last one.");
+        }
+        dynamicSubCommands.set(existingIndex, new DynamicSubCommand(incoming, true));
+    }
+
+    /**
      * Add a dynamic subcommand (builder API).
      *
      * @param subCommand subcommand spec
@@ -367,6 +432,11 @@ public abstract class MagicCommand {
             @Override
             public CommandThreading threading() {
                 return base.threading();
+            }
+
+            @Override
+            public MergePolicy merge() {
+                return base.merge();
             }
         };
     }
@@ -761,7 +831,8 @@ public abstract class MagicCommand {
                             directAction.threading(),
                             directAction.arguments(),
                             directAction.executor(),
-                            false
+                            false,
+                            info.merge()
                     ),
                     false
             ));
@@ -782,7 +853,8 @@ public abstract class MagicCommand {
                             subCommand.spec().threading(),
                             subCommand.spec().arguments(),
                             subCommand.spec().executor(),
-                            subCommand.replaceExisting()
+                            subCommand.replaceExisting(),
+                            subCommand.spec().mergePolicy()
                     ),
                     subCommand.replaceExisting()
             ));
@@ -803,9 +875,10 @@ public abstract class MagicCommand {
                             subInfo.annotation.permission(),
                             subInfo.annotation.permissionDefault(),
                             subInfo.annotation.threading(),
-                            getArguments(subInfo.method),
+                            withSuggestionHost(getArguments(subInfo.method), command),
                             createMethodExecutor(command, subInfo.method),
-                            false
+                            false,
+                            subInfo.annotation.merge()
                     ),
                     false
             ));
@@ -821,9 +894,10 @@ public abstract class MagicCommand {
                             dynamicSubCommand.spec().permission(),
                             dynamicSubCommand.spec().permissionDefault(),
                             dynamicSubCommand.spec().threading(),
-                            dynamicSubCommand.spec().arguments(),
+                            withSuggestionHost(dynamicSubCommand.spec().arguments(), command),
                             wrapExecutor(command, dynamicSubCommand.spec().executor()),
-                            dynamicSubCommand.replaceExisting()
+                            dynamicSubCommand.replaceExisting(),
+                            dynamicSubCommand.spec().mergePolicy()
                     ),
                     dynamicSubCommand.replaceExisting()
             );
@@ -834,6 +908,22 @@ public abstract class MagicCommand {
         }
 
         return resolved;
+    }
+
+    /**
+     * Tags each argument with {@code host} as the object its {@code @Suggest}
+     * provider methods resolve against, unless already tagged by an inner mount.
+     * Returns the same list (arguments are mutated in place) for call-site brevity.
+     */
+    private static List<CommandArgument> withSuggestionHost(List<CommandArgument> arguments, MagicCommand host) {
+        if (arguments != null) {
+            for (CommandArgument argument : arguments) {
+                if (argument != null) {
+                    argument.assignSuggestionHostIfAbsent(host);
+                }
+            }
+        }
+        return arguments;
     }
 
     private MountedAction resolveMountedDirectAction(MagicCommand command, CommandInfo info) {
@@ -875,10 +965,7 @@ public abstract class MagicCommand {
         return execution -> {
             try {
                 Object result = method.invoke(command, execution.parsedArgs());
-                if (result instanceof CommandResult commandResult) {
-                    return commandResult;
-                }
-                return CommandResult.success();
+                return resolveResult(result);
             } catch (InvocationTargetException e) {
                 Throwable cause = e.getCause();
                 if (cause instanceof RuntimeException runtimeException) {
@@ -892,6 +979,38 @@ public abstract class MagicCommand {
                 throw new IllegalStateException("Failed to invoke mounted command method", e);
             }
         };
+    }
+
+    /**
+     * Normalizes a {@code @SubCommand} method's return value into a
+     * {@link CommandResult}. A method may return a {@code CommandResult} directly, a
+     * {@link CompletableFuture} of one (awaited here — safe because {@code ASYNC}
+     * handlers already run off the main thread, letting the handler stay free of
+     * manual {@code join()}/callback boilerplate), or {@code void}/{@code null}
+     * (treated as success).
+     */
+    static CommandResult resolveResult(Object result) {
+        if (result instanceof CommandResult commandResult) {
+            return commandResult;
+        }
+        if (result instanceof CompletableFuture<?> future) {
+            try {
+                Object awaited = future.join();
+                return awaited instanceof CommandResult commandResult
+                        ? commandResult
+                        : CommandResult.success();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                if (cause instanceof RuntimeException runtimeException) {
+                    throw runtimeException;
+                }
+                if (cause instanceof Error error) {
+                    throw error;
+                }
+                throw new IllegalStateException("Async command handler failed", cause);
+            }
+        }
+        return CommandResult.success();
     }
 
     private static void removeMatchingSubCommands(List<MountedSubCommand> commands, SubCommandSpec<?> replacement) {
@@ -985,14 +1104,16 @@ public abstract class MagicCommand {
                                                                CommandThreading threading,
                                                                List<CommandArgument> arguments,
                                                                CommandExecutor<Object> executor,
-                                                               boolean replaceExisting) {
+                                                               boolean replaceExisting,
+                                                               MergePolicy mergePolicy) {
         SubCommandSpec.Builder<Object> builder = SubCommandSpec.<Object>builder(name)
                 .description(description)
                 .permission(permission)
                 .permissionDefault(permissionDefault)
                 .threading(threading)
                 .execute(executor)
-                .replaceExisting(replaceExisting);
+                .replaceExisting(replaceExisting)
+                .mergePolicy(mergePolicy);
         if (path != null && !path.isEmpty()) {
             builder.path(path.toArray(new String[0]));
         }

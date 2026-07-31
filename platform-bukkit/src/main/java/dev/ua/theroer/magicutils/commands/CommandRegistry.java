@@ -447,6 +447,37 @@ public class CommandRegistry {
     }
 
     /**
+     * Merges a carrier's sub-commands into an already-registered root, so several
+     * plugins can each contribute to a shared command (e.g. {@code /nox}) without
+     * overwriting one another. The current root is read at call time (not from a
+     * stale snapshot), copied, merged (dedup by path+name, execute ownership per
+     * {@link dev.ua.theroer.magicutils.annotations.MergePolicy}), and re-registered.
+     * If {@code rootName} is not registered yet, the carrier is registered as the
+     * root itself.
+     *
+     * <p>Call from each contributing plugin's enable — order does not matter, since
+     * every call folds into the live root rather than replacing it.
+     *
+     * @param rootName the shared root command name (e.g. {@code "nox"})
+     * @param carrier a {@code @CommandInfo}/{@code @SubCommand} class to contribute
+     */
+    public void contributeSubCommands(String rootName, MagicCommand carrier) {
+        if (rootName == null || carrier == null) {
+            return;
+        }
+        MagicCommand existing = commandManager.getCommand(rootName);
+        if (existing == null) {
+            // No root yet: the carrier becomes the root under its own name is wrong —
+            // register it under the requested root name instead.
+            registerCommand(carrier.copy().withName(rootName));
+            return;
+        }
+        MagicCommand merged = existing.copy().mergeSubCommands(carrier, message ->
+                logger.warn("[" + plugin.getName() + "] " + message));
+        registerCommand(merged);
+    }
+
+    /**
      * Registers a single command.
      *
      * @param command command to register

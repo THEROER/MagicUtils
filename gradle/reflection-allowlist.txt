@@ -5,7 +5,7 @@
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:384:.getMethod(
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:397:.getMethod(
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/NeoForgeCommandPlatform.java:313:.getMethod(
-commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1871:.getMethod(
+commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1901:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:15:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:18:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:30:.getMethod(
@@ -31,8 +31,8 @@ placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/Mini
 placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/MiniPlaceholdersBackend.java:102:.getDeclaredMethod(
 placeholders-fabric/src/main/java/dev/ua/theroer/magicutils/platform/fabric/MiniPlaceholdersBackend.java:254:.getMethod(
 platform-api/src/main/java/dev/ua/theroer/magicutils/platform/AudienceResolver.java:130:.getMethod(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:782:.getDeclaredField(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:816:.getDeclaredField(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:813:.getDeclaredField(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:847:.getDeclaredField(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/gui/MagicItem.java:233:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/gui/MagicItem.java:239:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/gui/MagicItem.java:241:.getMethod(

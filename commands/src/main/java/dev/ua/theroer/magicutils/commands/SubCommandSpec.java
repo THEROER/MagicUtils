@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
+import dev.ua.theroer.magicutils.annotations.MergePolicy;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +24,7 @@ public final class SubCommandSpec<S> {
     private final List<CommandArgument> arguments;
     private final CommandExecutor<S> executor;
     private final boolean replaceExisting;
+    private final MergePolicy mergePolicy;
 
     private SubCommandSpec(Builder<S> builder) {
         this.name = builder.name;
@@ -34,6 +37,7 @@ public final class SubCommandSpec<S> {
         this.arguments = List.copyOf(builder.arguments);
         this.executor = builder.executor;
         this.replaceExisting = builder.replaceExisting;
+        this.mergePolicy = builder.mergePolicy;
     }
 
     public String name() {
@@ -76,6 +80,16 @@ public final class SubCommandSpec<S> {
         return replaceExisting;
     }
 
+    /**
+     * How this node's execute is owned when merged into a shared root. Defaults to
+     * {@link MergePolicy#CONTRIBUTE}.
+     *
+     * @return the merge policy for this node's execute
+     */
+    public MergePolicy mergePolicy() {
+        return mergePolicy;
+    }
+
     private static List<String> sanitizePath(List<String> raw) {
         if (raw == null || raw.isEmpty()) {
             return List.of();
@@ -109,6 +123,7 @@ public final class SubCommandSpec<S> {
         private final List<CommandArgument> arguments = new ArrayList<>();
         private CommandExecutor<S> executor;
         private boolean replaceExisting = false;
+        private MergePolicy mergePolicy = MergePolicy.CONTRIBUTE;
 
         public Builder(String name) {
             if (name == null || name.isBlank()) {
@@ -180,6 +195,11 @@ public final class SubCommandSpec<S> {
 
         public Builder<S> replaceExisting(boolean replaceExisting) {
             this.replaceExisting = replaceExisting;
+            return this;
+        }
+
+        public Builder<S> mergePolicy(MergePolicy mergePolicy) {
+            this.mergePolicy = mergePolicy != null ? mergePolicy : MergePolicy.CONTRIBUTE;
             return this;
         }
 
