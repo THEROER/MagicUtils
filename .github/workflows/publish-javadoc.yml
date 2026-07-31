@@ -57,11 +57,19 @@ jobs:
         run: |
           ZIP=build/docs/magicutils-javadoc.zip
           test -f "$ZIP" || { echo "Javadoc zip not found at $ZIP"; exit 1; }
-          echo "Uploading to ${{ steps.coords.outputs.latest_url }}"
-          curl --fail-with-body -sS -u "$PUBLISH_USER:$PUBLISH_TOKEN" \
-            -T "$ZIP" "${{ steps.coords.outputs.latest_url }}"
+
+          # Reposilite's releases repo rejects overwrites with 409, and `latest`
+          # is by definition written on every release — so the upload has to
+          # clear the path first. Without this the job succeeded exactly once and
+          # then failed on every subsequent release. DELETE on a missing path is
+          # not an error here: a 404 just means there is nothing to replace.
+          upload() { # upload <url>
+            echo "Uploading to $1"
+            curl -sS -o /dev/null -u "$PUBLISH_USER:$PUBLISH_TOKEN" -X DELETE "$1" || true
+            curl --fail-with-body -sS -u "$PUBLISH_USER:$PUBLISH_TOKEN" -T "$ZIP" "$1"
+          }
+
+          upload "${{ steps.coords.outputs.latest_url }}"
           if [ -n "${{ steps.coords.outputs.version_url }}" ]; then
-            echo "Uploading versioned copy to ${{ steps.coords.outputs.version_url }}"
-            curl --fail-with-body -sS -u "$PUBLISH_USER:$PUBLISH_TOKEN" \
-              -T "$ZIP" "${{ steps.coords.outputs.version_url }}"
+            upload "${{ steps.coords.outputs.version_url }}"
           fi

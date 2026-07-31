@@ -161,6 +161,24 @@ class MagicUtilsReleaseModelTest {
     }
 
     @Test
+    fun `modrinthVersionPublished matches the per-artifact version numbers a release uploads`() {
+        // What publishToModrinth actually creates: one version per artifact.
+        val published = setOf(
+            "1.27.4-alpha-bukkit-java21",
+            "1.27.4-alpha-fabric-java25",
+            "1.27.3-alpha-bukkit-java21",
+        )
+        assertTrue(modrinthVersionPublished(published, "1.27.4"))
+        assertTrue(modrinthVersionPublished(published, "1.27.3"))
+        assertFalse(modrinthVersionPublished(published, "1.27.5"))
+        // A prefix that is not followed by the separator must not count: 1.27.4
+        // is not published just because 1.27.40 is.
+        assertFalse(modrinthVersionPublished(setOf("1.27.40-alpha-bukkit-java21"), "1.27.4"))
+        // Projects uploading a single unsuffixed artifact still match.
+        assertTrue(modrinthVersionPublished(setOf("1.27.4"), "1.27.4"))
+    }
+
+    @Test
     fun `evaluateReleaseConsistency passes when required sources agree and Modrinth may lag`() {
         val v = SemanticVersion(1, 26, 0)
         // Maven + tag + gradle.properties agree; Modrinth not yet published (manual) — still consistent.

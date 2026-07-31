@@ -408,7 +408,7 @@ abstract class VerifyReleaseConsistencyTask @Inject constructor(
         return runCatching {
             val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() !in 200..299) return null
-            versionNumber in parseModrinthVersionIds(response.body()).keys
+            modrinthVersionPublished(parseModrinthVersionIds(response.body()).keys, versionNumber)
         }.getOrNull()
     }
 }
