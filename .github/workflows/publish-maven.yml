@@ -78,6 +78,7 @@ jobs:
           ./gradlew clean ${{ matrix.unit.tasks }} --rerun-tasks \
             -Ppublish_repo=${{ needs.resolve-matrix.outputs.repo_url }} \
             -Pskip_shadow_publish=true \
+            -Pskip_existing \
             -Ptarget=${{ matrix.unit.target }} \
             ${{ matrix.unit.suffix && '-Ppublish_target_suffix=true' || '' }}
 
@@ -102,4 +103,5 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew -p build-logic publish \
-            -Ppublish_repo=${{ needs.resolve-matrix.outputs.repo_url }}
+            -Ppublish_repo=${{ needs.resolve-matrix.outputs.repo_url }} \
+            -Pskip_existing
