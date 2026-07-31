@@ -221,16 +221,18 @@ magicMatrix {
             runTask = ":velocity-bundle:runVelocity -Pscenario=velocity"
             successPattern = "Done ("
             diagnosticsCommand = "magicutils diagnostics export"
+            // One entry, covering 26.x too: the proxy bundle is built on the 1.21
+            // target and works in front of any server generation, so there is no
+            // 26.x proxy artifact to smoke or publish. A `target = "mc262"` entry
+            // here would synthesise a velocity-bundle+java25 Modrinth artifact that
+            // the build never produces — velocity is disabled on the 26.x targets
+            // (bungeecord/velocity APIs are still on Adventure 4; see the platform
+            // declaration above).
             entry("velocity-runtime") {
                 target = "mc12110"
                 primary = true
-                versions = listOf("1.20-1.20.6", "1.21-1.21.11")
+                versions = listOf("1.20-1.20.6", "1.21-1.21.11", "26.1-26.2")
                 smokeValues = listOf("1.21.10")
-            }
-            entry("velocity-26x") {
-                target = "mc262"
-                versions = listOf("26.1-26.2")
-                smokeValues = listOf("26.2")
             }
         }
         // BungeeCord: like Velocity, the API is decoupled from Minecraft, so one
@@ -240,16 +242,14 @@ magicMatrix {
             runTask = ":bungee-bundle:runWaterfall -Pscenario=bungee"
             successPattern = "Listening on"
             diagnosticsCommand = "magicutils diagnostics export"
+            // Same as velocity: one 1.21-built artifact fronting every server
+            // generation, so 26.x is a version range on this entry rather than a
+            // separate target that would demand a bungee-bundle+java25 jar.
             entry("bungee-runtime") {
                 target = "mc12110"
                 primary = true
-                versions = listOf("1.20-1.20.6", "1.21-1.21.11")
+                versions = listOf("1.20-1.20.6", "1.21-1.21.11", "26.1-26.2")
                 smokeValues = listOf("1.21.10")
-            }
-            entry("bungee-26x") {
-                target = "mc262"
-                versions = listOf("26.1-26.2")
-                smokeValues = listOf("26.2")
             }
         }
     }
