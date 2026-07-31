@@ -51,7 +51,14 @@ public class ListTypeParser<S> implements TypeParser<S, String> {
         Matcher matcher = LIST_PATTERN.matcher(source);
         if (matcher.matches()) {
             String listContent = matcher.group(1);
-            return Arrays.asList(listContent.split(","));
+            List<String> values = new ArrayList<>();
+            for (String part : listContent.split(",")) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    values.add(trimmed);
+                }
+            }
+            return values;
         }
         return new ArrayList<>();
     }
