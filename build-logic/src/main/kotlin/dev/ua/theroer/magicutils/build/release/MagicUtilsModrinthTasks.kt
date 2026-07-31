@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.build.release
 
+import org.gradle.work.DisableCachingByDefault
+
 import dev.ua.theroer.magicutils.build.support.findMagicUtilsModrinthToken
 import dev.ua.theroer.magicutils.build.smoke.SmokePlatformSpec
 import dev.ua.theroer.magicutils.build.smoke.expandVersionsFull
@@ -153,6 +155,7 @@ private fun modrinthArtifactsFromMatrix(
         }
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class ModrinthPublishTask : DefaultTask() {
     // Not a Gradle @Input: the spec isn't a stable up-to-date key (this task
     // always performs a network upload) and may legitimately be null so the
