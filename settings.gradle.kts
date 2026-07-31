@@ -49,8 +49,16 @@ magicMatrix {
     )
 
     platform("bukkit", listOf("platform-bukkit", "bukkit-bundle"))
-    platform("bungee", listOf("platform-bungee", "bungee-bundle"))
-    platform("velocity", listOf("platform-velocity", "velocity-bundle"))
+    // Bungee and Velocity are disabled on the 26.x targets. Unlike Bukkit/Fabric/NeoForge
+    // these proxies do not track the Minecraft version at all — bungeecord-api 1.20 and
+    // velocity-api 3.1.1 are pinned in the version catalog, and both still run Adventure 4
+    // while every 26.x platform moved to Adventure 5 (see magicUtilsAdventureVersion).
+    // Building them on a 26.x target would compile the shared modules they inline against
+    // Adventure 5 and then run them on a proxy that provides Adventure 4 — the same
+    // cross-major breakage this alignment exists to prevent. Their artifacts come from the
+    // 1.21 targets and work on proxies regardless of the servers behind them.
+    platform("bungee", listOf("platform-bungee", "bungee-bundle"), listOf("mc26"))
+    platform("velocity", listOf("platform-velocity", "velocity-bundle"), listOf("mc26"))
     platform("fabric", listOf("platform-fabric", "commands-fabric", "logger-fabric", "placeholders-fabric", "fabric-bundle"))
     // NeoForge is disabled on both 1.20.x targets (mc1201, mc1205): MagicUtils
     // publishes no neoforge module for the 1.20.x library coordinate.
