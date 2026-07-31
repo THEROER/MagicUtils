@@ -58,7 +58,7 @@ class MagicUtilsConsumerBukkitPlugin : Plugin<Project> {
         project.afterEvaluate {
             val consumer = project.magicUtilsConsumerExtension()
             val spec = consumer.devServerSpec.orNull ?: return@afterEvaluate
-            MagicUtilsDevServer.configureBukkit(
+            MagicUtilsJvmDevServer.configureBukkit(
                 project = project,
                 spec = spec,
                 targetMinecraftVersion = target.minecraft.get(),

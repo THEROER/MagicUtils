@@ -1,7 +1,6 @@
 package dev.ua.theroer.magicutils.build.target
 
 import org.gradle.api.Project
-import net.fabricmc.loom.api.LoomGradleExtensionAPI
 
 /**
  * Single source of truth for the target-derived Fabric/publishing conventions.
@@ -167,18 +166,7 @@ val MagicUtilsTargetExtension.runtimeOnlyConfiguration: String
 val MagicUtilsTargetExtension.mainJarTaskName: String
     get() = if (isDeobfuscated) "jar" else "remapJar"
 
-/**
- * Adds the Minecraft dependency and official Mojang mappings (obfuscated
- * targets only) to [project] for the resolved [target]. Uses the *runtime*
- * Minecraft ([MagicUtilsTargetExtension.minecraft]) — this is the game Loom
- * compiles/runs against, independent of the published library coordinate. The
- * Fabric loader is intentionally NOT added here — callers pick the configuration
- * themselves (compileOnly for modules, implementation for runnable bundles/mods).
- */
-fun applyMinecraftAndMappings(project: Project, target: MagicUtilsTargetExtension) {
-    project.dependencies.add("minecraft", "com.mojang:minecraft:${target.minecraft.get()}")
-    if (!target.isDeobfuscated) {
-        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
-        project.dependencies.add("mappings", loom.officialMojangMappings())
-    }
-}
+// `applyMinecraftAndMappings` lives in the :fabric subproject
+// (MagicUtilsFabricLoomConventions.kt): it needs Loom's API on the compile classpath,
+// and this file is part of the platform-neutral artifact that NeoForge/Bukkit/proxy
+// consumers resolve.
