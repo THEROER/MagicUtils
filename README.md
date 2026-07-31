@@ -83,6 +83,29 @@ dependencies {
 }
 ```
 
+## Adventure
+
+MagicUtils exposes Adventure types in its public API (`Audience.send(Component)`, the
+logger and message APIs), so the Adventure major matters to consumers. Each build tracks
+the Adventure version its target platforms actually run:
+
+| Target | Adventure | Why |
+| --- | --- | --- |
+| 1.20.x – 1.21.x | 4.24.0 | Paper 1.21 and adventure-platform-fabric 6.x are on Adventure 4 |
+| 26.x | 5.2.0 | paper-api 26.2 imports adventure-bom 5.2.0; adventure-platform-fabric 7.x bundles Adventure 5 |
+
+Two Adventure majors cannot coexist on Fabric's shared class loader — `ComponentFlattener`
+stopped extending `Buildable` in 5.x (so `toBuilder()` changed descriptor) and `Services`
+gained `service(ServiceLoader, Class)`. A mod carrying Adventure 4 next to a server on
+Adventure 5 crashes in `AdventureCommon.<clinit>` with `NoSuchMethodError` and takes every
+mod on that runtime down with it. Aligning per target is what prevents that, so **code
+built against a 26.x MagicUtils artifact compiles against Adventure 5**; the package stays
+`net.kyori`, but Adventure's own 4→5 changes apply.
+
+The Fabric and NeoForge bundles inline Adventure rather than requiring
+adventure-platform-fabric. They deliberately do **not** ship `com.google.gson` — Minecraft
+provides it, and a second copy breaks version detection.
+
 ## Modules At A Glance
 
 - Platform API: `magicutils-api`

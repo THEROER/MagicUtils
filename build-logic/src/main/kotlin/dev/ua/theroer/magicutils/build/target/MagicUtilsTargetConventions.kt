@@ -24,6 +24,73 @@ val MagicUtilsTargetExtension.isDeobfuscated: Boolean
     get() = libraryMinecraft.get().substringBefore('.').toInt() >= 26
 
 /**
+ * The Adventure version this target's platforms actually run.
+ *
+ * The 26.x line moved the whole ecosystem to Adventure 5: adventure-platform-fabric 7.x
+ * (the only line supporting 26.x) bundles Adventure 5.2.0, and paper-api 26.2 imports
+ * adventure-bom 5.2.0. Older targets are still on Adventure 4. Adventure 4 and 5 are not
+ * interchangeable — `Buildable` was removed, so `ComponentFlattener.toBuilder()` changed
+ * descriptor, and `Services.service(ServiceLoader, Class)` was added — so shipping the
+ * wrong major next to the platform's copy is what makes AdventureCommon.<clinit> die with
+ * NoSuchMethodError.
+ *
+ * Keyed on [isDeobfuscated] so a single `-Ptarget=` selects a consistent Adventure across
+ * every module and bundle of that target.
+ */
+fun magicUtilsAdventureVersion(project: Project, target: MagicUtilsTargetExtension): String {
+    val versions = project.extensions
+        .getByType(org.gradle.api.artifacts.VersionCatalogsExtension::class.java)
+        .named("libs")
+    val alias = if (target.isDeobfuscated) "kyoriAdventureDeobfuscated" else "kyoriAdventure"
+    return versions.findVersion(alias)
+        .orElseThrow { IllegalStateException("Version catalog 'libs' has no '$alias' version") }
+        .requiredVersion
+}
+
+/**
+ * Moves every `net.kyori:adventure-*` dependency whose major differs from
+ * [magicUtilsAdventureVersion] onto that version.
+ *
+ * The version catalog pins Adventure 4 (what the 1.20/1.21 platforms provide); this lifts
+ * the whole graph to Adventure 5 on deobfuscated targets, including the transitive pulls
+ * that the catalog never names. Applied to every module so the classes compiled into a
+ * bundle and the Adventure shipped beside them are always the same major.
+ *
+ * Only the major is forced, never the minor. The breakage this exists to prevent is a
+ * 4-vs-5 mix; within a major Adventure is compatible, and pinning the minor *down* breaks
+ * the platform that asks for a newer one — paper-api 1.21.11 imports adventure-bom 4.26.1
+ * and its API signatures reference `PlayerHeadObjectContents`, which 4.24.0 does not have.
+ * So a request already on the target's major is left alone and Gradle's usual
+ * highest-wins conflict resolution applies.
+ *
+ * `adventure-platform-*` is deliberately excluded: those track their own version line
+ * (7.x for 26.x), unrelated to the Adventure core version.
+ */
+fun magicUtilsAlignAdventure(project: Project, target: MagicUtilsTargetExtension) {
+    val adventureVersion = magicUtilsAdventureVersion(project, target)
+    val targetMajor = adventureVersion.substringBefore('.')
+    project.configurations.configureEach { configuration ->
+        configuration.resolutionStrategy.eachDependency { details ->
+            val requested = details.requested
+            if (requested.group != "net.kyori" ||
+                !requested.name.startsWith("adventure-") ||
+                requested.name.startsWith("adventure-platform")
+            ) {
+                return@eachDependency
+            }
+            // A blank requested version means the version comes from a platform/BOM —
+            // which this same rule has already aligned, so leave it to resolve.
+            val requestedMajor = requested.version?.substringBefore('.')?.takeIf { it.isNotBlank() }
+                ?: return@eachDependency
+            if (requestedMajor != targetMajor) {
+                details.useVersion(adventureVersion)
+                details.because("MagicUtils aligns Adventure to major $targetMajor for this target")
+            }
+        }
+    }
+}
+
+/**
  * Published artifact classifier for the target, e.g. `mc1.21`, `mc26`. Derived
  * from the *library* Minecraft, so a target whose runtime Minecraft differs
  * (e.g. Paper 1.20.6 on the `+1.20.1` library) still resolves the right jar.
