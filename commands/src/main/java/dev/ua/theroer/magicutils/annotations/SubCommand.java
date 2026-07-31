@@ -64,4 +64,14 @@ public @interface SubCommand {
      * @return threading policy
      */
     CommandThreading threading() default CommandThreading.MAIN;
+
+    /**
+     * How this node's execute is owned when several plugins contribute to the same
+     * command tree. Leaf sub-commands always accumulate; this only decides who owns
+     * the handler that runs when a player stops at this node. Defaults to
+     * {@link MergePolicy#CONTRIBUTE} (claim only if free — safe for shared roots).
+     *
+     * @return the merge policy for this node's execute
+     */
+    MergePolicy merge() default MergePolicy.CONTRIBUTE;
 }

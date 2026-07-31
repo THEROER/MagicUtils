@@ -12,6 +12,13 @@ jackson = "2.17.1"
 jedis = "5.1.5"
 kyoriAdventure = "4.24.0"
 kyoriAdventureLegacy = "4.24.0"
+# Adventure 5.x is required from Minecraft 26.2 on: paper-api 26.2 imports
+# adventure-bom 5.2.0 and adventure-platform-fabric 7.x bundles Adventure 5, and two
+# different Adventure majors cannot coexist on Fabric's shared class loader. Everything
+# earlier stays on Adventure 4 — including 26.1, which is already deobfuscated but whose
+# paper-api still imports adventure-bom 4.26.1 — so this is applied per target rather
+# than globally (see magicUtilsAdventureVersion in MagicUtilsTargetConventions).
+kyoriAdventure5 = "5.2.0"
 kyoriAnsi = "1.1.1"
 kyoriExamination = "1.3.0"
 kyoriOption = "1.1.0"

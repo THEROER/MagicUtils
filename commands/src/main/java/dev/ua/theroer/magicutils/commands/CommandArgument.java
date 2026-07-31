@@ -44,6 +44,16 @@ public class CommandArgument {
     private final List<String> optionLongNames;
     private final boolean flag;
     private final List<String> contextArgs;
+    /**
+     * The object on which {@code @Suggest("methodName")} provider methods are
+     * resolved. When a command is flat-mounted/merged into another root, the
+     * registered command is a wrapper that does not carry the carrier's provider
+     * methods; this keeps a direct reference to the original carrier instance so
+     * suggestion methods still resolve after mount. {@code null} for arguments built
+     * outside a mount (the suggestion path then falls back to the command itself).
+     */
+    @Getter
+    private Object suggestionHost;
 
     private CommandArgument(Builder builder) {
         this.name = builder.name;
@@ -71,6 +81,7 @@ public class CommandArgument {
         this.optionLongNames = new ArrayList<>(builder.optionLongNames);
         this.flag = builder.flag;
         this.contextArgs = new ArrayList<>(builder.contextArgs);
+        this.suggestionHost = builder.suggestionHost;
     }
 
     /**
@@ -165,6 +176,20 @@ public class CommandArgument {
     }
 
     /**
+     * Assigns the carrier instance that {@code @Suggest("methodName")} provider
+     * methods resolve against, set once when the owning command is mounted/merged
+     * into another root. Only set when currently unset, so an outer mount does not
+     * override an inner carrier's host.
+     *
+     * @param host the carrier instance
+     */
+    void assignSuggestionHostIfAbsent(Object host) {
+        if (this.suggestionHost == null && host != null) {
+            this.suggestionHost = host;
+        }
+    }
+
+    /**
      * Available suggestions for this argument.
      *
      * @return copy of suggestion list
@@ -209,6 +234,7 @@ public class CommandArgument {
         private final List<String> optionLongNames = new ArrayList<>();
         private boolean flag = false;
         private final List<String> contextArgs = new ArrayList<>();
+        private Object suggestionHost = null;
 
         /**
          * Constructs a new Builder for CommandArgument.
@@ -262,6 +288,20 @@ public class CommandArgument {
          */
         public Builder suggestions(List<String> suggestions) {
             this.suggestions.addAll(suggestions);
+            return this;
+        }
+
+        /**
+         * Sets the object on which {@code @Suggest("methodName")} provider methods
+         * resolve. Used when a carrier is mounted/merged into another root so the
+         * suggestion methods still resolve against the original carrier instance
+         * rather than the registered wrapper command.
+         *
+         * @param suggestionHost the carrier instance, or {@code null}
+         * @return this builder
+         */
+        public Builder suggestionHost(Object suggestionHost) {
+            this.suggestionHost = suggestionHost;
             return this;
         }
 

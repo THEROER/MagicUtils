@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.build.release
 
+import org.gradle.work.DisableCachingByDefault
+
 import dev.ua.theroer.magicutils.build.matrix.MagicUtilsFanoutInvocation
 import dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixDefinition
 import dev.ua.theroer.magicutils.build.matrix.availablePlatformsFor
@@ -227,6 +229,7 @@ internal fun registerReleaseJavadocTask(
 /** The aggregated Javadoc zip file name produced by aggregatedJavadocZip. */
 private const val JAVADOC_ZIP_NAME = "magicutils-javadoc.zip"
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class UploadJavadocTask : DefaultTask() {
     @get:Input abstract val zipPath: Property<Path>
     @get:Input abstract val latestUrl: Property<String>

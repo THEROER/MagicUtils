@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.build.release
 
+import org.gradle.work.DisableCachingByDefault
+
 import dev.ua.theroer.magicutils.build.publish.*
 import dev.ua.theroer.magicutils.build.support.findMagicUtilsModrinthToken
 import dev.ua.theroer.magicutils.build.target.magicUtilsPublishedModuleVersion
@@ -177,6 +179,7 @@ private fun ExecOperations.capture(vararg args: String): String {
     return out.toString().trim()
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class ReleaseTagTask @Inject constructor(
     private val execOps: ExecOperations,
 ) : DefaultTask() {
@@ -207,6 +210,7 @@ abstract class ReleaseTagTask @Inject constructor(
     }
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class ReleasePreflightTask @Inject constructor(
     private val execOps: ExecOperations,
 ) : DefaultTask() {
@@ -246,6 +250,7 @@ abstract class ReleasePreflightTask @Inject constructor(
     }
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class BumpVersionTask @Inject constructor(
     private val execOps: ExecOperations,
 ) : DefaultTask() {
@@ -268,6 +273,7 @@ abstract class BumpVersionTask @Inject constructor(
     }
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class DispatchReleaseTask @Inject constructor(
     private val execOps: ExecOperations,
 ) : DefaultTask() {
@@ -284,6 +290,7 @@ abstract class DispatchReleaseTask @Inject constructor(
     }
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class SmokeTestTask : DefaultTask() {
     @get:Input abstract val artifactUrl: Property<String>
 
@@ -317,6 +324,7 @@ abstract class SmokeTestTask : DefaultTask() {
     }
 }
 
+@DisableCachingByDefault(because = "Performs a release side effect (git, HTTP, or version bump), not a cacheable transformation")
 abstract class VerifyReleaseConsistencyTask @Inject constructor(
     private val execOps: ExecOperations,
 ) : DefaultTask() {

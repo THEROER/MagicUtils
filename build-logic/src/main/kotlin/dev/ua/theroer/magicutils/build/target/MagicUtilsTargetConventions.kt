@@ -1,7 +1,6 @@
 package dev.ua.theroer.magicutils.build.target
 
 import org.gradle.api.Project
-import net.fabricmc.loom.api.LoomGradleExtensionAPI
 
 /**
  * Single source of truth for the target-derived Fabric/publishing conventions.
@@ -22,6 +21,89 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI
  */
 val MagicUtilsTargetExtension.isDeobfuscated: Boolean
     get() = libraryMinecraft.get().substringBefore('.').toInt() >= 26
+
+/**
+ * Whether this target's platforms are on Adventure 5.
+ *
+ * Deliberately NOT [isDeobfuscated]: the two cutovers are one minor apart. 26.1 is
+ * deobfuscated, but paper-api 26.1.1 still imports adventure-bom 4.26.1 — Paper moved to
+ * Adventure 5 in 26.2, and treating all of 26.x as Adventure 5 forced 5.2.0 onto a
+ * platform whose own API is compiled against 4, which fails as soon as anything reflects
+ * over a Bukkit interface (CommandSender extends Audience).
+ */
+val MagicUtilsTargetExtension.usesAdventure5: Boolean
+    get() {
+        val parts = libraryMinecraft.get().split('.')
+        val major = parts.firstOrNull()?.toIntOrNull() ?: return false
+        val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        return major > 26 || (major == 26 && minor >= 2)
+    }
+
+/**
+ * The Adventure version this target's platforms actually run.
+ *
+ * From 26.2 the ecosystem is on Adventure 5: paper-api 26.2 imports adventure-bom 5.2.0
+ * and adventure-platform-fabric 7.x bundles Adventure 5. Everything earlier — including
+ * 26.1 — is still on Adventure 4. Adventure 4 and 5 are not interchangeable: `Buildable`
+ * was removed, so `ComponentFlattener.toBuilder()` changed descriptor, and
+ * `Services.service(ServiceLoader, Class)` was added — shipping the wrong major next to
+ * the platform's copy is what makes AdventureCommon.<clinit> die with NoSuchMethodError.
+ *
+ * Keyed on [usesAdventure5] so a single `-Ptarget=` selects a consistent Adventure across
+ * every module and bundle of that target.
+ */
+fun magicUtilsAdventureVersion(project: Project, target: MagicUtilsTargetExtension): String {
+    val versions = project.extensions
+        .getByType(org.gradle.api.artifacts.VersionCatalogsExtension::class.java)
+        .named("libs")
+    val alias = if (target.usesAdventure5) "kyoriAdventure5" else "kyoriAdventure"
+    return versions.findVersion(alias)
+        .orElseThrow { IllegalStateException("Version catalog 'libs' has no '$alias' version") }
+        .requiredVersion
+}
+
+/**
+ * Moves every `net.kyori:adventure-*` dependency whose major differs from
+ * [magicUtilsAdventureVersion] onto that version.
+ *
+ * The version catalog pins Adventure 4 (what the 1.20/1.21 platforms provide); this lifts
+ * the whole graph to Adventure 5 on deobfuscated targets, including the transitive pulls
+ * that the catalog never names. Applied to every module so the classes compiled into a
+ * bundle and the Adventure shipped beside them are always the same major.
+ *
+ * Only the major is forced, never the minor. The breakage this exists to prevent is a
+ * 4-vs-5 mix; within a major Adventure is compatible, and pinning the minor *down* breaks
+ * the platform that asks for a newer one — paper-api 1.21.11 imports adventure-bom 4.26.1
+ * and its API signatures reference `PlayerHeadObjectContents`, which 4.24.0 does not have.
+ * So a request already on the target's major is left alone and Gradle's usual
+ * highest-wins conflict resolution applies.
+ *
+ * `adventure-platform-*` is deliberately excluded: those track their own version line
+ * (7.x for 26.x), unrelated to the Adventure core version.
+ */
+fun magicUtilsAlignAdventure(project: Project, target: MagicUtilsTargetExtension) {
+    val adventureVersion = magicUtilsAdventureVersion(project, target)
+    val targetMajor = adventureVersion.substringBefore('.')
+    project.configurations.configureEach { configuration ->
+        configuration.resolutionStrategy.eachDependency { details ->
+            val requested = details.requested
+            if (requested.group != "net.kyori" ||
+                !requested.name.startsWith("adventure-") ||
+                requested.name.startsWith("adventure-platform")
+            ) {
+                return@eachDependency
+            }
+            // A blank requested version means the version comes from a platform/BOM —
+            // which this same rule has already aligned, so leave it to resolve.
+            val requestedMajor = requested.version?.substringBefore('.')?.takeIf { it.isNotBlank() }
+                ?: return@eachDependency
+            if (requestedMajor != targetMajor) {
+                details.useVersion(adventureVersion)
+                details.because("MagicUtils aligns Adventure to major $targetMajor for this target")
+            }
+        }
+    }
+}
 
 /**
  * Published artifact classifier for the target, e.g. `mc1.21`, `mc26`. Derived
@@ -100,18 +182,7 @@ val MagicUtilsTargetExtension.runtimeOnlyConfiguration: String
 val MagicUtilsTargetExtension.mainJarTaskName: String
     get() = if (isDeobfuscated) "jar" else "remapJar"
 
-/**
- * Adds the Minecraft dependency and official Mojang mappings (obfuscated
- * targets only) to [project] for the resolved [target]. Uses the *runtime*
- * Minecraft ([MagicUtilsTargetExtension.minecraft]) — this is the game Loom
- * compiles/runs against, independent of the published library coordinate. The
- * Fabric loader is intentionally NOT added here — callers pick the configuration
- * themselves (compileOnly for modules, implementation for runnable bundles/mods).
- */
-fun applyMinecraftAndMappings(project: Project, target: MagicUtilsTargetExtension) {
-    project.dependencies.add("minecraft", "com.mojang:minecraft:${target.minecraft.get()}")
-    if (!target.isDeobfuscated) {
-        val loom = project.extensions.getByType(LoomGradleExtensionAPI::class.java)
-        project.dependencies.add("mappings", loom.officialMojangMappings())
-    }
-}
+// `applyMinecraftAndMappings` lives in the :fabric subproject
+// (MagicUtilsFabricLoomConventions.kt): it needs Loom's API on the compile classpath,
+// and this file is part of the platform-neutral artifact that NeoForge/Bukkit/proxy
+// consumers resolve.

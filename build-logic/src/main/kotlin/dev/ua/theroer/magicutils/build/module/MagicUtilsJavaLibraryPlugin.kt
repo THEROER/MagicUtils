@@ -33,6 +33,12 @@ class MagicUtilsJavaLibraryPlugin : Plugin<Project> {
 
         val magicutilsTarget = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
 
+        // Every module compiles against the Adventure major its target's platforms
+        // actually run (4.x through 1.21, 5.x on 26.x). Done here, at the one plugin
+        // every module applies, so a module and the bundle that inlines it can never
+        // disagree.
+        magicUtilsAlignAdventure(project, magicutilsTarget)
+
         project.extensions.configure(JavaPluginExtension::class.java) { javaExtension ->
             // One fixed toolchain for all targets; per-target bytecode level is
             // set via options.release below, not via source/targetCompatibility.

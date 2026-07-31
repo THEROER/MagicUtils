@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
+import dev.ua.theroer.magicutils.annotations.MergePolicy;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public final class CommandSpec<S> {
     private final List<CommandArgument> arguments;
     private final CommandExecutor<S> executor;
     private final List<SubCommandSpec<S>> subCommands;
+    private final MergePolicy mergePolicy;
 
     private CommandSpec(Builder<S> builder) {
         this.name = builder.name;
@@ -34,6 +36,7 @@ public final class CommandSpec<S> {
         this.arguments = List.copyOf(builder.arguments);
         this.executor = builder.executor;
         this.subCommands = List.copyOf(builder.subCommands);
+        this.mergePolicy = builder.mergePolicy;
     }
 
     /**
@@ -164,6 +167,11 @@ public final class CommandSpec<S> {
             public CommandThreading threading() {
                 return threading;
             }
+
+            @Override
+            public MergePolicy merge() {
+                return mergePolicy;
+            }
         };
     }
 
@@ -182,6 +190,7 @@ public final class CommandSpec<S> {
         private final List<CommandArgument> arguments = new ArrayList<>();
         private CommandExecutor<S> executor;
         private final List<SubCommandSpec<S>> subCommands = new ArrayList<>();
+        private MergePolicy mergePolicy = MergePolicy.CONTRIBUTE;
 
         /**
          * Creates a builder for the specified command name.
@@ -299,6 +308,18 @@ public final class CommandSpec<S> {
             if (subCommand != null) {
                 this.subCommands.add(subCommand);
             }
+            return this;
+        }
+
+        /**
+         * Sets how this command's root execute is owned when merged into a shared
+         * root. Defaults to {@link MergePolicy#CONTRIBUTE}.
+         *
+         * @param mergePolicy the merge policy
+         * @return this builder
+         */
+        public Builder<S> mergePolicy(MergePolicy mergePolicy) {
+            this.mergePolicy = mergePolicy != null ? mergePolicy : MergePolicy.CONTRIBUTE;
             return this;
         }
 

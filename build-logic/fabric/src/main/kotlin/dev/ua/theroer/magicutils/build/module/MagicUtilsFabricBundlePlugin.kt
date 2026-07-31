@@ -14,6 +14,36 @@ import org.gradle.language.jvm.tasks.ProcessResources
 import net.fabricmc.loom.task.RemapJarTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+/**
+ * Shading rules for a Fabric bundle jar that inlines its dependencies.
+ *
+ * Two libraries need deliberate handling; everything else is inlined as-is.
+ *
+ * **Jackson — relocated.** The bundle pulls Jackson from two directions: the shaded
+ * modules (config/config-yaml/config-toml/lang) contribute it already relocated under
+ * `libs.jackson`, while the plain library modules (diagnostics/http-client/messaging)
+ * contribute plain `com.fasterxml.jackson`. Left alone the jar carries both copies —
+ * ~1100 duplicated classes and two competing sets of `META-INF/services` entries.
+ * Relocating here rewrites the second copy onto the first, so one Jackson ships.
+ *
+ * **gson — dropped.** Minecraft provides `com.google.gson` on the game class loader.
+ * Shipping a second copy is what MagicUtilsNeoForgeBundlePlugin already documents as
+ * breaking `DetectedVersion` ("Game version not set"); Adventure's gson serializer is
+ * meant to bind to Minecraft's copy. adventure-platform-fabric ships no gson either.
+ *
+ * **Adventure — neither relocated nor dropped, deliberately.** Relocating would move
+ * `Component` out of `net.kyori` in this bundle's public API (Audience.send, the logger
+ * API), breaking every consumer's binary compatibility, and would cut consumers off from
+ * interoperating with other mods' Adventure. Dropping it would make the bundle depend on
+ * adventure-platform-fabric being installed. Instead the version is aligned to whatever
+ * the target's platforms run (magicUtilsAdventureVersion), so the inlined copy and the
+ * server's copy are the same major.
+ */
+internal fun magicUtilsConfigureBundleShading(shadowJarTask: ShadowJar) {
+    shadowJarTask.relocate("com.fasterxml.jackson", "dev.ua.theroer.magicutils.libs.jackson")
+    shadowJarTask.exclude("com/google/gson/**")
+}
+
 class MagicUtilsFabricBundlePlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.pluginManager.apply("magicutils.target")
@@ -92,17 +122,31 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 "net.fabricmc:fabric-loader:${magicutilsTarget.loader.get()}",
             )
 
-            project.dependencies.add("include", "net.kyori:adventure-api:4.24.0")
-            project.dependencies.add("include", "net.kyori:adventure-key:4.24.0")
-            project.dependencies.add("include", "net.kyori:adventure-text-minimessage:4.24.0")
-            project.dependencies.add("include", "net.kyori:adventure-text-serializer-plain:4.24.0")
-            project.dependencies.add("include", "net.kyori:adventure-text-serializer-gson:4.24.0")
-            project.dependencies.add("include", "net.kyori:adventure-text-serializer-ansi:4.24.0")
-            project.dependencies.add("include", "net.kyori:adventure-text-serializer-json:4.24.0")
-            project.dependencies.add("include", "net.kyori:ansi:1.1.1")
-            project.dependencies.add("include", "net.kyori:examination-api:1.3.0")
-            project.dependencies.add("include", "net.kyori:examination-string:1.3.0")
-            project.dependencies.add("include", "net.kyori:option:1.1.0")
+            // Adventure follows the target's platform line (4.x through 1.21, 5.x on
+            // 26.x) — see magicUtilsAdventureVersion. Listed explicitly rather than
+            // pulled from the modules, because the module deps are non-transitive here.
+            //
+            // examination-* is Adventure 4 only: Adventure 5 dropped it in favour of
+            // jspecify, which arrives transitively, so adding it on 5.x would ship dead
+            // classes.
+            val adventureVersion = magicUtilsAdventureVersion(project, magicutilsTarget)
+            val adventureModules = listOf(
+                "net.kyori:adventure-api:$adventureVersion",
+                "net.kyori:adventure-key:$adventureVersion",
+                "net.kyori:adventure-text-minimessage:$adventureVersion",
+                "net.kyori:adventure-text-serializer-plain:$adventureVersion",
+                "net.kyori:adventure-text-serializer-gson:$adventureVersion",
+                "net.kyori:adventure-text-serializer-ansi:$adventureVersion",
+                "net.kyori:adventure-text-serializer-json:$adventureVersion",
+                "net.kyori:ansi:1.1.1",
+                "net.kyori:option:1.1.0",
+            ) + if (magicutilsTarget.isDeobfuscated) {
+                emptyList()
+            } else {
+                listOf("net.kyori:examination-api:1.3.0", "net.kyori:examination-string:1.3.0")
+            }
+
+            adventureModules.forEach { project.dependencies.add("include", it) }
 
             bundleShadedProjects.forEach { dep ->
                 val depProject = project(dep.path)
@@ -127,19 +171,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                 // Shade adventure + diagnostics into the classifier jar so it is
                 // self-contained for both publish and dev runtime (on <26 these
                 // reach the fat `:dev` jar transitively via `namedElements`).
-                listOf(
-                    "net.kyori:adventure-api:4.24.0",
-                    "net.kyori:adventure-key:4.24.0",
-                    "net.kyori:adventure-text-minimessage:4.24.0",
-                    "net.kyori:adventure-text-serializer-plain:4.24.0",
-                    "net.kyori:adventure-text-serializer-gson:4.24.0",
-                    "net.kyori:adventure-text-serializer-ansi:4.24.0",
-                    "net.kyori:adventure-text-serializer-json:4.24.0",
-                    "net.kyori:ansi:1.1.1",
-                    "net.kyori:examination-api:1.3.0",
-                    "net.kyori:examination-string:1.3.0",
-                    "net.kyori:option:1.1.0",
-                ).forEach { project.dependencies.add("bundleShadow", it) }
+                adventureModules.forEach { project.dependencies.add("bundleShadow", it) }
             }
             bundleShadedProjects.forEach { dep ->
                 val depProject = project(dep.path)
@@ -168,6 +200,7 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                     )
                     shadowJarTask.from(project.extensions.getByType(SourceSetContainer::class.java).getByName("main").output)
                     shadowJarTask.mergeServiceFiles()
+                    magicUtilsConfigureBundleShading(shadowJarTask)
                 }
             } else {
                 // remapJar is shipped (classifier-less); the fat `dev` shadow jar is
@@ -185,6 +218,9 @@ class MagicUtilsFabricBundlePlugin : Plugin<Project> {
                     )
                     shadowJarTask.from(project.extensions.getByType(SourceSetContainer::class.java).getByName("main").output)
                     shadowJarTask.mergeServiceFiles()
+                    // remapJar is built from this jar, so the same duplicate-Jackson and
+                    // duplicate-gson problems reach the shipped artifact on this branch too.
+                    magicUtilsConfigureBundleShading(shadowJarTask)
                 }
             }
 

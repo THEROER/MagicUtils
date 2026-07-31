@@ -1,7 +1,5 @@
 package dev.ua.theroer.magicutils.build.module
 
-import dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerBungeePlugin
-import dev.ua.theroer.magicutils.build.consumer.MagicUtilsConsumerVelocityPlugin
 import dev.ua.theroer.magicutils.build.support.*
 import dev.ua.theroer.magicutils.build.target.*
 
@@ -153,14 +151,14 @@ enum class JvmBundlePlatform(
     BUNGEE(":platform-bungee", listOf("plugin.yml")) {
         override fun apiCoordinate(project: Project): String {
             val version = project.providers.gradleProperty("bungeeApiVersion")
-                .orElse(MagicUtilsConsumerBungeePlugin.DEFAULT_BUNGEE_API).get()
+                .orElse(MagicUtilsPlatformApiDefaults.BUNGEE_API).get()
             return "net.md-5:bungeecord-api:$version"
         }
     },
     VELOCITY(":platform-velocity", listOf("velocity-plugin.json")) {
         override fun apiCoordinate(project: Project): String {
             val version = project.providers.gradleProperty("velocityApiVersion")
-                .orElse(MagicUtilsConsumerVelocityPlugin.DEFAULT_VELOCITY_API).get()
+                .orElse(MagicUtilsPlatformApiDefaults.VELOCITY_API).get()
             return "com.velocitypowered:velocity-api:$version"
         }
     };

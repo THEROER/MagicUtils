@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.build.smoke
 
+import org.gradle.work.DisableCachingByDefault
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -66,6 +68,7 @@ internal fun registerSmokeTasks(project: Project, cases: List<SmokeCase>, defaul
     }
 }
 
+@DisableCachingByDefault(because = "Launches a real server and asserts on its log; the result depends on runtime behaviour, not just inputs")
 abstract class MagicUtilsSmokeTask : DefaultTask() {
     @get:Internal
     abstract val cases: ListProperty<SmokeCase>

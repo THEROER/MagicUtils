@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.build.consumer
 
+import dev.ua.theroer.magicutils.build.support.MagicUtilsPlatformApiDefaults
+
 import dev.ua.theroer.magicutils.build.target.*
 
 import org.gradle.api.Plugin
@@ -63,7 +65,7 @@ class MagicUtilsConsumerVelocityPlugin : Plugin<Project> {
 
         project.afterEvaluate {
             val spec = consumer.devServerSpec.orNull ?: return@afterEvaluate
-            MagicUtilsDevServer.configureVelocity(
+            MagicUtilsJvmDevServer.configureVelocity(
                 project = project,
                 spec = spec,
                 velocityVersion = velocityApiVersion,
@@ -77,6 +79,6 @@ class MagicUtilsConsumerVelocityPlugin : Plugin<Project> {
     }
 
     companion object {
-        const val DEFAULT_VELOCITY_API = "3.1.1"
+        val DEFAULT_VELOCITY_API = MagicUtilsPlatformApiDefaults.VELOCITY_API
     }
 }

@@ -27,6 +27,22 @@ open class MagicUtilsModrinthDsl {
     /** Markdown changelog uploaded with every version. Empty = none. */
     var changelog: String = ""
 
+    /**
+     * Artifact-id prefix of the platform bundle jars, used when artifacts are
+     * synthesised from the smoke matrix. MagicUtils itself publishes
+     * `magicutils-<platform>-bundle`; a downstream consumer overrides this to its
+     * own prefix (for example `commandflow-`).
+     */
+    var artifactPrefix: String = "magicutils-"
+
+    /**
+     * Suffix of the bundle Gradle module name, used when artifacts are synthesised
+     * from the smoke matrix. MagicUtils bundles live in `<platform>-bundle`
+     * modules; a consumer whose platform modules are named plainly (for example
+     * `bukkit`, `fabric`) sets this to an empty string.
+     */
+    var moduleSuffix: String = "-bundle"
+
     private val artifacts = mutableListOf<MagicUtilsModrinthArtifactBuilder>()
 
     fun artifact(key: String, action: Action<MagicUtilsModrinthArtifactBuilder>) {
@@ -42,6 +58,8 @@ open class MagicUtilsModrinthDsl {
             channel = channel,
             featured = featured,
             changelog = changelog,
+            artifactPrefix = artifactPrefix,
+            moduleSuffix = moduleSuffix,
             artifacts = artifacts.map { it.build() },
         )
     }

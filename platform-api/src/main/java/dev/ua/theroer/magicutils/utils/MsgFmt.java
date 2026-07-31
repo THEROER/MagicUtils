@@ -102,7 +102,7 @@ public final class MsgFmt {
             values = toList((Iterable<?>) first);
         } else if (placeholders.length == 1 && first != null && first.getClass().isArray()) {
             values = Arrays.asList((Object[]) first);
-        } else if (looksLikeKeyValuePairs(placeholders)) {
+        } else if (looksLikeKeyValuePairs(template, placeholders)) {
             return replaceWithKeyValuePairs(template, placeholders, valueTransformer);
         } else {
             values = Arrays.asList(placeholders);
@@ -137,16 +137,35 @@ public final class MsgFmt {
         return s.indexOf('{') >= 0 && s.indexOf('}') > s.indexOf('{');
     }
 
-    private static boolean looksLikeKeyValuePairs(Object[] args) {
+    /**
+     * Decides whether {@code args} is a flat {@code key, value, ...} list rather
+     * than positional values. Even length with String keys is necessary but not
+     * sufficient: {@code ("create 'x'", "boom")} is two positional values, not a
+     * {@code {create 'x'} → boom} map. To disambiguate, every key position must
+     * name a placeholder that actually appears in {@code template}; otherwise the
+     * args are treated positionally. This keeps {@code send("{0}: {1}", a, b)} and
+     * {@code send("{action}: {reason}", a, b)} working as positional fills.
+     */
+    private static boolean looksLikeKeyValuePairs(String template, Object[] args) {
         if (args.length < 2 || args.length % 2 != 0) {
             return false;
         }
         for (int i = 0; i < args.length; i += 2) {
-            if (!(args[i] instanceof String)) {
+            if (!(args[i] instanceof String key) || !templateHasPlaceholder(template, key)) {
                 return false;
             }
         }
         return true;
+    }
+
+    private static boolean templateHasPlaceholder(String template, String name) {
+        Matcher matcher = CURLY.matcher(template);
+        while (matcher.find()) {
+            if (matcher.group(1).equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String replaceWithKeyValuePairs(String template,
