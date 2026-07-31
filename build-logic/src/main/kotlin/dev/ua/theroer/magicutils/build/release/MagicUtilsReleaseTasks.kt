@@ -135,7 +135,7 @@ internal fun registerReleaseTasks(
         task.description = "Build the non-Fabric platforms as a pre-publish gate."
         task.workingDir = project.rootProject.projectDir
         task.commandLine(
-            dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapperName(),
+            dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapper(project.rootProject.projectDir),
             "buildScenario", "-PincludePlatforms=bukkit,bungee,velocity,neoforge",
         )
     }

@@ -5,7 +5,7 @@ import org.gradle.work.DisableCachingByDefault
 import dev.ua.theroer.magicutils.build.matrix.MagicUtilsFanoutInvocation
 import dev.ua.theroer.magicutils.build.matrix.MagicUtilsMatrixDefinition
 import dev.ua.theroer.magicutils.build.matrix.availablePlatformsFor
-import dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapperName
+import dev.ua.theroer.magicutils.build.matrix.magicUtilsGradleWrapper
 import dev.ua.theroer.magicutils.build.matrix.publishUnits
 import dev.ua.theroer.magicutils.build.matrix.registerMagicUtilsFanout
 import dev.ua.theroer.magicutils.build.publish.MagicUtilsPublishingSpec
@@ -100,7 +100,10 @@ internal fun registerReleaseMavenTasks(
             task.group = RELEASE_GROUP
             task.description = "Publish the build-logic plugins to $repoUrl."
             task.workingDir = project.rootProject.projectDir
-            task.commandLine(magicUtilsGradleWrapperName(), "-p", "build-logic", "publish", "-Ppublish_repo=$repoUrl", "-Pskip_existing")
+            task.commandLine(
+                magicUtilsGradleWrapper(project.rootProject.projectDir),
+                "-p", "build-logic", "publish", "-Ppublish_repo=$repoUrl", "-Pskip_existing",
+            )
             publishEnv.forEach { (key, value) -> task.environment(key, value) }
         }
     }
