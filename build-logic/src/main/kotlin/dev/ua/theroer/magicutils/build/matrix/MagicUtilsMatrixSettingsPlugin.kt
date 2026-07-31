@@ -173,7 +173,9 @@ open class MagicUtilsMatrixSettingsExtension {
     }
 }
 
-private data class MagicUtilsTaskSelection(
+// `internal`, not `private`: MagicUtilsTaskSelectionTest exercises the inference
+// directly, and the test source set is a friend module of main.
+internal data class MagicUtilsTaskSelection(
     val scenarioName: String?,
     val platforms: Set<String>?,
     val preferAllAvailable: Boolean = false,
@@ -217,7 +219,7 @@ private fun parsePlatformList(raw: String?): Set<String> =
         .filter { it.isNotEmpty() }
         .toCollection(linkedSetOf())
 
-private fun inferTaskSelection(
+internal fun inferTaskSelection(
     requestedTaskNames: List<String>,
     definition: MagicUtilsMatrixDefinition,
 ): MagicUtilsTaskSelection {
@@ -235,9 +237,29 @@ private fun inferTaskSelection(
         .flatMap { platform -> platform.projects.map { projectPath -> projectPath to platform.name } }
         .toMap()
     val inferredPlatforms = linkedSetOf<String>()
+    // Whether any requested task named a subproject (`:velocity:build`). Such a request
+    // is already scoped by the user, so it must never widen to the whole workspace.
+    var sawProjectQualifiedTask = false
 
     for (rawTaskName in requestedTaskNames.map(String::trim).filter(String::isNotEmpty)) {
         val canonicalTaskName = rawTaskName.substringAfterLast(':').substringBefore('@').lowercase()
+
+        // A subproject-qualified task scopes to that subproject's platform, whatever the
+        // task is called. Checked before the full-graph shortcut below, because names like
+        // `build`/`jar`/`tasks` are exactly the ones that would otherwise pull in every
+        // platform — configuring, say, bukkit-bundle for a `:fabric-bundle:build`.
+        // `:build` (root, lastIndexOf == 0) is not subproject-qualified.
+        if (rawTaskName.lastIndexOf(':') > 0) {
+            sawProjectQualifiedTask = true
+            val owningProjectPath = rawTaskName.substringBeforeLast(':')
+            for ((projectPath, platformName) in projectPathToPlatform) {
+                if (owningProjectPath == projectPath || owningProjectPath.startsWith("$projectPath:")) {
+                    inferredPlatforms += platformName
+                }
+            }
+            continue
+        }
+
         if (canonicalTaskName in QUERY_OR_FULL_GRAPH_TASKS || canonicalTaskName == "listbuildmatrix") {
             return MagicUtilsTaskSelection(scenarioName = "workspace", platforms = null, preferAllAvailable = true)
         }
@@ -276,18 +298,19 @@ private fun inferTaskSelection(
         EXTERNAL_PLATFORM_TASKS[canonicalTaskName]?.let { platformName ->
             inferredPlatforms += platformName
         }
-
-        for ((projectPath, platformName) in projectPathToPlatform) {
-            if (rawTaskName == projectPath || rawTaskName.startsWith("$projectPath:")) {
-                inferredPlatforms += platformName
-            }
-        }
     }
 
     return when {
         inferredPlatforms.isNotEmpty() -> MagicUtilsTaskSelection(
             scenarioName = null,
             platforms = inferredPlatforms,
+        )
+        // Scoped to subprojects that belong to no platform (a common module, or
+        // build-logic itself): include the common projects only, rather than falling
+        // back to the whole workspace.
+        sawProjectQualifiedTask -> MagicUtilsTaskSelection(
+            scenarioName = null,
+            platforms = emptySet(),
         )
         else -> MagicUtilsTaskSelection(
             scenarioName = if ("workspace" in definition.scenarios) "workspace" else null,
@@ -373,8 +396,68 @@ private fun resolveMatrixContext(
     )
 }
 
+/**
+ * Platform plugin id -> the key holding its version in
+ * `magicutils/platform-plugins.properties` (baked into the build-logic jar by the
+ * `platformPluginVersions` task).
+ *
+ * Loom ships under two marker coordinates — the classic remapping id and the
+ * no-remap id used on deobfuscated (26.x) targets — and both resolve to the same
+ * `net.fabricmc:fabric-loom` artifact, so they share one version. run-velocity is
+ * released in lockstep with run-paper, hence the shared `runPaperVersion`.
+ */
+private val PLATFORM_PLUGIN_VERSION_KEYS = linkedMapOf(
+    "fabric-loom" to "fabricLoomVersion",
+    "net.fabricmc.fabric-loom" to "fabricLoomVersion",
+    "net.neoforged.moddev" to "neoForgeModdevVersion",
+    "xyz.jpenilla.run-paper" to "runPaperVersion",
+    "xyz.jpenilla.run-velocity" to "runPaperVersion",
+    "xyz.jpenilla.run-waterfall" to "runProxyVersion",
+)
+
+/**
+ * Reads the platform plugin versions baked into this jar. Empty when the resource is
+ * absent, which keeps an older build-logic jar usable (callers then have to declare
+ * the versions themselves, exactly as before this resource existed).
+ */
+internal fun loadPlatformPluginVersions(): Map<String, String> {
+    val properties = java.util.Properties()
+    val stream = MagicUtilsMatrixSettingsPlugin::class.java.classLoader
+        .getResourceAsStream("magicutils/platform-plugins.properties")
+        ?: return emptyMap()
+    stream.use(properties::load)
+
+    val versions = linkedMapOf<String, String>()
+    PLATFORM_PLUGIN_VERSION_KEYS.forEach { (pluginId, key) ->
+        val version = properties.getProperty(key)?.trim()
+        if (!version.isNullOrEmpty()) {
+            versions[pluginId] = version
+        }
+    }
+    return versions
+}
+
 class MagicUtilsMatrixSettingsPlugin : Plugin<Settings> {
     override fun apply(settings: Settings) {
+        // The platform plugins (Loom, ModDevGradle, the jpenilla run-* runners) are
+        // `compileOnly` in build-logic so that, say, a NeoForge consumer never has to
+        // resolve Fabric Loom. That means they are NOT on the buildscript classpath and
+        // every consumer would otherwise have to repeat each version in its own
+        // `pluginManagement`. Declaring them here — from the versions baked into this
+        // jar — keeps one source of truth: a project can then write
+        // `plugins { id("fabric-loom") }` with no version, and only the platforms it
+        // actually asks for get resolved.
+        val platformPluginVersions = loadPlatformPluginVersions()
+        if (platformPluginVersions.isNotEmpty()) {
+            settings.pluginManagement { pluginManagement ->
+                pluginManagement.plugins { plugins ->
+                    platformPluginVersions.forEach { (pluginId, version) ->
+                        plugins.id(pluginId).version(version)
+                    }
+                }
+            }
+        }
+
         val extension = settings.extensions.create(
             "magicMatrix",
             MagicUtilsMatrixSettingsExtension::class.java,

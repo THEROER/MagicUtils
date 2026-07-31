@@ -57,7 +57,27 @@ final class MagicUtilsDuplicationDetector {
      * @param plugin the plugin whose classloader carries this MagicUtils copy
      */
     static void record(JavaPlugin plugin) {
+        // Only a plugin that carries its OWN copy of MagicUtils is a host. A
+        // shaded plugin loaded this class through its own classloader; an external
+        // consumer sees these classes from the standalone bundle's classloader, so
+        // it shares that runtime rather than duplicating it and must not be counted
+        // (otherwise every external consumer would falsely read as "bundled").
+        if (!carriesOwnCopy(plugin)) {
+            return;
+        }
         record(plugin.getName(), plugin.getPluginMeta().getVersion(), plugin.getLogger());
+    }
+
+    /**
+     * True when this MagicUtils copy was loaded by {@code plugin}'s own classloader
+     * — i.e. the plugin shades MagicUtils. The standalone bundle is always a host;
+     * external consumers, whose MagicUtils classes come from the bundle, are not.
+     */
+    private static boolean carriesOwnCopy(JavaPlugin plugin) {
+        if (STANDALONE_PLUGIN_NAME.equalsIgnoreCase(plugin.getName())) {
+            return true;
+        }
+        return MagicUtilsDuplicationDetector.class.getClassLoader() == plugin.getClass().getClassLoader();
     }
 
     /**

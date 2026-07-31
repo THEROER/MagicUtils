@@ -57,4 +57,14 @@ public @interface CommandInfo {
      * @return threading policy
      */
     CommandThreading threading() default CommandThreading.MAIN;
+
+    /**
+     * How this command's root execute is owned when several plugins contribute to
+     * the same root (e.g. a shared {@code /nox}). Used when this command is merged
+     * into an already-registered root via the registry's contribute API. Defaults
+     * to {@link MergePolicy#CONTRIBUTE}.
+     *
+     * @return the merge policy for the root execute
+     */
+    MergePolicy merge() default MergePolicy.CONTRIBUTE;
 }

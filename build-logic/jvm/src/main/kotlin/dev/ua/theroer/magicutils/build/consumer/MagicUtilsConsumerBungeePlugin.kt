@@ -1,5 +1,7 @@
 package dev.ua.theroer.magicutils.build.consumer
 
+import dev.ua.theroer.magicutils.build.support.MagicUtilsPlatformApiDefaults
+
 import dev.ua.theroer.magicutils.build.target.*
 
 import org.gradle.api.Plugin
@@ -47,7 +49,7 @@ class MagicUtilsConsumerBungeePlugin : Plugin<Project> {
 
         project.afterEvaluate {
             val spec = consumer.devServerSpec.orNull ?: return@afterEvaluate
-            MagicUtilsDevServer.configureWaterfall(
+            MagicUtilsJvmDevServer.configureWaterfall(
                 project = project,
                 spec = spec,
                 waterfallVersion = bungeeApiVersion.substringBefore("-"),
@@ -61,6 +63,6 @@ class MagicUtilsConsumerBungeePlugin : Plugin<Project> {
     }
 
     companion object {
-        const val DEFAULT_BUNGEE_API = "1.20-R0.1"
+        val DEFAULT_BUNGEE_API = MagicUtilsPlatformApiDefaults.BUNGEE_API
     }
 }

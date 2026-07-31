@@ -2,7 +2,11 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import dev.ua.theroer.magicutils.platform.bukkit.BukkitAudienceWrapper;
+import dev.ua.theroer.magicutils.platform.bukkit.BukkitThreading;
+import java.util.concurrent.CompletableFuture;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -209,6 +213,21 @@ public class BukkitCommandPlatform implements CommandPlatform<CommandSender> {
                 return player.getAddress().getAddress().getHostAddress();
             }
             return null;
+        }
+
+        @Override
+        public CompletableFuture<Boolean> teleport(@Nullable String worldName, double x, double y, double z) {
+            if (!(sender instanceof Player player)) {
+                return CompletableFuture.completedFuture(false);
+            }
+            World world = worldName == null ? player.getWorld() : Bukkit.getWorld(worldName);
+            if (world == null) {
+                return CompletableFuture.completedFuture(false);
+            }
+            // BukkitThreading.teleport routes through teleportAsync, which is the
+            // only teleport legal on Folia/Canvas (sync teleport throws on any
+            // thread); it is equally safe on regular Paper.
+            return BukkitThreading.teleport(player, new Location(world, x, y, z));
         }
 
         @Override

@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.platform.Audience;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -94,6 +95,32 @@ public interface MagicSender {
      */
     default @Nullable String address() {
         return null;
+    }
+
+    /**
+     * Teleports the sender to a location, if the platform and sender support it.
+     *
+     * <p>Coordinates are used rather than a platform {@code Location} so this stays
+     * on the platform-agnostic interface. A {@code worldName} of null means "the
+     * sender's current world"; platforms that cannot resolve a world by name may
+     * ignore it. The move is asynchronous by contract: on Folia/Canvas a
+     * synchronous teleport throws on any thread, so implementations must route
+     * through the platform's async teleport and complete the returned future when
+     * the move resolves.</p>
+     *
+     * <p>The default implementation is a no-op for senders that cannot be
+     * teleported (console, non-player) and completes with {@code false}. Platforms
+     * whose senders can move (e.g. Bukkit players) override this.</p>
+     *
+     * @param worldName target world name, or null for the sender's current world
+     * @param x target x
+     * @param y target y
+     * @param z target z
+     * @return a future completed with true once the sender arrives, false if the
+     *         sender cannot be teleported
+     */
+    default CompletableFuture<Boolean> teleport(@Nullable String worldName, double x, double y, double z) {
+        return CompletableFuture.completedFuture(false);
     }
 
     /**

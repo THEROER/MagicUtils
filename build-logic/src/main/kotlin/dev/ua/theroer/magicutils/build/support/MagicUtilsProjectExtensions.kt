@@ -8,7 +8,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-internal fun Project.magicUtilsModuleName(projectName: String = name): String {
+fun Project.magicUtilsModuleName(projectName: String = name): String {
     val namingSpec = extensions.extraProperties
         .let { if (it.has("magicutilsModuleNaming")) it.get("magicutilsModuleNaming") else null }
             as? MagicUtilsModuleNamingSpec
@@ -29,7 +29,7 @@ internal fun Project.magicUtilsModuleName(projectName: String = name): String {
  *  - username: `publish_user` property or `PUBLISH_USER` env;
  *  - password: `publish_password` property or `PUBLISH_TOKEN` env.
  */
-internal fun Project.magicUtilsPublishRepository(publishing: PublishingExtension) {
+fun Project.magicUtilsPublishRepository(publishing: PublishingExtension) {
     if (!hasProperty("publish_repo")) {
         return
     }
@@ -104,7 +104,7 @@ internal fun Project.findMagicUtilsModrinthToken(): String? =
  * so advertising them as Maven deps would make consumers double-resolve them.
  * Shared by every bundle plugin instead of copying the `pom.withXml` block.
  */
-internal fun MavenPublication.stripPomDependencies() {
+fun MavenPublication.stripPomDependencies() {
     pom.withXml { xml ->
         xml.asElement().getElementsByTagName("dependencies").item(0)?.let { node ->
             node.parentNode.removeChild(node)
