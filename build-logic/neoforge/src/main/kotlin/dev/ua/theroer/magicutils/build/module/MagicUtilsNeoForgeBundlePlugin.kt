@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.build.module
 
 import dev.ua.theroer.magicutils.build.support.*
+import dev.ua.theroer.magicutils.build.target.*
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -19,6 +20,7 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
         project.pluginManager.apply("magicutils.target")
 
         val moduleName = project.magicUtilsModuleName()
+        val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
 
         with(project) {
             val bundleContents = configurations.create("bundleContents")
@@ -65,12 +67,11 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
             // component serializers the logger/command output need). Bundle the
             // Adventure API + serializers explicitly, since the project deps above
             // are added non-transitively to keep NeoForge itself out of the jar.
-            val kyoriAdventure = project.extensions
-                .getByType(org.gradle.api.artifacts.VersionCatalogsExtension::class.java)
-                .named("libs")
-                .findVersion("kyoriAdventure")
-                .get()
-                .requiredVersion
+            // Must be the target's Adventure major, not the catalog default: the modules
+            // inlined above are compiled against it (magicUtilsAlignAdventure), so pinning
+            // the catalog version here would ship Adventure 4 classes next to bytecode
+            // built for Adventure 5 on the 26.x branch.
+            val kyoriAdventure = magicUtilsAdventureVersion(project, target)
             listOf(
                 "net.kyori:adventure-api",
                 "net.kyori:adventure-key",
@@ -81,12 +82,15 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
             ).forEach { coord ->
                 dependencies.add("bundleContents", "$coord:$kyoriAdventure")
             }
-            listOf(
-                "net.kyori:examination-api:1.3.0",
-                "net.kyori:examination-string:1.3.0",
-                "net.kyori:option:1.1.0",
-            ).forEach { coord ->
-                dependencies.add("bundleContents", coord)
+            dependencies.add("bundleContents", "net.kyori:option:1.1.0")
+            // examination-* is Adventure 4 only; 5.x replaced it with jspecify.
+            if (!target.isDeobfuscated) {
+                listOf(
+                    "net.kyori:examination-api:1.3.0",
+                    "net.kyori:examination-string:1.3.0",
+                ).forEach { coord ->
+                    dependencies.add("bundleContents", coord)
+                }
             }
 
             // The messaging module's MessageCodec (and the config module) need

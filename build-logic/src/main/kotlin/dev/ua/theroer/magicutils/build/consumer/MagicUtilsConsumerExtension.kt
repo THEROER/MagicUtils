@@ -46,7 +46,7 @@ enum class EmbedMode {
 }
 
 /** The loader a consumer plugin targets, for [resolveEmbedMode] validation. */
-internal enum class ConsumerLoader(val label: String, val native: EmbedMode, val allowed: Set<EmbedMode>) {
+enum class ConsumerLoader(val label: String, val native: EmbedMode, val allowed: Set<EmbedMode>) {
     FABRIC("Fabric", EmbedMode.JAR_IN_JAR, setOf(EmbedMode.JAR_IN_JAR, EmbedMode.EXTERNAL)),
     NEOFORGE("NeoForge", EmbedMode.JAR_IN_JAR, setOf(EmbedMode.JAR_IN_JAR, EmbedMode.EXTERNAL)),
     // Velocity is a plain JVM plugin like Bukkit (flat proxy classpath, no
@@ -63,7 +63,7 @@ internal enum class ConsumerLoader(val label: String, val native: EmbedMode, val
  * combination (e.g. [EmbedMode.JAR_IN_JAR] on Bukkit) fails the build with a
  * message that names the alternatives, rather than silently doing something else.
  */
-internal fun resolveEmbedMode(requested: EmbedMode, loader: ConsumerLoader): EmbedMode {
+fun resolveEmbedMode(requested: EmbedMode, loader: ConsumerLoader): EmbedMode {
     val resolved = if (requested == EmbedMode.AUTO) loader.native else requested
     if (resolved !in loader.allowed) {
         val alternatives = loader.allowed.joinToString(" or ") { it.name }
@@ -310,7 +310,7 @@ abstract class MagicUtilsModrinthDependency {
     }
 }
 
-internal fun Project.magicUtilsConsumerExtension(): MagicUtilsConsumerExtension {
+fun Project.magicUtilsConsumerExtension(): MagicUtilsConsumerExtension {
     val existing = extensions.findByType(MagicUtilsConsumerExtension::class.java)
     if (existing != null) return existing
     val ext = extensions.create("magicutilsConsumer", MagicUtilsConsumerExtension::class.java)
@@ -334,7 +334,7 @@ internal fun Project.magicUtilsConsumerExtension(): MagicUtilsConsumerExtension 
  * defaults are target-derived and are applied by the platform plugin, which has
  * the target in hand.
  */
-internal fun Project.applyDevServerConventions(spec: MagicUtilsDevServerSpec) {
+fun Project.applyDevServerConventions(spec: MagicUtilsDevServerSpec) {
     spec.port.convention(25565)
     spec.motd.convention("{pluginName} {platform} dev")
     spec.onlineMode.convention(false)
@@ -349,13 +349,15 @@ internal fun Project.applyDevServerConventions(spec: MagicUtilsDevServerSpec) {
  * substituted. [platform] is the runner's platform label (e.g. `Paper`,
  * `Folia`, `Fabric`), supplied by the platform plugin that owns the run task.
  */
-internal fun MagicUtilsDevServerSpec.resolvedMotd(platform: String): String =
+fun MagicUtilsDevServerSpec.resolvedMotd(platform: String): String =
     motd.get()
         .replace("{pluginName}", pluginName.get())
         .replace("{platform}", platform)
 
 /** A resolved Modrinth dependency: its id and the version to load (or [AUTO]). */
-internal data class ResolvedModrinth(val id: String, val version: String)
+// Public, not internal: MagicUtilsModrinthResolver returns these, and the per-platform
+// build-logic artifacts (:fabric/:neoforge/:jvm) are separate Gradle modules.
+data class ResolvedModrinth(val id: String, val version: String)
 
 /**
  * Modrinth dependencies to load for [platform] on the target identified by
@@ -364,7 +366,7 @@ internal data class ResolvedModrinth(val id: String, val version: String)
  * dependency with neither is skipped. A version of [AUTO] is passed through for
  * the caller to resolve against the Modrinth API. `folia` reuses `paper`.
  */
-internal fun MagicUtilsDevServerSpec.modrinthFor(
+fun MagicUtilsDevServerSpec.modrinthFor(
     platform: String,
     mcClassifier: String,
 ): List<ResolvedModrinth> =
@@ -412,7 +414,7 @@ internal fun magicUtilsModuleCoordinate(
  *   script must build by hand (a classifier-less bundle jar). Bundles keep the
  *   suffix; plain modules are published bare, so this fact is bundle-shaped.
  */
-internal fun Project.exposeMagicUtilsTargetFacts(target: MagicUtilsTargetExtension) {
+fun Project.exposeMagicUtilsTargetFacts(target: MagicUtilsTargetExtension) {
     val base = magicUtilsConsumerExtension().magicutilsVersion.get()
     extensions.extraProperties.set("magicutilsMinecraftVersion", target.minecraft.get())
     extensions.extraProperties.set("magicutilsLoaderVersion", target.loader.getOrElse(""))
@@ -434,7 +436,7 @@ internal fun Project.exposeMagicUtilsTargetFacts(target: MagicUtilsTargetExtensi
  * (adding late would fail with "configuration was resolved"). Fabric consumers
  * pass mod-aware configuration names; bukkit/common pass plain ones.
  */
-internal fun Project.addConsumerMagicUtilsModules(
+fun Project.addConsumerMagicUtilsModules(
     target: MagicUtilsTargetExtension,
     apiConfiguration: String,
     implementationConfiguration: String,
@@ -469,7 +471,7 @@ internal fun Project.addConsumerMagicUtilsModules(
  * which executes after the plugin applies; a plain JVM loader has no Loom
  * early-observe of configurations, so a late `add` is safe.
  */
-internal fun Project.configureJvmConsumerEmbed(
+fun Project.configureJvmConsumerEmbed(
     target: MagicUtilsTargetExtension,
     loader: ConsumerLoader,
 ) {

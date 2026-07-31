@@ -76,6 +76,24 @@ version). MagicUtils itself uses them via `includeBuild("build-logic")`
 ./gradlew -p build-logic publish -Ppublish_repo=<url>
 ```
 
+Both commands publish **four** artifacts, all at `pluginsVersion`:
+
+| Artifact | Carries | Extra toolchain |
+| --- | --- | --- |
+| `magicutils-build-logic` | matrix/target/publish/release/smoke, module + bundle plugins, `consumer-common` | none |
+| `magicutils-build-logic-fabric` | `fabric-module`, `fabric-bundle`, `consumer-fabric` | Fabric Loom |
+| `magicutils-build-logic-neoforge` | `neoforge-bundle`, `consumer-neoforge` | ModDevGradle |
+| `magicutils-build-logic-jvm` | `consumer-bukkit`, `consumer-velocity`, `consumer-bungee` | jpenilla run-* |
+
+The split exists so a consumer resolves only its own platform's toolchain — a NeoForge
+mod on 1.21.1 must never be forced to fetch Fabric Loom, which pins a far newer Gradle.
+Nothing changes for consumers: they still apply plugins by id, and each plugin's marker
+points at the right artifact.
+
+`publish`/`publishToMavenLocal` are per-project tasks, so the root build-logic project
+aggregates the subprojects into them — publishing the neutral artifact alone would leave
+`magicutils.consumer-fabric` and friends unresolvable.
+
 ## Pipeline
 
 ```
