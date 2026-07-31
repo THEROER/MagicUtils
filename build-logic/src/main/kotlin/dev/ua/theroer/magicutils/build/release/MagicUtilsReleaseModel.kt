@@ -93,6 +93,19 @@ internal fun parseModrinthVersionIds(responseBody: String): Map<String, String> 
     }.toMap()
 }
 
+/**
+ * Whether [versionNumbers] (from [parseModrinthVersionIds]) covers release [version].
+ *
+ * A release is not one Modrinth version but one per published artifact, named
+ * `<version>-<channel>-<platform>-java<N>` (`1.27.4-alpha-bukkit-java21`) by
+ * `publishToModrinth`. Matching the bare version alone therefore never hit, so
+ * verifyReleaseConsistency reported every published release as missing from
+ * Modrinth. A bare match is still accepted for projects that upload a single
+ * unsuffixed artifact.
+ */
+internal fun modrinthVersionPublished(versionNumbers: Set<String>, version: String): Boolean =
+    versionNumbers.any { it == version || it.startsWith("$version-") }
+
 /** Maven artifactId the aggregated Javadoc zip is uploaded under. */
 private const val JAVADOC_ARTIFACT = "magicutils-javadoc"
 
