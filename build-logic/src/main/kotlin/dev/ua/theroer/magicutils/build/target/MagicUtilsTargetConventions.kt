@@ -23,24 +23,40 @@ val MagicUtilsTargetExtension.isDeobfuscated: Boolean
     get() = libraryMinecraft.get().substringBefore('.').toInt() >= 26
 
 /**
+ * Whether this target's platforms are on Adventure 5.
+ *
+ * Deliberately NOT [isDeobfuscated]: the two cutovers are one minor apart. 26.1 is
+ * deobfuscated, but paper-api 26.1.1 still imports adventure-bom 4.26.1 — Paper moved to
+ * Adventure 5 in 26.2, and treating all of 26.x as Adventure 5 forced 5.2.0 onto a
+ * platform whose own API is compiled against 4, which fails as soon as anything reflects
+ * over a Bukkit interface (CommandSender extends Audience).
+ */
+val MagicUtilsTargetExtension.usesAdventure5: Boolean
+    get() {
+        val parts = libraryMinecraft.get().split('.')
+        val major = parts.firstOrNull()?.toIntOrNull() ?: return false
+        val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        return major > 26 || (major == 26 && minor >= 2)
+    }
+
+/**
  * The Adventure version this target's platforms actually run.
  *
- * The 26.x line moved the whole ecosystem to Adventure 5: adventure-platform-fabric 7.x
- * (the only line supporting 26.x) bundles Adventure 5.2.0, and paper-api 26.2 imports
- * adventure-bom 5.2.0. Older targets are still on Adventure 4. Adventure 4 and 5 are not
- * interchangeable — `Buildable` was removed, so `ComponentFlattener.toBuilder()` changed
- * descriptor, and `Services.service(ServiceLoader, Class)` was added — so shipping the
- * wrong major next to the platform's copy is what makes AdventureCommon.<clinit> die with
- * NoSuchMethodError.
+ * From 26.2 the ecosystem is on Adventure 5: paper-api 26.2 imports adventure-bom 5.2.0
+ * and adventure-platform-fabric 7.x bundles Adventure 5. Everything earlier — including
+ * 26.1 — is still on Adventure 4. Adventure 4 and 5 are not interchangeable: `Buildable`
+ * was removed, so `ComponentFlattener.toBuilder()` changed descriptor, and
+ * `Services.service(ServiceLoader, Class)` was added — shipping the wrong major next to
+ * the platform's copy is what makes AdventureCommon.<clinit> die with NoSuchMethodError.
  *
- * Keyed on [isDeobfuscated] so a single `-Ptarget=` selects a consistent Adventure across
+ * Keyed on [usesAdventure5] so a single `-Ptarget=` selects a consistent Adventure across
  * every module and bundle of that target.
  */
 fun magicUtilsAdventureVersion(project: Project, target: MagicUtilsTargetExtension): String {
     val versions = project.extensions
         .getByType(org.gradle.api.artifacts.VersionCatalogsExtension::class.java)
         .named("libs")
-    val alias = if (target.isDeobfuscated) "kyoriAdventureDeobfuscated" else "kyoriAdventure"
+    val alias = if (target.usesAdventure5) "kyoriAdventure5" else "kyoriAdventure"
     return versions.findVersion(alias)
         .orElseThrow { IllegalStateException("Version catalog 'libs' has no '$alias' version") }
         .requiredVersion
