@@ -51,10 +51,10 @@ platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitCo
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitMagicUtilsConsumerRegistry.java:145:.getMethod(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitPlaceholderRegistrar.java:66:Class.forName(
 platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitPlaceholderRegistrar.java:71:Class.forName(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:181:Class.forName(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:190:.getMethod(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:198:.getMethod(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:210:Class.forName(
-platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:211:.getMethod(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:473:Class.forName(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:482:.getMethod(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:490:.getMethod(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:502:Class.forName(
+platform-bukkit/src/main/java/dev/ua/theroer/magicutils/platform/bukkit/BukkitThreading.java:503:.getMethod(
 platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:450:.getMethod(
 platform-neoforge/src/main/java/dev/ua/theroer/magicutils/platform/neoforge/NeoForgePlatformProvider.java:463:.getMethod(
