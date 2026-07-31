@@ -22,9 +22,19 @@ import org.gradle.api.tasks.TaskProvider
  * so the two paths stay behaviourally identical.
  */
 
-/** The project's Gradle wrapper script name for the current OS. */
-internal fun magicUtilsGradleWrapperName(): String =
-    if (System.getProperty("os.name").orEmpty().lowercase().contains("win")) "gradlew.bat" else "./gradlew"
+/**
+ * Absolute path to the project's Gradle wrapper script for the current OS.
+ *
+ * Absolute rather than the bare script name: on Windows the current directory is
+ * not on PATH, so an `Exec` with `commandLine("gradlew.bat")` fails with
+ * "'gradlew.bat' is not recognized" no matter what `workingDir` says — which took
+ * out `releaseValidateBuild`, and with it every local release from a Windows
+ * machine. Resolving against the root dir works the same on both platforms.
+ */
+internal fun magicUtilsGradleWrapper(rootDir: java.io.File): String {
+    val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
+    return rootDir.resolve(if (isWindows) "gradlew.bat" else "gradlew").absolutePath
+}
 
 /** One per-target invocation: the extra `gradlew` args to run for [target]. */
 data class MagicUtilsFanoutInvocation(
@@ -65,7 +75,7 @@ internal fun registerMagicUtilsFanout(
     describe: (MagicUtilsFanoutInvocation) -> String,
 ): List<TaskProvider<out Task>> {
     val rootDir = project.rootProject.projectDir
-    val wrapper = magicUtilsGradleWrapperName()
+    val wrapper = magicUtilsGradleWrapper(rootDir)
     // Under .gradle/, NOT build/: a child invocation may run `clean` (the Maven
     // release does, to republish from scratch), which would delete build/ — and
     // with it the child's own Gradle home if it lived there, killing the daemon
