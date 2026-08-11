@@ -2,6 +2,7 @@ package dev.ua.theroer.magicutils.build.consumer
 
 import dev.ua.theroer.magicutils.build.target.*
 
+import net.neoforged.moddevgradle.dsl.NeoForgeExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
@@ -41,16 +42,12 @@ class MagicUtilsConsumerNeoForgePlugin : Plugin<Project> {
             task.options.compilerArgs.add("-parameters")
         }
 
-        // neoForge { version = <target neoforge> } via the moddev extension,
-        // reached reflectively to keep moddev off build-logic's compile classpath.
-        // Use the String setter (setVersion) rather than getVersion().set(...):
-        // in current ModDevGradle getVersion() throws "Mod development has not
-        // been enabled yet" until a version is set, so reading the property first
-        // is not allowed. setVersion is what enables the workflow.
-        val neoForge = project.extensions.getByName("neoForge")
-        neoForge.javaClass.methods
-            .first { it.name == "setVersion" && it.parameterCount == 1 && it.parameterTypes[0] == String::class.java }
-            .invoke(neoForge, target.neoforge.get())
+        // neoForge { version = <target neoforge> }. This assigns through the String
+        // setter rather than getVersion().set(...): in current ModDevGradle
+        // getVersion() throws "Mod development has not been enabled yet" until a
+        // version is set, so reading the property first is not allowed —
+        // assigning is what enables the workflow.
+        project.extensions.getByType(NeoForgeExtension::class.java).version = target.neoforge.get()
 
         project.exposeMagicUtilsTargetFacts(target)
         project.addConsumerMagicUtilsModules(target, "api", "implementation")
