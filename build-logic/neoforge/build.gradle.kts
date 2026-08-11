@@ -2,8 +2,9 @@
 //
 // `implementation` for the same reason as Loom in :fabric — MagicUtilsConsumerNeoForge
 // Plugin applies moddev via `pluginManager.apply(id)`, which reads this artifact's
-// runtime classpath. ModDev's own API is never imported; the neoForge extension is
-// reached reflectively, so only the marker is needed.
+// runtime classpath. It also compiles against ModDev's own API (NeoForgeExtension),
+// which the marker brings along. Only projects asking for a NeoForge plugin id
+// resolve this artifact, so no Fabric or proxy consumer ever sees ModDevGradle.
 dependencies {
     implementation("net.neoforged.moddev:net.neoforged.moddev.gradle.plugin:${project.property("neoForgeModdevVersion")}")
 }
