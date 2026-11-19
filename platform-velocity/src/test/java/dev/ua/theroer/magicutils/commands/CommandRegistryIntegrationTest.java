@@ -266,6 +266,23 @@ class CommandRegistryIntegrationTest {
             return registeredCommands.containsKey(alias);
         }
 
+        // Abstract in velocity-api 4.x, absent from 3.1.1; no @Override so this test
+        // compiles against both the 3.1.1 and the 4.x API.
+        public boolean hasCommand(String alias, CommandSource source) {
+            return hasCommand(alias);
+        }
+
+        // Also abstract in 4.x only (see above).
+        public CompletableFuture<List<String>> offerSuggestions(CommandSource source, String cmdLine) {
+            return CompletableFuture.completedFuture(List.of());
+        }
+
+        public CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> offerBrigadierSuggestions(
+                CommandSource source, String cmdLine) {
+            return CompletableFuture.completedFuture(
+                    com.mojang.brigadier.suggestion.Suggestions.empty().join());
+        }
+
         private Set<String> registeredLabels() {
             return new LinkedHashSet<>(registeredCommands.keySet());
         }
