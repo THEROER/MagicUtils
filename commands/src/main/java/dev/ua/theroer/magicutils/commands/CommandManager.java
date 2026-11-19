@@ -884,6 +884,18 @@ public class CommandManager<S> {
                         + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
                 return null;
             }
+
+            // A default the author wrote (@DefaultValue) is a promise that the parameter
+            // always has a value, so a default that fails to resolve is an error, not a
+            // silent null: @DefaultValue("@sender") resolves to no player from console,
+            // and passing null would NPE inside the command instead of telling the user
+            // to name a player. @Nullable / @OptionalArgument opt out by declaring that
+            // null is expected, so they keep the old behaviour.
+            if (!providedByUser && parsedArgument.isInvalid() && !argument.isNullable()) {
+                logger.debug("Default value did not resolve for argument " + i + " ("
+                        + argument.getName() + "): " + value);
+                return null;
+            }
         }
 
         return result;

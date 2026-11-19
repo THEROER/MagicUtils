@@ -574,6 +574,7 @@ public abstract class MagicCommand {
             boolean hasPermissionAnnotation = false;
             AllowedSender[] allowedSenders = new AllowedSender[] { AllowedSender.ANY };
             boolean isSenderParameter = false;
+            boolean nullable = false;
             List<String> optionShortNames = new ArrayList<>();
             List<String> optionLongNames = new ArrayList<>();
             boolean isFlag = false;
@@ -586,6 +587,7 @@ public abstract class MagicCommand {
                 }
                 if (annotation instanceof OptionalArgument || isNullableAnnotation(annotation)) {
                     optional = true;
+                    nullable = true;
                 }
                 if (annotation instanceof Suggest) {
                     Suggest suggest = (Suggest) annotation;
@@ -638,7 +640,9 @@ public abstract class MagicCommand {
             }
 
             CommandArgument.Builder builder = CommandArgument.builder(name, type);
-            if (optional)
+            if (nullable)
+                builder.nullable();
+            else if (optional)
                 builder.optional();
             if (defaultValue != null)
                 builder.defaultValue(defaultValue);
