@@ -83,6 +83,40 @@ dependencies {
 }
 ```
 
+## Supported Versions
+
+Every row below is booted on a real server by the compatibility smoke
+(`./gradlew runCompatibilitySmoke`) and gated on the runtime diagnostics verdict. The one
+exception is NeoForge: its moddev dev run loads the mod on a different class loader than
+Minecraft (see the note in `neoforge-bundle/build.gradle.kts`), so the dev smoke cannot
+finish the diagnostics export; the published bundle jar itself runs cleanly on a real
+NeoForge server (checked by hand on 26.3.0.113).
+
+| Platform | Minecraft / proxy versions | Java | Build target |
+| --- | --- | --- | --- |
+| Paper / Spigot / Purpur | 1.20 – 1.20.4 | 17 | `mc1201` |
+| Paper / Spigot / Purpur | 1.20.5 – 1.20.6 | 21 | `mc1205` |
+| Paper / Spigot / Purpur / Folia | 1.21 – 1.21.11 | 21 | `mc12110` |
+| Paper / Folia | 26.1 – 26.1.2 | 25 | `mc2611` |
+| Paper / Folia | 26.2 | 25 | `mc262` |
+| Paper / Folia | 26.3 | 25 | `mc263` |
+| Fabric | 1.20.1, 1.20.6, 1.21.10, 26.2, 26.3 (one jar per branch) | 17 / 21 / 25 | `mc1201`, `mc1205`, `mc12110`, `mc262`, `mc263` |
+| NeoForge | 1.21.10, 26.2, 26.3 | 21 / 25 | `mc12110`, `mc262`, `mc263` |
+| Velocity 3.x (≤ 3.5.1, Adventure 4) | proxy for 1.20 – 1.21.x networks | 21 | `mc12110` |
+| Velocity 4.x (4.3.1, Adventure 5) | proxy for 26.x networks | 25 | `mc262`, `mc263` |
+| BungeeCord / Waterfall | proxy (Waterfall is end-of-life upstream) | 21 | `mc12110` |
+
+Released bundles are keyed by Java level (`+java17`, `+java21`, `+java25`), and each
+level ships the build of its newest target. The `+java25` bundles are therefore the
+26.3 build (Adventure 5) and serve 26.2 – 26.3; Paper/Folia 26.1, which is still on
+Adventure 4, is smoke-tested from the `mc2611` target but needs a build of that target
+(`-Ptarget=mc2611`) rather than the released `+java25` jar.
+
+Velocity 4 moved to Adventure 5 and Java 25, so a Velocity 3 build cannot run on it (and
+vice versa); the Velocity API a build compiles against follows the target's Adventure
+major (see below). Pick `velocity-bundle+java21` for Velocity 3 and
+`velocity-bundle+java25` for Velocity 4.
+
 ## Adventure
 
 MagicUtils exposes Adventure types in its public API (`Audience.send(Component)`, the
@@ -93,7 +127,7 @@ the Adventure version its target platforms actually run:
 | --- | --- | --- |
 | 1.20.x – 1.21.x | 4.x | Paper 1.21 and adventure-platform-fabric 6.x are on Adventure 4 |
 | 26.1 | 4.x | deobfuscated already, but paper-api 26.1.1 still imports adventure-bom 4.26.1 |
-| 26.2+ | 5.2.0 | paper-api 26.2 imports adventure-bom 5.2.0; adventure-platform-fabric 7.x bundles Adventure 5 |
+| 26.2+ | 5.2.0 | paper-api 26.2/26.3 and velocity-api 4.x import adventure-bom 5.2.0; adventure-platform-fabric 7.x bundles Adventure 5 |
 
 Only the major is pinned per target; within a major the platform's own requirement wins
 (paper-api 1.21.11 pulls Adventure 4.26.1, so that is what a 1.21 build compiles against).
@@ -115,14 +149,16 @@ provides it, and a second copy breaks version detection.
 - Platform API: `magicutils-api`
 - Core stack: `magicutils-core`
 - Feature modules: `magicutils-config`, `magicutils-lang`,
-  `magicutils-logger`, `magicutils-commands`, `magicutils-diagnostics`,
-  `magicutils-placeholders`, `magicutils-http-client`
+  `magicutils-logger`, `magicutils-commands`, `magicutils-commands-brigadier`,
+  `magicutils-diagnostics`, `magicutils-diagnostics-testkit`,
+  `magicutils-placeholders`, `magicutils-http-client`, `magicutils-messaging`
 - Config format helpers: `magicutils-config-yaml`,
   `magicutils-config-toml`
 - Platform adapters: `magicutils-bukkit`, `magicutils-bungee`,
   `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge`
-- Platform bundles: `magicutils-bukkit-bundle`,
-  `magicutils-fabric-bundle`
+- Platform bundles: `magicutils-bukkit-bundle`, `magicutils-bungee-bundle`,
+  `magicutils-velocity-bundle`, `magicutils-fabric-bundle`,
+  `magicutils-neoforge-bundle`
 - Fabric integrations: `magicutils-commands-fabric`,
   `magicutils-logger-fabric`, `magicutils-placeholders-fabric`
 - NeoForge commands: `magicutils-commands-neoforge`
@@ -186,9 +222,10 @@ Maintainers cut a tagged release with the Gradle release tasks (the former
 
 ```bash
 ./gradlew releasePreflight -Pversion=X.Y.Z   # validate version + tags, no changes
-./gradlew release -Pversion=X.Y.Z            # preflight → bump → dispatch release.yml
+./gradlew release -Pversion=X.Y.Z            # full local release (tag not pushed by default)
 ```
 
-`release` validates the version, bumps `gradle.properties`, commits, and
-dispatches `release.yml`. CI then tags `vX.Y.Z`, builds docs/javadoc, and
-publishes the artifacts to Reposilite. See `RELEASING.md` for the full flow.
+`release` runs locally: it validates the version and build, bumps
+`gradle.properties`, tags `vX.Y.Z`, and publishes the Maven artifacts, Modrinth
+versions, and Javadoc. `dispatchRelease` is the opt-in CI path via
+`release.yml`. See `RELEASING.md` for the full flow.

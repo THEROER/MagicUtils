@@ -106,6 +106,8 @@ abstract class MagicUtilsJvmBundlePlugin(private val platform: JvmBundlePlatform
                 shadowJarTask.archiveClassifier.set("")
                 shadowJarTask.configurations.set(setOf(bundleShadow))
                 shadowJarTask.mergeServiceFiles()
+
+                shadowJarTask.relocate("org.yaml.snakeyaml", "dev.ua.theroer.magicutils.libs.snakeyaml")
             }
 
             tasks.configureEach {
@@ -145,7 +147,14 @@ enum class JvmBundlePlatform(
 
         override fun extraResourceTokens(project: Project): Map<String, String> {
             val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
-            return mapOf("apiVersion" to bukkitApiVersion(target.minecraft.get()))
+            // On the Adventure-5 line the declared api-version is the line's floor
+            // (26.2), not the build's own minor: Paper refuses a plugin whose
+            // api-version is newer than the server, and the released +java25 jar is
+            // the newest target's build (see publishUnits) yet must load on every
+            // Adventure-5 server — while still being refused, cleanly, by 26.1.
+            val apiVersion = if (target.usesAdventure5) ADVENTURE5_BUKKIT_API_FLOOR
+            else bukkitApiVersion(target.minecraft.get())
+            return mapOf("apiVersion" to apiVersion)
         }
     },
     BUNGEE(":platform-bungee", listOf("plugin.yml")) {
@@ -157,9 +166,8 @@ enum class JvmBundlePlatform(
     },
     VELOCITY(":platform-velocity", listOf("velocity-plugin.json")) {
         override fun apiCoordinate(project: Project): String {
-            val version = project.providers.gradleProperty("velocityApiVersion")
-                .orElse(MagicUtilsPlatformApiDefaults.VELOCITY_API).get()
-            return "com.velocitypowered:velocity-api:$version"
+            val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
+            return "com.velocitypowered:velocity-api:${magicUtilsVelocityApiVersion(project, target)}"
         }
     };
 
@@ -173,6 +181,9 @@ enum class JvmBundlePlatform(
 class MagicUtilsBukkitBundlePlugin : MagicUtilsJvmBundlePlugin(JvmBundlePlatform.BUKKIT)
 class MagicUtilsBungeeBundlePlugin : MagicUtilsJvmBundlePlugin(JvmBundlePlatform.BUNGEE)
 class MagicUtilsVelocityBundlePlugin : MagicUtilsJvmBundlePlugin(JvmBundlePlatform.VELOCITY)
+
+/** First Paper release on Adventure 5; the api-version every Adventure-5 build declares. */
+private const val ADVENTURE5_BUKKIT_API_FLOOR = "26.2"
 
 private fun bukkitApiVersion(minecraftVersion: String): String {
     val parts = minecraftVersion.split('.')

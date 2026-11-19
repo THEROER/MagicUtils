@@ -19,12 +19,26 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
  *
  * Two libraries need deliberate handling; everything else is inlined as-is.
  *
- * **Jackson — relocated.** The bundle pulls Jackson from two directions: the shaded
- * modules (config/config-yaml/config-toml/lang) contribute it already relocated under
- * `libs.jackson`, while the plain library modules (diagnostics/http-client/messaging)
- * contribute plain `com.fasterxml.jackson`. Left alone the jar carries both copies —
- * ~1100 duplicated classes and two competing sets of `META-INF/services` entries.
- * Relocating here rewrites the second copy onto the first, so one Jackson ships.
+ * **Jackson — left plain, deliberately.** The bundle pulls Jackson from two
+ * directions: the shaded modules (config/config-yaml/config-toml/lang) contribute it
+ * already relocated under `libs.jackson` — that relocation is theirs, applied inside
+ * their own jars, and stays — while the plain library modules (diagnostics/http-client/
+ * messaging) contribute plain `com.fasterxml.jackson`.
+ *
+ * Relocating here as well used to look like the tidy answer (one Jackson instead of
+ * two), but it also rewrote the *public API*: `MagicHttpClient.mapper()` and
+ * `MessageCodec.mapper()` hand out an `ObjectMapper`, so on Fabric alone their
+ * signatures became `libs.jackson...ObjectMapper` while bukkit/velocity/bungee/neoforge
+ * kept `com.fasterxml...ObjectMapper`. A consumer compiled against the plain type — the
+ * only one it can name in source — then died at runtime with
+ * `NoSuchMethodError: MagicHttpClient$Builder.mapper(com.fasterxml...ObjectMapper)`,
+ * and a consumer with its own ObjectMapper (a local cache file, say) died with
+ * `NoClassDefFoundError` instead. The same is true for Adventure below: a type in the
+ * public API cannot be relocated without breaking every consumer.
+ *
+ * So the duplicate is accepted here exactly as the other bundles accept it: the plain
+ * copy is what consumers link against, the shaded modules keep their private one, and
+ * every platform exposes one and the same signature.
  *
  * **gson — dropped.** Minecraft provides `com.google.gson` on the game class loader.
  * Shipping a second copy is what MagicUtilsNeoForgeBundlePlugin already documents as
@@ -40,7 +54,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
  * server's copy are the same major.
  */
 internal fun magicUtilsConfigureBundleShading(shadowJarTask: ShadowJar) {
-    shadowJarTask.relocate("com.fasterxml.jackson", "dev.ua.theroer.magicutils.libs.jackson")
     shadowJarTask.exclude("com/google/gson/**")
 }
 

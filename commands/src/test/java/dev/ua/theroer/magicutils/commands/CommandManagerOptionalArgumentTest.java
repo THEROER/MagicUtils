@@ -1,6 +1,7 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
+import dev.ua.theroer.magicutils.annotations.DefaultValue;
 import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.ParamName;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
@@ -56,6 +57,31 @@ class CommandManagerOptionalArgumentTest {
         assertEquals("Alex", command.lastTarget);
     }
 
+    @Test
+    void executeRejectsCommandWhenDefaultValueCannotBeResolved() {
+        CommandManager<TestSender> manager = commandManager();
+        UnresolvableDefaultCommand command = new UnresolvableDefaultCommand();
+        manager.register(command, commandInfo(UnresolvableDefaultCommand.class));
+
+        CommandResult result = manager.execute("demo", new TestSender("tester"), List.of());
+
+        assertFalse(result.isSuccess());
+        assertFalse(command.executed, "the command must not run with an unresolved default");
+    }
+
+    @Test
+    void executePassesNullWhenNullableDefaultCannotBeResolved() {
+        CommandManager<TestSender> manager = commandManager();
+        NullableUnresolvableDefaultCommand command = new NullableUnresolvableDefaultCommand();
+        manager.register(command, commandInfo(NullableUnresolvableDefaultCommand.class));
+
+        CommandResult result = manager.execute("demo", new TestSender("tester"), List.of());
+
+        assertTrue(result.isSuccess());
+        assertTrue(command.executed);
+        assertNull(command.lastAction);
+    }
+
     private static CommandManager<TestSender> commandManager() {
         return new CommandManager<>(
                 "",
@@ -95,6 +121,31 @@ class CommandManagerOptionalArgumentTest {
             this.executed = true;
             this.lastAction = action;
             this.lastTarget = target;
+            return CommandResult.success("ok");
+        }
+    }
+
+    @CommandInfo(name = "demo")
+    private static final class UnresolvableDefaultCommand extends MagicCommand {
+        private boolean executed;
+
+        @SuppressWarnings("unused")
+        public CommandResult execute(@ParamName("action") @DefaultValue("nosuchvalue") DemoAction action) {
+            this.executed = true;
+            return CommandResult.success("ok");
+        }
+    }
+
+    @CommandInfo(name = "demo")
+    private static final class NullableUnresolvableDefaultCommand extends MagicCommand {
+        private boolean executed;
+        private DemoAction lastAction;
+
+        @SuppressWarnings("unused")
+        public CommandResult execute(@ParamName("action") @OptionalArgument
+                                     @DefaultValue("nosuchvalue") DemoAction action) {
+            this.executed = true;
+            this.lastAction = action;
             return CommandResult.success("ok");
         }
     }

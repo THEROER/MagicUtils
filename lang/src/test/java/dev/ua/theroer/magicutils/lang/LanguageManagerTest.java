@@ -39,6 +39,79 @@ class LanguageManagerTest {
     Path tempDir;
 
     @Test
+    void bundledKeysWithoutTypedFieldsStillResolve() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            manager.init("en");
+
+            // `magicutils.commands.help.*` exists in the bundled lang/en.json but
+            // CommandMessages declares no matching @ConfigValue field.
+            assertEquals("Help", manager.getMessage("magicutils.commands.help.title"));
+            assertEquals("Available commands:",
+                    manager.getMessage("magicutils.commands.help.available_commands"));
+            // A key that does have a typed field must keep working.
+            assertFalse(manager.getMessage("magicutils.commands.no_permission")
+                    .equals("magicutils.commands.no_permission"));
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void defaultsReachAFileAnotherModAlreadyCreated() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            // First mod on the shared config/lang/<code> file wins the creation.
+            LanguageManager first = new LanguageManager(platform, configManager);
+            first.init("en");
+
+            // Second mod runs its own ConfigManager, as a separate mod would, and
+            // finds the file already on disk. It must still pick up its bundled
+            // defaults rather than falling through to raw keys.
+            ConfigManager secondConfigManager = new ConfigManager(platform);
+            try {
+                LanguageManager second = new LanguageManager(platform, secondConfigManager);
+                second.init("en");
+
+                assertEquals("Help", second.getMessage("magicutils.commands.help.title"));
+            } finally {
+                secondConfigManager.shutdown();
+            }
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
+    void freshLanguageFileRecordsItsOwnCode() {
+        TestPlatform platform = new TestPlatform(tempDir, null);
+        ConfigManager configManager = new ConfigManager(platform);
+        try {
+            LanguageManager manager = new LanguageManager(platform, configManager);
+            // No bundled resource ships for ru_ru, so the metadata defaults would
+            // otherwise leave the file claiming to be English.
+            manager.init("ru_ru");
+
+            String written = Files.readString(tempDir.resolve("lang").resolve("ru_ru.json"))
+                    .replace(" ", "");
+            assertTrue(written.contains("\"code\":\"ru_ru\""),
+                    "expected the file to record its own code, got: " + written);
+            assertFalse(written.contains("\"name\":\"English\""),
+                    "expected the English default name to be replaced, got: " + written);
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        } finally {
+            configManager.shutdown();
+            platform.shutdown();
+        }
+    }
+
+    @Test
     void setLanguageAsyncReturnsFalseWhenMainThreadDispatchFails() {
         TestPlatform platform = new TestPlatform(tempDir, new IllegalStateException("no main thread"));
         ConfigManager configManager = new ConfigManager(platform);

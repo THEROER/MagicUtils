@@ -9,6 +9,7 @@ import dev.ua.theroer.magicutils.annotations.Option;
 import dev.ua.theroer.magicutils.annotations.OptionalArgument;
 import dev.ua.theroer.magicutils.annotations.ParamName;
 import dev.ua.theroer.magicutils.annotations.SubCommand;
+import dev.ua.theroer.magicutils.annotations.Suggest;
 import dev.ua.theroer.magicutils.commands.CommandArgument;
 import dev.ua.theroer.magicutils.commands.CommandPlatform;
 import dev.ua.theroer.magicutils.commands.CommandResult;
@@ -30,12 +31,16 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BrigadierCommandRegistryTest {
 
@@ -122,6 +127,39 @@ class BrigadierCommandRegistryTest {
             ArgumentCommandNode<?, ?> target = assertInstanceOf(ArgumentCommandNode.class, alias.getChild("target"));
             assertInstanceOf(StringArgumentType.class, target.getType());
             assertNull(target.getCustomSuggestions());
+        }
+    }
+
+    @Test
+    void suggestResolvesNestedArgumentsAgainstTheWholeCommandLine() {
+        try (Harness harness = new Harness()) {
+            CommandDispatcher<TestSender> dispatcher = new CommandDispatcher<>();
+            harness.registry().registerCommand(dispatcher, new NestedSuggestCommand());
+            TestSender sender = new TestSender();
+
+            String input = "sugg set a";
+            com.mojang.brigadier.suggestion.Suggestions suggestions = dispatcher
+                    .getCompletionSuggestions(dispatcher.parse(input, sender)).join();
+
+            List<String> texts = suggestions.getList().stream()
+                    .map(com.mojang.brigadier.suggestion.Suggestion::getText).toList();
+            assertTrue(texts.contains("alpha"), "expected the 'set' argument suggestions, got " + texts);
+            assertFalse(texts.contains("apex"),
+                    "suggestions must come from the 'set' sub-command, not the root: " + texts);
+            assertEquals(input.length() - 1, suggestions.getRange().getStart());
+        }
+    }
+
+    @CommandInfo(name = "sugg", permissionDefault = MagicPermissionDefault.TRUE)
+    private static final class NestedSuggestCommand extends MagicCommand {
+        @SuppressWarnings("unused")
+        public CommandResult execute(@ParamName("root") @Suggest({"apex", "root"}) String root) {
+            return CommandResult.success(root);
+        }
+
+        @SubCommand(name = "set", permissionDefault = MagicPermissionDefault.TRUE)
+        public CommandResult set(@ParamName("mode") @Suggest({"alpha", "beta"}) String mode) {
+            return CommandResult.success(mode);
         }
     }
 
@@ -218,7 +256,8 @@ class BrigadierCommandRegistryTest {
 
         @Override
         public boolean hasPermission(TestSender sender, String permission, MagicPermissionDefault defaultValue) {
-            return sender.permissions.contains(permission) || permission == null || permission.isEmpty();
+            return sender.permissions.contains(permission) || permission == null || permission.isEmpty()
+                    || defaultValue == MagicPermissionDefault.TRUE;
         }
 
         @Override

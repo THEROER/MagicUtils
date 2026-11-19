@@ -20,9 +20,12 @@ magicutilsPublish {
 // Velocity's API is decoupled from Minecraft, so one proxy build covers a wide
 // game-version range; the proxy version itself can still be overridden with
 // `-PrunVelocityVersion=...` for a targeted compatibility check.
+// Default proxy: the newest Velocity of the line this target compiles against —
+// Velocity 3.5.1 (last 3.x, Adventure 4) for the 1.20/1.21 targets, Velocity 4.3.1
+// (Adventure 5, Java 25) for 26.2+.
 val runVelocityVersion = (findProperty("runVelocityVersion") as String?)
     ?.trim()?.takeIf { it.isNotEmpty() }
-    ?: "3.4.0-SNAPSHOT"
+    ?: if (extensions.getByType<MagicUtilsTargetExtension>().usesAdventure5) "4.3.1" else "3.5.1"
 tasks.named<xyz.jpenilla.runvelocity.task.RunVelocity>("runVelocity") {
     velocityVersion(runVelocityVersion)
     pluginJars(tasks.named<Jar>("shadowJar").flatMap { it.archiveFile })
@@ -30,7 +33,13 @@ tasks.named<xyz.jpenilla.runvelocity.task.RunVelocity>("runVelocity") {
     // collides with a real proxy on 25565/25577. Velocity only loads plugins and
     // boots (we grep `Done (`); no client connects, so the exact port is
     // irrelevant. Patch the existing velocity.toml bind line when present.
-    val runDir = layout.projectDirectory.dir("run")
+    // One run dir per Velocity major: Velocity 4 rewrites velocity.toml in a shape
+    // Velocity 3 cannot read back ("Cannot convert ... SynchronizedConfig to an
+    // Enum"), so a shared dir breaks whichever line boots second.
+    val runDir = layout.projectDirectory.dir(
+        if (runVelocityVersion.substringBefore('.') == "3") "run" else "run-velocity${runVelocityVersion.substringBefore('.')}"
+    )
+    runDirectory.set(runDir)
     doFirst {
         val port = magicUtilsResolveRunPort()
         val toml = runDir.asFile.resolve("velocity.toml")

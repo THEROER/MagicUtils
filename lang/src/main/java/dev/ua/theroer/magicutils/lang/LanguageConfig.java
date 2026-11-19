@@ -167,9 +167,9 @@ public class LanguageConfig {
         return map;
     }
 
-    void applyTranslations(Map<String, Map<String, String>> translations, boolean override) {
+    boolean applyTranslations(Map<String, Map<String, String>> translations, boolean override) {
         if (translations == null || translations.isEmpty()) {
-            return;
+            return false;
         }
         boolean changed = false;
         for (Map.Entry<String, Map<String, String>> sectionEntry : translations.entrySet()) {
@@ -181,6 +181,12 @@ public class LanguageConfig {
 
             Object section = resolveSection(sectionPath);
             if (section == null) {
+                // No typed section for this path — keep the bundled values instead
+                // of dropping them, so a new section in lang/<code>.json still
+                // resolves before anyone adds a matching class.
+                for (Map.Entry<String, String> entry : values.entrySet()) {
+                    changed |= storeAsCustom(sectionPath, entry.getKey(), entry.getValue());
+                }
                 continue;
             }
             Map<String, Field> fieldMap = SECTION_FIELD_CACHE.computeIfAbsent(section.getClass(),
@@ -188,6 +194,11 @@ public class LanguageConfig {
             for (Map.Entry<String, String> entry : values.entrySet()) {
                 Field field = fieldMap.get(entry.getKey());
                 if (field == null) {
+                    // Bundled key with no @ConfigValue field (e.g. the nested
+                    // `help.*` keys under magicutils.commands). Without this the
+                    // value never reaches the config and callers fall through to
+                    // the raw key.
+                    changed |= storeAsCustom(sectionPath, entry.getKey(), entry.getValue());
                     continue;
                 }
                 try {
@@ -204,6 +215,67 @@ public class LanguageConfig {
         if (changed) {
             invalidateFlatCache();
         }
+        return changed;
+    }
+
+    /**
+     * Sets the metadata code (and a matching display name when the bundled
+     * defaults did not supply one) for a freshly created language file.
+     *
+     * @param languageCode language code the file was created for
+     * @return true when the metadata changed
+     */
+    boolean applyLanguageCode(String languageCode) {
+        if (languageCode == null || languageCode.isBlank() || metadata == null) {
+            return false;
+        }
+        Map<String, Field> fieldMap = SECTION_FIELD_CACHE.computeIfAbsent(metadata.getClass(),
+                LanguageConfig::mapSectionFields);
+        boolean changed = writeMetadata(fieldMap.get("code"), languageCode);
+        // Only fill the name when it is still the hardcoded English default;
+        // a bundled file that names the language properly must win.
+        String currentName = metadata.getName();
+        if (currentName == null || "English".equals(currentName)) {
+            changed |= writeMetadata(fieldMap.get("name"), languageCode);
+        }
+        return changed;
+    }
+
+    private boolean writeMetadata(Field field, String value) {
+        if (field == null) {
+            return false;
+        }
+        try {
+            if (value.equals(field.get(metadata))) {
+                return false;
+            }
+            field.set(metadata, value);
+            return true;
+        } catch (IllegalAccessException ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * Stores a bundled translation that has no typed field under its fully
+     * qualified key in {@link #customMessages}, which {@link #getMessage(String)}
+     * consults first.
+     *
+     * @return true when the entry was written
+     */
+    private boolean storeAsCustom(String sectionPath, String relativeKey, String value) {
+        if (relativeKey == null || relativeKey.isBlank() || value == null) {
+            return false;
+        }
+        String fullKey = sectionPath + "." + relativeKey;
+        // Never let a bundled default overwrite a value someone set explicitly:
+        // customMessages is also where putCustomMessage()/registerTranslations()
+        // land, and those win over the shipped text.
+        if (customMessages.containsKey(fullKey)) {
+            return false;
+        }
+        customMessages.put(fullKey, value);
+        return true;
     }
 
     private Object resolveSection(String sectionPath) {

@@ -46,22 +46,26 @@ only for `dispatchRelease`.
 ### Steps
 
 The enabled steps come from `magicMatrix { release { } }` in `settings.gradle.kts`
-and can be overridden per invocation with `-Prelease.<step>=true|false`:
+(not declared there today, so the defaults below apply) and can be overridden per invocation with `-Prelease.<step>=true|false`:
 
 | Property | Default | Step |
 |----------|---------|------|
 | `-Prelease.validateVersion` | on | `releasePreflight` |
-| `-Prelease.validateBuild` | on | `releaseValidateBuild` (the slow one) |
+| `-Prelease.validate` | on | `releaseValidateBuild` (the slow one) |
 | `-Prelease.bump` | on | `bumpVersion` |
 | `-Prelease.tag` | on | `releaseTag` |
 | `-Prelease.push` | **off** | push the tag to origin |
-| `-Prelease.publishMaven` | on | `releaseMavenAll` |
-| `-Prelease.publishModrinth` | on | `releaseModrinth` |
-| `-Prelease.publishJavadoc` | on | `releaseJavadoc` |
+| `-Prelease.maven` | on | `releaseMavenAll` |
+| `-Prelease.modrinth` | on | `releaseModrinth` |
+| `-Prelease.javadoc` | on | `releaseJavadoc` |
 | `-Prelease.verify` | on | `verifyReleaseConsistency` |
-| `-Prelease.dryRun` | off | print what would be published instead of uploading |
 | `-Prelease.branch=<name>` | `main` | branch a release may run from |
 | `-Prelease.allowAnyBranch=true` | off | bypass the branch gate once (genuine hotfix) |
+
+`-Prelease.dryRun` (its presence turns it on) makes `releaseMavenAll`,
+`releaseModrinth` and `releaseJavadoc` print the commands/URLs they would run
+instead of uploading; `-PmodrinthDryRun=true` additionally prints the resolved
+Modrinth upload plan (version, jar, loaders, game versions).
 
 Every publish step is resumable: uploads pass `-Pskip_existing`, which HEADs each
 POM and skips what is already in the (immutable) repository, and `publishToModrinth`
@@ -94,7 +98,7 @@ still goes through.
 When that applies, skip `releaseMavenAll` locally and let a runner do it:
 
 ```bash
-./gradlew release -Pversion=X.Y.Z -Prelease.push=true -Prelease.publishMaven=false
+./gradlew release -Pversion=X.Y.Z -Prelease.push=true -Prelease.maven=false
 gh workflow run publish-maven.yml --ref main -f version=X.Y.Z
 ```
 
@@ -114,10 +118,10 @@ This replaces the former Python `run_compatibility_smoke.py`.
 ```bash
 ./gradlew listSmokeMatrix          # show resolved smoke cases
 ./gradlew runCompatibilitySmoke    # run all cases; gate on diagnostics
-./gradlew runCompatibilitySmoke -PsmokeCase=bukkit-paper-121x-1.21.10  # one case
+./gradlew runCompatibilitySmoke -PsmokeCase=bukkit-paper-121x-1.21.11  # one case
 ```
 
-The smoke matrix is declared in `settings.gradle` under `magicMatrix { smoke { ... } }`
+The smoke matrix is declared in `settings.gradle.kts` under `magicMatrix { smoke { ... } }`
 (per-platform `runTask`, `successPattern`, and `entry(...)` with MC version
 ranges). Each case: launch `runTask` → wait for `successPattern` → run the
 diagnostics console command → read the exported report → **fail if diagnostics

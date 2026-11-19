@@ -17,6 +17,8 @@ public class CommandArgument {
     private final String name;
     private final Class<?> type;
     private final boolean optional;
+    /** True when the author declared null an acceptable value (@Nullable / @OptionalArgument). */
+    private final boolean nullable;
     private final String defaultValue;
     @Getter(AccessLevel.NONE)
     private final List<String> suggestions;
@@ -59,6 +61,7 @@ public class CommandArgument {
         this.name = builder.name;
         this.type = builder.type;
         this.optional = builder.optional;
+        this.nullable = builder.nullable;
         this.defaultValue = builder.defaultValue;
         this.suggestions = new ArrayList<>(builder.suggestions);
         this.permission = builder.permission;
@@ -216,6 +219,7 @@ public class CommandArgument {
         private final String name;
         private final Class<?> type;
         private boolean optional = false;
+        private boolean nullable = false;
         private String defaultValue = null;
         private final List<String> suggestions = new ArrayList<>();
         private String permission = null;
@@ -254,6 +258,18 @@ public class CommandArgument {
          */
         public Builder optional() {
             this.optional = true;
+            return this;
+        }
+
+        /**
+         * Marks the argument as accepting {@code null}: the author declared null a valid
+         * value, so an unresolved value is passed through instead of failing the command.
+         *
+         * @return this builder
+         */
+        public Builder nullable() {
+            this.optional = true;
+            this.nullable = true;
             return this;
         }
 
@@ -522,6 +538,7 @@ public class CommandArgument {
                 "name='" + name + '\'' +
                 ", type=" + type.getSimpleName() +
                 ", optional=" + optional +
+                ", nullable=" + nullable +
                 ", defaultValue='" + defaultValue + '\'' +
                 ", suggestions=" + suggestions +
                 ", permission='" + permission + '\'' +

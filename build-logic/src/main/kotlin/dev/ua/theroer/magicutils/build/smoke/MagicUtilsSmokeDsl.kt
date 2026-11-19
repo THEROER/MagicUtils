@@ -72,6 +72,8 @@ open class MagicUtilsSmokeEntryBuilder(private val id: String) {
     var target: String? = null
     /** Platform's primary sub-range (update-service default); at most one per platform. */
     var primary: Boolean = false
+    /** False = smoke-only: gated, but not released/advertised. */
+    var released: Boolean = true
     /** Extra -P flags for rare cases; `target` above is the idiomatic way to pick one. */
     var gradleProperties: Map<String, String> = emptyMap()
     var smokeGradleProperties: Map<String, Map<String, String>> = emptyMap()
@@ -83,6 +85,7 @@ open class MagicUtilsSmokeEntryBuilder(private val id: String) {
         smokeValues = smokeValues,
         target = target,
         primary = primary,
+        released = released,
         gradleProperties = gradleProperties,
         smokeGradleProperties = smokeGradleProperties,
         successPattern = successPattern,
