@@ -189,10 +189,41 @@ public final class BundledTranslations {
     private static Map<String, String> loadResource(String languageCode) {
         URL url = findResource(languageCode);
         if (url == null) {
+            // Nothing on the classpath. Mod loaders that serve a jar through a
+            // union/secure filesystem can refuse a bare `lang/x.json` lookup while
+            // still resolving it relative to a class in the same jar, so retry that
+            // way before reporting the language as unavailable.
+            url = BundledTranslations.class.getResource(
+                    "/" + RESOURCE_PREFIX + languageCode + RESOURCE_SUFFIX);
+        }
+        if (url == null) {
+            LOADER_DIAGNOSTIC.report(languageCode);
             return Collections.emptyMap();
         }
         return parseFlat(url, languageCode);
     }
+
+    /**
+     * Warns once per language when no bundled resource can be located, so a
+     * classloader that cannot see {@code lang/} shows up in the log instead of
+     * silently degrading every message to its raw key.
+     */
+    private static final class LoaderDiagnostic {
+        private final Set<String> reported = ConcurrentHashMap.newKeySet();
+
+        private void report(String languageCode) {
+            if (!reported.add(languageCode)) {
+                return;
+            }
+            System.getLogger(BundledTranslations.class.getName())
+                    .log(System.Logger.Level.WARNING,
+                            "No bundled translations found for '" + languageCode
+                                    + "' (looked for " + RESOURCE_PREFIX + languageCode + RESOURCE_SUFFIX
+                                    + " on the classpath). Messages will fall back to raw keys.");
+        }
+    }
+
+    private static final LoaderDiagnostic LOADER_DIAGNOSTIC = new LoaderDiagnostic();
 
     private static Map<String, String> parseFlat(URL url, String diagnosticName) {
         try (InputStream in = url.openStream()) {

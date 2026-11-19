@@ -160,14 +160,23 @@ public class LanguageManager {
 
     private boolean initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
         Map<String, Map<String, String>> translations = createTranslations(languageCode);
-        if (translations.isEmpty()) {
-            return false;
-        }
+        boolean changed = false;
         if (!existed) {
-            config.applyTranslations(translations, true);
-            return true;
+            // Stamp the real code even when nothing is bundled for this language:
+            // LanguageMetadata defaults to English/en, so a fresh ru_ru.jsonc would
+            // otherwise claim to be the English file.
+            changed = config.applyLanguageCode(languageCode);
         }
-        return false;
+        if (translations.isEmpty()) {
+            return changed;
+        }
+        // Fill defaults even into a file that already exists. lang/<code> is shared
+        // by every MagicUtils-based mod on the server, so whichever mod boots first
+        // creates it and the rest used to skip their own defaults entirely, leaving
+        // their keys unresolved. override=false keeps user edits and the first
+        // writer's values intact. Only report a change when something was actually
+        // filled in, so an up-to-date file is not rewritten on every start.
+        return config.applyTranslations(translations, !existed) | changed;
     }
 
     private boolean applyRegisteredTranslations(LanguageConfig config, String languageCode) {
