@@ -703,17 +703,27 @@ public class ConfigManager {
                     if (shuttingDown) {
                         return;
                     }
-                    // Skip reload if the file's mtime matches what we last
-                    // saw — this drops spurious watcher events caused by
-                    // initial registration writes (saveConfig defaults), and
-                    // duplicate ENTRY_CREATE/ENTRY_MODIFY pairs the OS emits
-                    // for the same physical save.
-                    long observed = entry.file.exists() ? entry.file.lastModified() : -1L;
-                    long lastKnown = entry.lastModified.get();
-                    if (lastKnown > 0 && observed == lastKnown) {
-                        return;
+                    boolean reloaded;
+                    // The mtime check runs under entry.monitor, the lock saveEntry
+                    // holds from writing the file until it records the new mtime.
+                    // Checked outside it, an echo of our own save could be sampled
+                    // mid-save (file written, mtime not yet recorded), look external,
+                    // and then reload stale disk state over in-memory changes made
+                    // after that save (e.g. a custom message about to be saved).
+                    synchronized (entry.monitor) {
+                        // Skip reload if the file's mtime matches what we last
+                        // saw — this drops spurious watcher events caused by
+                        // initial registration writes (saveConfig defaults), and
+                        // duplicate ENTRY_CREATE/ENTRY_MODIFY pairs the OS emits
+                        // for the same physical save.
+                        long observed = entry.file.exists() ? entry.file.lastModified() : -1L;
+                        long lastKnown = entry.lastModified.get();
+                        if (lastKnown > 0 && observed == lastKnown) {
+                            return;
+                        }
+                        reloaded = reloadEntry(entry, Collections.emptySet(), true);
                     }
-                    if (reloadEntry(entry, Collections.emptySet(), true)) {
+                    if (reloaded) {
                         notifyChangeListenersOnMain(entry, Collections.emptySet());
                     }
                 }
