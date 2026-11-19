@@ -20,9 +20,12 @@ magicutilsPublish {
 // Velocity's API is decoupled from Minecraft, so one proxy build covers a wide
 // game-version range; the proxy version itself can still be overridden with
 // `-PrunVelocityVersion=...` for a targeted compatibility check.
+// Default proxy: the newest Velocity of the line this target compiles against —
+// Velocity 3.5.1 (last 3.x, Adventure 4) for the 1.20/1.21 targets, Velocity 4.3.1
+// (Adventure 5, Java 25) for 26.2+.
 val runVelocityVersion = (findProperty("runVelocityVersion") as String?)
     ?.trim()?.takeIf { it.isNotEmpty() }
-    ?: "3.4.0-SNAPSHOT"
+    ?: if (extensions.getByType<MagicUtilsTargetExtension>().usesAdventure5) "4.3.1" else "3.5.1"
 tasks.named<xyz.jpenilla.runvelocity.task.RunVelocity>("runVelocity") {
     velocityVersion(runVelocityVersion)
     pluginJars(tasks.named<Jar>("shadowJar").flatMap { it.archiveFile })

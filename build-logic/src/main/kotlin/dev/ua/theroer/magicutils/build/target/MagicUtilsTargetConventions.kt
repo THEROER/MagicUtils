@@ -63,6 +63,23 @@ fun magicUtilsAdventureVersion(project: Project, target: MagicUtilsTargetExtensi
 }
 
 /**
+ * The Velocity API this target compiles against.
+ *
+ * Velocity's API is decoupled from Minecraft, but not from Adventure: velocity-api 3.x
+ * is on Adventure 4, velocity-api 4.x (Velocity 4, Java 25) on Adventure 5. Code built
+ * for one cannot run on the other (see [magicUtilsAdventureVersion]), so the API line
+ * follows [usesAdventure5]: Velocity 3 for 1.20/1.21/26.1, Velocity 4 for 26.2+.
+ * A `velocityApiVersion` Gradle property still overrides it.
+ */
+fun magicUtilsVelocityApiVersion(project: Project, target: MagicUtilsTargetExtension): String =
+    project.providers.gradleProperty("velocityApiVersion").orNull?.trim()?.takeIf { it.isNotEmpty() }
+        ?: if (target.usesAdventure5) {
+            dev.ua.theroer.magicutils.build.support.MagicUtilsPlatformApiDefaults.VELOCITY_API_4
+        } else {
+            dev.ua.theroer.magicutils.build.support.MagicUtilsPlatformApiDefaults.VELOCITY_API
+        }
+
+/**
  * Moves every `net.kyori:adventure-*` dependency whose major differs from
  * [magicUtilsAdventureVersion] onto that version.
  *
