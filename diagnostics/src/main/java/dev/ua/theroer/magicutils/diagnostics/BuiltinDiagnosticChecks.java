@@ -3,6 +3,7 @@ package dev.ua.theroer.magicutils.diagnostics;
 import dev.ua.theroer.magicutils.commands.CommandManager;
 import dev.ua.theroer.magicutils.commands.HelpCommandSupport;
 import dev.ua.theroer.magicutils.config.ConfigManager;
+import dev.ua.theroer.magicutils.lang.BundledTranslations;
 import dev.ua.theroer.magicutils.lang.LanguageManager;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.placeholders.MagicPlaceholders;
@@ -42,6 +43,9 @@ final class BuiltinDiagnosticChecks {
                 check("runtime.language.present", "runtime", "Language manager is available when configured",
                         DiagnosticSeverity.INFO, EnumSet.allOf(DiagnosticMode.class),
                         context -> CompletableFuture.completedFuture(runtimeLanguagePresent(context))),
+                check("language.translations.resolve", "runtime", "Bundled translations resolve to real text",
+                        DiagnosticSeverity.WARNING, EnumSet.allOf(DiagnosticMode.class),
+                        context -> CompletableFuture.completedFuture(languageTranslationsResolve(context))),
                 check("runtime.components.snapshot", "runtime", "Runtime component snapshot is accessible",
                         DiagnosticSeverity.WARNING, EnumSet.allOf(DiagnosticMode.class),
                         context -> CompletableFuture.completedFuture(runtimeComponentsSnapshot(context))),
@@ -120,6 +124,46 @@ final class BuiltinDiagnosticChecks {
         }
         return DiagnosticResult.ok("runtime.language.present", "runtime", DiagnosticSeverity.INFO,
                 "LanguageManager is registered", details("type", languageManager.getClass().getName()));
+    }
+
+    /**
+     * Walks the translation lookup chain for a key that ships in every bundled
+     * language file, reporting each stage separately. When help output degrades to
+     * raw {@code magicutils.*} keys this pinpoints which stage lost the text: the
+     * bundled resource on the classpath, the on-disk language file, or the
+     * manager's own resolution.
+     */
+    private static DiagnosticResult languageTranslationsResolve(DiagnosticContext context) {
+        String probeKey = "magicutils.commands.help.title";
+        Map<String, Object> info = new LinkedHashMap<>();
+
+        Map<String, String> bundled = BundledTranslations.getTranslations("en");
+        info.put("bundled.en.keys", String.valueOf(bundled.size()));
+        info.put("bundled.en.probe", String.valueOf(bundled.get(probeKey)));
+
+        LanguageManager languageManager = context.findComponent(LanguageManager.class).orElse(null);
+        if (languageManager == null) {
+            return DiagnosticResult.skipped("language.translations.resolve", "runtime",
+                    DiagnosticSeverity.WARNING, "LanguageManager is not registered for this runtime", info);
+        }
+
+        String current = languageManager.getCurrentLanguage();
+        info.put("language.current", String.valueOf(current));
+        String resolved = languageManager.getMessage(probeKey);
+        info.put("resolved", String.valueOf(resolved));
+
+        boolean bundledOk = bundled.get(probeKey) != null;
+        boolean resolvedOk = resolved != null && !resolved.equals(probeKey);
+
+        if (bundledOk && resolvedOk) {
+            return DiagnosticResult.ok("language.translations.resolve", "runtime",
+                    DiagnosticSeverity.WARNING, "Translations resolve to real text", info);
+        }
+        String reason = !bundledOk
+                ? "Bundled lang/en.json is missing or empty on the classpath"
+                : "Bundled text exists but the manager still returns the raw key";
+        return DiagnosticResult.warn("language.translations.resolve", "runtime",
+                DiagnosticSeverity.WARNING, reason, info);
     }
 
     private static DiagnosticResult runtimeComponentsSnapshot(DiagnosticContext context) {
