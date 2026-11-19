@@ -121,6 +121,9 @@ magicMatrix {
             }
             entry("paper-261x") {
                 target = "mc2611"
+                // Smoke-only: 26.1 is Adventure 4, but the released +java25 bundle is
+                // the newest Java-25 target's (26.3, Adventure 5) — see publishUnits.
+                released = false
                 versions = listOf("26.1-26.1.2")
                 smokeValues = listOf("26.1.2")
                 smokeGradleProperties = mapOf(
@@ -128,7 +131,9 @@ magicMatrix {
                 )
             }
             entry("paper-262x") {
-                target = "mc262"
+                // The released +java25 bundle is the 26.3 build, so gate exactly that
+                // jar on a real 26.2 server (same Adventure 5 line, same Java).
+                target = "mc263"
                 versions = listOf("26.2")
                 smokeValues = listOf("26.2")
                 smokeGradleProperties = mapOf(
@@ -169,6 +174,9 @@ magicMatrix {
             }
             entry("folia-261x") {
                 target = "mc2611"
+                // Smoke-only: 26.1 is Adventure 4, but the released +java25 bundle is
+                // the newest Java-25 target's (26.3, Adventure 5) — see publishUnits.
+                released = false
                 versions = listOf("26.1-26.1.2")
                 smokeValues = listOf("26.1.2")
                 smokeGradleProperties = mapOf(
@@ -178,7 +186,9 @@ magicMatrix {
             // Folia now ships 26.2 and 26.3 builds. Each runs the jar of its own
             // target, like Paper: 26.2+ is Adventure 5, which the 26.1 jar is not.
             entry("folia-262x") {
-                target = "mc262"
+                // The released +java25 bundle is the 26.3 build, so gate exactly that
+                // jar on a real 26.2 server (same Adventure 5 line, same Java).
+                target = "mc263"
                 versions = listOf("26.2")
                 smokeValues = listOf("26.2")
                 smokeGradleProperties = mapOf(

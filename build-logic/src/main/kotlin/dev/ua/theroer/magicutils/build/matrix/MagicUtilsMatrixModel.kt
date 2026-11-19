@@ -69,12 +69,19 @@ internal fun MagicUtilsMatrixDefinition.availablePlatformsFor(target: String): S
  * mc12110 / mc12111 are all Java 21); publishing each would re-upload a
  * byte-identical jar to the same coordinate and 409 in the immutable releases
  * repo. So we pick one representative target per Java level — the default target
- * for its own level, otherwise the first target in file order — and publish the
+ * for its own level, otherwise the newest (last in file order) — and publish the
  * full module set there (`publishDefaultMatrix` covers every category, plus the
  * Fabric matrix when that representative enables the fabric platform).
  *
  * The remaining targets still exist for the build/smoke matrix (each Minecraft
  * version boots a real server); they just don't publish.
+ *
+ * Newest rather than first: since 26.2 the Java level no longer pins the Adventure
+ * major (26.1 is Java 25 + Adventure 4, 26.2/26.3 are Java 25 + Adventure 5), and the
+ * `+java25` bundle can only be one of them. The newest target is the one the current
+ * platforms — and Velocity 4, which only builds on 26.2+ — actually run; the first
+ * one (26.1) left the 26.2/26.3 rows shipping an Adventure-4 jar and the velocity
+ * `+java25` jar never built at all.
  */
 internal fun MagicUtilsMatrixDefinition.publishUnits(
     allTargets: List<String>,
@@ -84,8 +91,8 @@ internal fun MagicUtilsMatrixDefinition.publishUnits(
     for (target in allTargets) {
         val java = javaLevelOf(target)
         // Prefer the default target as its level's representative; otherwise the
-        // first-seen target for that level wins (file order).
-        if (java !in representatives || target == defaultTarget) {
+        // newest target for that level wins (last in file order).
+        if (representatives[java] != defaultTarget) {
             representatives[java] = target
         }
     }

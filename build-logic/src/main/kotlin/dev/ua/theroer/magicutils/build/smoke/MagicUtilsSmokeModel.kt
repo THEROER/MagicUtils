@@ -62,6 +62,13 @@ data class SmokeMatrixEntry(
      * that does not use the primary concept can leave them all false.
      */
     val primary: Boolean = false,
+    /**
+     * Whether this sub-range is released (Modrinth artifact + printReleaseMatrix row).
+     * False keeps it as a smoke-only gate: the target is still booted and checked, but
+     * its versions are not advertised — for a target whose jar is not the one its Java
+     * level releases (see publishUnits).
+     */
+    val released: Boolean = true,
     val gradleProperties: Map<String, String> = emptyMap(),
     val smokeGradleProperties: Map<String, Map<String, String>> = emptyMap(),
     val successPattern: String? = null,
