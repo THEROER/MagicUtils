@@ -1,7 +1,6 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.*;
-import dev.ua.theroer.magicutils.lang.InternalMessages;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -167,8 +166,8 @@ public abstract class MagicCommand {
             throw new IllegalArgumentException("Cannot mount a command into itself");
         }
 
-        String mountedName = sanitizeSegment(route);
-        for (MountedSubCommand mounted : snapshotMountedSubCommands(command, mountedName)) {
+        String mountedName = CommandMountResolver.sanitizeSegment(route);
+        for (CommandMountResolver.MountedSubCommand mounted : CommandMountResolver.snapshot(command, mountedName)) {
             addSubCommand(mounted.spec(), mounted.replaceExisting());
         }
         return this;
@@ -198,7 +197,7 @@ public abstract class MagicCommand {
         if (command == this) {
             throw new IllegalArgumentException("Cannot mount a command into itself");
         }
-        for (MountedSubCommand mounted : resolveMountedSubCommands(command)) {
+        for (CommandMountResolver.MountedSubCommand mounted : CommandMountResolver.resolve(command)) {
             addSubCommand(mounted.spec(), mounted.replaceExisting());
         }
         return this;
@@ -224,7 +223,7 @@ public abstract class MagicCommand {
         if (command == null || command == this) {
             return this;
         }
-        for (MountedSubCommand incoming : resolveMountedSubCommands(command)) {
+        for (CommandMountResolver.MountedSubCommand incoming : CommandMountResolver.resolve(command)) {
             SubCommandSpec<Object> spec = incoming.spec();
             int existingIndex = indexOfSubCommand(spec);
             if (existingIndex < 0) {
@@ -238,10 +237,10 @@ public abstract class MagicCommand {
 
     /** @return index in dynamicSubCommands of a node with the same path+name, or -1 */
     private int indexOfSubCommand(SubCommandSpec<?> spec) {
-        List<String> path = normalizePath(spec.path());
+        List<String> path = CommandMountResolver.normalizePath(spec.path());
         for (int i = 0; i < dynamicSubCommands.size(); i++) {
             SubCommandSpec<?> existing = dynamicSubCommands.get(i).spec();
-            if (pathEquals(existing.path(), path)
+            if (CommandMountResolver.pathEquals(existing.path(), path)
                     && existing.name().equalsIgnoreCase(spec.name())) {
                 return i;
             }
@@ -260,7 +259,7 @@ public abstract class MagicCommand {
         // OVERRIDE: take the node. Warn if the existing owner also explicitly claimed it.
         SubCommandSpec<?> existing = dynamicSubCommands.get(existingIndex).spec();
         if (existing.mergePolicy() == MergePolicy.OVERRIDE && warn != null) {
-            String node = String.join(" ", normalizePath(incoming.path()));
+            String node = String.join(" ", CommandMountResolver.normalizePath(incoming.path()));
             warn.accept("Command node '" + (node.isEmpty() ? incoming.name() : node + " " + incoming.name())
                     + "' execute is claimed by more than one plugin — using the last one.");
         }
@@ -599,265 +598,6 @@ public abstract class MagicCommand {
         if (frozen) {
             throw new IllegalStateException("MagicCommand can no longer be modified after registration");
         }
-    }
-
-    private List<MountedSubCommand> snapshotMountedSubCommands(MagicCommand command, String routeOverride) {
-        CommandInfo info = command.resolveInfo();
-        if (info == null) {
-            throw new IllegalArgumentException(
-                    InternalMessages.ERR_MISSING_COMMANDINFO.get("class", command.getClass().getName())
-            );
-        }
-
-        String mountedName = routeOverride != null ? routeOverride : info.name();
-        List<String> rootAliases = routeOverride != null ? List.of() : Arrays.asList(info.aliases());
-        List<MountedSubCommand> mounted = new ArrayList<>();
-
-        MountedAction directAction = resolveMountedDirectAction(command, info);
-        if (directAction != null) {
-            mounted.add(new MountedSubCommand(
-                    createSubCommandSpec(
-                            mountedName,
-                            List.of(),
-                            info.description(),
-                            rootAliases,
-                            info.permission(),
-                            info.permissionDefault(),
-                            directAction.threading(),
-                            directAction.arguments(),
-                            directAction.executor(),
-                            false,
-                            info.merge()
-                    ),
-                    false
-            ));
-        }
-
-        for (MountedSubCommand subCommand : resolveMountedSubCommands(command)) {
-            List<String> rebasedPath = new ArrayList<>();
-            rebasedPath.add(mountedName);
-            rebasedPath.addAll(subCommand.spec().path());
-            mounted.add(new MountedSubCommand(
-                    createSubCommandSpec(
-                            subCommand.spec().name(),
-                            rebasedPath,
-                            subCommand.spec().description(),
-                            subCommand.spec().aliases(),
-                            subCommand.spec().permission(),
-                            subCommand.spec().permissionDefault(),
-                            subCommand.spec().threading(),
-                            subCommand.spec().arguments(),
-                            subCommand.spec().executor(),
-                            subCommand.replaceExisting(),
-                            subCommand.spec().mergePolicy()
-                    ),
-                    subCommand.replaceExisting()
-            ));
-        }
-
-        return mounted;
-    }
-
-    private List<MountedSubCommand> resolveMountedSubCommands(MagicCommand command) {
-        List<MountedSubCommand> resolved = new ArrayList<>();
-        for (SubCommandInfo subInfo : getSubCommands(command.getClass())) {
-            resolved.add(new MountedSubCommand(
-                    createSubCommandSpec(
-                            subInfo.annotation.name(),
-                            Arrays.asList(subInfo.annotation.path()),
-                            subInfo.annotation.description(),
-                            Arrays.asList(subInfo.annotation.aliases()),
-                            subInfo.annotation.permission(),
-                            subInfo.annotation.permissionDefault(),
-                            subInfo.annotation.threading(),
-                            withSuggestionHost(getArguments(subInfo.method), command),
-                            MountedCommandExecutors.forMethod(command, subInfo.method),
-                            false,
-                            subInfo.annotation.merge()
-                    ),
-                    false
-            ));
-        }
-
-        for (DynamicSubCommand dynamicSubCommand : command.getDynamicSubCommands()) {
-            MountedSubCommand mounted = new MountedSubCommand(
-                    createSubCommandSpec(
-                            dynamicSubCommand.spec().name(),
-                            dynamicSubCommand.spec().path(),
-                            dynamicSubCommand.spec().description(),
-                            dynamicSubCommand.spec().aliases(),
-                            dynamicSubCommand.spec().permission(),
-                            dynamicSubCommand.spec().permissionDefault(),
-                            dynamicSubCommand.spec().threading(),
-                            withSuggestionHost(dynamicSubCommand.spec().arguments(), command),
-                            MountedCommandExecutors.wrap(command, dynamicSubCommand.spec().executor()),
-                            dynamicSubCommand.replaceExisting(),
-                            dynamicSubCommand.spec().mergePolicy()
-                    ),
-                    dynamicSubCommand.replaceExisting()
-            );
-            if (dynamicSubCommand.replaceExisting()) {
-                removeMatchingSubCommands(resolved, mounted.spec());
-            }
-            resolved.add(mounted);
-        }
-
-        return resolved;
-    }
-
-    /**
-     * Tags each argument with {@code host} as the object its {@code @Suggest}
-     * provider methods resolve against, unless already tagged by an inner mount.
-     * Returns the same list (arguments are mutated in place) for call-site brevity.
-     */
-    private static List<CommandArgument> withSuggestionHost(List<CommandArgument> arguments, MagicCommand host) {
-        if (arguments != null) {
-            for (CommandArgument argument : arguments) {
-                if (argument != null) {
-                    argument.assignSuggestionHostIfAbsent(host);
-                }
-            }
-        }
-        return arguments;
-    }
-
-    private MountedAction resolveMountedDirectAction(MagicCommand command, CommandInfo info) {
-        Method executeMethod = findExecuteMethod(command.getClass());
-        DynamicExecute dynamic = command.getDynamicExecute();
-        if (dynamic != null && (dynamic.replaceExisting() || executeMethod == null)) {
-            return new MountedAction(dynamic.arguments(), MountedCommandExecutors.wrap(command, dynamic.executor()),
-                    dynamic.threading());
-        }
-        if (executeMethod != null) {
-            return new MountedAction(getArguments(executeMethod), MountedCommandExecutors.forMethod(command, executeMethod),
-                    info.threading());
-        }
-        if (dynamic != null) {
-            return new MountedAction(dynamic.arguments(), MountedCommandExecutors.wrap(command, dynamic.executor()),
-                    dynamic.threading());
-        }
-        return null;
-    }
-
-    private static void removeMatchingSubCommands(List<MountedSubCommand> commands, SubCommandSpec<?> replacement) {
-        if (commands == null || commands.isEmpty() || replacement == null) {
-            return;
-        }
-        List<String> replacementPath = normalizePath(replacement.path());
-        List<String> replacementKeys = allKeysLower(replacement);
-        commands.removeIf(existing -> pathEquals(existing.spec().path(), replacementPath)
-                && hasAnyKey(existing.spec(), replacementKeys));
-    }
-
-    private static boolean pathEquals(List<String> left, List<String> right) {
-        List<String> leftNorm = normalizePath(left);
-        List<String> rightNorm = normalizePath(right);
-        if (leftNorm.size() != rightNorm.size()) {
-            return false;
-        }
-        for (int i = 0; i < leftNorm.size(); i++) {
-            if (!leftNorm.get(i).equalsIgnoreCase(rightNorm.get(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean hasAnyKey(SubCommandSpec<?> spec, List<String> keys) {
-        if (spec == null || keys == null || keys.isEmpty()) {
-            return false;
-        }
-        for (String key : keys) {
-            if (key == null) {
-                continue;
-            }
-            if (spec.name().equalsIgnoreCase(key)) {
-                return true;
-            }
-            for (String alias : spec.aliases()) {
-                if (alias != null && alias.equalsIgnoreCase(key)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static List<String> allKeysLower(SubCommandSpec<?> spec) {
-        List<String> keys = new ArrayList<>();
-        if (spec == null) {
-            return keys;
-        }
-        if (spec.name() != null && !spec.name().isBlank()) {
-            keys.add(spec.name().toLowerCase(Locale.ROOT));
-        }
-        for (String alias : spec.aliases()) {
-            if (alias != null && !alias.isBlank()) {
-                keys.add(alias.toLowerCase(Locale.ROOT));
-            }
-        }
-        return keys;
-    }
-
-    private static List<String> normalizePath(List<String> raw) {
-        if (raw == null || raw.isEmpty()) {
-            return List.of();
-        }
-        List<String> normalized = new ArrayList<>();
-        for (String segment : raw) {
-            String sanitized = sanitizeSegment(segment);
-            if (sanitized != null) {
-                normalized.add(sanitized);
-            }
-        }
-        return normalized.isEmpty() ? List.of() : List.copyOf(normalized);
-    }
-
-    private static String sanitizeSegment(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private static SubCommandSpec<Object> createSubCommandSpec(String name,
-                                                               List<String> path,
-                                                               String description,
-                                                               List<String> aliases,
-                                                               String permission,
-                                                               MagicPermissionDefault permissionDefault,
-                                                               CommandThreading threading,
-                                                               List<CommandArgument> arguments,
-                                                               CommandExecutor<Object> executor,
-                                                               boolean replaceExisting,
-                                                               MergePolicy mergePolicy) {
-        SubCommandSpec.Builder<Object> builder = SubCommandSpec.<Object>builder(name)
-                .description(description)
-                .permission(permission)
-                .permissionDefault(permissionDefault)
-                .threading(threading)
-                .execute(executor)
-                .replaceExisting(replaceExisting)
-                .mergePolicy(mergePolicy);
-        if (path != null && !path.isEmpty()) {
-            builder.path(path.toArray(new String[0]));
-        }
-        if (aliases != null && !aliases.isEmpty()) {
-            builder.aliases(aliases.toArray(new String[0]));
-        }
-        if (arguments != null && !arguments.isEmpty()) {
-            builder.arguments(arguments);
-        }
-        return builder.build();
-    }
-
-    private record MountedAction(List<CommandArgument> arguments,
-                                 CommandExecutor<Object> executor,
-                                 CommandThreading threading) {
-    }
-
-    private record MountedSubCommand(SubCommandSpec<Object> spec, boolean replaceExisting) {
     }
 
     /**
