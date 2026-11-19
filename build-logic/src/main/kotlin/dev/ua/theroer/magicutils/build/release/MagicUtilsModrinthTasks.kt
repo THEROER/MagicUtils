@@ -128,6 +128,7 @@ private fun modrinthArtifactsFromMatrix(
     // otherwise we'd upload the same file once per Minecraft version.
     val ver = version ?: "{version}"
     platform.versionMatrix
+        .filter { it.released }
         .groupBy { entry ->
             resolveMagicUtilsTargetSpec(
                 targetsFile = targetsFile,

@@ -98,6 +98,15 @@ class MagicUtilsMatrixModelTest {
     }
 
     @Test
+    fun `publishUnits picks the newest target of a non-default Java level`() {
+        // mc2611 (Adventure 4) and mc262/mc263 (Adventure 5) are all Java 25; the
+        // +java25 jar must be the newest one, not the first in file order.
+        val levels = mapOf("mc12110" to 21, "mc2611" to 25, "mc262" to 25, "mc263" to 25)
+        val units = definition().publishUnits(listOf("mc12110", "mc2611", "mc262", "mc263")) { levels.getValue(it) }
+        assertEquals(listOf("mc12110", "mc263"), units.map { it.target })
+    }
+
+    @Test
     fun `publishUnits adds fabric only when platform enabled`() {
         val units = definition().publishUnits(listOf("mc1201", "mc262"), javaLevelOf)
         val mc1201 = units.single { it.target == "mc1201" }
