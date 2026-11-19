@@ -37,8 +37,7 @@ public class LanguageManager {
     private final TaskScheduler scheduler;
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
-    private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
-    private final Map<UUID, String> autoDetectedPlayerLanguages = new ConcurrentHashMap<>();
+    private final PlayerLanguageStore playerLanguageStore = new PlayerLanguageStore();
     private final TranslationRegistry translationRegistry = new TranslationRegistry();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
     private static final Set<String> LANGUAGE_EXTENSIONS = Set.of("jsonc", "json", "yml", "yaml", "toml");
@@ -473,7 +472,7 @@ public class LanguageManager {
      * @return true if updated
      */
     public boolean setPlayerLanguage(UUID playerId, String languageCode) {
-        return setStoredPlayerLanguage(playerLanguages, playerId, languageCode, false);
+        return setStoredPlayerLanguage(false, playerId, languageCode);
     }
 
     /**
@@ -505,9 +504,7 @@ public class LanguageManager {
      * @param playerId player UUID
      */
     public void clearPlayerLanguage(UUID playerId) {
-        if (playerId != null) {
-            playerLanguages.remove(playerId);
-        }
+        playerLanguageStore.remove(false, playerId);
     }
 
     /**
@@ -520,7 +517,7 @@ public class LanguageManager {
      * @return true if a supported language was stored or cleared
      */
     public boolean setAutoDetectedPlayerLanguage(UUID playerId, String languageCode) {
-        return setStoredPlayerLanguage(autoDetectedPlayerLanguages, playerId, languageCode, true);
+        return setStoredPlayerLanguage(true, playerId, languageCode);
     }
 
     /**
@@ -540,9 +537,7 @@ public class LanguageManager {
      * @param playerId player UUID
      */
     public void clearAutoDetectedPlayerLanguage(UUID playerId) {
-        if (playerId != null) {
-            autoDetectedPlayerLanguages.remove(playerId);
-        }
+        playerLanguageStore.remove(true, playerId);
     }
 
     /**
@@ -572,18 +567,7 @@ public class LanguageManager {
      * @return language code
      */
     public String getPlayerLanguage(UUID playerId) {
-        if (playerId == null) {
-            return currentLanguage;
-        }
-        String explicit = playerLanguages.get(playerId);
-        if (explicit != null && !explicit.isBlank()) {
-            return explicit;
-        }
-        String autoDetected = autoDetectedPlayerLanguages.get(playerId);
-        if (autoDetected != null && !autoDetected.isBlank()) {
-            return autoDetected;
-        }
-        return currentLanguage;
+        return playerLanguageStore.resolve(playerId, currentLanguage);
     }
 
     /**
@@ -603,7 +587,7 @@ public class LanguageManager {
      * @return snapshot of player language preferences
      */
     public Map<UUID, String> getPlayerLanguages() {
-        return Collections.unmodifiableMap(new HashMap<>(playerLanguages));
+        return playerLanguageStore.snapshot(false);
     }
 
     /**
@@ -612,7 +596,7 @@ public class LanguageManager {
      * @return snapshot of auto-detected player language preferences
      */
     public Map<UUID, String> getAutoDetectedPlayerLanguages() {
-        return Collections.unmodifiableMap(new HashMap<>(autoDetectedPlayerLanguages));
+        return playerLanguageStore.snapshot(true);
     }
 
     /**
@@ -846,24 +830,25 @@ public class LanguageManager {
         return config;
     }
 
-    private boolean setStoredPlayerLanguage(Map<UUID, String> store,
-                                            UUID playerId,
-                                            String languageCode,
-                                            boolean resolveSupportedLanguage) {
+    /**
+     * Stores a player language preference. Explicit preferences are taken as given;
+     * auto-detected ones (client locale tags) are first matched to a supported code.
+     */
+    private boolean setStoredPlayerLanguage(boolean autoDetected, UUID playerId, String languageCode) {
         if (playerId == null) {
             return false;
         }
 
         if (languageCode == null || languageCode.isBlank()) {
-            store.remove(playerId);
+            playerLanguageStore.remove(autoDetected, playerId);
             return true;
         }
 
-        String resolvedLanguageCode = resolveSupportedLanguage
+        String resolvedLanguageCode = autoDetected
                 ? resolveSupportedLanguageCode(languageCode)
                 : languageCode;
         if (resolvedLanguageCode == null || resolvedLanguageCode.isBlank()) {
-            store.remove(playerId);
+            playerLanguageStore.remove(autoDetected, playerId);
             return false;
         }
 
@@ -875,7 +860,7 @@ public class LanguageManager {
             }
         }
 
-        store.put(playerId, resolvedLanguageCode);
+        playerLanguageStore.put(autoDetected, playerId, resolvedLanguageCode);
         return true;
     }
 
