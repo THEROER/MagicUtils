@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -45,10 +44,7 @@ public class CommandManager<S> {
     private final Map<String, MagicCommand> commands = new ConcurrentHashMap<>();
     private final Map<String, CommandInfo> commandInfos = new ConcurrentHashMap<>();
     private final Map<MagicCommand, CommandInfo> commandInfoByInstance = new ConcurrentHashMap<>();
-    private final Map<MagicCommand, CommandCache<S>> commandCache = new ConcurrentHashMap<>();
-    private final Map<Class<?>, Method> executeMethodCache = new ConcurrentHashMap<>();
-    private final Map<Class<?>, List<MagicCommand.SubCommandInfo>> subCommandInfoCache = new ConcurrentHashMap<>();
-    private final Map<Method, List<CommandArgument>> argumentCache = new ConcurrentHashMap<>();
+    private final CommandActionCatalog<S> actionCatalog = new CommandActionCatalog<>();
     private final String permissionPrefix;
     private final String pluginName;
     @Getter
@@ -159,7 +155,7 @@ public class CommandManager<S> {
             return null;
         }
         CommandAction<S> directAction = getDirectAction(command, info);
-        SubCommandNode<S> subTree = getSubCommandTree(command, info);
+        SubCommandTree.Node<S> subTree = getSubCommandTree(command, info);
         return new ResolvedCommandSchema(
                 info.name(),
                 resolveCommandDescription(info),
@@ -171,143 +167,18 @@ public class CommandManager<S> {
         );
     }
 
-    /**
-     * Gets the direct execute method if it exists.
-     * 
-     * @param clazz the command class
-     * @return the execute method or null if not found
-     */
-    private Method getExecuteMethodCached(Class<?> clazz) {
-        return executeMethodCache.computeIfAbsent(clazz, MagicCommand::findExecuteMethod);
-    }
-
-    private List<MagicCommand.SubCommandInfo> getSubCommandInfoCached(Class<?> clazz) {
-        return subCommandInfoCache.computeIfAbsent(clazz, MagicCommand::getSubCommands);
-    }
-
-    private List<CommandArgument> getArgumentsCached(Method method) {
-        return argumentCache.computeIfAbsent(method, MagicCommand::getArguments);
-    }
-
-    private CommandCache<S> getCommandCache(MagicCommand command, CommandInfo info) {
-        if (command == null || info == null) {
-            return new CommandCache<>(0, null, List.of(), null, new SubCommandNode<>(""));
-        }
-        CommandCache<S> cached = commandCache.get(command);
-        if (cached == null || cached.isStale(command)) {
-            cached = buildCommandCache(command, info);
-            commandCache.put(command, cached);
-        }
-        return cached;
-    }
-
-    private CommandCache<S> buildCommandCache(MagicCommand command, CommandInfo info) {
-        Class<?> clazz = command.getClass();
-        Method executeMethod = getExecuteMethodCached(clazz);
-        CommandAction<S> baseDirectAction = null;
-        if (executeMethod != null) {
-            List<CommandArgument> arguments = getArgumentsCached(executeMethod);
-            baseDirectAction = CommandAction.forMethod(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), info.threading(), arguments, executeMethod);
-        }
-
-        List<CommandAction<S>> staticSubActions = new ArrayList<>();
-        for (MagicCommand.SubCommandInfo subInfo : getSubCommandInfoCached(clazz)) {
-            List<CommandArgument> arguments = getArgumentsCached(subInfo.method);
-            staticSubActions.add(CommandAction.forSubCommand(subInfo, arguments));
-        }
-
-        List<MagicCommand.DynamicSubCommand> dynamicSubs = command.getDynamicSubCommands();
-        MagicCommand.DynamicExecute dynamicExecute = command.getDynamicExecute();
-
-        List<CommandAction<S>> combinedSubActions = resolveSubCommandActions(staticSubActions, dynamicSubs);
-        CommandAction<S> resolvedDirectAction = resolveDirectAction(info, baseDirectAction, dynamicExecute);
-        SubCommandNode<S> tree = buildSubCommandTree(combinedSubActions);
-
-        return new CommandCache<>(dynamicSubs.size(), dynamicExecute, combinedSubActions, resolvedDirectAction, tree);
-    }
-
-    private SubCommandNode<S> getSubCommandTree(MagicCommand command, CommandInfo info) {
-        return getCommandCache(command, info).tree();
-    }
-
-    private List<CommandAction<S>> resolveSubCommandActions(List<CommandAction<S>> staticActions,
-                                                           List<MagicCommand.DynamicSubCommand> dynamicSubs) {
-        if (staticActions == null || staticActions.isEmpty()) {
-            staticActions = List.of();
-        }
-        List<CommandAction<S>> resolved = new ArrayList<>(staticActions);
-        if (dynamicSubs != null) {
-            for (MagicCommand.DynamicSubCommand dynamic : dynamicSubs) {
-                CommandAction<S> action = CommandAction.forDynamicSubCommand(dynamic.spec(),
-                        castExecutor(dynamic.spec().executor()));
-                if (dynamic.replaceExisting()) {
-                    removeMatchingSubCommands(resolved, action);
-                }
-                resolved.add(action);
-            }
-        }
-        return resolved;
-    }
-
-    private CommandAction<S> resolveDirectAction(CommandInfo info,
-                                                 @Nullable CommandAction<S> baseAction,
-                                                 @Nullable MagicCommand.DynamicExecute dynamicExecute) {
-        if (dynamicExecute != null && (dynamicExecute.replaceExisting() || baseAction == null)) {
-            return CommandAction.forExecute(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), dynamicExecute.threading(), dynamicExecute.arguments(),
-                    castExecutor(dynamicExecute.executor()));
-        }
-        if (baseAction != null) {
-            return baseAction;
-        }
-        if (dynamicExecute != null) {
-            return CommandAction.forExecute(info.name(), info.description(), info.permission(),
-                    info.permissionDefault(), dynamicExecute.threading(), dynamicExecute.arguments(),
-                    castExecutor(dynamicExecute.executor()));
-        }
-        return null;
+    private SubCommandTree.Node<S> getSubCommandTree(MagicCommand command, CommandInfo info) {
+        return actionCatalog.tree(command, info);
     }
 
     CommandAction<S> getDirectAction(MagicCommand command, CommandInfo info) {
         CommandInfo resolvedInfo = info != null ? info : commandInfoByInstance.get(command);
-        CommandCache<S> cache = getCommandCache(command, resolvedInfo);
-        return cache.directAction();
+        return actionCatalog.directAction(command, resolvedInfo);
     }
 
     List<CommandAction<S>> getSubCommandActions(MagicCommand command) {
         CommandInfo resolvedInfo = commandInfoByInstance.get(command);
-        CommandCache<S> cache = getCommandCache(command, resolvedInfo);
-        return cache.subActions();
-    }
-
-    @SuppressWarnings("unchecked")
-    private CommandExecutor<S> castExecutor(CommandExecutor<?> executor) {
-        return (CommandExecutor<S>) executor;
-    }
-
-    private void removeMatchingSubCommands(List<CommandAction<S>> actions, CommandAction<S> replacement) {
-        if (actions.isEmpty() || replacement == null) {
-            return;
-        }
-        List<String> keys = replacement.allKeysLower();
-        List<String> replacementPath = normalizePath(replacement.path());
-        actions.removeIf(existing -> pathEquals(existing.path(), replacementPath) && hasAnyKey(existing, keys));
-    }
-
-    private boolean hasAnyKey(CommandAction<S> action, List<String> keys) {
-        if (action == null || keys == null || keys.isEmpty()) {
-            return false;
-        }
-        for (String key : keys) {
-            if (key == null) {
-                continue;
-            }
-            if (action.matches(key)) {
-                return true;
-            }
-        }
-        return false;
+        return actionCatalog.subActions(command, resolvedInfo);
     }
 
     private ResolvedCommandAction toResolvedAction(String commandName, CommandAction<S> action) {
@@ -323,12 +194,12 @@ public class CommandManager<S> {
         );
     }
 
-    private ResolvedSubCommandNode toResolvedNode(String commandName, SubCommandNode<S> node) {
+    private ResolvedSubCommandNode toResolvedNode(String commandName, SubCommandTree.Node<S> node) {
         if (node == null) {
             return ResolvedSubCommandNode.root();
         }
         List<ResolvedSubCommandNode> children = new ArrayList<>();
-        for (SubCommandNode<S> child : node.children().values()) {
+        for (SubCommandTree.Node<S> child : node.children().values()) {
             children.add(toResolvedNode(commandName, child));
         }
         return new ResolvedSubCommandNode(
@@ -337,20 +208,6 @@ public class CommandManager<S> {
                 children,
                 node.action() != null ? toResolvedAction(commandName, node.action()) : null
         );
-    }
-
-    private boolean pathEquals(List<String> left, List<String> right) {
-        List<String> leftNorm = normalizePath(left);
-        List<String> rightNorm = normalizePath(right);
-        if (leftNorm.size() != rightNorm.size()) {
-            return false;
-        }
-        for (int i = 0; i < leftNorm.size(); i++) {
-            if (!leftNorm.get(i).equalsIgnoreCase(rightNorm.get(i))) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -428,8 +285,8 @@ public class CommandManager<S> {
             return directAction != null ? directAction.threading() : CommandThreading.MAIN;
         }
 
-        SubCommandNode<S> root = getSubCommandTree(command, info);
-        SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
+        SubCommandTree.Node<S> root = getSubCommandTree(command, info);
+        SubCommandTree.Traversal<S> traversal = SubCommandTree.traverse(root, args);
         if (traversal.lastActionNode() != null && traversal.lastActionNode().action() != null) {
             return traversal.lastActionNode().action().threading();
         }
@@ -486,8 +343,8 @@ public class CommandManager<S> {
             return true;
         }
 
-        SubCommandNode<S> root = getSubCommandTree(command, info);
-        SubCommandNode<S> node = resolveNode(root, pathSegments);
+        SubCommandTree.Node<S> root = getSubCommandTree(command, info);
+        SubCommandTree.Node<S> node = SubCommandTree.resolveNode(root, pathSegments);
         if (node == null) {
             return false;
         }
@@ -577,8 +434,8 @@ public class CommandManager<S> {
                     .failure(InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", availableSubCommands));
         }
 
-        SubCommandNode<S> root = getSubCommandTree(command, info);
-        SubCommandTraversal<S> traversal = traverseSubCommands(root, args);
+        SubCommandTree.Node<S> root = getSubCommandTree(command, info);
+        SubCommandTree.Traversal<S> traversal = SubCommandTree.traverse(root, args);
 
         if (traversal.consumed() == 0) {
             if (directAction != null) {
@@ -1287,7 +1144,7 @@ public class CommandManager<S> {
             return Collections.emptyList();
         }
 
-        SubCommandNode<S> root = buildSubCommandTree(subCommands);
+        SubCommandTree.Node<S> root = SubCommandTree.build(subCommands);
 
         // If no args and we have subcommands, show top-level subcommands
         if (args.isEmpty() && !subCommands.isEmpty()) {
@@ -1298,12 +1155,12 @@ public class CommandManager<S> {
         String currentInput = args.isEmpty() ? "" : args.get(args.size() - 1);
         List<String> fixedTokens = args.size() > 1 ? args.subList(0, args.size() - 1) : List.of();
 
-        SubCommandTraversal<S> traversal = traverseSubCommands(root, fixedTokens);
+        SubCommandTree.Traversal<S> traversal = SubCommandTree.traverse(root, fixedTokens);
         if (traversal.consumed() < fixedTokens.size() && traversal.lastActionNode() == null) {
             return Collections.emptyList();
         }
 
-        SubCommandNode<S> node = traversal.node();
+        SubCommandTree.Node<S> node = traversal.node();
         CommandAction<S> matchedAction = traversal.lastActionNode() != null ? traversal.lastActionNode().action() : null;
         int actionIndex = traversal.lastActionIndex();
 
@@ -1849,8 +1706,8 @@ public class CommandManager<S> {
             return false;
         }
         if (targetSubName != null && !targetSubName.isEmpty()) {
-            SubCommandNode<S> root = getSubCommandTree(command, info);
-            SubCommandTraversal<S> traversal = traverseSubCommands(root, List.of(targetSubName));
+            SubCommandTree.Node<S> root = getSubCommandTree(command, info);
+            SubCommandTree.Traversal<S> traversal = SubCommandTree.traverse(root, List.of(targetSubName));
             if (traversal.consumed() > 0 && hasPermissionInNode(traversal.node(), sender, baseCommandName)) {
                 return true;
             }
@@ -1865,7 +1722,7 @@ public class CommandManager<S> {
         return false;
     }
 
-    private boolean hasPermissionInNode(SubCommandNode<S> node, S sender, String baseCommandName) {
+    private boolean hasPermissionInNode(SubCommandTree.Node<S> node, S sender, String baseCommandName) {
         if (node == null) {
             return false;
         }
@@ -1875,7 +1732,7 @@ public class CommandManager<S> {
                 return true;
             }
         }
-        for (SubCommandNode<S> child : node.children().values()) {
+        for (SubCommandTree.Node<S> child : node.children().values()) {
             if (hasPermissionInNode(child, sender, baseCommandName)) {
                 return true;
             }
@@ -2166,17 +2023,17 @@ public class CommandManager<S> {
 
     private List<String> getAvailableSubCommandsList(List<CommandAction<S>> subCommands,
             S sender, String commandName, List<String> pathSegments) {
-        SubCommandNode<S> root = buildSubCommandTree(subCommands);
-        SubCommandNode<S> node = resolveNode(root, pathSegments);
+        SubCommandTree.Node<S> root = SubCommandTree.build(subCommands);
+        SubCommandTree.Node<S> node = SubCommandTree.resolveNode(root, pathSegments);
         if (node == null) {
             return new ArrayList<>();
         }
         return getAvailableChildNames(node, sender, commandName);
     }
 
-    private List<String> getAvailableChildNames(SubCommandNode<S> node, S sender, String commandName) {
+    private List<String> getAvailableChildNames(SubCommandTree.Node<S> node, S sender, String commandName) {
         Set<String> available = new LinkedHashSet<>();
-        for (SubCommandNode<S> child : node.children().values()) {
+        for (SubCommandTree.Node<S> child : node.children().values()) {
             if (!hasAccessibleAction(child, sender, commandName)) {
                 continue;
             }
@@ -2229,14 +2086,14 @@ public class CommandManager<S> {
         return platform.hasPermission(sender, subPermission, action.permissionDefault());
     }
 
-    private boolean hasAccessibleAction(SubCommandNode<S> node, S sender, String commandName) {
+    private boolean hasAccessibleAction(SubCommandTree.Node<S> node, S sender, String commandName) {
         if (node == null) {
             return false;
         }
         if (node.action() != null && canAccessActionOrArguments(node.action(), sender, commandName)) {
             return true;
         }
-        for (SubCommandNode<S> child : node.children().values()) {
+        for (SubCommandTree.Node<S> child : node.children().values()) {
             if (hasAccessibleAction(child, sender, commandName)) {
                 return true;
             }
@@ -2250,182 +2107,6 @@ public class CommandManager<S> {
         }
         return canAccessAction(action, sender, commandName)
                 || hasArgumentPermissionOverride(commandName, action.fullPath(), sender);
-    }
-
-    private SubCommandNode<S> buildSubCommandTree(List<CommandAction<S>> subCommands) {
-        SubCommandNode<S> root = new SubCommandNode<>("");
-        if (subCommands == null || subCommands.isEmpty()) {
-            return root;
-        }
-        for (CommandAction<S> action : subCommands) {
-            if (action == null) {
-                continue;
-            }
-            SubCommandNode<S> node = root;
-            for (String segment : action.path()) {
-                node = node.child(segment);
-            }
-            node = node.child(action.name());
-            node.setAction(action);
-        }
-        return root;
-    }
-
-    private SubCommandNode<S> resolveNode(SubCommandNode<S> root, List<String> pathSegments) {
-        if (root == null) {
-            return null;
-        }
-        SubCommandTraversal<S> traversal = traverseSubCommands(root, pathSegments);
-        if (traversal.consumed() < (pathSegments != null ? pathSegments.size() : 0)) {
-            return null;
-        }
-        return traversal.node();
-    }
-
-    private SubCommandTraversal<S> traverseSubCommands(SubCommandNode<S> root, List<String> tokens) {
-        if (root == null) {
-            return new SubCommandTraversal<>(null, 0, null, 0);
-        }
-        SubCommandNode<S> node = root;
-        SubCommandNode<S> lastAction = null;
-        int lastActionIndex = 0;
-        int index = 0;
-        if (tokens != null) {
-            for (String token : tokens) {
-                if (token == null || token.isEmpty()) {
-                    break;
-                }
-                SubCommandNode<S> child = node.findChild(token);
-                if (child == null) {
-                    break;
-                }
-                node = child;
-                index++;
-                if (node.action() != null) {
-                    lastAction = node;
-                    lastActionIndex = index;
-                }
-            }
-        }
-        return new SubCommandTraversal<>(node, index, lastAction, lastActionIndex);
-    }
-
-    private static final class CommandCache<S> {
-        private final int dynamicSubCount;
-        private final MagicCommand.DynamicExecute dynamicExecute;
-        private final List<CommandAction<S>> subActions;
-        private final CommandAction<S> directAction;
-        private final SubCommandNode<S> tree;
-
-        private CommandCache(int dynamicSubCount,
-                             MagicCommand.DynamicExecute dynamicExecute,
-                             List<CommandAction<S>> subActions,
-                             CommandAction<S> directAction,
-                             SubCommandNode<S> tree) {
-            this.dynamicSubCount = dynamicSubCount;
-            this.dynamicExecute = dynamicExecute;
-            this.subActions = subActions != null ? Collections.unmodifiableList(subActions) : List.of();
-            this.directAction = directAction;
-            this.tree = tree;
-        }
-
-        boolean isStale(MagicCommand command) {
-            if (command == null) {
-                return false;
-            }
-            return command.getDynamicSubCommands().size() != dynamicSubCount
-                    || command.getDynamicExecute() != dynamicExecute;
-        }
-
-        List<CommandAction<S>> subActions() {
-            return subActions;
-        }
-
-        CommandAction<S> directAction() {
-            return directAction;
-        }
-
-        SubCommandNode<S> tree() {
-            return tree;
-        }
-    }
-
-    private record SubCommandTraversal<S>(SubCommandNode<S> node, int consumed,
-                                          SubCommandNode<S> lastActionNode, int lastActionIndex) {
-    }
-
-    private static final class SubCommandNode<S> {
-        private final String name;
-        private List<String> aliases = List.of();
-        private final Map<String, SubCommandNode<S>> children = new LinkedHashMap<>();
-        private CommandAction<S> action;
-
-        SubCommandNode(String name) {
-            this.name = name != null ? name : "";
-        }
-
-        String name() {
-            return name;
-        }
-
-        List<String> aliases() {
-            return aliases;
-        }
-
-        Map<String, SubCommandNode<S>> children() {
-            return children;
-        }
-
-        CommandAction<S> action() {
-            return action;
-        }
-
-        void setAction(CommandAction<S> action) {
-            this.action = action;
-            if (action != null) {
-                this.aliases = action.aliases();
-            }
-        }
-
-        SubCommandNode<S> child(String name) {
-            String key = name != null ? name.toLowerCase(Locale.ROOT) : "";
-            if (key.isEmpty()) {
-                return this;
-            }
-            return children.computeIfAbsent(key, ignored -> new SubCommandNode<>(name));
-        }
-
-        SubCommandNode<S> findChild(String token) {
-            if (token == null || token.isEmpty()) {
-                return null;
-            }
-            String lowered = token.toLowerCase(Locale.ROOT);
-            SubCommandNode<S> direct = children.get(lowered);
-            if (direct != null) {
-                return direct;
-            }
-            for (SubCommandNode<S> child : children.values()) {
-                if (child.matches(token)) {
-                    return child;
-                }
-            }
-            return null;
-        }
-
-        boolean matches(String input) {
-            if (input == null) {
-                return false;
-            }
-            if (name.equalsIgnoreCase(input)) {
-                return true;
-            }
-            for (String alias : aliases) {
-                if (alias != null && alias.equalsIgnoreCase(input)) {
-                    return true;
-                }
-            }
-            return false;
-        }
     }
 
     static final class CommandAction<S> {
@@ -2645,7 +2326,7 @@ public class CommandManager<S> {
         return commandName;
     }
 
-    private static List<String> normalizePath(List<String> raw) {
+    static List<String> normalizePath(List<String> raw) {
         if (raw == null || raw.isEmpty()) {
             return List.of();
         }

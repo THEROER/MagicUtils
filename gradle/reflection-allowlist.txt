@@ -5,7 +5,7 @@
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:384:.getMethod(
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/CommandRegistry.java:397:.getMethod(
 commands-neoforge/src/main/java/dev/ua/theroer/magicutils/commands/NeoForgeCommandPlatform.java:313:.getMethod(
-commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1699:.getMethod(
+commands/src/main/java/dev/ua/theroer/magicutils/commands/CommandManager.java:1556:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:15:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:18:.getMethod(
 commands/src/main/java/dev/ua/theroer/magicutils/commands/ComparisonUtils.java:30:.getMethod(
