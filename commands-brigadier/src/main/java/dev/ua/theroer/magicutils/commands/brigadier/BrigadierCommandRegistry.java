@@ -955,13 +955,23 @@ public class BrigadierCommandRegistry<S> {
 
     private CompletableFuture<Suggestions> suggest(String label, S source, SuggestionsBuilder builder) {
         String input = builder.getInput();
-        int start = builder.getStart();
-        String remaining = (input != null && start >= 0 && start <= input.length())
-                ? input.substring(start)
-                : builder.getRemaining();
-        TokenizedInput tokenized = tokenize(remaining, true);
-        List<String> args = tokenized.tokens();
-        SuggestionsBuilder offsetBuilder = builder.createOffset(builder.getStart() + tokenized.currentTokenStart());
+        // Tokenize the whole command line rather than `input.substring(getStart())`:
+        // on a nested argument node Brigadier's start points at the *current*
+        // argument, so slicing there drops the preceding sub-command names and the
+        // command manager would resolve suggestions against the wrong level.
+        // Mirrors executeFromContext(): take every token, then drop the label.
+        String line = normalizeInput(input != null ? input : builder.getRemaining());
+        TokenizedInput tokenized = tokenize(line, true);
+        List<String> args = new ArrayList<>(tokenized.tokens());
+        if (!args.isEmpty()) {
+            args.remove(0);
+        }
+        // currentTokenStart is an offset into `line`; normalizeInput() may have
+        // stripped a leading '/', so shift it back to an index into `input`.
+        int leadingSlash = (input != null && !input.isEmpty() && input.charAt(0) == '/') ? 1 : 0;
+        int tokenStart = Math.min(tokenized.currentTokenStart() + leadingSlash,
+                input != null ? input.length() : 0);
+        SuggestionsBuilder offsetBuilder = builder.createOffset(tokenStart);
         List<String> suggestions = commandManager.getSuggestions(label, source, args);
         for (String suggestion : suggestions) {
             if (suggestion != null && !suggestion.trim().isEmpty()) {
@@ -1009,7 +1019,12 @@ public class BrigadierCommandRegistry<S> {
                     break;
                 }
                 tokens.add(token);
-                starts.add(start);
+                // A quoted token parses to its unquoted content, so anchoring the
+                // replacement range at the opening quote would make Brigadier splice
+                // the suggestion over the quote and drop it as non-matching. Point
+                // past the quote so the range covers exactly what `token` holds.
+                boolean quoted = start < input.length() && isQuote(input.charAt(start));
+                starts.add(quoted ? start + 1 : start);
             } catch (CommandSyntaxException e) {
                 String rest = input.substring(start);
                 tokens.add(rest);
@@ -1031,6 +1046,10 @@ public class BrigadierCommandRegistry<S> {
 
         int offset = starts.isEmpty() ? 0 : starts.get(starts.size() - 1);
         return new TokenizedInput(tokens, offset);
+    }
+
+    private static boolean isQuote(char c) {
+        return c == '"' || c == '\'';
     }
 
     private record TokenizedInput(List<String> tokens, int currentTokenStart) {
