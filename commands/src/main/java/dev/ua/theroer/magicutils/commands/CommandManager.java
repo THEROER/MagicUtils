@@ -47,6 +47,7 @@ public class CommandManager<S> {
     private final CommandDescriptionResolver descriptions;
     private final CommandPermissions<S> permissions;
     private final CommandUsageFormatter<S> usageFormatter;
+    private final CommandArgumentBinder<S> argumentBinder;
     private final String permissionPrefix;
     private final String pluginName;
     @Getter
@@ -76,6 +77,8 @@ public class CommandManager<S> {
                 descriptions, new ArgumentPermissionConditions<>(this.typeParserRegistry), actionCatalog,
                 this::getSubCommandActions, this::isSenderArgument);
         this.usageFormatter = new CommandUsageFormatter<>(descriptions, this::isSenderArgument);
+        this.argumentBinder = new CommandArgumentBinder<>(this.platform, this.logger, this.typeParserRegistry,
+                permissions, this::isSenderArgument);
         this.logger.debug("CommandManager initialized with permission prefix: " + permissionPrefix
                 + " and plugin name: " + pluginName);
     }
@@ -491,7 +494,7 @@ public class CommandManager<S> {
                 logger.debug("Method parameter types: " + Arrays.toString(action.method().getParameterTypes()));
             }
 
-            Object[] methodArgs = parseArgumentsForDirectMethod(arguments, args, sender, normalizedCommandName,
+            Object[] methodArgs = argumentBinder.parseArgumentsForDirectMethod(arguments, args, sender, normalizedCommandName,
                     subCommandName);
 
             if (methodArgs == null) {
@@ -540,293 +543,6 @@ public class CommandManager<S> {
             }
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
-    }
-
-    private Object[] parseArgumentsForDirectMethod(List<CommandArgument> arguments, List<String> args,
-            S sender, String normalizedCommandName, @Nullable String subCommandName) {
-        Object[] result = new Object[arguments.size()];
-        boolean[] filled = new boolean[arguments.size()];
-        OptionIndex optionIndex = buildOptionIndex(arguments, this::isSenderArgument);
-        ParsedOptions parsedOptions = optionIndex.hasOptions()
-                ? parseOptions(args, optionIndex, false)
-                : new ParsedOptions(args != null ? new ArrayList<>(args) : new ArrayList<>(),
-                        new HashMap<>(), new HashSet<>(), null, false);
-        if (parsedOptions == null) {
-            return null;
-        }
-
-        // First pass: auto-fill sender arguments
-        for (int i = 0; i < arguments.size(); i++) {
-            CommandArgument argument = arguments.get(i);
-            if (isSenderArgument(argument)) {
-                try {
-                    result[i] = platform.resolveSenderArgument(sender, argument);
-                    filled[i] = true;
-                    logger.debug("Auto-filled sender argument " + i + " (" + argument.getName()
-                            + "): " + platform.getName(sender));
-                } catch (SenderMismatchException ex) {
-                    logger.debug("Sender mismatch for argument " + argument.getName() + ": "
-                            + ex.getMessage());
-                    throw ex;
-                }
-            }
-        }
-
-        // Option arguments (including flags)
-        if (optionIndex.hasOptions()) {
-            for (int i = 0; i < arguments.size(); i++) {
-                if (filled[i]) {
-                    continue;
-                }
-                CommandArgument argument = arguments.get(i);
-                if (isSenderArgument(argument) || !argument.isOption()) {
-                    continue;
-                }
-                if (argument.isFlag() && !parsedOptions.values().containsKey(argument)) {
-                    String defaultValue = argument.getDefaultValue();
-                    if (defaultValue == null) {
-                        defaultValue = "false";
-                    }
-                    result[i] = convertArgument(defaultValue, argument.getType(), sender);
-                    filled[i] = true;
-                    continue;
-                }
-                String optionValue = parsedOptions.values().get(argument);
-                if (optionValue == null) {
-                    continue;
-                }
-                TypeParseResult<Object> parsedOption = convertArgumentDetailed(optionValue, argument.getType(), sender);
-                result[i] = parsedOption.value();
-                filled[i] = true;
-                if (parsedOption.isInvalid()) {
-                    logger.debug("Failed to convert option value for argument " + argument.getName()
-                            + " from value: " + optionValue);
-                    return null;
-                }
-            }
-        }
-
-        // Second pass: try to match user arguments intelligently
-        List<String> remainingArgs = new ArrayList<>(parsedOptions.positionals());
-
-        for (int i = 0; i < arguments.size(); i++) {
-            if (filled[i])
-                continue; // Skip already filled arguments
-
-            CommandArgument argument = arguments.get(i);
-            if (argument.isFlag()) {
-                continue;
-            }
-
-            if (permissions.lacksArgumentPermission(normalizedCommandName, subCommandName, argument, sender)) {
-                logger.debug("Skipping argument " + argument.getName() + " due to missing permission, setting to default/null");
-                if (argument.getDefaultValue() != null) {
-                    result[i] = convertArgument(argument.getDefaultValue(), argument.getType(), sender);
-                } else {
-                    result[i] = null;
-                }
-                filled[i] = true;
-                if (!remainingArgs.isEmpty() && !isSenderArgument(argument) && !argument.isOption()) {
-                    remainingArgs.remove(0);
-                }
-                continue;
-            }
-
-            if (argument.isGreedy()) {
-                continue; // Greedy handled in final pass
-            }
-            String bestMatch = null;
-            int bestMatchIndex = -1;
-
-            // Try to find the best match for this parameter
-            for (int j = 0; j < remainingArgs.size(); j++) {
-                String userArg = remainingArgs.get(j);
-
-                // Check if this user argument is a good match for this parameter
-                if (isArgumentMatch(argument, userArg, sender)) {
-                    bestMatch = userArg;
-                    bestMatchIndex = j;
-                    break; // Take first good match to maintain order priority
-                }
-            }
-
-            // If we found a match, use it
-            if (bestMatch != null) {
-                result[i] = convertArgument(bestMatch, argument.getType(), sender);
-                filled[i] = true;
-                remainingArgs.remove(bestMatchIndex);
-                logger.debug("Matched user arg '" + bestMatch + "' to parameter " + i + " (" + argument.getName() + ")");
-            }
-        }
-
-        // Third pass: fill remaining arguments in order
-        int userArgIndex = 0;
-        for (int i = 0; i < arguments.size(); i++) {
-            if (filled[i])
-                continue; // Skip already filled arguments
-
-            CommandArgument argument = arguments.get(i);
-            String value;
-            boolean providedByUser = false;
-
-            if (argument.isFlag()) {
-                String defaultValue = argument.getDefaultValue();
-                if (defaultValue == null) {
-                    defaultValue = "false";
-                }
-                result[i] = convertArgument(defaultValue, argument.getType(), sender);
-                filled[i] = true;
-                continue;
-            }
-
-            if (argument.isGreedy()) {
-                // Consume all remaining args joined by space
-                if (userArgIndex < remainingArgs.size()) {
-                    value = String.join(" ", remainingArgs.subList(userArgIndex, remainingArgs.size()));
-                    userArgIndex = remainingArgs.size();
-                    providedByUser = true;
-                    logger.debug("Greedy parameter " + i + " (" + argument.getName() + ") consumed remaining args: " + value);
-                } else if (argument.getDefaultValue() != null) {
-                    value = argument.getDefaultValue();
-                    logger.debug("Used default value for greedy parameter " + i + " (" + argument.getName() + "): " + value);
-                } else if (argument.isOptional()) {
-                    value = null;
-                    logger.debug("Used null for optional greedy parameter " + i + " (" + argument.getName() + ")");
-                } else {
-                    logger.debug("Missing required greedy argument at position " + i + ": " + argument.getName());
-                    return null;
-                }
-            } else {
-                if (userArgIndex < remainingArgs.size()) {
-                    value = remainingArgs.get(userArgIndex);
-                    userArgIndex++;
-                    providedByUser = true;
-                    logger.debug("Filled remaining parameter " + i + " (" + argument.getName() + ") with user arg: " + value);
-                } else if (argument.getDefaultValue() != null) {
-                    value = argument.getDefaultValue();
-                    logger.debug("Used default value for parameter " + i + " (" + argument.getName() + "): " + value);
-                } else if (argument.isOptional()) {
-                    value = null;
-                    logger.debug("Used null for optional parameter " + i + " (" + argument.getName() + ")");
-                } else {
-                    logger.debug("Missing required argument at position " + i + ": " + argument.getName());
-                    return null;
-                }
-            }
-
-            TypeParseResult<Object> parsedArgument = convertArgumentDetailed(value, argument.getType(), sender);
-            result[i] = parsedArgument.value();
-            logger.debug("Parsed argument " + i + " (" + argument.getName() + "): " + result[i]
-                    + " (type: " + (result[i] != null ? result[i].getClass().getSimpleName() : "null") + ")");
-
-            if (providedByUser && parsedArgument.isInvalid()) {
-                if (argument.isOptional() && canLaterArgumentConsume(arguments, i + 1, value, sender)) {
-                    userArgIndex = Math.max(0, userArgIndex - 1);
-                    logger.debug("Conversion failed for optional argument " + argument.getName()
-                            + ", reusing value for next parameter");
-                    continue;
-                }
-                logger.debug("Failed to convert argument " + i + " (" + argument.getName()
-                        + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
-                return null;
-            }
-
-            // Check if conversion failed
-            if (value != null && parsedArgument.isInvalid() && !argument.isOptional()) {
-                logger.debug("Failed to convert argument " + i + " (" + argument.getName()
-                        + ") from value: " + value + " to type: " + argument.getType().getSimpleName());
-                return null;
-            }
-
-            // A default the author wrote (@DefaultValue) is a promise that the parameter
-            // always has a value, so a default that fails to resolve is an error, not a
-            // silent null: @DefaultValue("@sender") resolves to no player from console,
-            // and passing null would NPE inside the command instead of telling the user
-            // to name a player. @Nullable / @OptionalArgument opt out by declaring that
-            // null is expected, so they keep the old behaviour.
-            if (!providedByUser && parsedArgument.isInvalid() && !argument.isNullable()) {
-                logger.debug("Default value did not resolve for argument " + i + " ("
-                        + argument.getName() + "): " + value);
-                return null;
-            }
-        }
-
-        return result;
-    }
-
-    private boolean isArgumentMatch(CommandArgument argument, String userArg, S sender) {
-        if (argument.isGreedy()) {
-            return false;
-        }
-
-        // Check if the argument type can successfully parse this value
-        Object converted = convertArgument(userArg, argument.getType(), sender);
-
-        // If conversion succeeded and didn't just fall back to string
-        if (converted != null && !converted.equals(userArg)) {
-            return true;
-        }
-
-        // Check if this value is in the argument's suggestions
-        if (argumentHasSuggestion(argument, userArg, sender)) {
-            return true;
-        }
-
-        // For string arguments, accept anything as last resort
-        if (argument.getType().equals(String.class)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean argumentHasSuggestion(CommandArgument argument, String value, S sender) {
-        for (String suggestionSource : argument.getSuggestions()) {
-            // Use the suggestion parser to get all possible values
-            List<String> suggestions = typeParserRegistry.parseSuggestion(suggestionSource, sender);
-            for (String suggestion : suggestions) {
-                if (suggestion.equalsIgnoreCase(value)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean canLaterArgumentConsume(List<CommandArgument> arguments, int startIndex, String value, S sender) {
-        if (value == null) {
-            return false;
-        }
-        for (int i = startIndex; i < arguments.size(); i++) {
-            CommandArgument argument = arguments.get(i);
-            if (argument == null || isSenderArgument(argument) || argument.isFlag()) {
-                continue;
-            }
-            if (argument.isGreedy()) {
-                if (argument.getType().equals(String.class)) {
-                    return true;
-                }
-                TypeParseResult<Object> parsed = convertArgumentDetailed(value, argument.getType(), sender);
-                return parsed.isSuccess() || argumentHasSuggestion(argument, value, sender);
-            }
-            if (isArgumentMatch(argument, value, sender)) {
-                return true;
-            }
-            if (!argument.isOptional() && argument.getDefaultValue() == null) {
-                return false;
-            }
-        }
-        return false;
-    }
-
-    private Object convertArgument(String value, Class<?> type, S sender) {
-        return convertArgumentDetailed(value, type, sender).value();
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private TypeParseResult<Object> convertArgumentDetailed(String value, Class<?> type, S sender) {
-        logger.debug("Converting argument: '" + value + "' to type: " + type.getSimpleName());
-        return (TypeParseResult<Object>) typeParserRegistry.parseDetailed(value, (Class) type, sender);
     }
 
     /**
@@ -1039,7 +755,7 @@ public class CommandManager<S> {
 
             ArgumentInfo argInfo = userInputArguments.get(currentArgPosition);
             String token = args.get(i);
-            Object parsedValue = convertArgument(token, argInfo.argument.getType(), sender);
+            Object parsedValue = argumentBinder.convertArgument(token, argInfo.argument.getType(), sender);
 
             if (parsedValue != null) {
                 allParsedArguments.put(argInfo.argument.getName(), parsedValue);
@@ -1109,7 +825,7 @@ public class CommandManager<S> {
         for (Map.Entry<CommandArgument, String> entry : parsed.values().entrySet()) {
             CommandArgument arg = entry.getKey();
             String value = entry.getValue();
-            Object converted = convertArgument(value, arg.getType(), sender);
+            Object converted = argumentBinder.convertArgument(value, arg.getType(), sender);
             if (converted != null) {
                 allParsedArguments.put(arg.getName(), converted);
             }
