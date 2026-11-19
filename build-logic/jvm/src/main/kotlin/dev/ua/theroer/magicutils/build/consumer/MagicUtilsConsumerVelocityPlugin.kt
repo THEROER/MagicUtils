@@ -15,8 +15,9 @@ import org.gradle.kotlin.dsl.*
  * Consumer plugin for the Velocity module of a downstream plugin.
  *
  * Velocity's API is decoupled from the Minecraft version, so unlike bukkit/fabric
- * there is no per-target API here: the version comes from the `velocityApiVersion`
- * gradle property (default [DEFAULT_VELOCITY_API]). The plugin applies
+ * the API follows the target's Adventure major instead (velocity-api 3.x on the
+ * Adventure-4 targets, 4.x on 26.2+; see magicUtilsVelocityApiVersion), overridable
+ * with the `velocityApiVersion` gradle property. The plugin applies
  * `java-library` + shadow, pins the Java toolchain to the active target, adds the
  * Velocity API (compileOnly + annotationProcessor), wires the consumer's
  * MagicUtils modules per [EmbedMode] (like the Bukkit consumer, since Velocity is
@@ -50,8 +51,7 @@ class MagicUtilsConsumerVelocityPlugin : Plugin<Project> {
             task.options.compilerArgs.add("-parameters")
         }
 
-        val velocityApiVersion = project.providers.gradleProperty("velocityApiVersion")
-            .orElse(DEFAULT_VELOCITY_API).get()
+        val velocityApiVersion = magicUtilsVelocityApiVersion(project, target)
         project.dependencies.add("compileOnly", "com.velocitypowered:velocity-api:$velocityApiVersion")
         project.dependencies.add("annotationProcessor", "com.velocitypowered:velocity-api:$velocityApiVersion")
 

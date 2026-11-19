@@ -14,4 +14,12 @@ package dev.ua.theroer.magicutils.build.support
 object MagicUtilsPlatformApiDefaults {
     const val BUNGEE_API = "1.20-R0.1"
     const val VELOCITY_API = "3.1.1"
+
+    /**
+     * Velocity API for the Adventure-5 targets (26.2+). Velocity 4 moved to Adventure 5
+     * (velocity-api 4.x imports adventure-bom 5.2.0) and requires Java 25, which is
+     * exactly what those targets run; Velocity 3.x stays on Adventure 4 and keeps
+     * serving the 1.20/1.21 builds. See `magicUtilsVelocityApiVersion`.
+     */
+    const val VELOCITY_API_4 = "4.3.1"
 }

@@ -168,7 +168,7 @@ private fun registerReleaseMatrixTask(
                         "Smoke platform '${platform.name}' marks $primaries entries primary; at most one allowed."
                     )
                 }
-                platform.versionMatrix.map { entry ->
+                platform.versionMatrix.filter { it.released }.map { entry ->
                     val spec = resolveMagicUtilsTargetSpec(
                         targetsFile = targetsFile,
                         defaultTarget = definition.defaultTarget,
