@@ -7,6 +7,7 @@
 // resolve this artifact, so no Fabric or proxy consumer ever sees ModDevGradle.
 dependencies {
     implementation("net.neoforged.moddev:net.neoforged.moddev.gradle.plugin:${project.property("neoForgeModdevVersion")}")
+    implementation("com.gradleup.shadow:shadow-gradle-plugin:${project.property("shadowVersion")}")
 }
 
 gradlePlugin {

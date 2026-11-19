@@ -92,6 +92,11 @@ val plainRuntime = listOf(
     ":core",
     ":commands",
     ":commands-brigadier",
+    // commands-fabric has an `api(project(":messaging"))`, so Loom resolves
+    // messaging while remapping it. Left off this list it is looked up as an
+    // external coordinate (dev.ua.theroer:messaging) that no repository has, and
+    // every obfuscated-target dev run dies at "Could not find ...:messaging".
+    ":messaging",
     ":logger",
     ":placeholders",
     ":diagnostics",
