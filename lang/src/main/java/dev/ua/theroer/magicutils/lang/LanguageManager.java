@@ -13,14 +13,8 @@ import dev.ua.theroer.magicutils.platform.Tasks;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -55,7 +49,7 @@ public class LanguageManager {
      * @param configManager config manager for loading language files
      */
     public LanguageManager(Object platformOrPlugin, ConfigManager configManager) {
-        this(resolvePlatform(platformOrPlugin), configManager);
+        this(LegacyPlatformResolver.resolve(platformOrPlugin), configManager);
     }
 
     /**
@@ -957,28 +951,5 @@ public class LanguageManager {
             String fallbackInfo = fallbackLanguage != null ? ("; fallback=" + fallbackLanguage) : "";
             logger.debug("Missing translation for key '" + key + "' in language '" + languageCode + "'" + fallbackInfo);
         }
-    }
-
-    private static Platform resolvePlatform(Object platformOrPlugin) {
-        if (platformOrPlugin instanceof Platform) {
-            return (Platform) platformOrPlugin;
-        }
-        if (platformOrPlugin != null) {
-            try {
-                Class<?> providerClass = Class
-                        .forName("dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider");
-                for (var ctor : providerClass.getConstructors()) {
-                    if (ctor.getParameterCount() == 1
-                            && ctor.getParameterTypes()[0].isAssignableFrom(platformOrPlugin.getClass())) {
-                        Object instance = ctor.newInstance(platformOrPlugin);
-                        if (instance instanceof Platform) {
-                            return (Platform) instance;
-                        }
-                    }
-                }
-            } catch (ReflectiveOperationException ignored) {
-            }
-        }
-        throw new IllegalArgumentException("Platform provider is required to initialize LanguageManager");
     }
 }
