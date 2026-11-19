@@ -110,12 +110,10 @@ the code shown in parentheses is the one to use.
 
 ## Switching the active language
 
-Server admins can change the active language with the built-in
-settings command. From console or in-game:
-
-```
-/magicutils settings language uk
-```
+MagicUtils itself has no built-in command for this (the old `settings`
+command was removed). The active language is chosen by each plugin through
+`LanguageManager#setLanguage` — usually exposed via the plugin's own config
+or command; check its documentation.
 
 Per-player languages also work automatically: when a player joins, the
 client reports its locale and MagicUtils picks the matching translation
@@ -140,8 +138,8 @@ After dropping the file in place:
 1. Run the plugin's reload command (commonly `/<plugin> reload`).
 2. Trigger a few messages in-game (errors, status, help) and confirm
    the language renders correctly.
-3. Check console logs for warnings like `Missing translation for key
-   '...'` — this means MagicUtils used English fallback for that key.
+3. With debug logging enabled, check console logs for `Missing translation
+   for key '...'` — this means MagicUtils used English fallback for that key.
 
 For automated checking, run the plugin's tests with your file on the
 classpath. Reflection and test scaffolding will fail if your JSON has
