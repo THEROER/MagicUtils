@@ -5,7 +5,7 @@ import dev.ua.theroer.magicutils.lang.InternalMessages;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dev.ua.theroer.magicutils.commands.HelpCommandSupport.argumentLabel;
+import static dev.ua.theroer.magicutils.commands.HelpArgumentLabels.argumentLabel;
 import static dev.ua.theroer.magicutils.commands.HelpCommandSupport.baseCommandName;
 import static dev.ua.theroer.magicutils.commands.HelpCommandSupport.message;
 

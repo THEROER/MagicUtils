@@ -21,10 +21,8 @@ import java.util.function.Supplier;
 
 import static dev.ua.theroer.magicutils.commands.HelpRequests.findSubCommand;
 import static dev.ua.theroer.magicutils.commands.HelpRequests.parseRequest;
-import static dev.ua.theroer.magicutils.commands.HelpStyling.closeTag;
 import static dev.ua.theroer.magicutils.commands.HelpStyling.color;
 import static dev.ua.theroer.magicutils.commands.HelpStyling.escapeMiniText;
-import static dev.ua.theroer.magicutils.commands.HelpStyling.openTag;
 import static dev.ua.theroer.magicutils.commands.HelpStyling.resolveStyle;
 import static dev.ua.theroer.magicutils.commands.HelpVisibility.canViewDirect;
 import static dev.ua.theroer.magicutils.commands.HelpVisibility.canViewSubCommand;
@@ -400,7 +398,7 @@ public final class HelpCommandSupport {
                 : List.of();
         String usage = buildCommandUsage(manager, sender, info, directArgs, directAllowed, allowedSubs);
         lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_COMMAND) + " ")
-                + color(style.textTag(), styleUsage(usage, style)));
+                + color(style.textTag(), HelpArgumentLabels.styleUsage(usage, style)));
         lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_DESCRIPTION) + " ")
                 + color(style.textTag(), safeDescription(manager, sender,
                 resolveDescription(manager, sender, info.name(), info.description(), null))));
@@ -408,7 +406,7 @@ public final class HelpCommandSupport {
         List<String> commandAliases = normalizeAliases(info.aliases());
         if (!commandAliases.isEmpty()) {
             lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ALIASES) + " ")
-                    + color(style.textTag(), joinValues(commandAliases)));
+                    + color(style.textTag(), HelpArgumentLabels.joinValues(commandAliases)));
         }
 
         if (directAction != null && directAllowed) {
@@ -422,7 +420,7 @@ public final class HelpCommandSupport {
                 String subPath = sub.fullPath();
                 List<CommandArgument> subArgs = filterVisibleArguments(manager, sender, baseCommandName,
                         subPath, sub.arguments());
-                String subUsage = styleUsage(buildUsage(manager, info, subPath, subArgs), style);
+                String subUsage = HelpArgumentLabels.styleUsage(buildUsage(manager, info, subPath, subArgs), style);
                 String prefix = i == allowedSubs.size() - 1 ? "`-" : "|-";
                 String hover = hoverText(manager, sender, resolveDescription(manager, sender, baseCommandName,
                         sub.description(), sub.fullPathSegments()));
@@ -446,7 +444,7 @@ public final class HelpCommandSupport {
                 subPath, args);
         String usage = buildUsage(manager, info, subPath, visibleArgs);
         lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_COMMAND) + " ")
-                + color(style.textTag(), styleUsage(usage, style)));
+                + color(style.textTag(), HelpArgumentLabels.styleUsage(usage, style)));
         String description = resolveDescription(
                 manager,
                 sender,
@@ -459,7 +457,7 @@ public final class HelpCommandSupport {
         List<String> aliases = subInfo != null ? normalizeAliases(subInfo.aliases()) : List.of();
         if (!aliases.isEmpty()) {
             lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ALIASES) + " ")
-                    + color(style.textTag(), joinValues(aliases)));
+                    + color(style.textTag(), HelpArgumentLabels.joinValues(aliases)));
         }
         appendArguments(lines, args, manager, style, sender, baseCommandName, subPath);
         return lines;
@@ -481,7 +479,7 @@ public final class HelpCommandSupport {
             CommandArgument arg = visible.get(i);
             String prefix = i == visible.size() - 1 ? "`-" : "|-";
             boolean optional = arg.isOptional() || arg.getDefaultValue() != null;
-            String label = argumentLabel(arg);
+            String label = HelpArgumentLabels.argumentLabel(arg);
             String suffix = optional
                     ? " " + color(style.primaryTag(), message(manager, sender, InternalMessages.CMD_HELP_OPTIONAL))
                     : "";
@@ -491,11 +489,11 @@ public final class HelpCommandSupport {
                 suffix += " " + color(style.mutedTag(),
                         message(manager, sender, InternalMessages.CMD_HELP_DEFAULT_VALUE, "value", shown));
             }
-            List<String> enumValues = getEnumValues(arg);
+            List<String> enumValues = HelpArgumentLabels.enumValues(arg);
             if (!enumValues.isEmpty() && enumValues.size() <= style.maxEnumValues()) {
                 suffix += " " + color(style.mutedTag(),
                         message(manager, sender, InternalMessages.CMD_HELP_VALUES,
-                                "values", joinValues(enumValues)));
+                                "values", HelpArgumentLabels.joinValues(enumValues)));
             }
             lines.add(color(style.mutedTag(), prefix + " ") + color(style.textTag(), label) + suffix);
         }
@@ -638,12 +636,12 @@ public final class HelpCommandSupport {
         String prefix = last ? "`-" : "|-";
         String hover = hoverText(manager, sender, entry.description);
         String click = buildHelpCommand(context, entry.command, entry.subcommand);
-        String usage = styleUsage(entry.usage, style);
+        String usage = HelpArgumentLabels.styleUsage(entry.usage, style);
         String line = color(style.mutedTag(), prefix + " ") + clickable(usage, hover, click, style);
         if (entry.subcommand == null && entry.aliases != null && !entry.aliases.isEmpty()) {
             line += " " + color(style.mutedTag(),
                     message(manager, sender, InternalMessages.CMD_HELP_ALIASES_INLINE,
-                            "aliases", joinValues(entry.aliases)));
+                            "aliases", HelpArgumentLabels.joinValues(entry.aliases)));
         }
         return line;
     }
@@ -833,75 +831,6 @@ public final class HelpCommandSupport {
         return base;
     }
 
-    private static String styleUsage(String usage, HelpStyle style) {
-        if (usage == null || usage.isEmpty()) {
-            return usage;
-        }
-        String safeUsage = escapeMiniText(usage);
-        StringBuilder out = new StringBuilder();
-        boolean optional = false;
-        for (int i = 0; i < safeUsage.length(); i++) {
-            char ch = safeUsage.charAt(i);
-            if (ch == '[') {
-                if (!optional) {
-                    out.append(openTag(style.primaryTag()));
-                    optional = true;
-                }
-                out.append(ch);
-            } else if (ch == ']') {
-                out.append(ch);
-                if (optional) {
-                    out.append(closeTag(style.primaryTag()));
-                    optional = false;
-                }
-            } else {
-                out.append(ch);
-            }
-        }
-        if (optional) {
-            out.append(closeTag(style.primaryTag()));
-        }
-        return out.toString();
-    }
-
-    static String argumentLabel(CommandArgument argument) {
-        if (argument == null) {
-            return "";
-        }
-        String valueLabel = argumentValueLabel(argument);
-        if (argument.isOption()) {
-            String optionNames = optionNamesLabel(argument);
-            if (argument.isFlag()) {
-                return optionNames;
-            }
-            return optionNames + " <" + valueLabel + ">";
-        }
-        return valueLabel;
-    }
-
-    private static String argumentValueLabel(CommandArgument argument) {
-        String name = argument.getName();
-        if (name != null && !name.isEmpty()) {
-            return name;
-        }
-        return argument.getType().getSimpleName().toLowerCase(Locale.ROOT);
-    }
-
-    private static String optionNamesLabel(CommandArgument argument) {
-        List<String> tokens = new ArrayList<>();
-        for (String longName : argument.getLongOptionNames()) {
-            tokens.add("--" + longName);
-        }
-        for (String shortName : argument.getShortOptionNames()) {
-            tokens.add("-" + shortName);
-        }
-        if (tokens.isEmpty()) {
-            String name = argument.getName();
-            return name != null ? name : "";
-        }
-        return String.join(", ", tokens);
-    }
-
     private static List<String> normalizeAliases(String[] aliases) {
         if (aliases == null || aliases.length == 0) {
             return List.of();
@@ -934,43 +863,6 @@ public final class HelpCommandSupport {
             }
         }
         return result;
-    }
-
-    private static List<String> getEnumValues(CommandArgument argument) {
-        if (argument == null) {
-            return List.of();
-        }
-        Class<?> type = argument.getType();
-        if (type == null || !type.isEnum()) {
-            return List.of();
-        }
-        Object[] constants = type.getEnumConstants();
-        if (constants == null || constants.length == 0) {
-            return List.of();
-        }
-        List<String> values = new ArrayList<>(constants.length);
-        for (Object constant : constants) {
-            if (constant instanceof Enum<?> e) {
-                values.add(e.name().toLowerCase(Locale.ROOT));
-            } else if (constant != null) {
-                values.add(constant.toString().toLowerCase(Locale.ROOT));
-            }
-        }
-        return values;
-    }
-
-    private static String joinValues(List<String> values) {
-        if (values == null || values.isEmpty()) {
-            return "";
-        }
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < values.size(); i++) {
-            if (i > 0) {
-                out.append(", ");
-            }
-            out.append(escapeMiniText(values.get(i)));
-        }
-        return out.toString();
     }
 
     private static String safeDescription(CommandManager<?> manager, MagicSender sender, String description) {
