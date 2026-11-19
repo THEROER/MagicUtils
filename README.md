@@ -86,7 +86,11 @@ dependencies {
 ## Supported Versions
 
 Every row below is booted on a real server by the compatibility smoke
-(`./gradlew runCompatibilitySmoke`) and gated on the runtime diagnostics verdict.
+(`./gradlew runCompatibilitySmoke`) and gated on the runtime diagnostics verdict. The one
+exception is NeoForge: its moddev dev run loads the mod on a different class loader than
+Minecraft (see the note in `neoforge-bundle/build.gradle.kts`), so the dev smoke cannot
+finish the diagnostics export; the published bundle jar itself runs cleanly on a real
+NeoForge server (checked by hand on 26.3.0.113).
 
 | Platform | Minecraft / proxy versions | Java | Build target |
 | --- | --- | --- | --- |
