@@ -49,16 +49,19 @@ magicMatrix {
     )
 
     platform("bukkit", listOf("platform-bukkit", "bukkit-bundle"))
-    // Bungee and Velocity are disabled on the 26.x targets. Unlike Bukkit/Fabric/NeoForge
-    // these proxies do not track the Minecraft version at all — bungeecord-api 1.20 and
-    // velocity-api 3.1.1 are pinned in the version catalog, and both still run Adventure 4
-    // while every 26.x platform moved to Adventure 5 (see magicUtilsAdventureVersion).
-    // Building them on a 26.x target would compile the shared modules they inline against
-    // Adventure 5 and then run them on a proxy that provides Adventure 4 — the same
-    // cross-major breakage this alignment exists to prevent. Their artifacts come from the
-    // 1.21 targets and work on proxies regardless of the servers behind them.
+    // Bungee is disabled on every 26.x target: bungeecord-api (1.20, pinned in
+    // MagicUtilsPlatformApiDefaults) does not track Minecraft and still runs Adventure 4,
+    // while 26.2+ platforms moved to Adventure 5 (see magicUtilsAdventureVersion).
+    // Building it on a 26.x target would compile the shared modules it inlines against the
+    // wrong Adventure; its artifact comes from the 1.21 target and works on proxies
+    // regardless of the servers behind them.
+    //
+    // Velocity follows the Adventure major instead: Velocity 3.x (Adventure 4) on the
+    // 1.20/1.21 targets, Velocity 4.x (Adventure 5, Java 25) on 26.2+ — see
+    // magicUtilsVelocityApiVersion. Only 26.1 is excluded: it is Java 25 but still
+    // Adventure 4, a combination no supported Velocity line has.
     platform("bungee", listOf("platform-bungee", "bungee-bundle"), listOf("mc26"))
-    platform("velocity", listOf("platform-velocity", "velocity-bundle"), listOf("mc26"))
+    platform("velocity", listOf("platform-velocity", "velocity-bundle"), listOf("mc2611"))
     platform("fabric", listOf("platform-fabric", "commands-fabric", "logger-fabric", "placeholders-fabric", "fabric-bundle"))
     // NeoForge is disabled on both 1.20.x targets (mc1201, mc1205): MagicUtils
     // publishes no neoforge module for the 1.20.x library coordinate.
@@ -132,6 +135,14 @@ magicMatrix {
                     "26.2" to mapOf("runMinecraftVersion" to "26.2"),
                 )
             }
+            entry("paper-263x") {
+                target = "mc263"
+                versions = listOf("26.3")
+                smokeValues = listOf("26.3")
+                smokeGradleProperties = mapOf(
+                    "26.3" to mapOf("runMinecraftVersion" to "26.3"),
+                )
+            }
         }
         // Folia: a Paper fork with regionised multithreading. It is NOT a separate
         // published artifact — `folia` is one of the bukkit bundle's Modrinth
@@ -145,7 +156,7 @@ magicMatrix {
             successPattern = "Done ("
             diagnosticsCommand = "magicutils diagnostics export"
             // Folia does NOT publish a build for every patch — it releases under a
-            // subset (e.g. 1.21.11 but not 1.21.10; 26.1.2 but not 26.2). So the
+            // subset (e.g. 1.21.11 but not 1.21.10; 26.1.2 but not 26.1.1). So the
             // smokeValue is a Folia-available version, launched on the same bundle
             // jar (the jar built for +1.21.10 runs fine on the 1.21.11 Folia server).
             entry("folia-121x") {
@@ -158,10 +169,28 @@ magicMatrix {
             }
             entry("folia-261x") {
                 target = "mc2611"
-                versions = listOf("26.1-26.2")
+                versions = listOf("26.1-26.1.2")
                 smokeValues = listOf("26.1.2")
                 smokeGradleProperties = mapOf(
                     "26.1.2" to mapOf("runMinecraftVersion" to "26.1.2"),
+                )
+            }
+            // Folia now ships 26.2 and 26.3 builds. Each runs the jar of its own
+            // target, like Paper: 26.2+ is Adventure 5, which the 26.1 jar is not.
+            entry("folia-262x") {
+                target = "mc262"
+                versions = listOf("26.2")
+                smokeValues = listOf("26.2")
+                smokeGradleProperties = mapOf(
+                    "26.2" to mapOf("runMinecraftVersion" to "26.2"),
+                )
+            }
+            entry("folia-263x") {
+                target = "mc263"
+                versions = listOf("26.3")
+                smokeValues = listOf("26.3")
+                smokeGradleProperties = mapOf(
+                    "26.3" to mapOf("runMinecraftVersion" to "26.3"),
                 )
             }
         }
@@ -191,8 +220,13 @@ magicMatrix {
             }
             entry("fabric-262x") {
                 target = "mc262"
-                versions = listOf("26.1-26.2")
+                versions = listOf("26.1-26.1.2", "26.2")
                 smokeValues = listOf("26.2")
+            }
+            entry("fabric-263x") {
+                target = "mc263"
+                versions = listOf("26.3")
+                smokeValues = listOf("26.3")
             }
         }
         // NeoForge: like Fabric, runtime MC is pinned to the target. Disabled on
@@ -210,8 +244,13 @@ magicMatrix {
             }
             entry("neoforge-262x") {
                 target = "mc262"
-                versions = listOf("26.1-26.2")
+                versions = listOf("26.1-26.1.2", "26.2")
                 smokeValues = listOf("26.2")
+            }
+            entry("neoforge-263x") {
+                target = "mc263"
+                versions = listOf("26.3")
+                smokeValues = listOf("26.3")
             }
         }
         // Proxies (velocity, bungee): MC-version-agnostic — one jar covers the
@@ -221,18 +260,33 @@ magicMatrix {
             runTask = ":velocity-bundle:runVelocity -Pscenario=velocity"
             successPattern = "Done ("
             diagnosticsCommand = "magicutils diagnostics export"
-            // One entry, covering 26.x too: the proxy bundle is built on the 1.21
-            // target and works in front of any server generation, so there is no
-            // 26.x proxy artifact to smoke or publish. A `target = "mc262"` entry
-            // here would synthesise a velocity-bundle+java25 Modrinth artifact that
-            // the build never produces — velocity is disabled on the 26.x targets
-            // (bungeecord/velocity APIs are still on Adventure 4; see the platform
-            // declaration above).
-            entry("velocity-runtime") {
+            // Two proxy lines, split by Adventure major (see the platform declaration
+            // above). Each jar is MC-agnostic within its line, so `versions` only says
+            // which networks it is meant for; the Modrinth artifacts fold by Java
+            // level, so these become two files: velocity-bundle+java21 (Velocity 3)
+            // and velocity-bundle+java25 (Velocity 4).
+            //
+            // Velocity 3.x (Adventure 4, Java 21): built on the 1.21 target, smoked on
+            // 3.5.1 — the last 3.x release (deprecated upstream since 2026-09-30).
+            entry("velocity-3x") {
                 target = "mc12110"
                 primary = true
-                versions = listOf("1.20-1.20.6", "1.21-1.21.11", "26.1-26.2")
-                smokeValues = listOf("1.21.10")
+                versions = listOf("1.20-1.20.6", "1.21-1.21.11")
+                smokeValues = listOf("3.5.1")
+                smokeGradleProperties = mapOf(
+                    "3.5.1" to mapOf("runVelocityVersion" to "3.5.1"),
+                )
+            }
+            // Velocity 4.x (Adventure 5, Java 25): built on the newest target and
+            // smoked on 4.3.1, the current supported Velocity release. It fronts
+            // every 26.x server generation.
+            entry("velocity-4x") {
+                target = "mc263"
+                versions = listOf("26.1-26.1.2", "26.2", "26.3")
+                smokeValues = listOf("4.3.1")
+                smokeGradleProperties = mapOf(
+                    "4.3.1" to mapOf("runVelocityVersion" to "4.3.1"),
+                )
             }
         }
         // BungeeCord: like Velocity, the API is decoupled from Minecraft, so one
@@ -242,13 +296,15 @@ magicMatrix {
             runTask = ":bungee-bundle:runWaterfall -Pscenario=bungee"
             successPattern = "Listening on"
             diagnosticsCommand = "magicutils diagnostics export"
-            // Same as velocity: one 1.21-built artifact fronting every server
-            // generation, so 26.x is a version range on this entry rather than a
-            // separate target that would demand a bungee-bundle+java25 jar.
+            // One 1.21-built artifact fronting every server generation, so 26.x is a
+            // version range on this entry rather than a separate target that would
+            // demand a bungee-bundle+java25 jar. Unlike Velocity there is no Adventure-5
+            // BungeeCord API to split onto, and Waterfall itself is end-of-life, so the
+            // advertised span is left where it was.
             entry("bungee-runtime") {
                 target = "mc12110"
                 primary = true
-                versions = listOf("1.20-1.20.6", "1.21-1.21.11", "26.1-26.2")
+                versions = listOf("1.20-1.20.6", "1.21-1.21.11", "26.1-26.1.2", "26.2")
                 smokeValues = listOf("1.21.10")
             }
         }
