@@ -2,7 +2,6 @@ package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.*;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -389,51 +388,7 @@ public abstract class MagicCommand {
         if (overrideName == null && addedAliases.isEmpty() && removedAliases.isEmpty()) {
             return base;
         }
-        return new CommandInfo() {
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return CommandInfo.class;
-            }
-
-            @Override
-            public String name() {
-                return overrideName != null ? overrideName : base.name();
-            }
-
-            @Override
-            public String description() {
-                return base.description();
-            }
-
-            @Override
-            public String[] aliases() {
-                List<String> aliases = new ArrayList<>();
-                aliases.addAll(Arrays.asList(base.aliases()));
-                aliases.addAll(addedAliases);
-                aliases.removeIf(a -> removedAliases.contains(a.toLowerCase(Locale.ROOT)));
-                return aliases.toArray(new String[0]);
-            }
-
-            @Override
-            public String permission() {
-                return base.permission();
-            }
-
-            @Override
-            public MagicPermissionDefault permissionDefault() {
-                return base.permissionDefault();
-            }
-
-            @Override
-            public CommandThreading threading() {
-                return base.threading();
-            }
-
-            @Override
-            public MergePolicy merge() {
-                return base.merge();
-            }
-        };
+        return new OverriddenCommandInfo(base, overrideName, addedAliases, removedAliases);
     }
 
     List<DynamicSubCommand> getDynamicSubCommands() {
