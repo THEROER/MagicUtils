@@ -11,7 +11,6 @@ import dev.ua.theroer.magicutils.platform.ShutdownHookRegistrar;
 import dev.ua.theroer.magicutils.platform.TaskScheduler;
 import dev.ua.theroer.magicutils.platform.Tasks;
 import dev.ua.theroer.magicutils.platform.ThreadContext;
-import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +21,6 @@ import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -34,8 +32,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -2127,108 +2123,6 @@ public class ConfigManager {
                 return;
             }
             latestVersion = null;
-        }
-    }
-
-    private static final class ConfigKey {
-        private final Class<?> configClass;
-        private final String filePath;
-
-        private ConfigKey(Class<?> configClass, String filePath) {
-            this.configClass = configClass;
-            this.filePath = filePath;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-            ConfigKey configKey = (ConfigKey) o;
-            return Objects.equals(configClass, configKey.configClass)
-                    && Objects.equals(filePath, configKey.filePath);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(configClass, filePath);
-        }
-    }
-
-    private static final class ConfigEntry<T> {
-        private final ConfigKey key;
-        private final T instance;
-        private final ConfigMetadata metadata;
-        private final File file;
-        private String schemaVersion;
-        private final Object monitor = new Object();
-        private final AtomicBoolean reloadScheduled = new AtomicBoolean(false);
-        private final AtomicLong lastModified = new AtomicLong(-1L);
-
-        private ConfigEntry(ConfigKey key, T instance, ConfigMetadata metadata, File file) {
-            this.key = key;
-            this.instance = instance;
-            this.metadata = metadata;
-            this.file = file;
-        }
-
-        private boolean markReloadScheduled() {
-            return reloadScheduled.compareAndSet(false, true);
-        }
-
-        private void reloadComplete() {
-            reloadScheduled.set(false);
-        }
-
-        private void refreshLastModified() {
-            long modified = file.exists() ? file.lastModified() : -1L;
-            this.lastModified.set(modified);
-        }
-
-        private long getLastModified() {
-            return this.lastModified.get();
-        }
-    }
-
-    private static final class ConfigMetadata {
-        @Getter
-        private final String filePath;
-        @Getter
-        private final boolean autoCreate;
-        @Getter
-        private final String templatePath;
-
-        ConfigMetadata(String filePath, boolean autoCreate, String templatePath, Path baseDir) {
-            this.filePath = sanitizePath(filePath, baseDir);
-            this.autoCreate = autoCreate;
-            this.templatePath = templatePath;
-        }
-
-        private String sanitizePath(String path, Path baseDir) {
-            if (path == null || path.isEmpty()) {
-                throw new IllegalArgumentException("Path cannot be null or empty");
-            }
-            try {
-                Path normalizedPath = Paths.get(path).normalize();
-                Path fullPath = baseDir.resolve(normalizedPath).normalize();
-
-                if (!fullPath.startsWith(baseDir.normalize())) {
-                    throw new SecurityException(
-                            "Path traversal detected! Path '" + path +
-                                    "' attempts to access files outside config directory.");
-                }
-                return baseDir.normalize().relativize(fullPath).toString().replace('\\', '/');
-            } catch (Exception e) {
-                if (e instanceof SecurityException) {
-                    throw e;
-                }
-                throw new IllegalArgumentException("Invalid path: " + path, e);
-            }
-        }
-
-        private File resolveFile(Path baseDir) {
-            return baseDir.resolve(filePath).toFile();
         }
     }
 
