@@ -33,7 +33,13 @@ tasks.named<xyz.jpenilla.runvelocity.task.RunVelocity>("runVelocity") {
     // collides with a real proxy on 25565/25577. Velocity only loads plugins and
     // boots (we grep `Done (`); no client connects, so the exact port is
     // irrelevant. Patch the existing velocity.toml bind line when present.
-    val runDir = layout.projectDirectory.dir("run")
+    // One run dir per Velocity major: Velocity 4 rewrites velocity.toml in a shape
+    // Velocity 3 cannot read back ("Cannot convert ... SynchronizedConfig to an
+    // Enum"), so a shared dir breaks whichever line boots second.
+    val runDir = layout.projectDirectory.dir(
+        if (runVelocityVersion.substringBefore('.') == "3") "run" else "run-velocity${runVelocityVersion.substringBefore('.')}"
+    )
+    runDirectory.set(runDir)
     doFirst {
         val port = magicUtilsResolveRunPort()
         val toml = runDir.asFile.resolve("velocity.toml")
