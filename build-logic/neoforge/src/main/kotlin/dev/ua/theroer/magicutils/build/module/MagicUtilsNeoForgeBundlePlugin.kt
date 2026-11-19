@@ -9,8 +9,8 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.bundling.Jar
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.kotlin.dsl.*
 
 class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
@@ -110,18 +110,40 @@ class MagicUtilsNeoForgeBundlePlugin : Plugin<Project> {
                 dependencies.add("bundleContents", "$coord:$jacksonVersion")
             }
 
+            // Minecraft's own dependency graph pins Jackson with a `strictly 2.13.4`
+            // constraint, and NeoForge puts that graph on this project's configurations.
+            // Asking for the catalog's Jackson then becomes an unsatisfiable conflict and
+            // resolution fails outright ("Cannot find a version of jackson-databind that
+            // satisfies the version constraints") — which is why the NeoForge bundle could
+            // not build or dev-run on 1.21.x at all. The force below picks the catalog
+            // version for this project: it decides which copy is packed into the bundle
+            // and which one the dev run loads, and touches nothing outside this project,
+            // so the game's own classpath keeps its strict pin. It has to apply to every
+            // configuration, not just bundleContents, because `runtimeOnly` extends
+            // bundleContents for the dev run and would otherwise hit the same conflict.
+            configurations.all { configuration ->
+                configuration.resolutionStrategy.force(
+                    "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion",
+                    "com.fasterxml.jackson.core:jackson-core:$jacksonVersion",
+                    "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion",
+                )
+            }
+
+
+            val relocateLibs = tasks.register("relocateLibs", ShadowJar::class.java) {
+                it.configurations.set(setOf(bundleContents))
+                it.archiveClassifier.set("relocated-libs")
+
+                it.relocate("org.yaml.snakeyaml", "dev.ua.theroer.magicutils.libs.snakeyaml")
+            }
+
             tasks.named("jar", Jar::class.java).configure { jarTask ->
                 jarTask.archiveBaseName.set(moduleName)
                 jarTask.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
                 jarTask.dependsOn(bundleContents)
-                jarTask.inputs.files(bundleContents)
-                    .withPropertyName("bundleContents")
-                    .withPathSensitivity(PathSensitivity.RELATIVE)
-                jarTask.from(provider {
-                    bundleContents.files.map { file ->
-                        if (file.isDirectory) file else zipTree(file)
-                    }
-                })
+                jarTask.from(relocateLibs.map { project.zipTree(it.archiveFile) })
+
                 jarTask.exclude(
                     "META-INF/MANIFEST.MF",
                     "META-INF/*.DSA",

@@ -106,6 +106,8 @@ abstract class MagicUtilsJvmBundlePlugin(private val platform: JvmBundlePlatform
                 shadowJarTask.archiveClassifier.set("")
                 shadowJarTask.configurations.set(setOf(bundleShadow))
                 shadowJarTask.mergeServiceFiles()
+
+                shadowJarTask.relocate("org.yaml.snakeyaml", "dev.ua.theroer.magicutils.libs.snakeyaml")
             }
 
             tasks.configureEach {
