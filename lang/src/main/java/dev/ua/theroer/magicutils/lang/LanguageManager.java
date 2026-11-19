@@ -40,7 +40,6 @@ public class LanguageManager {
     private final PlayerLanguageStore playerLanguageStore = new PlayerLanguageStore();
     private final TranslationRegistry translationRegistry = new TranslationRegistry();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
-    private static final Set<String> LANGUAGE_EXTENSIONS = Set.of("jsonc", "json", "yml", "yaml", "toml");
     @Getter
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
@@ -110,7 +109,7 @@ public class LanguageManager {
     }
 
     private boolean loadLanguageBlocking(String languageCode) {
-        boolean existed = languageFileExists(languageCode);
+        boolean existed = LanguageFiles.exists(platform.configDir(), languageCode);
         try {
             this.loggedMissingMessages.clear();
             Map<String, String> placeholders = new HashMap<>();
@@ -341,32 +340,7 @@ public class LanguageManager {
      * @return set of language codes found on disk or loaded in memory
      */
     public Set<String> getAvailableLanguages() {
-        Set<String> languages = new HashSet<>();
-        File langDir = platform.configDir().resolve("lang").toFile();
-
-        if (langDir.exists() && langDir.isDirectory()) {
-            File[] files = langDir.listFiles((dir, name) -> {
-                if (name == null) {
-                    return false;
-                }
-                int dot = name.lastIndexOf('.');
-                if (dot <= 0 || dot >= name.length() - 1) {
-                    return false;
-                }
-                String ext = name.substring(dot + 1).toLowerCase();
-                return LANGUAGE_EXTENSIONS.contains(ext);
-            });
-            if (files != null) {
-                for (File file : files) {
-                    String name = file.getName();
-                    int dot = name.lastIndexOf('.');
-                    if (dot > 0) {
-                        languages.add(name.substring(0, dot));
-                    }
-                }
-            }
-        }
-
+        Set<String> languages = new HashSet<>(LanguageFiles.codesOnDisk(platform.configDir()));
         languages.addAll(loadedLanguages.keySet());
         return languages;
     }
@@ -609,7 +583,7 @@ public class LanguageManager {
         if (languageCode == null || languageCode.isBlank()) {
             return null;
         }
-        for (String candidate : expandLanguageCandidates(languageCode)) {
+        for (String candidate : LanguageCodes.candidates(languageCode)) {
             String matched = matchAvailableLanguageCode(candidate);
             if (matched != null && !matched.isBlank()) {
                 return matched;
@@ -871,33 +845,6 @@ public class LanguageManager {
         setAutoDetectedPlayerLanguage(playerLocale.playerId(), playerLocale.localeTag());
     }
 
-    private Set<String> expandLanguageCandidates(String languageCode) {
-        LinkedHashSet<String> candidates = new LinkedHashSet<>();
-        String trimmed = languageCode != null ? languageCode.trim() : "";
-        if (trimmed.isEmpty()) {
-            return candidates;
-        }
-        candidates.add(trimmed);
-
-        String lowerCased = trimmed.toLowerCase(Locale.ROOT);
-        candidates.add(lowerCased);
-
-        String normalizedTag = normalizeLanguageKey(trimmed);
-        candidates.add(normalizedTag);
-
-        int hyphenIndex = normalizedTag.indexOf('-');
-        if (hyphenIndex > 0) {
-            candidates.add(normalizedTag.substring(0, hyphenIndex));
-        }
-
-        int underscoreIndex = lowerCased.indexOf('_');
-        if (underscoreIndex > 0) {
-            candidates.add(lowerCased.substring(0, underscoreIndex));
-        }
-
-        return candidates;
-    }
-
     private String matchAvailableLanguageCode(String candidate) {
         if (candidate == null || candidate.isBlank()) {
             return null;
@@ -906,12 +853,12 @@ public class LanguageManager {
             return candidate;
         }
 
-        String normalizedCandidate = normalizeLanguageKey(candidate);
+        String normalizedCandidate = LanguageCodes.normalizeKey(candidate);
         for (String availableLanguage : getAvailableLanguages()) {
             if (candidate.equals(availableLanguage)) {
                 return availableLanguage;
             }
-            if (normalizedCandidate.equals(normalizeLanguageKey(availableLanguage))) {
+            if (normalizedCandidate.equals(LanguageCodes.normalizeKey(availableLanguage))) {
                 return availableLanguage;
             }
         }
@@ -919,10 +866,6 @@ public class LanguageManager {
             return candidate;
         }
         return null;
-    }
-
-    private String normalizeLanguageKey(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT).replace('_', '-');
     }
 
     private void applyLanguage(String languageCode) {
@@ -960,20 +903,6 @@ public class LanguageManager {
                 logger.warn("Failed to run language action on main thread: " + action, error);
             }
         });
-    }
-
-    private boolean languageFileExists(String languageCode) {
-        if (languageCode == null || languageCode.isBlank()) {
-            return false;
-        }
-        Path base = platform.configDir().resolve("lang");
-        for (String ext : LANGUAGE_EXTENSIONS) {
-            Path candidate = base.resolve(languageCode + "." + ext);
-            if (candidate.toFile().exists()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void warnIfMainThread(String action) {
