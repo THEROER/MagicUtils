@@ -4,12 +4,9 @@ import dev.ua.theroer.magicutils.annotations.*;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 /**
  * Abstract base class for all custom commands.
@@ -880,7 +877,7 @@ public abstract class MagicCommand {
                             subInfo.annotation.permissionDefault(),
                             subInfo.annotation.threading(),
                             withSuggestionHost(getArguments(subInfo.method), command),
-                            createMethodExecutor(command, subInfo.method),
+                            MountedCommandExecutors.forMethod(command, subInfo.method),
                             false,
                             subInfo.annotation.merge()
                     ),
@@ -899,7 +896,7 @@ public abstract class MagicCommand {
                             dynamicSubCommand.spec().permissionDefault(),
                             dynamicSubCommand.spec().threading(),
                             withSuggestionHost(dynamicSubCommand.spec().arguments(), command),
-                            wrapExecutor(command, dynamicSubCommand.spec().executor()),
+                            MountedCommandExecutors.wrap(command, dynamicSubCommand.spec().executor()),
                             dynamicSubCommand.replaceExisting(),
                             dynamicSubCommand.spec().mergePolicy()
                     ),
@@ -934,87 +931,18 @@ public abstract class MagicCommand {
         Method executeMethod = findExecuteMethod(command.getClass());
         DynamicExecute dynamic = command.getDynamicExecute();
         if (dynamic != null && (dynamic.replaceExisting() || executeMethod == null)) {
-            return new MountedAction(dynamic.arguments(), wrapExecutor(command, dynamic.executor()),
+            return new MountedAction(dynamic.arguments(), MountedCommandExecutors.wrap(command, dynamic.executor()),
                     dynamic.threading());
         }
         if (executeMethod != null) {
-            return new MountedAction(getArguments(executeMethod), createMethodExecutor(command, executeMethod),
+            return new MountedAction(getArguments(executeMethod), MountedCommandExecutors.forMethod(command, executeMethod),
                     info.threading());
         }
         if (dynamic != null) {
-            return new MountedAction(dynamic.arguments(), wrapExecutor(command, dynamic.executor()),
+            return new MountedAction(dynamic.arguments(), MountedCommandExecutors.wrap(command, dynamic.executor()),
                     dynamic.threading());
         }
         return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CommandExecutor<Object> wrapExecutor(MagicCommand command, CommandExecutor<?> executor) {
-        if (executor == null) {
-            return null;
-        }
-        CommandExecutor<Object> typed = (CommandExecutor<Object>) executor;
-        return execution -> typed.execute(new CommandExecution<>(
-                command,
-                execution.commandName(),
-                execution.subCommandName(),
-                execution.sender(),
-                execution.rawArgs(),
-                execution.arguments(),
-                execution.parsedArgs()
-        ));
-    }
-
-    private static CommandExecutor<Object> createMethodExecutor(MagicCommand command, Method method) {
-        return execution -> {
-            try {
-                Object result = method.invoke(command, execution.parsedArgs());
-                return resolveResult(result);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException runtimeException) {
-                    throw runtimeException;
-                }
-                if (cause instanceof Error error) {
-                    throw error;
-                }
-                throw new IllegalStateException("Failed to invoke mounted command method", cause);
-            } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException("Failed to invoke mounted command method", e);
-            }
-        };
-    }
-
-    /**
-     * Normalizes a {@code @SubCommand} method's return value into a
-     * {@link CommandResult}. A method may return a {@code CommandResult} directly, a
-     * {@link CompletableFuture} of one (awaited here — safe because {@code ASYNC}
-     * handlers already run off the main thread, letting the handler stay free of
-     * manual {@code join()}/callback boilerplate), or {@code void}/{@code null}
-     * (treated as success).
-     */
-    static CommandResult resolveResult(Object result) {
-        if (result instanceof CommandResult commandResult) {
-            return commandResult;
-        }
-        if (result instanceof CompletableFuture<?> future) {
-            try {
-                Object awaited = future.join();
-                return awaited instanceof CommandResult commandResult
-                        ? commandResult
-                        : CommandResult.success();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause() != null ? e.getCause() : e;
-                if (cause instanceof RuntimeException runtimeException) {
-                    throw runtimeException;
-                }
-                if (cause instanceof Error error) {
-                    throw error;
-                }
-                throw new IllegalStateException("Async command handler failed", cause);
-            }
-        }
-        return CommandResult.success();
     }
 
     private static void removeMatchingSubCommands(List<MountedSubCommand> commands, SubCommandSpec<?> replacement) {
