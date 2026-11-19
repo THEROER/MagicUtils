@@ -62,8 +62,10 @@ The enabled steps come from `magicMatrix { release { } }` in `settings.gradle.kt
 | `-Prelease.branch=<name>` | `main` | branch a release may run from |
 | `-Prelease.allowAnyBranch=true` | off | bypass the branch gate once (genuine hotfix) |
 
-`releaseModrinth` alone supports a dry run: `-PmodrinthDryRun=true` prints the
-resolved upload plan without uploading.
+`-Prelease.dryRun` (its presence turns it on) makes `releaseMavenAll`,
+`releaseModrinth` and `releaseJavadoc` print the commands/URLs they would run
+instead of uploading; `-PmodrinthDryRun=true` additionally prints the resolved
+Modrinth upload plan (version, jar, loaders, game versions).
 
 Every publish step is resumable: uploads pass `-Pskip_existing`, which HEADs each
 POM and skips what is already in the (immutable) repository, and `publishToModrinth`
