@@ -39,7 +39,7 @@ public class LanguageManager {
     private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
     private final Map<UUID, String> autoDetectedPlayerLanguages = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, String>> registeredTranslations = new ConcurrentHashMap<>();
+    private final TranslationRegistry translationRegistry = new TranslationRegistry();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
     private static final Set<String> LANGUAGE_EXTENSIONS = Set.of("jsonc", "json", "yml", "yaml", "toml");
     @Getter
@@ -118,8 +118,8 @@ public class LanguageManager {
             placeholders.put("lang", languageCode);
 
             LanguageConfig config = configManager.register(LanguageConfig.class, placeholders);
-            boolean changed = initializeLanguageDefaults(config, languageCode, existed);
-            changed |= applyRegisteredTranslations(config, languageCode);
+            boolean changed = translationRegistry.initializeDefaults(config, languageCode, existed);
+            changed |= translationRegistry.applyTo(config, languageCode);
 
             if (changed) {
                 try {
@@ -156,50 +156,6 @@ public class LanguageManager {
         }
         CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                 .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
-    }
-
-    private boolean initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
-        Map<String, Map<String, String>> translations = createTranslations(languageCode);
-        boolean changed = false;
-        if (!existed) {
-            // Stamp the real code even when nothing is bundled for this language:
-            // LanguageMetadata defaults to English/en, so a fresh ru_ru.jsonc would
-            // otherwise claim to be the English file.
-            changed = config.applyLanguageCode(languageCode);
-        }
-        if (translations.isEmpty()) {
-            return changed;
-        }
-        // Fill defaults even into a file that already exists. lang/<code> is shared
-        // by every MagicUtils-based mod on the server, so whichever mod boots first
-        // creates it and the rest used to skip their own defaults entirely, leaving
-        // their keys unresolved. override=false keeps user edits and the first
-        // writer's values intact. Only report a change when something was actually
-        // filled in, so an up-to-date file is not rewritten on every start.
-        return config.applyTranslations(translations, !existed) | changed;
-    }
-
-    private boolean applyRegisteredTranslations(LanguageConfig config, String languageCode) {
-        if (config == null || languageCode == null || languageCode.isBlank()) {
-            return false;
-        }
-        Map<String, String> translations = registeredTranslations.get(languageCode);
-        if (translations == null || translations.isEmpty()) {
-            return false;
-        }
-
-        boolean changed = false;
-        Map<String, String> customMessages = config.getCustomMessages();
-        for (Map.Entry<String, String> entry : translations.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            if (key == null || key.isBlank() || value == null || customMessages.containsKey(key)) {
-                continue;
-            }
-            customMessages.put(key, value);
-            changed = true;
-        }
-        return changed;
     }
 
     private void loadFallbackLanguage(String languageCode) {
@@ -314,27 +270,13 @@ public class LanguageManager {
      * @param translations message key -> message text
      */
     public void registerTranslations(String languageCode, Map<String, String> translations) {
-        if (languageCode == null || languageCode.isBlank() || translations == null || translations.isEmpty()) {
+        String normalizedLanguage = translationRegistry.register(languageCode, translations);
+        if (normalizedLanguage == null) {
             return;
         }
-
-        String normalizedLanguage = languageCode.trim();
-        Map<String, String> normalizedTranslations = normalizeTranslations(translations);
-        if (normalizedTranslations.isEmpty()) {
-            return;
-        }
-
-        registeredTranslations.compute(normalizedLanguage, (ignored, existing) -> {
-            Map<String, String> merged = new LinkedHashMap<>();
-            if (existing != null && !existing.isEmpty()) {
-                merged.putAll(existing);
-            }
-            merged.putAll(normalizedTranslations);
-            return merged;
-        });
 
         LanguageConfig config = loadedLanguages.get(normalizedLanguage);
-        if (config != null && applyRegisteredTranslations(config, normalizedLanguage)) {
+        if (config != null && translationRegistry.applyTo(config, normalizedLanguage)) {
             try {
                 configManager.save(config);
             } catch (Exception e) {
@@ -988,7 +930,7 @@ public class LanguageManager {
                 return availableLanguage;
             }
         }
-        if (!createTranslations(candidate).isEmpty()) {
+        if (translationRegistry.hasBundled(candidate)) {
             return candidate;
         }
         return null;
@@ -1065,7 +1007,7 @@ public class LanguageManager {
             }
         }
 
-        String inMemory = resolveInMemoryMessage(languageCode, key);
+        String inMemory = translationRegistry.lookup(languageCode, key);
         if (inMemory != null) {
             return inMemory;
         }
@@ -1092,40 +1034,6 @@ public class LanguageManager {
         return config.getMessage(key) != null;
     }
 
-    private String resolveInMemoryMessage(String languageCode, String key) {
-        if (languageCode == null || languageCode.isBlank() || key == null || key.isBlank()) {
-            return null;
-        }
-
-        Map<String, String> registered = registeredTranslations.get(languageCode);
-        if (registered != null) {
-            String registeredMessage = registered.get(key);
-            if (registeredMessage != null) {
-                return registeredMessage;
-            }
-        }
-
-        Map<String, Map<String, String>> bundled = createTranslations(languageCode);
-        if (bundled.isEmpty()) {
-            return null;
-        }
-        for (Map.Entry<String, Map<String, String>> sectionEntry : bundled.entrySet()) {
-            if (sectionEntry == null || sectionEntry.getKey() == null || sectionEntry.getValue() == null) {
-                continue;
-            }
-            String section = sectionEntry.getKey();
-            if (!key.startsWith(section + ".")) {
-                continue;
-            }
-            String relativeKey = key.substring(section.length() + 1);
-            String bundledMessage = sectionEntry.getValue().get(relativeKey);
-            if (bundledMessage != null) {
-                return bundledMessage;
-            }
-        }
-        return null;
-    }
-
     private void logMissing(String languageCode, String key) {
         if (!logMissingMessages) {
             return;
@@ -1135,25 +1043,6 @@ public class LanguageManager {
             String fallbackInfo = fallbackLanguage != null ? ("; fallback=" + fallbackLanguage) : "";
             logger.debug("Missing translation for key '" + key + "' in language '" + languageCode + "'" + fallbackInfo);
         }
-    }
-
-    private Map<String, String> normalizeTranslations(Map<String, String> translations) {
-        LinkedHashMap<String, String> normalized = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : translations.entrySet()) {
-            if (entry == null || entry.getKey() == null || entry.getValue() == null) {
-                continue;
-            }
-            String key = entry.getKey().trim();
-            if (key.isEmpty()) {
-                continue;
-            }
-            normalized.put(key, entry.getValue());
-        }
-        return normalized;
-    }
-
-    private Map<String, Map<String, String>> createTranslations(String languageCode) {
-        return BundledTranslations.getSections(languageCode);
     }
 
     private static Platform resolvePlatform(Object platformOrPlugin) {
