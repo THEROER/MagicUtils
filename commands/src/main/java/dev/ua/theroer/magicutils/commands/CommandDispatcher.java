@@ -170,7 +170,7 @@ final class CommandDispatcher<S> {
                 return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
             }
 
-            CommandResult commandResult = MagicCommand.resolveResult(result);
+            CommandResult commandResult = MountedCommandExecutors.resolveResult(result);
             logger.debug(label + " executed successfully, result: " + commandResult.isSuccess());
 
             return commandResult;
