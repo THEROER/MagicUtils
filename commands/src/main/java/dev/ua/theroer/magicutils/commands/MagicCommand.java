@@ -1,15 +1,9 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.*;
-import dev.ua.theroer.magicutils.lang.InternalMessages;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 /**
  * Abstract base class for all custom commands.
@@ -171,8 +165,8 @@ public abstract class MagicCommand {
             throw new IllegalArgumentException("Cannot mount a command into itself");
         }
 
-        String mountedName = sanitizeSegment(route);
-        for (MountedSubCommand mounted : snapshotMountedSubCommands(command, mountedName)) {
+        String mountedName = CommandMountResolver.sanitizeSegment(route);
+        for (CommandMountResolver.MountedSubCommand mounted : CommandMountResolver.snapshot(command, mountedName)) {
             addSubCommand(mounted.spec(), mounted.replaceExisting());
         }
         return this;
@@ -202,7 +196,7 @@ public abstract class MagicCommand {
         if (command == this) {
             throw new IllegalArgumentException("Cannot mount a command into itself");
         }
-        for (MountedSubCommand mounted : resolveMountedSubCommands(command)) {
+        for (CommandMountResolver.MountedSubCommand mounted : CommandMountResolver.resolve(command)) {
             addSubCommand(mounted.spec(), mounted.replaceExisting());
         }
         return this;
@@ -228,7 +222,7 @@ public abstract class MagicCommand {
         if (command == null || command == this) {
             return this;
         }
-        for (MountedSubCommand incoming : resolveMountedSubCommands(command)) {
+        for (CommandMountResolver.MountedSubCommand incoming : CommandMountResolver.resolve(command)) {
             SubCommandSpec<Object> spec = incoming.spec();
             int existingIndex = indexOfSubCommand(spec);
             if (existingIndex < 0) {
@@ -242,10 +236,10 @@ public abstract class MagicCommand {
 
     /** @return index in dynamicSubCommands of a node with the same path+name, or -1 */
     private int indexOfSubCommand(SubCommandSpec<?> spec) {
-        List<String> path = normalizePath(spec.path());
+        List<String> path = CommandMountResolver.normalizePath(spec.path());
         for (int i = 0; i < dynamicSubCommands.size(); i++) {
             SubCommandSpec<?> existing = dynamicSubCommands.get(i).spec();
-            if (pathEquals(existing.path(), path)
+            if (CommandMountResolver.pathEquals(existing.path(), path)
                     && existing.name().equalsIgnoreCase(spec.name())) {
                 return i;
             }
@@ -264,7 +258,7 @@ public abstract class MagicCommand {
         // OVERRIDE: take the node. Warn if the existing owner also explicitly claimed it.
         SubCommandSpec<?> existing = dynamicSubCommands.get(existingIndex).spec();
         if (existing.mergePolicy() == MergePolicy.OVERRIDE && warn != null) {
-            String node = String.join(" ", normalizePath(incoming.path()));
+            String node = String.join(" ", CommandMountResolver.normalizePath(incoming.path()));
             warn.accept("Command node '" + (node.isEmpty() ? incoming.name() : node + " " + incoming.name())
                     + "' execute is claimed by more than one plugin — using the last one.");
         }
@@ -394,51 +388,7 @@ public abstract class MagicCommand {
         if (overrideName == null && addedAliases.isEmpty() && removedAliases.isEmpty()) {
             return base;
         }
-        return new CommandInfo() {
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return CommandInfo.class;
-            }
-
-            @Override
-            public String name() {
-                return overrideName != null ? overrideName : base.name();
-            }
-
-            @Override
-            public String description() {
-                return base.description();
-            }
-
-            @Override
-            public String[] aliases() {
-                List<String> aliases = new ArrayList<>();
-                aliases.addAll(Arrays.asList(base.aliases()));
-                aliases.addAll(addedAliases);
-                aliases.removeIf(a -> removedAliases.contains(a.toLowerCase(Locale.ROOT)));
-                return aliases.toArray(new String[0]);
-            }
-
-            @Override
-            public String permission() {
-                return base.permission();
-            }
-
-            @Override
-            public MagicPermissionDefault permissionDefault() {
-                return base.permissionDefault();
-            }
-
-            @Override
-            public CommandThreading threading() {
-                return base.threading();
-            }
-
-            @Override
-            public MergePolicy merge() {
-                return base.merge();
-            }
-        };
+        return new OverriddenCommandInfo(base, overrideName, addedAliases, removedAliases);
     }
 
     List<DynamicSubCommand> getDynamicSubCommands() {
@@ -506,21 +456,7 @@ public abstract class MagicCommand {
      * @return a list of SubCommandInfo
      */
     public static List<SubCommandInfo> getSubCommands(Class<?> clazz) {
-        List<SubCommandInfo> result = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
-            for (Method method : current.getDeclaredMethods()) {
-                SubCommand sub = method.getAnnotation(SubCommand.class);
-                if (sub == null) {
-                    continue;
-                }
-                String signature = buildSignature(method);
-                if (seen.add(signature)) {
-                    result.add(new SubCommandInfo(sub, method));
-                }
-            }
-        }
-        return result;
+        return CommandMethodIntrospector.subCommands(clazz);
     }
 
     /**
@@ -530,14 +466,7 @@ public abstract class MagicCommand {
      * @return execute method or {@code null}
      */
     public static Method findExecuteMethod(Class<?> clazz) {
-        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
-            for (Method method : current.getDeclaredMethods()) {
-                if (method.getName().equals("execute") && !method.isAnnotationPresent(SubCommand.class)) {
-                    return method;
-                }
-            }
-        }
-        return null;
+        return CommandMethodIntrospector.findExecuteMethod(clazz);
     }
 
     /**
@@ -547,191 +476,7 @@ public abstract class MagicCommand {
      * @return a list of CommandArgument
      */
     public static List<CommandArgument> getArguments(Method method) {
-        List<CommandArgument> args = new ArrayList<>();
-        Parameter[] parameters = method.getParameters();
-        Annotation[][] paramAnnotations = method.getParameterAnnotations();
-
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter param = parameters[i];
-            String name = param.getName();
-            ParamName annotatedName = param.getAnnotation(ParamName.class);
-            if (annotatedName != null && !annotatedName.value().isEmpty()) {
-                name = annotatedName.value();
-            }
-            Class<?> type = param.getType();
-            boolean optional = false;
-            String defaultValue = null;
-            List<String> suggestions = new ArrayList<>();
-            String permission = null;
-            PermissionConditionType permissionCondition = PermissionConditionType.ALWAYS;
-            String[] permissionConditionArgs = new String[0];
-            CompareMode compareMode = CompareMode.AUTO;
-            String permissionMessage = InternalMessages.CMD_NO_PERMISSION.get();
-            String permissionNode = null;
-            boolean includeArgumentSegment = true;
-            MagicPermissionDefault permissionDefault = MagicPermissionDefault.OP;
-            boolean greedy = false;
-            boolean hasPermissionAnnotation = false;
-            AllowedSender[] allowedSenders = new AllowedSender[] { AllowedSender.ANY };
-            boolean isSenderParameter = false;
-            boolean nullable = false;
-            List<String> optionShortNames = new ArrayList<>();
-            List<String> optionLongNames = new ArrayList<>();
-            boolean isFlag = false;
-            List<String> contextArgs = new ArrayList<>();
-
-            for (Annotation annotation : paramAnnotations[i]) {
-                if (annotation instanceof DefaultValue) {
-                    defaultValue = ((DefaultValue) annotation).value();
-                    optional = true;
-                }
-                if (annotation instanceof OptionalArgument || isNullableAnnotation(annotation)) {
-                    optional = true;
-                    nullable = true;
-                }
-                if (annotation instanceof Suggest) {
-                    Suggest suggest = (Suggest) annotation;
-                    suggestions.addAll(Arrays.asList(suggest.value()));
-                    if (suggest.contextArgs() != null && suggest.contextArgs().length > 0) {
-                        contextArgs.addAll(Arrays.asList(suggest.contextArgs()));
-                    }
-                }
-                if (annotation instanceof Permission) {
-                    Permission perm = (Permission) annotation;
-                    permission = perm.value();
-                    permissionCondition = perm.condition();
-                    permissionConditionArgs = perm.conditionArgs();
-                    compareMode = perm.compare();
-                    permissionNode = perm.node();
-                    includeArgumentSegment = perm.includeArgumentSegment();
-                    permissionDefault = perm.defaultValue();
-                    hasPermissionAnnotation = true;
-                    if ((permissionCondition == PermissionConditionType.ALWAYS || permissionCondition == null)
-                            && perm.when() != null && !perm.when().isEmpty()) {
-                        ParsedCondition parsed = parseCondition(perm.when());
-                        if (parsed != null) {
-                            permissionCondition = parsed.condition();
-                            permissionConditionArgs = parsed.args();
-                        }
-                    }
-                    permissionMessage = perm.message();
-                }
-                if (annotation instanceof Greedy) {
-                    greedy = true;
-                }
-                if (annotation instanceof Sender senderAnno) {
-                    isSenderParameter = true;
-                    allowedSenders = senderAnno.value();
-                }
-                if (annotation instanceof Option option) {
-                    optionShortNames.addAll(Arrays.asList(option.shortNames()));
-                    optionLongNames.addAll(Arrays.asList(option.longNames()));
-                    if (option.flag()) {
-                        isFlag = true;
-                    }
-                }
-            }
-
-            if (isFlag) {
-                optional = true;
-                if (defaultValue == null) {
-                    defaultValue = "false";
-                }
-            }
-
-            CommandArgument.Builder builder = CommandArgument.builder(name, type);
-            if (nullable)
-                builder.nullable();
-            else if (optional)
-                builder.optional();
-            if (defaultValue != null)
-                builder.defaultValue(defaultValue);
-            if (!suggestions.isEmpty())
-                builder.suggestions(suggestions);
-            if (hasPermissionAnnotation) {
-                builder.markPermissionDeclared();
-                builder.permission(permission != null ? permission : "");
-            }
-            builder.permissionCondition(permissionCondition);
-            builder.permissionConditionArgs(permissionConditionArgs);
-            builder.compareMode(compareMode);
-            builder.permissionNode(permissionNode);
-            builder.includeArgumentSegment(includeArgumentSegment);
-            builder.permissionDefault(permissionDefault);
-            if (permissionMessage != null)
-                builder.permissionMessage(permissionMessage);
-            if (greedy)
-                builder.greedy();
-            if (permissionMessage != null)
-                builder.permissionMessage(permissionMessage);
-            if (isSenderParameter) {
-                builder.sender(allowedSenders);
-            }
-            if (!optionShortNames.isEmpty() || !optionLongNames.isEmpty()) {
-                builder.option(optionShortNames.toArray(new String[0]),
-                        optionLongNames.toArray(new String[0]),
-                        isFlag);
-            }
-            builder.contextArgs(contextArgs.toArray(new String[0]));
-
-            args.add(builder.build());
-        }
-        return args;
-    }
-
-    private static ParsedCondition parseCondition(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            return null;
-        }
-        String trimmed = raw.trim().toLowerCase(Locale.ROOT);
-        int open = trimmed.indexOf('(');
-        int close = trimmed.lastIndexOf(')');
-        if (open == -1 || close <= open) {
-            return null;
-        }
-        String keyword = trimmed.substring(0, open).trim();
-        String argsPart = trimmed.substring(open + 1, close);
-        String[] parts = Arrays.stream(argsPart.split("[, ]+")).filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-
-        return switch (keyword) {
-            case "self" -> new ParsedCondition(PermissionConditionType.SELF, parts);
-            case "other", "anyother" -> new ParsedCondition(
-                    parts.length > 1 ? PermissionConditionType.ANY_OTHER : PermissionConditionType.OTHER, parts);
-            case "not_null", "notnull" -> new ParsedCondition(PermissionConditionType.NOT_NULL, parts);
-            case "distinct" -> new ParsedCondition(PermissionConditionType.DISTINCT, parts);
-            case "all_distinct", "alldistinct" -> new ParsedCondition(PermissionConditionType.ALL_DISTINCT, parts);
-            case "equals", "eq" -> new ParsedCondition(PermissionConditionType.EQUALS, parts);
-            case "not_equals", "noteq", "neq" -> new ParsedCondition(PermissionConditionType.NOT_EQUALS, parts);
-            case "exists" -> new ParsedCondition(PermissionConditionType.EXISTS, parts);
-            default -> null;
-        };
-    }
-
-    private record ParsedCondition(PermissionConditionType condition, String[] args) {
-    }
-
-    private static String buildSignature(Method method) {
-        StringBuilder sb = new StringBuilder(method.getName()).append('(');
-        Class<?>[] params = method.getParameterTypes();
-        for (int i = 0; i < params.length; i++) {
-            if (i > 0) {
-                sb.append(',');
-            }
-            sb.append(params[i].getName());
-        }
-        return sb.append(')').toString();
-    }
-
-    private static boolean isNullableAnnotation(Annotation annotation) {
-        if (annotation == null) {
-            return false;
-        }
-        String name = annotation.annotationType().getName();
-        if (name == null) {
-            return false;
-        }
-        return name.endsWith(".Nullable") || name.endsWith(".CheckForNull");
+        return CommandMethodIntrospector.arguments(method);
     }
 
     /**
@@ -808,334 +553,6 @@ public abstract class MagicCommand {
         if (frozen) {
             throw new IllegalStateException("MagicCommand can no longer be modified after registration");
         }
-    }
-
-    private List<MountedSubCommand> snapshotMountedSubCommands(MagicCommand command, String routeOverride) {
-        CommandInfo info = command.resolveInfo();
-        if (info == null) {
-            throw new IllegalArgumentException(
-                    InternalMessages.ERR_MISSING_COMMANDINFO.get("class", command.getClass().getName())
-            );
-        }
-
-        String mountedName = routeOverride != null ? routeOverride : info.name();
-        List<String> rootAliases = routeOverride != null ? List.of() : Arrays.asList(info.aliases());
-        List<MountedSubCommand> mounted = new ArrayList<>();
-
-        MountedAction directAction = resolveMountedDirectAction(command, info);
-        if (directAction != null) {
-            mounted.add(new MountedSubCommand(
-                    createSubCommandSpec(
-                            mountedName,
-                            List.of(),
-                            info.description(),
-                            rootAliases,
-                            info.permission(),
-                            info.permissionDefault(),
-                            directAction.threading(),
-                            directAction.arguments(),
-                            directAction.executor(),
-                            false,
-                            info.merge()
-                    ),
-                    false
-            ));
-        }
-
-        for (MountedSubCommand subCommand : resolveMountedSubCommands(command)) {
-            List<String> rebasedPath = new ArrayList<>();
-            rebasedPath.add(mountedName);
-            rebasedPath.addAll(subCommand.spec().path());
-            mounted.add(new MountedSubCommand(
-                    createSubCommandSpec(
-                            subCommand.spec().name(),
-                            rebasedPath,
-                            subCommand.spec().description(),
-                            subCommand.spec().aliases(),
-                            subCommand.spec().permission(),
-                            subCommand.spec().permissionDefault(),
-                            subCommand.spec().threading(),
-                            subCommand.spec().arguments(),
-                            subCommand.spec().executor(),
-                            subCommand.replaceExisting(),
-                            subCommand.spec().mergePolicy()
-                    ),
-                    subCommand.replaceExisting()
-            ));
-        }
-
-        return mounted;
-    }
-
-    private List<MountedSubCommand> resolveMountedSubCommands(MagicCommand command) {
-        List<MountedSubCommand> resolved = new ArrayList<>();
-        for (SubCommandInfo subInfo : getSubCommands(command.getClass())) {
-            resolved.add(new MountedSubCommand(
-                    createSubCommandSpec(
-                            subInfo.annotation.name(),
-                            Arrays.asList(subInfo.annotation.path()),
-                            subInfo.annotation.description(),
-                            Arrays.asList(subInfo.annotation.aliases()),
-                            subInfo.annotation.permission(),
-                            subInfo.annotation.permissionDefault(),
-                            subInfo.annotation.threading(),
-                            withSuggestionHost(getArguments(subInfo.method), command),
-                            createMethodExecutor(command, subInfo.method),
-                            false,
-                            subInfo.annotation.merge()
-                    ),
-                    false
-            ));
-        }
-
-        for (DynamicSubCommand dynamicSubCommand : command.getDynamicSubCommands()) {
-            MountedSubCommand mounted = new MountedSubCommand(
-                    createSubCommandSpec(
-                            dynamicSubCommand.spec().name(),
-                            dynamicSubCommand.spec().path(),
-                            dynamicSubCommand.spec().description(),
-                            dynamicSubCommand.spec().aliases(),
-                            dynamicSubCommand.spec().permission(),
-                            dynamicSubCommand.spec().permissionDefault(),
-                            dynamicSubCommand.spec().threading(),
-                            withSuggestionHost(dynamicSubCommand.spec().arguments(), command),
-                            wrapExecutor(command, dynamicSubCommand.spec().executor()),
-                            dynamicSubCommand.replaceExisting(),
-                            dynamicSubCommand.spec().mergePolicy()
-                    ),
-                    dynamicSubCommand.replaceExisting()
-            );
-            if (dynamicSubCommand.replaceExisting()) {
-                removeMatchingSubCommands(resolved, mounted.spec());
-            }
-            resolved.add(mounted);
-        }
-
-        return resolved;
-    }
-
-    /**
-     * Tags each argument with {@code host} as the object its {@code @Suggest}
-     * provider methods resolve against, unless already tagged by an inner mount.
-     * Returns the same list (arguments are mutated in place) for call-site brevity.
-     */
-    private static List<CommandArgument> withSuggestionHost(List<CommandArgument> arguments, MagicCommand host) {
-        if (arguments != null) {
-            for (CommandArgument argument : arguments) {
-                if (argument != null) {
-                    argument.assignSuggestionHostIfAbsent(host);
-                }
-            }
-        }
-        return arguments;
-    }
-
-    private MountedAction resolveMountedDirectAction(MagicCommand command, CommandInfo info) {
-        Method executeMethod = findExecuteMethod(command.getClass());
-        DynamicExecute dynamic = command.getDynamicExecute();
-        if (dynamic != null && (dynamic.replaceExisting() || executeMethod == null)) {
-            return new MountedAction(dynamic.arguments(), wrapExecutor(command, dynamic.executor()),
-                    dynamic.threading());
-        }
-        if (executeMethod != null) {
-            return new MountedAction(getArguments(executeMethod), createMethodExecutor(command, executeMethod),
-                    info.threading());
-        }
-        if (dynamic != null) {
-            return new MountedAction(dynamic.arguments(), wrapExecutor(command, dynamic.executor()),
-                    dynamic.threading());
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CommandExecutor<Object> wrapExecutor(MagicCommand command, CommandExecutor<?> executor) {
-        if (executor == null) {
-            return null;
-        }
-        CommandExecutor<Object> typed = (CommandExecutor<Object>) executor;
-        return execution -> typed.execute(new CommandExecution<>(
-                command,
-                execution.commandName(),
-                execution.subCommandName(),
-                execution.sender(),
-                execution.rawArgs(),
-                execution.arguments(),
-                execution.parsedArgs()
-        ));
-    }
-
-    private static CommandExecutor<Object> createMethodExecutor(MagicCommand command, Method method) {
-        return execution -> {
-            try {
-                Object result = method.invoke(command, execution.parsedArgs());
-                return resolveResult(result);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException runtimeException) {
-                    throw runtimeException;
-                }
-                if (cause instanceof Error error) {
-                    throw error;
-                }
-                throw new IllegalStateException("Failed to invoke mounted command method", cause);
-            } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException("Failed to invoke mounted command method", e);
-            }
-        };
-    }
-
-    /**
-     * Normalizes a {@code @SubCommand} method's return value into a
-     * {@link CommandResult}. A method may return a {@code CommandResult} directly, a
-     * {@link CompletableFuture} of one (awaited here — safe because {@code ASYNC}
-     * handlers already run off the main thread, letting the handler stay free of
-     * manual {@code join()}/callback boilerplate), or {@code void}/{@code null}
-     * (treated as success).
-     */
-    static CommandResult resolveResult(Object result) {
-        if (result instanceof CommandResult commandResult) {
-            return commandResult;
-        }
-        if (result instanceof CompletableFuture<?> future) {
-            try {
-                Object awaited = future.join();
-                return awaited instanceof CommandResult commandResult
-                        ? commandResult
-                        : CommandResult.success();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause() != null ? e.getCause() : e;
-                if (cause instanceof RuntimeException runtimeException) {
-                    throw runtimeException;
-                }
-                if (cause instanceof Error error) {
-                    throw error;
-                }
-                throw new IllegalStateException("Async command handler failed", cause);
-            }
-        }
-        return CommandResult.success();
-    }
-
-    private static void removeMatchingSubCommands(List<MountedSubCommand> commands, SubCommandSpec<?> replacement) {
-        if (commands == null || commands.isEmpty() || replacement == null) {
-            return;
-        }
-        List<String> replacementPath = normalizePath(replacement.path());
-        List<String> replacementKeys = allKeysLower(replacement);
-        commands.removeIf(existing -> pathEquals(existing.spec().path(), replacementPath)
-                && hasAnyKey(existing.spec(), replacementKeys));
-    }
-
-    private static boolean pathEquals(List<String> left, List<String> right) {
-        List<String> leftNorm = normalizePath(left);
-        List<String> rightNorm = normalizePath(right);
-        if (leftNorm.size() != rightNorm.size()) {
-            return false;
-        }
-        for (int i = 0; i < leftNorm.size(); i++) {
-            if (!leftNorm.get(i).equalsIgnoreCase(rightNorm.get(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean hasAnyKey(SubCommandSpec<?> spec, List<String> keys) {
-        if (spec == null || keys == null || keys.isEmpty()) {
-            return false;
-        }
-        for (String key : keys) {
-            if (key == null) {
-                continue;
-            }
-            if (spec.name().equalsIgnoreCase(key)) {
-                return true;
-            }
-            for (String alias : spec.aliases()) {
-                if (alias != null && alias.equalsIgnoreCase(key)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static List<String> allKeysLower(SubCommandSpec<?> spec) {
-        List<String> keys = new ArrayList<>();
-        if (spec == null) {
-            return keys;
-        }
-        if (spec.name() != null && !spec.name().isBlank()) {
-            keys.add(spec.name().toLowerCase(Locale.ROOT));
-        }
-        for (String alias : spec.aliases()) {
-            if (alias != null && !alias.isBlank()) {
-                keys.add(alias.toLowerCase(Locale.ROOT));
-            }
-        }
-        return keys;
-    }
-
-    private static List<String> normalizePath(List<String> raw) {
-        if (raw == null || raw.isEmpty()) {
-            return List.of();
-        }
-        List<String> normalized = new ArrayList<>();
-        for (String segment : raw) {
-            String sanitized = sanitizeSegment(segment);
-            if (sanitized != null) {
-                normalized.add(sanitized);
-            }
-        }
-        return normalized.isEmpty() ? List.of() : List.copyOf(normalized);
-    }
-
-    private static String sanitizeSegment(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private static SubCommandSpec<Object> createSubCommandSpec(String name,
-                                                               List<String> path,
-                                                               String description,
-                                                               List<String> aliases,
-                                                               String permission,
-                                                               MagicPermissionDefault permissionDefault,
-                                                               CommandThreading threading,
-                                                               List<CommandArgument> arguments,
-                                                               CommandExecutor<Object> executor,
-                                                               boolean replaceExisting,
-                                                               MergePolicy mergePolicy) {
-        SubCommandSpec.Builder<Object> builder = SubCommandSpec.<Object>builder(name)
-                .description(description)
-                .permission(permission)
-                .permissionDefault(permissionDefault)
-                .threading(threading)
-                .execute(executor)
-                .replaceExisting(replaceExisting)
-                .mergePolicy(mergePolicy);
-        if (path != null && !path.isEmpty()) {
-            builder.path(path.toArray(new String[0]));
-        }
-        if (aliases != null && !aliases.isEmpty()) {
-            builder.aliases(aliases.toArray(new String[0]));
-        }
-        if (arguments != null && !arguments.isEmpty()) {
-            builder.arguments(arguments);
-        }
-        return builder.build();
-    }
-
-    private record MountedAction(List<CommandArgument> arguments,
-                                 CommandExecutor<Object> executor,
-                                 CommandThreading threading) {
-    }
-
-    private record MountedSubCommand(SubCommandSpec<Object> spec, boolean replaceExisting) {
     }
 
     /**
@@ -1306,35 +723,6 @@ public abstract class MagicCommand {
      * @return the usage string, or null if not available
      */
     public static String getUsage(Class<?> clazz) {
-        CommandInfo info = clazz.getAnnotation(CommandInfo.class);
-        if (info == null)
-            return null;
-
-        StringBuilder usage = new StringBuilder("/" + info.name());
-        List<SubCommandInfo> subCommands = getSubCommands(clazz);
-
-        if (!subCommands.isEmpty()) {
-            Set<String> topLevel = new LinkedHashSet<>();
-            for (SubCommandInfo sub : subCommands) {
-                String[] path = sub.annotation.path();
-                if (path != null && path.length > 0 && path[0] != null && !path[0].trim().isEmpty()) {
-                    topLevel.add(path[0].trim());
-                } else {
-                    topLevel.add(sub.annotation.name());
-                }
-            }
-            usage.append(" <");
-            int index = 0;
-            for (String name : topLevel) {
-                if (index > 0) {
-                    usage.append("|");
-                }
-                usage.append(name);
-                index++;
-            }
-            usage.append(">");
-        }
-
-        return usage.toString();
+        return CommandMethodIntrospector.usage(clazz);
     }
 }

@@ -13,14 +13,8 @@ import dev.ua.theroer.magicutils.platform.Tasks;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -37,11 +31,9 @@ public class LanguageManager {
     private final TaskScheduler scheduler;
     private final Map<String, LanguageConfig> loadedLanguages = new ConcurrentHashMap<>();
     private final Set<String> pendingLanguages = ConcurrentHashMap.newKeySet();
-    private final Map<UUID, String> playerLanguages = new ConcurrentHashMap<>();
-    private final Map<UUID, String> autoDetectedPlayerLanguages = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, String>> registeredTranslations = new ConcurrentHashMap<>();
+    private final PlayerLanguageStore playerLanguageStore = new PlayerLanguageStore();
+    private final TranslationRegistry translationRegistry = new TranslationRegistry();
     private final Set<String> loggedMissingMessages = ConcurrentHashMap.newKeySet();
-    private static final Set<String> LANGUAGE_EXTENSIONS = Set.of("jsonc", "json", "yml", "yaml", "toml");
     @Getter
     private String currentLanguage = "en";
     private LanguageConfig currentConfig;
@@ -57,7 +49,7 @@ public class LanguageManager {
      * @param configManager config manager for loading language files
      */
     public LanguageManager(Object platformOrPlugin, ConfigManager configManager) {
-        this(resolvePlatform(platformOrPlugin), configManager);
+        this(LegacyPlatformResolver.resolve(platformOrPlugin), configManager);
     }
 
     /**
@@ -111,15 +103,15 @@ public class LanguageManager {
     }
 
     private boolean loadLanguageBlocking(String languageCode) {
-        boolean existed = languageFileExists(languageCode);
+        boolean existed = LanguageFiles.exists(platform.configDir(), languageCode);
         try {
             this.loggedMissingMessages.clear();
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("lang", languageCode);
 
             LanguageConfig config = configManager.register(LanguageConfig.class, placeholders);
-            boolean changed = initializeLanguageDefaults(config, languageCode, existed);
-            changed |= applyRegisteredTranslations(config, languageCode);
+            boolean changed = translationRegistry.initializeDefaults(config, languageCode, existed);
+            changed |= translationRegistry.applyTo(config, languageCode);
 
             if (changed) {
                 try {
@@ -156,50 +148,6 @@ public class LanguageManager {
         }
         CompletableFuture.supplyAsync(() -> loadLanguageBlocking(languageCode), scheduler.io())
                 .whenComplete((ok, error) -> pendingLanguages.remove(languageCode));
-    }
-
-    private boolean initializeLanguageDefaults(LanguageConfig config, String languageCode, boolean existed) {
-        Map<String, Map<String, String>> translations = createTranslations(languageCode);
-        boolean changed = false;
-        if (!existed) {
-            // Stamp the real code even when nothing is bundled for this language:
-            // LanguageMetadata defaults to English/en, so a fresh ru_ru.jsonc would
-            // otherwise claim to be the English file.
-            changed = config.applyLanguageCode(languageCode);
-        }
-        if (translations.isEmpty()) {
-            return changed;
-        }
-        // Fill defaults even into a file that already exists. lang/<code> is shared
-        // by every MagicUtils-based mod on the server, so whichever mod boots first
-        // creates it and the rest used to skip their own defaults entirely, leaving
-        // their keys unresolved. override=false keeps user edits and the first
-        // writer's values intact. Only report a change when something was actually
-        // filled in, so an up-to-date file is not rewritten on every start.
-        return config.applyTranslations(translations, !existed) | changed;
-    }
-
-    private boolean applyRegisteredTranslations(LanguageConfig config, String languageCode) {
-        if (config == null || languageCode == null || languageCode.isBlank()) {
-            return false;
-        }
-        Map<String, String> translations = registeredTranslations.get(languageCode);
-        if (translations == null || translations.isEmpty()) {
-            return false;
-        }
-
-        boolean changed = false;
-        Map<String, String> customMessages = config.getCustomMessages();
-        for (Map.Entry<String, String> entry : translations.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            if (key == null || key.isBlank() || value == null || customMessages.containsKey(key)) {
-                continue;
-            }
-            customMessages.put(key, value);
-            changed = true;
-        }
-        return changed;
     }
 
     private void loadFallbackLanguage(String languageCode) {
@@ -314,27 +262,13 @@ public class LanguageManager {
      * @param translations message key -> message text
      */
     public void registerTranslations(String languageCode, Map<String, String> translations) {
-        if (languageCode == null || languageCode.isBlank() || translations == null || translations.isEmpty()) {
+        String normalizedLanguage = translationRegistry.register(languageCode, translations);
+        if (normalizedLanguage == null) {
             return;
         }
-
-        String normalizedLanguage = languageCode.trim();
-        Map<String, String> normalizedTranslations = normalizeTranslations(translations);
-        if (normalizedTranslations.isEmpty()) {
-            return;
-        }
-
-        registeredTranslations.compute(normalizedLanguage, (ignored, existing) -> {
-            Map<String, String> merged = new LinkedHashMap<>();
-            if (existing != null && !existing.isEmpty()) {
-                merged.putAll(existing);
-            }
-            merged.putAll(normalizedTranslations);
-            return merged;
-        });
 
         LanguageConfig config = loadedLanguages.get(normalizedLanguage);
-        if (config != null && applyRegisteredTranslations(config, normalizedLanguage)) {
+        if (config != null && translationRegistry.applyTo(config, normalizedLanguage)) {
             try {
                 configManager.save(config);
             } catch (Exception e) {
@@ -400,32 +334,7 @@ public class LanguageManager {
      * @return set of language codes found on disk or loaded in memory
      */
     public Set<String> getAvailableLanguages() {
-        Set<String> languages = new HashSet<>();
-        File langDir = platform.configDir().resolve("lang").toFile();
-
-        if (langDir.exists() && langDir.isDirectory()) {
-            File[] files = langDir.listFiles((dir, name) -> {
-                if (name == null) {
-                    return false;
-                }
-                int dot = name.lastIndexOf('.');
-                if (dot <= 0 || dot >= name.length() - 1) {
-                    return false;
-                }
-                String ext = name.substring(dot + 1).toLowerCase();
-                return LANGUAGE_EXTENSIONS.contains(ext);
-            });
-            if (files != null) {
-                for (File file : files) {
-                    String name = file.getName();
-                    int dot = name.lastIndexOf('.');
-                    if (dot > 0) {
-                        languages.add(name.substring(0, dot));
-                    }
-                }
-            }
-        }
-
+        Set<String> languages = new HashSet<>(LanguageFiles.codesOnDisk(platform.configDir()));
         languages.addAll(loadedLanguages.keySet());
         return languages;
     }
@@ -531,7 +440,7 @@ public class LanguageManager {
      * @return true if updated
      */
     public boolean setPlayerLanguage(UUID playerId, String languageCode) {
-        return setStoredPlayerLanguage(playerLanguages, playerId, languageCode, false);
+        return setStoredPlayerLanguage(false, playerId, languageCode);
     }
 
     /**
@@ -563,9 +472,7 @@ public class LanguageManager {
      * @param playerId player UUID
      */
     public void clearPlayerLanguage(UUID playerId) {
-        if (playerId != null) {
-            playerLanguages.remove(playerId);
-        }
+        playerLanguageStore.remove(false, playerId);
     }
 
     /**
@@ -578,7 +485,7 @@ public class LanguageManager {
      * @return true if a supported language was stored or cleared
      */
     public boolean setAutoDetectedPlayerLanguage(UUID playerId, String languageCode) {
-        return setStoredPlayerLanguage(autoDetectedPlayerLanguages, playerId, languageCode, true);
+        return setStoredPlayerLanguage(true, playerId, languageCode);
     }
 
     /**
@@ -598,9 +505,7 @@ public class LanguageManager {
      * @param playerId player UUID
      */
     public void clearAutoDetectedPlayerLanguage(UUID playerId) {
-        if (playerId != null) {
-            autoDetectedPlayerLanguages.remove(playerId);
-        }
+        playerLanguageStore.remove(true, playerId);
     }
 
     /**
@@ -630,18 +535,7 @@ public class LanguageManager {
      * @return language code
      */
     public String getPlayerLanguage(UUID playerId) {
-        if (playerId == null) {
-            return currentLanguage;
-        }
-        String explicit = playerLanguages.get(playerId);
-        if (explicit != null && !explicit.isBlank()) {
-            return explicit;
-        }
-        String autoDetected = autoDetectedPlayerLanguages.get(playerId);
-        if (autoDetected != null && !autoDetected.isBlank()) {
-            return autoDetected;
-        }
-        return currentLanguage;
+        return playerLanguageStore.resolve(playerId, currentLanguage);
     }
 
     /**
@@ -661,7 +555,7 @@ public class LanguageManager {
      * @return snapshot of player language preferences
      */
     public Map<UUID, String> getPlayerLanguages() {
-        return Collections.unmodifiableMap(new HashMap<>(playerLanguages));
+        return playerLanguageStore.snapshot(false);
     }
 
     /**
@@ -670,7 +564,7 @@ public class LanguageManager {
      * @return snapshot of auto-detected player language preferences
      */
     public Map<UUID, String> getAutoDetectedPlayerLanguages() {
-        return Collections.unmodifiableMap(new HashMap<>(autoDetectedPlayerLanguages));
+        return playerLanguageStore.snapshot(true);
     }
 
     /**
@@ -683,7 +577,7 @@ public class LanguageManager {
         if (languageCode == null || languageCode.isBlank()) {
             return null;
         }
-        for (String candidate : expandLanguageCandidates(languageCode)) {
+        for (String candidate : LanguageCodes.candidates(languageCode)) {
             String matched = matchAvailableLanguageCode(candidate);
             if (matched != null && !matched.isBlank()) {
                 return matched;
@@ -904,24 +798,25 @@ public class LanguageManager {
         return config;
     }
 
-    private boolean setStoredPlayerLanguage(Map<UUID, String> store,
-                                            UUID playerId,
-                                            String languageCode,
-                                            boolean resolveSupportedLanguage) {
+    /**
+     * Stores a player language preference. Explicit preferences are taken as given;
+     * auto-detected ones (client locale tags) are first matched to a supported code.
+     */
+    private boolean setStoredPlayerLanguage(boolean autoDetected, UUID playerId, String languageCode) {
         if (playerId == null) {
             return false;
         }
 
         if (languageCode == null || languageCode.isBlank()) {
-            store.remove(playerId);
+            playerLanguageStore.remove(autoDetected, playerId);
             return true;
         }
 
-        String resolvedLanguageCode = resolveSupportedLanguage
+        String resolvedLanguageCode = autoDetected
                 ? resolveSupportedLanguageCode(languageCode)
                 : languageCode;
         if (resolvedLanguageCode == null || resolvedLanguageCode.isBlank()) {
-            store.remove(playerId);
+            playerLanguageStore.remove(autoDetected, playerId);
             return false;
         }
 
@@ -933,7 +828,7 @@ public class LanguageManager {
             }
         }
 
-        store.put(playerId, resolvedLanguageCode);
+        playerLanguageStore.put(autoDetected, playerId, resolvedLanguageCode);
         return true;
     }
 
@@ -944,33 +839,6 @@ public class LanguageManager {
         setAutoDetectedPlayerLanguage(playerLocale.playerId(), playerLocale.localeTag());
     }
 
-    private Set<String> expandLanguageCandidates(String languageCode) {
-        LinkedHashSet<String> candidates = new LinkedHashSet<>();
-        String trimmed = languageCode != null ? languageCode.trim() : "";
-        if (trimmed.isEmpty()) {
-            return candidates;
-        }
-        candidates.add(trimmed);
-
-        String lowerCased = trimmed.toLowerCase(Locale.ROOT);
-        candidates.add(lowerCased);
-
-        String normalizedTag = normalizeLanguageKey(trimmed);
-        candidates.add(normalizedTag);
-
-        int hyphenIndex = normalizedTag.indexOf('-');
-        if (hyphenIndex > 0) {
-            candidates.add(normalizedTag.substring(0, hyphenIndex));
-        }
-
-        int underscoreIndex = lowerCased.indexOf('_');
-        if (underscoreIndex > 0) {
-            candidates.add(lowerCased.substring(0, underscoreIndex));
-        }
-
-        return candidates;
-    }
-
     private String matchAvailableLanguageCode(String candidate) {
         if (candidate == null || candidate.isBlank()) {
             return null;
@@ -979,23 +847,19 @@ public class LanguageManager {
             return candidate;
         }
 
-        String normalizedCandidate = normalizeLanguageKey(candidate);
+        String normalizedCandidate = LanguageCodes.normalizeKey(candidate);
         for (String availableLanguage : getAvailableLanguages()) {
             if (candidate.equals(availableLanguage)) {
                 return availableLanguage;
             }
-            if (normalizedCandidate.equals(normalizeLanguageKey(availableLanguage))) {
+            if (normalizedCandidate.equals(LanguageCodes.normalizeKey(availableLanguage))) {
                 return availableLanguage;
             }
         }
-        if (!createTranslations(candidate).isEmpty()) {
+        if (translationRegistry.hasBundled(candidate)) {
             return candidate;
         }
         return null;
-    }
-
-    private String normalizeLanguageKey(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT).replace('_', '-');
     }
 
     private void applyLanguage(String languageCode) {
@@ -1035,20 +899,6 @@ public class LanguageManager {
         });
     }
 
-    private boolean languageFileExists(String languageCode) {
-        if (languageCode == null || languageCode.isBlank()) {
-            return false;
-        }
-        Path base = platform.configDir().resolve("lang");
-        for (String ext : LANGUAGE_EXTENSIONS) {
-            Path candidate = base.resolve(languageCode + "." + ext);
-            if (candidate.toFile().exists()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void warnIfMainThread(String action) {
         if (isBlockingSensitiveThread()) {
             logger.warn("LanguageManager." + action + " performs disk I/O. Consider using "
@@ -1065,7 +915,7 @@ public class LanguageManager {
             }
         }
 
-        String inMemory = resolveInMemoryMessage(languageCode, key);
+        String inMemory = translationRegistry.lookup(languageCode, key);
         if (inMemory != null) {
             return inMemory;
         }
@@ -1092,40 +942,6 @@ public class LanguageManager {
         return config.getMessage(key) != null;
     }
 
-    private String resolveInMemoryMessage(String languageCode, String key) {
-        if (languageCode == null || languageCode.isBlank() || key == null || key.isBlank()) {
-            return null;
-        }
-
-        Map<String, String> registered = registeredTranslations.get(languageCode);
-        if (registered != null) {
-            String registeredMessage = registered.get(key);
-            if (registeredMessage != null) {
-                return registeredMessage;
-            }
-        }
-
-        Map<String, Map<String, String>> bundled = createTranslations(languageCode);
-        if (bundled.isEmpty()) {
-            return null;
-        }
-        for (Map.Entry<String, Map<String, String>> sectionEntry : bundled.entrySet()) {
-            if (sectionEntry == null || sectionEntry.getKey() == null || sectionEntry.getValue() == null) {
-                continue;
-            }
-            String section = sectionEntry.getKey();
-            if (!key.startsWith(section + ".")) {
-                continue;
-            }
-            String relativeKey = key.substring(section.length() + 1);
-            String bundledMessage = sectionEntry.getValue().get(relativeKey);
-            if (bundledMessage != null) {
-                return bundledMessage;
-            }
-        }
-        return null;
-    }
-
     private void logMissing(String languageCode, String key) {
         if (!logMissingMessages) {
             return;
@@ -1135,47 +951,5 @@ public class LanguageManager {
             String fallbackInfo = fallbackLanguage != null ? ("; fallback=" + fallbackLanguage) : "";
             logger.debug("Missing translation for key '" + key + "' in language '" + languageCode + "'" + fallbackInfo);
         }
-    }
-
-    private Map<String, String> normalizeTranslations(Map<String, String> translations) {
-        LinkedHashMap<String, String> normalized = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : translations.entrySet()) {
-            if (entry == null || entry.getKey() == null || entry.getValue() == null) {
-                continue;
-            }
-            String key = entry.getKey().trim();
-            if (key.isEmpty()) {
-                continue;
-            }
-            normalized.put(key, entry.getValue());
-        }
-        return normalized;
-    }
-
-    private Map<String, Map<String, String>> createTranslations(String languageCode) {
-        return BundledTranslations.getSections(languageCode);
-    }
-
-    private static Platform resolvePlatform(Object platformOrPlugin) {
-        if (platformOrPlugin instanceof Platform) {
-            return (Platform) platformOrPlugin;
-        }
-        if (platformOrPlugin != null) {
-            try {
-                Class<?> providerClass = Class
-                        .forName("dev.ua.theroer.magicutils.platform.bukkit.BukkitPlatformProvider");
-                for (var ctor : providerClass.getConstructors()) {
-                    if (ctor.getParameterCount() == 1
-                            && ctor.getParameterTypes()[0].isAssignableFrom(platformOrPlugin.getClass())) {
-                        Object instance = ctor.newInstance(platformOrPlugin);
-                        if (instance instanceof Platform) {
-                            return (Platform) instance;
-                        }
-                    }
-                }
-            } catch (ReflectiveOperationException ignored) {
-            }
-        }
-        throw new IllegalArgumentException("Platform provider is required to initialize LanguageManager");
     }
 }

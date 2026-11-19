@@ -1,8 +1,6 @@
 package dev.ua.theroer.magicutils.commands;
 
 import dev.ua.theroer.magicutils.annotations.CommandInfo;
-import dev.ua.theroer.magicutils.config.logger.HelpSettings;
-import dev.ua.theroer.magicutils.config.logger.LoggerConfig;
 import dev.ua.theroer.magicutils.lang.InternalMessages;
 import dev.ua.theroer.magicutils.logger.LogBuilderCore;
 import dev.ua.theroer.magicutils.logger.LogLevel;
@@ -10,7 +8,8 @@ import dev.ua.theroer.magicutils.logger.LogTarget;
 import dev.ua.theroer.magicutils.logger.LoggerCore;
 import dev.ua.theroer.magicutils.logger.MessageParser;
 import dev.ua.theroer.magicutils.platform.Audience;
-import dev.ua.theroer.magicutils.utils.ColorUtils;
+import dev.ua.theroer.magicutils.commands.HelpRequests.HelpRequest;
+import dev.ua.theroer.magicutils.commands.HelpStyling.HelpStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -20,22 +19,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import static dev.ua.theroer.magicutils.commands.HelpRequests.findSubCommand;
+import static dev.ua.theroer.magicutils.commands.HelpRequests.parseRequest;
+import static dev.ua.theroer.magicutils.commands.HelpStyling.color;
+import static dev.ua.theroer.magicutils.commands.HelpStyling.escapeMiniText;
+import static dev.ua.theroer.magicutils.commands.HelpStyling.resolveStyle;
+import static dev.ua.theroer.magicutils.commands.HelpVisibility.canViewDirect;
+import static dev.ua.theroer.magicutils.commands.HelpVisibility.canViewSubCommand;
+import static dev.ua.theroer.magicutils.commands.HelpVisibility.filterSubCommands;
+import static dev.ua.theroer.magicutils.commands.HelpVisibility.filterVisibleArguments;
+
 /**
  * Static helpers for building formatted help output.
  */
 @SuppressWarnings("doclint:missing")
 public final class HelpCommandSupport {
     private static final String DEFAULT_HELP_COMMAND = "mhelp";
-    private static final HelpStyle DEFAULT_STYLE = new HelpStyle(
-            "#ff55ff",
-            "gray",
-            "white",
-            "#ff55ff",
-            "-----------------------------",
-            7,
-            8
-    );
-
     private HelpCommandSupport() {
     }
 
@@ -210,11 +209,11 @@ public final class HelpCommandSupport {
         HelpStyle style = resolveStyle(logger);
         HelpContext context = new HelpContext(normalizeHelpCommand(helpCommand));
         HelpRequest request = parseRequest(manager, commandName, subCommand);
-        if (request.detailTarget != null) {
-            return HelpResult.success(buildDetails(manager, request.detailTarget, request.detailSub,
+        if (request.detailTarget() != null) {
+            return HelpResult.success(buildDetails(manager, request.detailTarget(), request.detailSub(),
                     context, style, sender));
         }
-        return HelpResult.success(buildOverview(manager, request.query, request.page, context, style, sender));
+        return HelpResult.success(buildOverview(manager, request.query(), request.page(), context, style, sender));
     }
 
     public static HelpResult build(List<CommandManager<?>> managers, String commandName, String subCommand,
@@ -227,17 +226,17 @@ public final class HelpCommandSupport {
         HelpStyle style = resolveStyle(logger);
         HelpContext context = new HelpContext(normalizeHelpCommand(helpCommand));
         HelpRequest request = parseRequest(normalized, commandName, subCommand);
-        if (request.detailTarget != null) {
-            CommandManager<?> detailManager = resolveManagerForCommand(normalized, request.detailTarget,
-                    request.detailSub);
+        if (request.detailTarget() != null) {
+            CommandManager<?> detailManager = resolveManagerForCommand(normalized, request.detailTarget(),
+                    request.detailSub());
             if (detailManager == null) {
                 return HelpResult.failure(message(primaryManager(normalized), sender,
                         InternalMessages.CMD_HELP_COMMAND_NOT_FOUND));
             }
-            return HelpResult.success(buildDetails(detailManager, request.detailTarget, request.detailSub,
+            return HelpResult.success(buildDetails(detailManager, request.detailTarget(), request.detailSub(),
                     context, style, sender));
         }
-        return HelpResult.success(buildOverview(normalized, request.query, request.page, context, style, sender));
+        return HelpResult.success(buildOverview(normalized, request.query(), request.page(), context, style, sender));
     }
 
     public static String[] getCommandSuggestions(CommandManager<?> manager) {
@@ -353,133 +352,6 @@ public final class HelpCommandSupport {
         return lines;
     }
 
-    private static MagicCommand findCommand(CommandManager<?> manager, String commandName) {
-        String lookup = commandName.toLowerCase(Locale.ROOT);
-        for (MagicCommand cmd : manager.getAll()) {
-            CommandInfo info = resolveCommandInfo(manager, cmd);
-            if (info == null) {
-                continue;
-            }
-            if (info.name().equalsIgnoreCase(lookup)) {
-                return cmd;
-            }
-            for (String alias : info.aliases()) {
-                if (alias.equalsIgnoreCase(lookup)) {
-                    return cmd;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static HelpRequest parseRequest(CommandManager<?> manager, String commandName, String subCommand) {
-        String first = safeTrim(commandName);
-        String second = safeTrim(subCommand);
-
-        if (first == null) {
-            return new HelpRequest(null, null, "", 1);
-        }
-
-        Integer page = parsePage(first);
-        if (page != null) {
-            String query = second != null ? second : "";
-            return new HelpRequest(null, null, query, page);
-        }
-
-        MagicCommand target = findCommand(manager, first);
-        if (target != null) {
-            if (second != null) {
-                CommandManager.CommandAction<?> sub = findSubCommand(manager, target, second);
-                if (sub != null) {
-                    return new HelpRequest(target, sub, "", 1);
-                }
-                Integer subPage = parsePage(second);
-                if (subPage != null) {
-                    return new HelpRequest(null, null, first, subPage);
-                }
-            }
-            return new HelpRequest(target, null, "", 1);
-        }
-
-        Integer secondPage = parsePage(second);
-        if (secondPage != null) {
-            return new HelpRequest(null, null, first, secondPage);
-        }
-
-        String query = second != null ? first + " " + second : first;
-        return new HelpRequest(null, null, query, 1);
-    }
-
-    private static HelpRequest parseRequest(List<CommandManager<?>> managers, String commandName, String subCommand) {
-        String first = safeTrim(commandName);
-        String second = safeTrim(subCommand);
-
-        if (first == null) {
-            return new HelpRequest(null, null, "", 1);
-        }
-
-        Integer page = parsePage(first);
-        if (page != null) {
-            String query = second != null ? second : "";
-            return new HelpRequest(null, null, query, page);
-        }
-
-        for (CommandManager<?> manager : managers) {
-            MagicCommand target = findCommand(manager, first);
-            if (target != null) {
-                if (second != null) {
-                    CommandManager.CommandAction<?> sub = findSubCommand(manager, target, second);
-                    if (sub != null) {
-                        return new HelpRequest(target, sub, "", 1);
-                    }
-                    Integer subPage = parsePage(second);
-                    if (subPage != null) {
-                        return new HelpRequest(null, null, first, subPage);
-                    }
-                }
-                return new HelpRequest(target, null, "", 1);
-            }
-        }
-
-        Integer secondPage = parsePage(second);
-        if (secondPage != null) {
-            return new HelpRequest(null, null, first, secondPage);
-        }
-
-        String query = second != null ? first + " " + second : first;
-        return new HelpRequest(null, null, query, 1);
-    }
-
-    private static CommandManager.CommandAction<?> findSubCommand(CommandManager<?> manager,
-                                                                  MagicCommand command,
-                                                                  String name) {
-        if (manager == null || command == null || name == null || name.isEmpty()) {
-            return null;
-        }
-        List<String> segments = splitSubCommandPath(name);
-        for (CommandManager.CommandAction<?> sub : getSubCommandActions(manager, command)) {
-            if (matchesSubCommandPath(sub, segments)) {
-                return sub;
-            }
-        }
-        return null;
-    }
-
-    private static CommandManager.CommandAction<?> findSubCommand(List<CommandManager<?>> managers,
-                                                                  MagicCommand command,
-                                                                  String name) {
-        if (managers == null || managers.isEmpty() || command == null || name == null || name.isEmpty()) {
-            return null;
-        }
-        for (CommandManager<?> manager : managers) {
-            CommandManager.CommandAction<?> sub = findSubCommand(manager, command, name);
-            if (sub != null) {
-                return sub;
-            }
-        }
-        return null;
-    }
-
     private static List<String> buildDetails(CommandManager<?> manager, MagicCommand target,
                                              CommandManager.CommandAction<?> subInfo, HelpContext context,
                                              HelpStyle style, MagicSender sender) {
@@ -526,7 +398,7 @@ public final class HelpCommandSupport {
                 : List.of();
         String usage = buildCommandUsage(manager, sender, info, directArgs, directAllowed, allowedSubs);
         lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_COMMAND) + " ")
-                + color(style.textTag(), styleUsage(usage, style)));
+                + color(style.textTag(), HelpArgumentLabels.styleUsage(usage, style)));
         lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_DESCRIPTION) + " ")
                 + color(style.textTag(), safeDescription(manager, sender,
                 resolveDescription(manager, sender, info.name(), info.description(), null))));
@@ -534,7 +406,7 @@ public final class HelpCommandSupport {
         List<String> commandAliases = normalizeAliases(info.aliases());
         if (!commandAliases.isEmpty()) {
             lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ALIASES) + " ")
-                    + color(style.textTag(), joinValues(commandAliases)));
+                    + color(style.textTag(), HelpArgumentLabels.joinValues(commandAliases)));
         }
 
         if (directAction != null && directAllowed) {
@@ -548,7 +420,7 @@ public final class HelpCommandSupport {
                 String subPath = sub.fullPath();
                 List<CommandArgument> subArgs = filterVisibleArguments(manager, sender, baseCommandName,
                         subPath, sub.arguments());
-                String subUsage = styleUsage(buildUsage(manager, info, subPath, subArgs), style);
+                String subUsage = HelpArgumentLabels.styleUsage(buildUsage(manager, info, subPath, subArgs), style);
                 String prefix = i == allowedSubs.size() - 1 ? "`-" : "|-";
                 String hover = hoverText(manager, sender, resolveDescription(manager, sender, baseCommandName,
                         sub.description(), sub.fullPathSegments()));
@@ -572,7 +444,7 @@ public final class HelpCommandSupport {
                 subPath, args);
         String usage = buildUsage(manager, info, subPath, visibleArgs);
         lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_COMMAND) + " ")
-                + color(style.textTag(), styleUsage(usage, style)));
+                + color(style.textTag(), HelpArgumentLabels.styleUsage(usage, style)));
         String description = resolveDescription(
                 manager,
                 sender,
@@ -585,7 +457,7 @@ public final class HelpCommandSupport {
         List<String> aliases = subInfo != null ? normalizeAliases(subInfo.aliases()) : List.of();
         if (!aliases.isEmpty()) {
             lines.add(color(style.mutedTag(), message(manager, sender, InternalMessages.CMD_HELP_LABEL_ALIASES) + " ")
-                    + color(style.textTag(), joinValues(aliases)));
+                    + color(style.textTag(), HelpArgumentLabels.joinValues(aliases)));
         }
         appendArguments(lines, args, manager, style, sender, baseCommandName, subPath);
         return lines;
@@ -607,7 +479,7 @@ public final class HelpCommandSupport {
             CommandArgument arg = visible.get(i);
             String prefix = i == visible.size() - 1 ? "`-" : "|-";
             boolean optional = arg.isOptional() || arg.getDefaultValue() != null;
-            String label = argumentLabel(arg);
+            String label = HelpArgumentLabels.argumentLabel(arg);
             String suffix = optional
                     ? " " + color(style.primaryTag(), message(manager, sender, InternalMessages.CMD_HELP_OPTIONAL))
                     : "";
@@ -617,11 +489,11 @@ public final class HelpCommandSupport {
                 suffix += " " + color(style.mutedTag(),
                         message(manager, sender, InternalMessages.CMD_HELP_DEFAULT_VALUE, "value", shown));
             }
-            List<String> enumValues = getEnumValues(arg);
+            List<String> enumValues = HelpArgumentLabels.enumValues(arg);
             if (!enumValues.isEmpty() && enumValues.size() <= style.maxEnumValues()) {
                 suffix += " " + color(style.mutedTag(),
                         message(manager, sender, InternalMessages.CMD_HELP_VALUES,
-                                "values", joinValues(enumValues)));
+                                "values", HelpArgumentLabels.joinValues(enumValues)));
             }
             lines.add(color(style.mutedTag(), prefix + " ") + color(style.textTag(), label) + suffix);
         }
@@ -764,17 +636,17 @@ public final class HelpCommandSupport {
         String prefix = last ? "`-" : "|-";
         String hover = hoverText(manager, sender, entry.description);
         String click = buildHelpCommand(context, entry.command, entry.subcommand);
-        String usage = styleUsage(entry.usage, style);
+        String usage = HelpArgumentLabels.styleUsage(entry.usage, style);
         String line = color(style.mutedTag(), prefix + " ") + clickable(usage, hover, click, style);
         if (entry.subcommand == null && entry.aliases != null && !entry.aliases.isEmpty()) {
             line += " " + color(style.mutedTag(),
                     message(manager, sender, InternalMessages.CMD_HELP_ALIASES_INLINE,
-                            "aliases", joinValues(entry.aliases)));
+                            "aliases", HelpArgumentLabels.joinValues(entry.aliases)));
         }
         return line;
     }
 
-    private static CommandInfo resolveCommandInfo(List<CommandManager<?>> managers, MagicCommand command) {
+    static CommandInfo resolveCommandInfo(List<CommandManager<?>> managers, MagicCommand command) {
         if (command == null) {
             return null;
         }
@@ -868,7 +740,7 @@ public final class HelpCommandSupport {
         return usage.toString();
     }
 
-    private static CommandInfo resolveCommandInfo(CommandManager<?> manager, MagicCommand command) {
+    static CommandInfo resolveCommandInfo(CommandManager<?> manager, MagicCommand command) {
         if (command == null) {
             return null;
         }
@@ -882,8 +754,8 @@ public final class HelpCommandSupport {
     }
 
     @SuppressWarnings("unchecked")
-    private static List<CommandManager.CommandAction<?>> getSubCommandActions(CommandManager<?> manager,
-                                                                              MagicCommand command) {
+    static List<CommandManager.CommandAction<?>> getSubCommandActions(CommandManager<?> manager,
+                                                                      MagicCommand command) {
         if (manager == null || command == null) {
             return List.of();
         }
@@ -899,130 +771,12 @@ public final class HelpCommandSupport {
         return (CommandManager.CommandAction<?>) manager.getDirectAction(command, info);
     }
 
-    private static String baseCommandName(CommandInfo info) {
+    static String baseCommandName(CommandInfo info) {
         if (info == null) {
             return "";
         }
         String name = info.name();
         return name != null ? name.toLowerCase(Locale.ROOT) : "";
-    }
-
-    private static boolean canViewDirect(CommandManager<?> manager, MagicSender sender, CommandInfo info,
-                                         String baseCommandName) {
-        if (manager == null || sender == null || info == null) {
-            return true;
-        }
-        String permission = manager.resolvePermission(info.permission(), "commands." + baseCommandName);
-        return manager.hasPermissionForHelp(sender, permission, info.permissionDefault(),
-                info.name(), info.description(), List.of())
-                || hasArgumentPermissionOverride(manager, sender, baseCommandName, null);
-    }
-
-    private static boolean canViewSubCommand(CommandManager<?> manager, MagicSender sender, String baseCommandName,
-                                             CommandManager.CommandAction<?> subInfo) {
-        if (manager == null || sender == null || subInfo == null) {
-            return true;
-        }
-        String permission = manager.resolvePermission(subInfo.permission(),
-                "commands." + baseCommandName + ".subcommand." + subInfo.permissionSegment());
-        return manager.hasPermissionForHelp(sender, permission, subInfo.permissionDefault(),
-                baseCommandName, subInfo.description(), subInfo.fullPathSegments())
-                || hasArgumentPermissionOverride(manager, sender, baseCommandName, subInfo.fullPath());
-    }
-
-    private static List<CommandManager.CommandAction<?>> filterSubCommands(CommandManager<?> manager,
-                                                                           MagicSender sender,
-                                                                           String baseCommandName,
-                                                                           List<CommandManager.CommandAction<?>> subs) {
-        if (subs == null || subs.isEmpty()) {
-            return List.of();
-        }
-        if (manager == null || sender == null) {
-            return new ArrayList<>(subs);
-        }
-        List<CommandManager.CommandAction<?>> allowed = new ArrayList<>();
-        for (CommandManager.CommandAction<?> sub : subs) {
-            if (canViewSubCommand(manager, sender, baseCommandName, sub)) {
-                allowed.add(sub);
-            }
-        }
-        return allowed;
-    }
-
-    private static List<CommandArgument> filterVisibleArguments(CommandManager<?> manager,
-                                                                MagicSender sender,
-                                                                String baseCommandName,
-                                                                String subCommandName,
-                                                                List<CommandArgument> args) {
-        if (args == null || args.isEmpty()) {
-            return List.of();
-        }
-        List<CommandArgument> visible = new ArrayList<>();
-        for (CommandArgument arg : args) {
-            if (arg == null) {
-                continue;
-            }
-            boolean senderArg = arg.isSenderParameter();
-            if (!senderArg && manager != null) {
-                senderArg = manager.isSenderArgument(arg);
-            }
-            if (senderArg) {
-                continue;
-            }
-            if (!canViewArgument(manager, sender, baseCommandName, subCommandName, arg)) {
-                continue;
-            }
-            visible.add(arg);
-        }
-        return visible;
-    }
-
-    private static boolean canViewArgument(CommandManager<?> manager, MagicSender sender, String baseCommandName,
-                                           String subCommandName, CommandArgument argument) {
-        if (manager == null || sender == null || argument == null) {
-            return true;
-        }
-        if (!argument.hasPermission()) {
-            return true;
-        }
-        String fallback = manager.buildArgumentPermission(baseCommandName, subCommandName, argument);
-        String resolved = manager.resolvePermission(argument.getPermission(), fallback);
-        String argName = argument.getName();
-        if (argName == null || argName.isEmpty()) {
-            argName = argumentLabel(argument);
-        }
-        String subCommandSuffix = subCommandName != null && !subCommandName.isEmpty() ? " " + subCommandName : "";
-        String description = message(manager, null, InternalMessages.CMD_HELP_ARGUMENT_PERMISSION,
-                "argument", argName,
-                "command", baseCommandName,
-                "subcommandSuffix", subCommandSuffix);
-        return manager.hasPermissionForHelp(sender, resolved, argument.getPermissionDefault(), description);
-    }
-
-    private static boolean hasArgumentPermissionOverride(CommandManager<?> manager, MagicSender sender,
-                                                         String baseCommandName, String subCommandName) {
-        if (manager == null || sender == null) {
-            return false;
-        }
-        String prefix = "commands." + baseCommandName;
-        String normalized = normalizeSubCommandSegment(subCommandName);
-        if (!normalized.isEmpty()) {
-            prefix += ".subcommand." + normalized;
-        }
-        String argPrefix = manager.resolvePermission(null, prefix + ".argument");
-        String argPrefixNoSegment = manager.resolvePermission(null, prefix);
-        return manager.hasPermissionByPrefixForHelp(sender, argPrefix, argPrefixNoSegment);
-    }
-
-    private static String normalizeSubCommandSegment(String subCommandName) {
-        if (subCommandName == null) {
-            return "";
-        }
-        String trimmed = subCommandName.trim();
-        if (trimmed.isEmpty()) {
-            return "";
-        }
-        return trimmed.replaceAll("\\s+", ".");
     }
 
     private static List<String> topLevelSubNames(List<CommandManager.CommandAction<?>> subs) {
@@ -1077,75 +831,6 @@ public final class HelpCommandSupport {
         return base;
     }
 
-    private static String styleUsage(String usage, HelpStyle style) {
-        if (usage == null || usage.isEmpty()) {
-            return usage;
-        }
-        String safeUsage = escapeMiniText(usage);
-        StringBuilder out = new StringBuilder();
-        boolean optional = false;
-        for (int i = 0; i < safeUsage.length(); i++) {
-            char ch = safeUsage.charAt(i);
-            if (ch == '[') {
-                if (!optional) {
-                    out.append(openTag(style.primaryTag()));
-                    optional = true;
-                }
-                out.append(ch);
-            } else if (ch == ']') {
-                out.append(ch);
-                if (optional) {
-                    out.append(closeTag(style.primaryTag()));
-                    optional = false;
-                }
-            } else {
-                out.append(ch);
-            }
-        }
-        if (optional) {
-            out.append(closeTag(style.primaryTag()));
-        }
-        return out.toString();
-    }
-
-    private static String argumentLabel(CommandArgument argument) {
-        if (argument == null) {
-            return "";
-        }
-        String valueLabel = argumentValueLabel(argument);
-        if (argument.isOption()) {
-            String optionNames = optionNamesLabel(argument);
-            if (argument.isFlag()) {
-                return optionNames;
-            }
-            return optionNames + " <" + valueLabel + ">";
-        }
-        return valueLabel;
-    }
-
-    private static String argumentValueLabel(CommandArgument argument) {
-        String name = argument.getName();
-        if (name != null && !name.isEmpty()) {
-            return name;
-        }
-        return argument.getType().getSimpleName().toLowerCase(Locale.ROOT);
-    }
-
-    private static String optionNamesLabel(CommandArgument argument) {
-        List<String> tokens = new ArrayList<>();
-        for (String longName : argument.getLongOptionNames()) {
-            tokens.add("--" + longName);
-        }
-        for (String shortName : argument.getShortOptionNames()) {
-            tokens.add("-" + shortName);
-        }
-        if (tokens.isEmpty()) {
-            String name = argument.getName();
-            return name != null ? name : "";
-        }
-        return String.join(", ", tokens);
-    }
-
     private static List<String> normalizeAliases(String[] aliases) {
         if (aliases == null || aliases.length == 0) {
             return List.of();
@@ -1180,43 +865,6 @@ public final class HelpCommandSupport {
         return result;
     }
 
-    private static List<String> getEnumValues(CommandArgument argument) {
-        if (argument == null) {
-            return List.of();
-        }
-        Class<?> type = argument.getType();
-        if (type == null || !type.isEnum()) {
-            return List.of();
-        }
-        Object[] constants = type.getEnumConstants();
-        if (constants == null || constants.length == 0) {
-            return List.of();
-        }
-        List<String> values = new ArrayList<>(constants.length);
-        for (Object constant : constants) {
-            if (constant instanceof Enum<?> e) {
-                values.add(e.name().toLowerCase(Locale.ROOT));
-            } else if (constant != null) {
-                values.add(constant.toString().toLowerCase(Locale.ROOT));
-            }
-        }
-        return values;
-    }
-
-    private static String joinValues(List<String> values) {
-        if (values == null || values.isEmpty()) {
-            return "";
-        }
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < values.size(); i++) {
-            if (i > 0) {
-                out.append(", ");
-            }
-            out.append(escapeMiniText(values.get(i)));
-        }
-        return out.toString();
-    }
-
     private static String safeDescription(CommandManager<?> manager, MagicSender sender, String description) {
         if (description == null || description.isEmpty()) {
             return message(manager, sender, InternalMessages.CMD_HELP_NO_DESCRIPTION);
@@ -1231,8 +879,8 @@ public final class HelpCommandSupport {
         return description;
     }
 
-    private static String message(CommandManager<?> manager, MagicSender sender, InternalMessages key,
-                                  String... replacements) {
+    static String message(CommandManager<?> manager, MagicSender sender, InternalMessages key,
+                          String... replacements) {
         String scope = manager != null ? manager.languageScope() : null;
         Audience audience = sender != null ? sender.audience() : null;
         return key.getScoped(scope, audience, replacements);
@@ -1274,24 +922,12 @@ public final class HelpCommandSupport {
         return trimmed.replaceAll("\\s+", " ");
     }
 
-    private static String safeTrim(String input) {
+    static String safeTrim(String input) {
         if (input == null) {
             return null;
         }
         String trimmed = input.trim();
         return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private static Integer parsePage(String input) {
-        if (input == null || input.isEmpty()) {
-            return null;
-        }
-        try {
-            int value = Integer.parseInt(input);
-            return value > 0 ? value : null;
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
     }
 
     private static int clamp(int value, int min, int max) {
@@ -1316,174 +952,6 @@ public final class HelpCommandSupport {
         }
     }
 
-    private static String color(String tag, String text) {
-        if (text == null) {
-            return "";
-        }
-        if (tag == null || tag.isEmpty()) {
-            return text;
-        }
-        return openTag(tag) + text + closeTag(tag);
-    }
-
-    private static String openTag(String tag) {
-        String trimmed = tag.trim();
-        if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
-            return trimmed;
-        }
-        return "<" + trimmed + ">";
-    }
-
-    private static String closeTag(String tag) {
-        String trimmed = tag.trim();
-        if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
-            String inner = trimmed.substring(1, trimmed.length() - 1);
-            String name = inner.split(":", 2)[0];
-            return "</" + name + ">";
-        }
-        return "</" + trimmed + ">";
-    }
-
-    private static String escapeMiniText(String text) {
-        if (text == null || text.isEmpty()) {
-            return "";
-        }
-        String escaped = text.replace("\\", "\\\\");
-        escaped = escaped.replace("<", "\\<").replace(">", "\\>");
-        return escaped;
-    }
-
-    private static List<String> splitSubCommandPath(String raw) {
-        if (raw == null) {
-            return List.of();
-        }
-        String trimmed = raw.trim();
-        if (trimmed.isEmpty()) {
-            return List.of();
-        }
-        String[] parts = trimmed.split("\\s+");
-        List<String> result = new ArrayList<>();
-        for (String part : parts) {
-            if (part == null || part.isBlank()) {
-                continue;
-            }
-            result.add(part.trim());
-        }
-        return result;
-    }
-
-    private static boolean matchesSubCommandPath(CommandManager.CommandAction<?> sub, List<String> segments) {
-        if (sub == null || segments == null || segments.isEmpty()) {
-            return false;
-        }
-        List<String> full = sub.fullPathSegments();
-        if (full.size() != segments.size()) {
-            return false;
-        }
-        int lastIndex = full.size() - 1;
-        for (int i = 0; i < full.size(); i++) {
-            String expected = full.get(i);
-            String actual = segments.get(i);
-            if (expected == null || actual == null) {
-                return false;
-            }
-            if (i == lastIndex) {
-                if (expected.equalsIgnoreCase(actual)) {
-                    continue;
-                }
-                boolean aliasMatch = false;
-                for (String alias : sub.aliases()) {
-                    if (alias != null && alias.equalsIgnoreCase(actual)) {
-                        aliasMatch = true;
-                        break;
-                    }
-                }
-                if (!aliasMatch) {
-                    return false;
-                }
-            } else if (!expected.equalsIgnoreCase(actual)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static String normalizeTag(String tag, String fallback) {
-        if (tag == null) {
-            return fallback;
-        }
-        String trimmed = tag.trim();
-        return trimmed.isEmpty() ? fallback : trimmed;
-    }
-
-    private static String safeLine(String line, String fallback) {
-        if (line == null) {
-            return fallback;
-        }
-        String trimmed = line.trim();
-        return trimmed.isEmpty() ? fallback : trimmed;
-    }
-
-    private static String firstColor(String[] colors, String fallback) {
-        if (colors == null || colors.length == 0) {
-            return fallback;
-        }
-        String primary = colors[0];
-        return normalizeTag(primary, fallback);
-    }
-
-    private static String mutedFrom(String primary, String fallback) {
-        if (primary == null) {
-            return fallback;
-        }
-        String trimmed = primary.trim();
-        if (trimmed.startsWith("#") && trimmed.length() == 7) {
-            return ColorUtils.adjustBrightness(trimmed, 0.7f);
-        }
-        return fallback;
-    }
-
-    private static HelpStyle resolveStyle(LoggerCore logger) {
-        HelpStyle base = DEFAULT_STYLE;
-        if (logger == null) {
-            return base;
-        }
-        LoggerConfig config = logger.getConfig();
-        if (config == null) {
-            return base;
-        }
-        HelpSettings help = config.getHelp();
-        if (help == null) {
-            return base;
-        }
-
-        int pageSize = help.getPageSize() > 0 ? help.getPageSize() : base.pageSize();
-        int maxEnumValues = help.getMaxEnumValues() > 0 ? help.getMaxEnumValues() : base.maxEnumValues();
-        String lineText = safeLine(help.getLine(), base.lineText());
-
-        if (help.isUseLoggerColors()) {
-            String[] palette = config.resolveColors(LogLevel.INFO, false);
-            String primary = firstColor(palette, base.primaryTag());
-            String muted = mutedFrom(primary, base.mutedTag());
-            String text = normalizeTag(help.getTextColor(), base.textTag());
-            String lineTag = palette != null && palette.length > 1
-                    ? ColorUtils.createGradientTag(palette)
-                    : primary;
-            return new HelpStyle(primary, muted, text, lineTag, lineText, pageSize, maxEnumValues);
-        }
-
-        String primary = normalizeTag(help.getPrimaryColor(), base.primaryTag());
-        String muted = normalizeTag(help.getMutedColor(), base.mutedTag());
-        String text = normalizeTag(help.getTextColor(), base.textTag());
-        return new HelpStyle(primary, muted, text, primary, lineText, pageSize, maxEnumValues);
-    }
-
-    private record HelpRequest(MagicCommand detailTarget,
-                               CommandManager.CommandAction<?> detailSub,
-                               String query,
-                               int page) {
-    }
-
     private record HelpEntry(String usage, String description, String command, String subcommand,
                              List<String> aliases) {
     }
@@ -1491,12 +959,4 @@ public final class HelpCommandSupport {
     private record HelpContext(String helpCommand) {
     }
 
-    private record HelpStyle(String primaryTag,
-                             String mutedTag,
-                             String textTag,
-                             String lineTag,
-                             String lineText,
-                             int pageSize,
-                             int maxEnumValues) {
-    }
 }
