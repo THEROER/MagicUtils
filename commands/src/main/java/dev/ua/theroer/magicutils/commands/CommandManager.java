@@ -53,6 +53,7 @@ public class CommandManager<S> {
      * @param platform         platform adapter
      * @param typeParserRegistry type parser registry
      */
+    @SuppressWarnings("this-escape")
     public CommandManager(String permissionPrefix,
                           String pluginName,
                           CommandLogger logger,
