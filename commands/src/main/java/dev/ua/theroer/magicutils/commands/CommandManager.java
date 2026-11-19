@@ -45,6 +45,8 @@ public class CommandManager<S> {
     private final Map<String, CommandInfo> commandInfos = new ConcurrentHashMap<>();
     private final Map<MagicCommand, CommandInfo> commandInfoByInstance = new ConcurrentHashMap<>();
     private final CommandActionCatalog<S> actionCatalog = new CommandActionCatalog<>();
+    private final CommandDescriptionResolver descriptions;
+    private final CommandPermissions<S> permissions;
     private final String permissionPrefix;
     private final String pluginName;
     @Getter
@@ -69,6 +71,10 @@ public class CommandManager<S> {
         this.logger = logger != null ? logger : CommandLogger.noop();
         this.platform = Objects.requireNonNull(platform, "platform");
         this.typeParserRegistry = Objects.requireNonNull(typeParserRegistry, "typeParserRegistry");
+        this.descriptions = new CommandDescriptionResolver(this.pluginName);
+        this.permissions = new CommandPermissions<>(this.platform, this.logger, permissionPrefix, this.pluginName,
+                descriptions, new ArgumentPermissionConditions<>(this.typeParserRegistry), actionCatalog,
+                this::getSubCommandActions, this::isSenderArgument);
         this.logger.debug("CommandManager initialized with permission prefix: " + permissionPrefix
                 + " and plugin name: " + pluginName);
     }
@@ -158,7 +164,7 @@ public class CommandManager<S> {
         SubCommandTree.Node<S> subTree = getSubCommandTree(command, info);
         return new ResolvedCommandSchema(
                 info.name(),
-                resolveCommandDescription(info),
+                descriptions.resolveCommandDescription(info),
                 Arrays.asList(info.aliases()),
                 info.permission(),
                 info.permissionDefault(),
@@ -185,7 +191,7 @@ public class CommandManager<S> {
         return new ResolvedCommandAction(
                 action.name(),
                 action.path(),
-                resolveActionDescription(commandName, action),
+                descriptions.resolveActionDescription(commandName, action),
                 action.aliases(),
                 action.permission(),
                 action.permissionDefault(),
@@ -311,7 +317,7 @@ public class CommandManager<S> {
             return false;
         }
         String baseCommandName = info.name().toLowerCase(Locale.ROOT);
-        return hasCommandPermission(command, info, sender, baseCommandName, targetSubName);
+        return permissions.hasCommandPermission(command, info, sender, baseCommandName, targetSubName);
     }
 
     /**
@@ -336,7 +342,7 @@ public class CommandManager<S> {
         String targetSubName = (pathSegments != null && !pathSegments.isEmpty())
                 ? pathSegments.get(0).toLowerCase(Locale.ROOT)
                 : null;
-        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
+        if (!permissions.hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
             return false;
         }
         if (pathSegments == null || pathSegments.isEmpty()) {
@@ -348,7 +354,7 @@ public class CommandManager<S> {
         if (node == null) {
             return false;
         }
-        return hasAccessibleAction(node, sender, baseCommandName);
+        return permissions.hasAccessibleAction(node, sender, baseCommandName);
     }
 
     private CommandResult executeInternal(String name, S sender, List<String> args, boolean bubbleErrors)
@@ -367,7 +373,7 @@ public class CommandManager<S> {
 
         String baseCommandName = info.name().toLowerCase(Locale.ROOT);
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
-        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
+        if (!permissions.hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
@@ -386,24 +392,6 @@ public class CommandManager<S> {
             }
             return CommandResult.failure(InternalMessages.CMD_EXECUTION_ERROR.get());
         }
-    }
-
-    private boolean hasCommandPermission(MagicCommand command, CommandInfo info, S sender,
-            String baseCommandName, @Nullable String targetSubName) {
-        String commandPermission = resolvePermission(info.permission(),
-                "commands." + baseCommandName);
-        platform.ensurePermissionRegistered(commandPermission, info.permissionDefault(),
-                resolveCommandDescription(info));
-        if (commandPermission.isEmpty()) {
-            return true;
-        }
-        if (platform.hasPermission(sender, commandPermission, info.permissionDefault())) {
-            return true;
-        }
-        if (hasSubOrArgPermission(command, info, sender, baseCommandName, targetSubName)) {
-            return true;
-        }
-        return false;
     }
 
     private CommandResult executeCommand(MagicCommand command, CommandInfo info, S sender,
@@ -428,7 +416,7 @@ public class CommandManager<S> {
 
         // If there are subcommands but no args provided
         if (args.isEmpty() && !subCommands.isEmpty()) {
-            String availableSubCommands = getAvailableSubCommands(subCommands, sender, normalizedCommandName);
+            String availableSubCommands = permissions.getAvailableSubCommands(subCommands, sender, normalizedCommandName);
             logger.debug("No arguments provided, available subcommands: " + availableSubCommands);
             return CommandResult
                     .failure(InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", availableSubCommands));
@@ -444,7 +432,7 @@ public class CommandManager<S> {
             }
             String subCommandName = args.get(0).toLowerCase(Locale.ROOT);
             logger.debug("Subcommand not found: " + subCommandName + ". Available: " +
-                    getAvailableSubCommands(subCommands, sender, normalizedCommandName));
+                    permissions.getAvailableSubCommands(subCommands, sender, normalizedCommandName));
             return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", subCommandName));
         }
 
@@ -452,7 +440,7 @@ public class CommandManager<S> {
             if (traversal.consumed() >= args.size()) {
                 List<String> path = args.subList(0, traversal.consumed());
                 String available = String.join(", ",
-                        getAvailableSubCommandsList(subCommands, sender, normalizedCommandName, path));
+                        permissions.getAvailableSubCommandsList(subCommands, sender, normalizedCommandName, path));
                 logger.debug("No subcommand at path, available: " + available);
                 return CommandResult.failure(
                         InternalMessages.CMD_SPECIFY_SUBCOMMAND.get("subcommands", available));
@@ -460,7 +448,7 @@ public class CommandManager<S> {
             String unknown = args.get(traversal.consumed());
             List<String> path = args.subList(0, traversal.consumed());
             String available = String.join(", ",
-                    getAvailableSubCommandsList(subCommands, sender, normalizedCommandName, path));
+                    permissions.getAvailableSubCommandsList(subCommands, sender, normalizedCommandName, path));
             logger.debug("Subcommand not found: " + unknown + ". Available: " + available);
             return CommandResult.failure(InternalMessages.CMD_UNKNOWN_SUBCOMMAND.get("subcommand", unknown));
         }
@@ -470,13 +458,13 @@ public class CommandManager<S> {
         String subCommandName = targetSubCommand.fullPath();
         logger.debug("Found subcommand: " + subCommandName + ", checking permissions...");
 
-        String subPermission = resolvePermission(targetSubCommand.permission(),
+        String subPermission = permissions.resolvePermission(targetSubCommand.permission(),
                 "commands." + normalizedCommandName + ".subcommand." + targetSubCommand.permissionSegment());
         platform.ensurePermissionRegistered(subPermission, targetSubCommand.permissionDefault(),
-                resolveActionDescription(normalizedCommandName, targetSubCommand));
+                descriptions.resolveActionDescription(normalizedCommandName, targetSubCommand));
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, targetSubCommand.permissionDefault())
-                && !hasArgumentPermissionOverride(normalizedCommandName, subCommandName, sender)) {
+                && !permissions.hasArgumentPermissionOverride(normalizedCommandName, subCommandName, sender)) {
             return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
         }
 
@@ -511,7 +499,7 @@ public class CommandManager<S> {
                 return CommandResult.failure(InternalMessages.CMD_INVALID_ARGUMENTS.get("usage", usage));
             }
 
-            if (!validateArgumentPermissions(normalizedCommandName, subCommandName, arguments, methodArgs, sender)) {
+            if (!permissions.validateArgumentPermissions(normalizedCommandName, subCommandName, arguments, methodArgs, sender)) {
                 return CommandResult.failure(InternalMessages.CMD_NO_PERMISSION.get());
             }
 
@@ -629,7 +617,7 @@ public class CommandManager<S> {
                 continue;
             }
 
-            if (lacksArgumentPermission(normalizedCommandName, subCommandName, argument, sender)) {
+            if (permissions.lacksArgumentPermission(normalizedCommandName, subCommandName, argument, sender)) {
                 logger.debug("Skipping argument " + argument.getName() + " due to missing permission, setting to default/null");
                 if (argument.getDefaultValue() != null) {
                     result[i] = convertArgument(argument.getDefaultValue(), argument.getType(), sender);
@@ -850,241 +838,6 @@ public class CommandManager<S> {
         return argument.isSenderParameter() || platform.isSenderType(argument.getType());
     }
 
-    private boolean validateArgumentPermissions(String normalizedCommandName, @Nullable String subCommandName,
-            List<CommandArgument> arguments, Object[] values, S sender) {
-        Map<String, Object> valuesByName = new HashMap<>();
-        Map<String, CommandArgument> argumentsByName = new HashMap<>();
-
-        for (int i = 0; i < arguments.size(); i++) {
-            valuesByName.put(arguments.get(i).getName(), values[i]);
-            argumentsByName.put(arguments.get(i).getName(), arguments.get(i));
-        }
-
-        for (int i = 0; i < arguments.size(); i++) {
-            CommandArgument argument = arguments.get(i);
-            if (isSenderArgument(argument) || !argument.hasPermission()) {
-                continue;
-            }
-
-            if (!shouldCheckPermission(argument, values[i], valuesByName, argumentsByName, sender)) {
-                continue;
-            }
-
-            String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
-            String resolved = resolvePermission(argument.getPermission(), fallback);
-            platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
-                    "Argument " + argument.getName() + " for /" + normalizedCommandName
-                            + (subCommandName != null ? " " + subCommandName : ""));
-            if (resolved != null && !resolved.isEmpty()
-                    && !platform.hasPermission(sender, resolved, argument.getPermissionDefault())) {
-                logger.debug("Permission denied for argument " + argument.getName()
-                        + " (missing permission " + resolved + ")");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean canSuggestArgument(String normalizedCommandName, @Nullable String subCommandName,
-            CommandArgument argument, S sender) {
-        if (isSenderArgument(argument)) {
-            return false;
-        }
-        if (!argument.hasPermission()) {
-            return true;
-        }
-        String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
-        String resolved = resolvePermission(argument.getPermission(), fallback);
-        platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
-                "Argument " + argument.getName() + " for /" + normalizedCommandName
-                        + (subCommandName != null ? " " + subCommandName : ""));
-        return resolved == null || resolved.isEmpty()
-                || platform.hasPermission(sender, resolved, argument.getPermissionDefault());
-    }
-
-    private boolean lacksArgumentPermission(String normalizedCommandName, @Nullable String subCommandName,
-            CommandArgument argument, S sender) {
-        if (isSenderArgument(argument)) {
-            return false;
-        }
-        if (!argument.hasPermission()) {
-            return false;
-        }
-        String fallback = buildArgumentPermission(normalizedCommandName, subCommandName, argument);
-        String resolved = resolvePermission(argument.getPermission(), fallback);
-        platform.ensurePermissionRegistered(resolved, argument.getPermissionDefault(),
-                "Argument " + argument.getName() + " for /" + normalizedCommandName
-                        + (subCommandName != null ? " " + subCommandName : ""));
-        return resolved != null && !resolved.isEmpty()
-                && !platform.hasPermission(sender, resolved, argument.getPermissionDefault());
-    }
-
-    private boolean shouldCheckPermission(CommandArgument argument, Object value, Map<String, Object> valuesByName,
-            Map<String, CommandArgument> argumentsByName, S sender) {
-        PermissionConditionType condition = argument.getPermissionCondition();
-        String[] names = argument.getPermissionConditionArgs();
-
-        List<ArgValue> targets = collectTargets(argument, value, names, valuesByName, argumentsByName);
-
-        switch (condition) {
-            case ALWAYS:
-                return true;
-            case NOT_NULL:
-                return targets.stream().anyMatch(av -> av.value != null);
-            case SELF:
-                return targets.stream().anyMatch(av -> av.value != null && isSenderMatch(sender, av.meta(), av.value()));
-            case OTHER:
-            case ANY_OTHER:
-                return targets.stream().anyMatch(av -> av.value != null && !isSenderMatch(sender, av.meta(), av.value()));
-            case DISTINCT:
-                return isDistinct(sender, targets, false);
-            case ALL_DISTINCT:
-                return isDistinct(sender, targets, true);
-            case EXISTS:
-                return targets.stream().anyMatch(av -> av.value != null);
-            case EQUALS:
-                return areAllEqual(sender, targets);
-            case NOT_EQUALS:
-                return areAllDistinct(sender, targets);
-            default:
-                return false;
-        }
-    }
-
-    private List<ArgValue> collectTargets(CommandArgument selfArgument, Object selfValue, String[] names,
-            Map<String, Object> valuesByName, Map<String, CommandArgument> argumentsByName) {
-        List<ArgValue> targets = new ArrayList<>();
-        if (names != null && names.length > 0) {
-            for (String name : names) {
-                Object val = valuesByName.get(name);
-                CommandArgument meta = argumentsByName.getOrDefault(name, selfArgument);
-                targets.add(new ArgValue(meta, val));
-            }
-        } else {
-            targets.add(new ArgValue(selfArgument, selfValue));
-        }
-        return targets;
-    }
-
-    private boolean isDistinct(S sender, List<ArgValue> targets, boolean requireAllDistinct) {
-        List<ArgValue> nonNull = targets.stream().filter(av -> av.value != null).toList();
-        if (nonNull.size() < 2) {
-            return false;
-        }
-
-        for (int i = 0; i < nonNull.size(); i++) {
-            for (int j = i + 1; j < nonNull.size(); j++) {
-                ArgValue a = nonNull.get(i);
-                ArgValue b = nonNull.get(j);
-                boolean equal = areEqual(sender, a.meta(), a.value(), b.meta(), b.value());
-                if (requireAllDistinct && equal) {
-                    return false;
-                }
-                if (!requireAllDistinct && !equal) {
-                    return true;
-                }
-            }
-        }
-
-        return requireAllDistinct;
-    }
-
-    private boolean areAllEqual(S sender, List<ArgValue> targets) {
-        List<ArgValue> nonNull = targets.stream().filter(av -> av.value != null).toList();
-        if (nonNull.size() < 2) {
-            return false;
-        }
-        ArgValue first = nonNull.get(0);
-        for (int i = 1; i < nonNull.size(); i++) {
-            ArgValue other = nonNull.get(i);
-            if (!areEqual(sender, first.meta(), first.value(), other.meta(), other.value())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean areAllDistinct(S sender, List<ArgValue> targets) {
-        return isDistinct(sender, targets, true);
-    }
-
-    private boolean isSenderMatch(S sender, CommandArgument argument, Object value) {
-        CompareMode mode = argument.getCompareMode();
-        TypeParser<S, ?> parser = typeParserRegistry.findParserForType(argument.getType());
-        if (parser != null) {
-            try {
-                return parser.isSender(sender, value, mode);
-            } catch (Exception ignored) {
-            }
-        }
-        return defaultIsSender(sender, value, mode);
-    }
-
-    private boolean areEqual(S sender, CommandArgument leftMeta, Object left, CommandArgument rightMeta,
-            Object right) {
-        CompareMode leftMode = leftMeta != null ? leftMeta.getCompareMode() : CompareMode.AUTO;
-        CompareMode rightMode = rightMeta != null ? rightMeta.getCompareMode() : CompareMode.AUTO;
-
-        TypeParser<S, ?> leftParser = leftMeta != null ? typeParserRegistry.findParserForType(leftMeta.getType()) : null;
-        if (leftParser != null) {
-            try {
-                return leftParser.isEqual(sender, left, right, leftMode);
-            } catch (Exception ignored) {
-            }
-        }
-
-        TypeParser<S, ?> rightParser = rightMeta != null ? typeParserRegistry.findParserForType(rightMeta.getType()) : null;
-        if (rightParser != null) {
-            try {
-                return rightParser.isEqual(sender, left, right, rightMode);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return defaultEquals(sender, left, right, leftMode != null ? leftMode : rightMode);
-    }
-
-    private boolean defaultIsSender(S sender, Object value, CompareMode mode) {
-        return ComparisonUtils.isSender(sender, value, mode);
-    }
-
-    private boolean defaultEquals(S sender, Object first, Object second, CompareMode mode) {
-        return ComparisonUtils.isEqual(first, second, mode);
-    }
-
-    String buildArgumentPermission(String normalizedCommandName, @Nullable String subCommandName, CommandArgument argument) {
-        StringBuilder sb = new StringBuilder("commands.").append(normalizedCommandName);
-        String normalizedSub = normalizeSubCommandSegment(subCommandName);
-        if (!normalizedSub.isEmpty()) {
-            sb.append(".subcommand.").append(normalizedSub);
-        }
-        String node = argument.getPermissionNode();
-        if (node == null || node.isEmpty()) {
-            node = argument.getName();
-        }
-        if (argument.isIncludeArgumentSegment()) {
-            sb.append(".argument.");
-        } else {
-            sb.append(".");
-        }
-        sb.append(node);
-        return sb.toString();
-    }
-
-    private String normalizeSubCommandSegment(@Nullable String subCommandName) {
-        if (subCommandName == null) {
-            return "";
-        }
-        String trimmed = subCommandName.trim();
-        if (trimmed.isEmpty()) {
-            return "";
-        }
-        return trimmed.replaceAll("\\s+", ".");
-    }
-
-    private record ArgValue(CommandArgument meta, Object value) {
-    }
-
     /**
      * Gets tab completion suggestions for a command.
      * 
@@ -1108,7 +861,7 @@ public class CommandManager<S> {
         }
 
         String targetSubName = (args != null && !args.isEmpty()) ? args.get(0).toLowerCase(Locale.ROOT) : null;
-        if (!hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
+        if (!permissions.hasCommandPermission(command, info, sender, baseCommandName, targetSubName)) {
             logger.debug(() -> "No permission for suggestions");
             return Collections.emptyList();
         }
@@ -1149,7 +902,7 @@ public class CommandManager<S> {
         // If no args and we have subcommands, show top-level subcommands
         if (args.isEmpty() && !subCommands.isEmpty()) {
             logger.debug("No args, showing subcommands");
-            return getAvailableChildNames(root, sender, normalizedCommandName);
+            return permissions.getAvailableChildNames(root, sender, normalizedCommandName);
         }
 
         String currentInput = args.isEmpty() ? "" : args.get(args.size() - 1);
@@ -1165,10 +918,10 @@ public class CommandManager<S> {
         int actionIndex = traversal.lastActionIndex();
 
         if (matchedAction != null && actionIndex < fixedTokens.size()) {
-            String subPermission = resolvePermission(matchedAction.permission(),
+            String subPermission = permissions.resolvePermission(matchedAction.permission(),
                     "commands." + normalizedCommandName + ".subcommand." + matchedAction.permissionSegment());
             platform.ensurePermissionRegistered(subPermission, matchedAction.permissionDefault(),
-                    resolveActionDescription(normalizedCommandName, matchedAction));
+                    descriptions.resolveActionDescription(normalizedCommandName, matchedAction));
             if (!subPermission.isEmpty()
                     && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
                 return Collections.emptyList();
@@ -1178,7 +931,7 @@ public class CommandManager<S> {
                     normalizedCommandName, Collections.emptyMap()); // Initial call, no previous parsed args yet
         }
 
-        List<String> availableChildren = getAvailableChildNames(node, sender, normalizedCommandName);
+        List<String> availableChildren = permissions.getAvailableChildNames(node, sender, normalizedCommandName);
         List<String> filteredChildren = availableChildren.stream()
                 .filter(sub -> sub.toLowerCase(Locale.ROOT).startsWith(currentInput.toLowerCase(Locale.ROOT)))
                 .collect(Collectors.toList());
@@ -1198,10 +951,10 @@ public class CommandManager<S> {
             return filteredChildren;
         }
 
-        String subPermission = resolvePermission(matchedAction.permission(),
+        String subPermission = permissions.resolvePermission(matchedAction.permission(),
                 "commands." + normalizedCommandName + ".subcommand." + matchedAction.permissionSegment());
         platform.ensurePermissionRegistered(subPermission, matchedAction.permissionDefault(),
-                resolveActionDescription(normalizedCommandName, matchedAction));
+                descriptions.resolveActionDescription(normalizedCommandName, matchedAction));
         if (!subPermission.isEmpty()
                 && !platform.hasPermission(sender, subPermission, matchedAction.permissionDefault())) {
             return filteredChildren.isEmpty() ? Collections.emptyList() : filteredChildren;
@@ -1304,7 +1057,7 @@ public class CommandManager<S> {
         if (args.isEmpty()) {
             if (!userInputArguments.isEmpty()) {
                 ArgumentInfo firstArg = userInputArguments.get(0);
-                if (canSuggestArgument(normalizedCommandName, subCommandName, firstArg.argument, sender)) {
+                if (permissions.canSuggestArgument(normalizedCommandName, subCommandName, firstArg.argument, sender)) {
                     suggestions.addAll(generateSuggestionsForArgument(command, firstArg.argument, sender, "",
                             allParsedArguments));
                 }
@@ -1317,7 +1070,7 @@ public class CommandManager<S> {
 
         if (targetArgumentIndex < userInputArguments.size()) {
             ArgumentInfo targetArg = userInputArguments.get(targetArgumentIndex);
-            if (canSuggestArgument(normalizedCommandName, subCommandName, targetArg.argument, sender)) {
+            if (permissions.canSuggestArgument(normalizedCommandName, subCommandName, targetArg.argument, sender)) {
                 suggestions.addAll(generateSuggestionsForArgument(command, targetArg.argument, sender, currentInput,
                         allParsedArguments));
             }
@@ -1328,7 +1081,7 @@ public class CommandManager<S> {
             if ((targetArg.argument.isOptional() || targetArg.argument.getDefaultValue() != null)
                     && targetArgumentIndex + 1 < userInputArguments.size()) {
                 ArgumentInfo nextArg = userInputArguments.get(targetArgumentIndex + 1);
-                if (canSuggestArgument(normalizedCommandName, subCommandName, nextArg.argument, sender)) {
+                if (permissions.canSuggestArgument(normalizedCommandName, subCommandName, nextArg.argument, sender)) {
                     suggestions.addAll(generateSuggestionsForArgument(command, nextArg.argument, sender, "",
                             allParsedArguments));
                 }
@@ -1363,7 +1116,7 @@ public class CommandManager<S> {
         
         CommandArgument pending = parsed.pendingValue();
         if (pending != null) {
-            if (!canSuggestArgument(normalizedCommandName, subCommandName, pending, sender)) {
+            if (!permissions.canSuggestArgument(normalizedCommandName, subCommandName, pending, sender)) {
                 return Collections.emptyList();
             }
             return generateSuggestionsForArgument(command, pending, sender, currentInput, allParsedArguments);
@@ -1416,7 +1169,7 @@ public class CommandManager<S> {
             if (usedOptions != null && usedOptions.contains(argument)) {
                 continue;
             }
-            if (!canSuggestArgument(normalizedCommandName, subCommandName, argument, sender)) {
+            if (!permissions.canSuggestArgument(normalizedCommandName, subCommandName, argument, sender)) {
                 continue;
             }
             for (String longName : argument.getLongOptionNames()) {
@@ -1699,59 +1452,6 @@ public class CommandManager<S> {
         return false;
     }
 
-    private boolean hasSubOrArgPermission(MagicCommand command, CommandInfo info, S sender,
-            String baseCommandName, @Nullable String targetSubName) {
-        List<CommandAction<S>> subs = getSubCommandActions(command);
-        if (subs.isEmpty()) {
-            return false;
-        }
-        if (targetSubName != null && !targetSubName.isEmpty()) {
-            SubCommandTree.Node<S> root = getSubCommandTree(command, info);
-            SubCommandTree.Traversal<S> traversal = SubCommandTree.traverse(root, List.of(targetSubName));
-            if (traversal.consumed() > 0 && hasPermissionInNode(traversal.node(), sender, baseCommandName)) {
-                return true;
-            }
-        }
-        // Fallback: any subcommand permission granted
-        for (CommandAction<S> subInfo : subs) {
-            if (canAccessAction(subInfo, sender, baseCommandName)
-                    || hasArgumentPermissionOverride(baseCommandName, subInfo.fullPath(), sender)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean hasPermissionInNode(SubCommandTree.Node<S> node, S sender, String baseCommandName) {
-        if (node == null) {
-            return false;
-        }
-        if (node.action() != null) {
-            if (canAccessAction(node.action(), sender, baseCommandName)
-                    || hasArgumentPermissionOverride(baseCommandName, node.action().fullPath(), sender)) {
-                return true;
-            }
-        }
-        for (SubCommandTree.Node<S> child : node.children().values()) {
-            if (hasPermissionInNode(child, sender, baseCommandName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean hasArgumentPermissionOverride(String baseCommandName, @Nullable String subCommandName,
-            S sender) {
-        String prefix = "commands." + baseCommandName;
-        String normalizedSub = normalizeSubCommandSegment(subCommandName);
-        if (!normalizedSub.isEmpty()) {
-            prefix += ".subcommand." + normalizedSub;
-        }
-        String argPrefix = resolvePermission(null, prefix + ".argument");
-        String argPrefixNoSegment = resolvePermission(null, prefix);
-        return platform.hasPermissionByPrefix(sender, argPrefix, argPrefixNoSegment);
-    }
-
     /**
      * Generates a usage string for a command based on its structure.
      * 
@@ -1812,7 +1512,7 @@ public class CommandManager<S> {
 
             appendArgumentsToUsage(usage, subInfo.arguments());
 
-            String description = resolveActionDescription(info.name(), subInfo);
+            String description = descriptions.resolveActionDescription(info.name(), subInfo);
             if (description != null && !description.isEmpty()) {
                 usage.append(" - ").append(description);
             }
@@ -2016,39 +1716,6 @@ public class CommandManager<S> {
         return name != null ? name : "";
     }
 
-    private String getAvailableSubCommands(List<CommandAction<S>> subCommands, S sender,
-            String commandName) {
-        return String.join(", ", getAvailableSubCommandsList(subCommands, sender, commandName, List.of()));
-    }
-
-    private List<String> getAvailableSubCommandsList(List<CommandAction<S>> subCommands,
-            S sender, String commandName, List<String> pathSegments) {
-        SubCommandTree.Node<S> root = SubCommandTree.build(subCommands);
-        SubCommandTree.Node<S> node = SubCommandTree.resolveNode(root, pathSegments);
-        if (node == null) {
-            return new ArrayList<>();
-        }
-        return getAvailableChildNames(node, sender, commandName);
-    }
-
-    private List<String> getAvailableChildNames(SubCommandTree.Node<S> node, S sender, String commandName) {
-        Set<String> available = new LinkedHashSet<>();
-        for (SubCommandTree.Node<S> child : node.children().values()) {
-            if (!hasAccessibleAction(child, sender, commandName)) {
-                continue;
-            }
-            available.add(child.name());
-            if (child.action() != null && canAccessActionOrArguments(child.action(), sender, commandName)) {
-                for (String alias : child.aliases()) {
-                    if (alias != null && !alias.isBlank()) {
-                        available.add(alias);
-                    }
-                }
-            }
-        }
-        return new ArrayList<>(available);
-    }
-
     private List<String> getTopLevelSubCommandNames(List<CommandAction<S>> subCommands) {
         Set<String> names = new LinkedHashSet<>();
         if (subCommands == null) {
@@ -2072,41 +1739,6 @@ public class CommandManager<S> {
             }
         }
         return new ArrayList<>(names);
-    }
-
-    private boolean canAccessAction(CommandAction<S> action, S sender, String commandName) {
-        if (action == null) {
-            return false;
-        }
-        String subPermission = resolvePermission(action.permission(),
-                "commands." + commandName + ".subcommand." + action.permissionSegment());
-        if (subPermission.isEmpty()) {
-            return true;
-        }
-        return platform.hasPermission(sender, subPermission, action.permissionDefault());
-    }
-
-    private boolean hasAccessibleAction(SubCommandTree.Node<S> node, S sender, String commandName) {
-        if (node == null) {
-            return false;
-        }
-        if (node.action() != null && canAccessActionOrArguments(node.action(), sender, commandName)) {
-            return true;
-        }
-        for (SubCommandTree.Node<S> child : node.children().values()) {
-            if (hasAccessibleAction(child, sender, commandName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean canAccessActionOrArguments(CommandAction<S> action, S sender, String commandName) {
-        if (action == null) {
-            return false;
-        }
-        return canAccessAction(action, sender, commandName)
-                || hasArgumentPermissionOverride(commandName, action.fullPath(), sender);
     }
 
     static final class CommandAction<S> {
@@ -2390,122 +2022,29 @@ public class CommandManager<S> {
 
     boolean hasPermissionForHelp(MagicSender sender, String permission, MagicPermissionDefault defaultValue,
                                  String description) {
-        if (permission == null || permission.isEmpty()) {
-            return true;
-        }
-        if (sender == null) {
-            return false;
-        }
-        platform.ensurePermissionRegistered(permission, defaultValue,
-                CommandDescriptions.resolveGlobal(pluginName, description));
-        S raw = unwrapSender(sender);
-        if (raw != null) {
-            return platform.hasPermission(raw, permission, defaultValue);
-        }
-        return sender.hasPermission(permission);
+        return permissions.hasPermissionForHelp(sender, permission, defaultValue, description);
     }
 
     boolean hasPermissionForHelp(MagicSender sender, String permission, MagicPermissionDefault defaultValue,
                                  String commandName, String description, @Nullable List<String> relativePath) {
-        if (permission == null || permission.isEmpty()) {
-            return true;
-        }
-        if (sender == null) {
-            return false;
-        }
-        platform.ensurePermissionRegistered(permission, defaultValue,
-                CommandDescriptions.resolveGlobal(pluginName, description, commandName, relativePath));
-        S raw = unwrapSender(sender);
-        if (raw != null) {
-            return platform.hasPermission(raw, permission, defaultValue);
-        }
-        return sender.hasPermission(permission);
+        return permissions.hasPermissionForHelp(sender, permission, defaultValue, commandName, description,
+                relativePath);
     }
 
     boolean hasPermissionByPrefixForHelp(MagicSender sender, String... prefixes) {
-        if (sender == null) {
-            return false;
-        }
-        S raw = unwrapSender(sender);
-        if (raw != null) {
-            return platform.hasPermissionByPrefix(raw, prefixes);
-        }
-        if (prefixes == null) {
-            return false;
-        }
-        for (String prefix : prefixes) {
-            if (prefix == null || prefix.isEmpty()) {
-                continue;
-            }
-            String withDot = prefix.endsWith(".") ? prefix : prefix + ".";
-            if (sender.hasPermission(withDot + "*")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @SuppressWarnings("unchecked")
-    private @Nullable S unwrapSender(MagicSender sender) {
-        if (sender == null) {
-            return null;
-        }
-        Object raw = sender.handle();
-        if (raw == null) {
-            return null;
-        }
-        Class<?> senderType = platform.senderType();
-        if (senderType != null && senderType.isInstance(raw)) {
-            return (S) raw;
-        }
-        return null;
+        return permissions.hasPermissionByPrefixForHelp(sender, prefixes);
     }
 
     String resolvePermission(String annotationPermission, String fallbackPermission) {
-        String permission = (annotationPermission != null && !annotationPermission.isEmpty())
-                ? annotationPermission
-                : fallbackPermission;
-        if (permission == null || permission.isEmpty()) {
-            return "";
-        }
-        String prefix = permissionPrefix != null ? permissionPrefix : "";
-        if (!prefix.isEmpty()) {
-            if (permission.startsWith(prefix + ".")) {
-                return permission;
-            }
-            if (permission.startsWith(".")) {
-                return prefix + permission;
-            }
-            return prefix + "." + permission;
-        }
-        return permission.startsWith(".") ? permission.substring(1) : permission;
+        return permissions.resolvePermission(annotationPermission, fallbackPermission);
+    }
+
+    String buildArgumentPermission(String normalizedCommandName, @Nullable String subCommandName, CommandArgument argument) {
+        return permissions.buildArgumentPermission(normalizedCommandName, subCommandName, argument);
     }
 
     String languageScope() {
         return pluginName;
     }
 
-    private String resolveCommandDescription(CommandInfo info) {
-        if (info == null) {
-            return "";
-        }
-        return CommandDescriptions.resolveGlobal(pluginName, info.description(), info.name());
-    }
-
-    private String resolveActionDescription(String commandName, CommandAction<S> action) {
-        if (action == null) {
-            return "";
-        }
-        List<String> relativePath = isDirectRootAction(commandName, action)
-                ? List.of()
-                : action.fullPathSegments();
-        return CommandDescriptions.resolveGlobal(pluginName, action.description(), commandName, relativePath);
-    }
-
-    private boolean isDirectRootAction(String commandName, CommandAction<S> action) {
-        if (commandName == null || action == null) {
-            return false;
-        }
-        return action.path().isEmpty() && commandName.equalsIgnoreCase(action.name());
-    }
 }
