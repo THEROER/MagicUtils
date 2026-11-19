@@ -42,6 +42,7 @@ public class ConfigManager {
     private final PlatformLogger logger;
     private final TaskScheduler scheduler;
     private final ConfigFormatResolver formatResolver;
+    private final ConfigMigrator migrator;
     private final ShutdownHookRegistrar shutdownRegistrar;
     private final Runnable shutdownHook;
     private final Map<ConfigKey, ConfigEntry<?>> configs = new ConcurrentHashMap<>();
@@ -49,7 +50,6 @@ public class ConfigManager {
     private final Map<Object, ConfigKey> instanceIndex = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> primaryInstances = new ConcurrentHashMap<>();
     private final Map<Class<?>, List<BiConsumer<Object, Set<String>>>> changeListeners = new ConcurrentHashMap<>();
-    private final Map<Class<?>, MigrationChain> migrationChains = new ConcurrentHashMap<>();
 
     private final Map<Path, Set<ConfigKey>> fileIndex = new ConcurrentHashMap<>();
     private final Map<Path, WatchKey> directoryWatchKeys = new ConcurrentHashMap<>();
@@ -72,7 +72,6 @@ public class ConfigManager {
      * supposed to be quiet.</p>
      */
     private final Object shutdownLock = new Object();
-    private static final String MIGRATION_VERSION_KEY = "config-version";
     private static final int CLONE_SNAPSHOT_RETRY_LIMIT = 8;
 
     /**
@@ -86,6 +85,7 @@ public class ConfigManager {
         this.logger = platform.logger();
         this.scheduler = Tasks.scheduler(platform);
         this.formatResolver = new ConfigFormatResolver(platform, logger);
+        this.migrator = new ConfigMigrator(logger);
         ShutdownHookRegistrar registrar = platform instanceof ShutdownHookRegistrar hookRegistrar
                 ? hookRegistrar
                 : null;
@@ -177,9 +177,8 @@ public class ConfigManager {
         if (configClass == null || migrations == null) {
             return;
         }
-        MigrationChain chain = migrationChains.computeIfAbsent(configClass, k -> new MigrationChain());
         for (ConfigMigration migration : migrations) {
-            chain.register(migration, logger);
+            migrator.register(configClass, migration);
         }
     }
 
@@ -193,8 +192,7 @@ public class ConfigManager {
         if (configClass == null || migration == null) {
             return;
         }
-        MigrationChain chain = migrationChains.computeIfAbsent(configClass, k -> new MigrationChain());
-        chain.register(migration, logger);
+        migrator.register(configClass, migration);
     }
 
     /**
@@ -308,7 +306,7 @@ public class ConfigManager {
         }
 
         ConfigDocument document = ConfigDocument.load(configFile);
-        MigrationResult migrationResult = applyMigrations(instance.getClass(), document, created);
+        ConfigMigrator.MigrationResult migrationResult = migrator.applyMigrations(instance.getClass(), document, created);
         Set<String> normalizedSections = normalizeSections(sections);
         boolean fullReload = normalizedSections.isEmpty() || migrationResult.shouldSave();
         processFields(instance, document, instance.getClass(), "",
@@ -317,85 +315,6 @@ public class ConfigManager {
             saveConfigToFile(instance, metadata, migrationResult.schemaVersion());
         }
         return new LoadResult(migrationResult.schemaVersion(), migrationResult.migrated());
-    }
-
-    private MigrationResult applyMigrations(Class<?> configClass, ConfigDocument document, boolean createdNew) {
-        MigrationChain chain = migrationChains.get(configClass);
-        if (chain == null || chain.isEmpty()) {
-            return new MigrationResult(null, false, false);
-        }
-        Map<String, Object> data = document.data;
-        String rawVersion = normalizeVersion(data.get(MIGRATION_VERSION_KEY));
-        boolean versionMissing = rawVersion == null;
-        String currentVersion = versionMissing ? "0" : rawVersion;
-        boolean migrated = false;
-        boolean changed = false;
-        Set<String> visited = new HashSet<>();
-
-        while (true) {
-            if (!visited.add(currentVersion)) {
-                logger.warn("Config migration cycle detected for " + configClass.getSimpleName()
-                        + " at version " + currentVersion);
-                break;
-            }
-            ConfigMigration migration = chain.byFrom.get(currentVersion);
-            if (migration == null) {
-                break;
-            }
-            migration.migrate(data);
-            String nextVersion = normalizeVersion(migration.toVersion());
-            if (nextVersion == null) {
-                logger.warn("Migration from " + currentVersion + " returned empty target version for "
-                        + configClass.getSimpleName());
-                break;
-            }
-            currentVersion = nextVersion;
-            migrated = true;
-            changed = true;
-        }
-
-        if (migrated) {
-            data.put(MIGRATION_VERSION_KEY, currentVersion);
-        } else if (versionMissing && createdNew && chain.latestVersion != null) {
-            currentVersion = chain.latestVersion;
-            data.put(MIGRATION_VERSION_KEY, currentVersion);
-            changed = true;
-        } else if (versionMissing && !createdNew && chain.latestVersion != null) {
-            logger.warn("Config " + configClass.getSimpleName() + " is missing " + MIGRATION_VERSION_KEY
-                    + ". Add a migration from version 0 or set the version explicitly.");
-        } else if (rawVersion != null && chain.latestVersion != null && !rawVersion.equals(chain.latestVersion)) {
-            logger.warn("Config " + configClass.getSimpleName() + " is at version " + rawVersion
-                    + " but latest is " + chain.latestVersion + ". Missing migration?");
-        }
-
-        return new MigrationResult(currentVersion, changed, migrated);
-    }
-
-    private void applySchemaVersion(ConfigDocument document, String schemaVersion) {
-        if (document == null) {
-            return;
-        }
-        String normalized = normalizeVersion(schemaVersion);
-        if (normalized == null) {
-            return;
-        }
-        document.set(MIGRATION_VERSION_KEY, normalized, null);
-    }
-
-    private static String normalizeVersion(Object raw) {
-        if (raw == null) {
-            return null;
-        }
-        if (raw instanceof Number number) {
-            long asLong = number.longValue();
-            double asDouble = number.doubleValue();
-            if (asDouble == (double) asLong) {
-                return String.valueOf(asLong);
-            }
-            return String.valueOf(asDouble);
-        }
-        String value = String.valueOf(raw).trim();
-        return value.isEmpty() ? null : value;
     }
 
     private <T> void createDefaultConfig(T instance, File configFile, ConfigMetadata metadata) throws Exception {
@@ -1229,7 +1148,7 @@ public class ConfigManager {
     private void saveConfigToFile(Object instance, ConfigMetadata metadata, String schemaVersion) throws Exception {
         ConfigDocument document = ConfigDocument.empty();
         saveFields(instance, document, instance.getClass(), "");
-        applySchemaVersion(document, schemaVersion);
+        migrator.applySchemaVersion(document, schemaVersion);
         File file = metadata.resolveFile(platform.configDir());
         ConfigDocument.ensureParentDirectory(file);
         document.save(file);
@@ -1560,7 +1479,7 @@ public class ConfigManager {
 
                 ConfigDocument document = ConfigDocument.empty();
                 saveFields(entry.instance, document, entry.instance.getClass(), "");
-                applySchemaVersion(document, entry.schemaVersion);
+                migrator.applySchemaVersion(document, entry.schemaVersion);
 
                 ConfigDocument.ensureParentDirectory(entry.file);
                 document.save(entry.file);
@@ -1832,66 +1751,6 @@ public class ConfigManager {
     }
 
     private record LoadResult(String schemaVersion, boolean migrated) {
-    }
-
-    private record MigrationResult(String schemaVersion, boolean shouldSave, boolean migrated) {
-    }
-
-    private static final class MigrationChain {
-        private final Map<String, ConfigMigration> byFrom = new LinkedHashMap<>();
-        private String latestVersion;
-
-        private boolean isEmpty() {
-            return byFrom.isEmpty();
-        }
-
-        private void register(ConfigMigration migration, PlatformLogger logger) {
-            if (migration == null) {
-                return;
-            }
-            String from = normalizeVersion(migration.fromVersion());
-            String to = normalizeVersion(migration.toVersion());
-            if (from == null || to == null) {
-                if (logger != null) {
-                    logger.warn("Skipping migration with empty version identifiers: " + migration.getClass().getName());
-                }
-                return;
-            }
-            if (byFrom.containsKey(from) && logger != null) {
-                logger.warn("Replacing migration for version " + from + " with " + migration.getClass().getName());
-            }
-            byFrom.put(from, migration);
-            recomputeLatest(logger);
-        }
-
-        private void recomputeLatest(PlatformLogger logger) {
-            if (byFrom.isEmpty()) {
-                latestVersion = null;
-                return;
-            }
-            Set<String> fromVersions = new LinkedHashSet<>(byFrom.keySet());
-            Set<String> toVersions = new LinkedHashSet<>();
-            for (ConfigMigration migration : byFrom.values()) {
-                String to = normalizeVersion(migration.toVersion());
-                if (to != null) {
-                    toVersions.add(to);
-                }
-            }
-            Set<String> endCandidates = new LinkedHashSet<>(toVersions);
-            endCandidates.removeAll(fromVersions);
-            if (endCandidates.size() == 1) {
-                latestVersion = endCandidates.iterator().next();
-                return;
-            }
-            if (!toVersions.isEmpty()) {
-                latestVersion = new ArrayList<>(toVersions).get(toVersions.size() - 1);
-                if (logger != null && endCandidates.size() > 1) {
-                    logger.warn("Multiple migration endpoints detected. Using version " + latestVersion);
-                }
-                return;
-            }
-            latestVersion = null;
-        }
     }
 
 }
