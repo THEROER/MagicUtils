@@ -149,14 +149,16 @@ provides it, and a second copy breaks version detection.
 - Platform API: `magicutils-api`
 - Core stack: `magicutils-core`
 - Feature modules: `magicutils-config`, `magicutils-lang`,
-  `magicutils-logger`, `magicutils-commands`, `magicutils-diagnostics`,
-  `magicutils-placeholders`, `magicutils-http-client`
+  `magicutils-logger`, `magicutils-commands`, `magicutils-commands-brigadier`,
+  `magicutils-diagnostics`, `magicutils-diagnostics-testkit`,
+  `magicutils-placeholders`, `magicutils-http-client`, `magicutils-messaging`
 - Config format helpers: `magicutils-config-yaml`,
   `magicutils-config-toml`
 - Platform adapters: `magicutils-bukkit`, `magicutils-bungee`,
   `magicutils-fabric`, `magicutils-velocity`, `magicutils-neoforge`
-- Platform bundles: `magicutils-bukkit-bundle`,
-  `magicutils-fabric-bundle`
+- Platform bundles: `magicutils-bukkit-bundle`, `magicutils-bungee-bundle`,
+  `magicutils-velocity-bundle`, `magicutils-fabric-bundle`,
+  `magicutils-neoforge-bundle`
 - Fabric integrations: `magicutils-commands-fabric`,
   `magicutils-logger-fabric`, `magicutils-placeholders-fabric`
 - NeoForge commands: `magicutils-commands-neoforge`
@@ -220,9 +222,10 @@ Maintainers cut a tagged release with the Gradle release tasks (the former
 
 ```bash
 ./gradlew releasePreflight -Pversion=X.Y.Z   # validate version + tags, no changes
-./gradlew release -Pversion=X.Y.Z            # preflight → bump → dispatch release.yml
+./gradlew release -Pversion=X.Y.Z            # full local release (tag not pushed by default)
 ```
 
-`release` validates the version, bumps `gradle.properties`, commits, and
-dispatches `release.yml`. CI then tags `vX.Y.Z`, builds docs/javadoc, and
-publishes the artifacts to Reposilite. See `RELEASING.md` for the full flow.
+`release` runs locally: it validates the version and build, bumps
+`gradle.properties`, tags `vX.Y.Z`, and publishes the Maven artifacts, Modrinth
+versions, and Javadoc. `dispatchRelease` is the opt-in CI path via
+`release.yml`. See `RELEASING.md` for the full flow.
