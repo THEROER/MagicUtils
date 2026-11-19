@@ -159,9 +159,8 @@ enum class JvmBundlePlatform(
     },
     VELOCITY(":platform-velocity", listOf("velocity-plugin.json")) {
         override fun apiCoordinate(project: Project): String {
-            val version = project.providers.gradleProperty("velocityApiVersion")
-                .orElse(MagicUtilsPlatformApiDefaults.VELOCITY_API).get()
-            return "com.velocitypowered:velocity-api:$version"
+            val target = project.extensions.getByType(MagicUtilsTargetExtension::class.java)
+            return "com.velocitypowered:velocity-api:${magicUtilsVelocityApiVersion(project, target)}"
         }
     };
 

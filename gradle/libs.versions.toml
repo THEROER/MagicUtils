@@ -25,7 +25,6 @@ kyoriOption = "1.1.0"
 placeholderapi = "2.11.6" # clip
 slf4j = "2.0.13"
 bungeecordApi = "1.20-R0.1"
-velocityApi = "3.1.1"
 junitJupiter = "5.9.2"
 junitPlatform = "1.9.2"
 mockito = "5.1.1"
@@ -63,7 +62,6 @@ kyori-option = { module = "net.kyori:option", version.ref = "kyoriOption" }
 clip-placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 bungeecord-api = { module = "net.md-5:bungeecord-api", version.ref = "bungeecordApi" }
-velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocityApi" }
 brigadier = { module = "com.mojang:brigadier", version.ref = "brigadier" }
 neoforge = { module = "net.neoforged:neoforge" }
 
